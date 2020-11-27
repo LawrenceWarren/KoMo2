@@ -1,17 +1,20 @@
 #include "BrowseButton.h"
 #include <iostream>
+#include "CompileLoadButton.h"
 
 /**
  * @brief Construct a new BrowseButton object which calls it's superconstructor
- * and set's the onClick event.
+ * and set's the `onClick` event.
  * @param labelText The text to display on the button.
  */
-BrowseButton::BrowseButton(const char* labelText) : Gtk::Button(labelText) {
+BrowseButton::BrowseButton(const char* labelText,
+                           CompileLoadButton* compileLoad)
+    : Gtk::Button(labelText), compileLoadButton(compileLoad) {
   signal_clicked().connect(sigc::mem_fun(*this, &BrowseButton::onClick));
 }
 
 /**
- * @brief Opens a file selection dialog upon the BrowseButton being clicked.
+ * @brief Opens a file selection dialog upon the `BrowseButton` being clicked.
  */
 void BrowseButton::onClick() {
   // Creates a new file browser dialogue box.
@@ -19,7 +22,7 @@ void BrowseButton::onClick() {
                                 Gtk::FILE_CHOOSER_ACTION_OPEN);
 
   // Gets the parent of the dialogue box.
-  Gtk::Window* parent = dynamic_cast<Gtk::Window*>(this->get_parent());
+  Gtk::Window* parent = dynamic_cast<Gtk::Window*>(this->get_toplevel());
   dialog.set_transient_for(*parent);
 
   // Add response buttons the the dialog:
@@ -47,8 +50,7 @@ void BrowseButton::onClick() {
 void BrowseButton::handleResult(int result, Gtk::FileChooserDialog* dialog) {
   switch (result) {
     case (Gtk::RESPONSE_OK): {
-      absolutePathToSelectedFile = dialog->get_filename();
-      std::cout << "File selected: " << absolutePathToSelectedFile << std::endl;
+      compileLoadButton->setAbsolutePathToSelectedFile(dialog->get_filename());
       break;
     }
     case (Gtk::RESPONSE_CANCEL): {
