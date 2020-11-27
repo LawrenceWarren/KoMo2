@@ -31,11 +31,13 @@
  */
 class CompileLoadButton : public Gtk::Button {
  public:
-  CompileLoadButton(const char* labelText);
+  CompileLoadButton(const char* labelText, std::string absolutePathCalledFrom);
   void setAbsolutePathToSelectedFile(std::string val);
   std::string getAbsolutePathToSelectedFile();
 
  private:
+  std::string absolutePathCalledFrom;
   std::string absolutePathToSelectedFile = "";
+  std::string makeKmdPath(std::string absolutePath);
   void onClick();
 };

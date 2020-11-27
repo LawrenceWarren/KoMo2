@@ -6,15 +6,14 @@
 
 ### Dependencies
 
-_KoMo2_ is implemented using _GTKMM_, a C++ implementation of the popular GUI library _GTK-3_. This in turn has many of it's own dependencies - a full list can be found [here](https://developer.gnome.org/gtkmm-tutorial/stable/sec-installation-dependencies.html.en). 
+_KoMo2_ is implemented using _GTKMM_, a C++ implementation of the popular GUI library _GTK-3_. This in turn has many of it's own dependencies - a full list can be found [here](https://developer.gnome.org/gtkmm-tutorial/stable/sec-installation-dependencies.html.en).
 
 These libraries are popular and can likely be found on your Linux distributions package manager. However, it is possible to compile them from source - instructions are readily available online.
 
-### Assumptions
+_KoMo2_ also uses two binaries:
 
-This program relies on the executable `bin/kmd_compile` - it is assumed that this executable will be in this directory, and the executable is tracked in the source repository. Furthermore, `bin/kmd_compile` does not have source code, so any assumptions it makes, we must follow.
+- `./bin/aasm`, which takes a target `.s` file and compiles it to a `.kmd`. The source code for this executable can be found in `./src/aasmSrc`, and compilation is performed in the make file.
 
-`bin/kmd_compile` also relies on several other files:
+  - `./bin/aasm` depends on a file, `./bin/mnemonics`, which must be in the same directory as `./bin/aasm`.
 
-- `aasm`, another executable with missing source code - `bin/kmd_compile` assumes `aasm` is located in `_____________`.
-- `aasm` in turn relies on a plain text file, `mnemonics`, which must be in the same directory.
+- `./bin/Jimulator`, which is the main ARM emulation program. The source code for this executable can be found in `./src/jimulatorSrc`, and compilation is performed in the make file.

@@ -37,9 +37,11 @@
  * superconstructor and set's the `onClick` event.
  * @param labelText The text to display on the button.
  */
-CompileLoadButton::CompileLoadButton(const char* labelText)
+CompileLoadButton::CompileLoadButton(const char* labelText,
+                                     std::string absolutePathCalledFrom)
     : Gtk::Button(labelText) {
   signal_clicked().connect(sigc::mem_fun(*this, &CompileLoadButton::onClick));
+  this->absolutePathCalledFrom = absolutePathCalledFrom;
 }
 
 /**
@@ -49,13 +51,27 @@ CompileLoadButton::CompileLoadButton(const char* labelText)
 void CompileLoadButton::onClick() {
   // Won't evaluate `fork()` if the string compare succeeds.
   if (absolutePathToSelectedFile.compare("") && !fork()) {
-    compile(absolutePathToSelectedFile.c_str());
+    compile((absolutePathCalledFrom + "/aasm").c_str(),
+            absolutePathToSelectedFile.c_str(),
+            makeKmdPath(absolutePathToSelectedFile).c_str());
     _exit(0);
   }
   // The parent waits for the child and then.
   else {
     wait(0);
+    // TODO: Load
   }
+}
+
+/**
+ * @brief Takes an ARM assembly file, removes it's current `s` extension, and
+ * appends `kmd`. For example, `/home/user/demo.s` will return
+ * `home/user/demo.kmd`.
+ * @param absolutePath The absolute path to the `.s` program.
+ * @return std::string The absolute path with just the file name.
+ */
+std::string CompileLoadButton::makeKmdPath(std::string absolutePath) {
+  return absolutePath.substr(0, absolutePath.size() - 1).append("kmd");
 }
 
 /**

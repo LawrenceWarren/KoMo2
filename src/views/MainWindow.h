@@ -32,11 +32,13 @@
  */
 class MainWindow : public Gtk::Window {
  public:
-  MainWindow();
+  MainWindow(std::string argv0);
   virtual ~MainWindow();
+  std::string absolutePathCalledFrom;
 
   // Child widgets & layouts
  protected:
+  // TODO: Add label for displaying currently selected path
   Gtk::ButtonBox selectAndLoadContainer;
   CompileLoadButton compileAndLoad;
   BrowseButton fileSelector;

@@ -1,8 +1,8 @@
 /**
  * @file MainWindow.cpp
  * @author Lawrence Warren (lawrencewarren2@gmail.com)
- * @brief The definition of the class `MainWindow` and all of it's related functions
- * and members.
+ * @brief The definition of the class `MainWindow` and all of it's related
+ * functions and members.
  * @version 0.1
  * @date 2020-11-27
  *
@@ -25,9 +25,10 @@
 
 #include "MainWindow.h"
 
-MainWindow::MainWindow()
-    : selectAndLoadContainer(),
-      compileAndLoad("Compile & Load"),
+MainWindow::MainWindow(std::string argv0)
+    : absolutePathCalledFrom(argv0),
+      selectAndLoadContainer(),
+      compileAndLoad("Compile & Load", absolutePathCalledFrom),
       fileSelector("Select File", &compileAndLoad) {
   set_border_width(10);
   set_default_size(1150, 725);

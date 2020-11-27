@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-void compile(const char* pathToFile);
+int compile(const char* pathToBin, const char* pathToS, const char* pathToKMD);
 
 #ifdef __cplusplus
 }

@@ -23,10 +23,25 @@
  *
  */
 #include <gtkmm/application.h>
+#include <libgen.h>
+#include <unistd.h>
+#include <iostream>
 #include "views/MainWindow.h"
 
 int main(int argc, char* argv[]) {
+  // Gets a path to this executable
+  char buf[255];
+  if (readlink("/proc/self/exe", buf, sizeof(buf)) == -1) {
+    std::cout << "could not find executable path!" << std::endl;
+    exit(1);
+  }
+
+  // Turns the path into a std string, removes "/kmd"
+  std::string argv0(buf);
+  argv0 = argv0.substr(0, argv0.size() - 4);
+
+  // Launch the app
   auto app = Gtk::Application::create(argc, argv, "uon.komodo");
-  MainWindow KoMo2;
+  MainWindow KoMo2(argv0);
   return app->run(KoMo2);
 }

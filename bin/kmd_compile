@@ -1,5 +1,0 @@
-#! /bin/sh
-
-FLNME=`echo $1 | sed s/[.]s$//`
-/usr/local/kmd-1.5.0/bin/aasm -lk ${FLNME}.kmd $1
-

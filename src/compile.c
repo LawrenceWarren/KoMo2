@@ -34,8 +34,10 @@
  * `pathToFile` through the KoMoDo compile script.
  * @param pathToFile an absolute path (from root) to the .s file to be compiled.
  */
-void compile(const char *pathToFile) {
-    // TODO: make "execlp" use a non-absolute path to the compile script.
-    execlp("/home/lawrencewarren/projects/KMD2/bin/kmd_compile", pathToFile,
-           pathToFile, (char *)0);
+int compile(const char *pathToBin, const char *pathToS, const char *pathToKMD) {
+    execlp(pathToBin, "-lk", pathToS, pathToKMD, (char *)0);
+
+    // Should not get here!
+    printf("Running ARM assembler failed. \n");
+    return 1;
 }
