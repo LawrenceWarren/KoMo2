@@ -4,6 +4,7 @@
         "GTKMM",
         "Jimulator",
         "aasm",
+        "dotkomodo",
         "gboolean",
         "gchar",
         "gint",

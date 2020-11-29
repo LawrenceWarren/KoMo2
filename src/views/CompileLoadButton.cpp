@@ -56,10 +56,11 @@ void CompileLoadButton::onClick() {
             makeKmdPath(absolutePathToSelectedFile).c_str());
     _exit(0);
   }
-  // The parent waits for the child and then.
+  // The parent waits for the child and then loads.
   else {
     wait(0);
-    // TODO: Load
+    load(makeKmdPath(absolutePathToSelectedFile).c_str());
+    std::cout << "File loaded!" << std::endl;
   }
 }
 
