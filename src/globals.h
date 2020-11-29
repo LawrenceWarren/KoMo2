@@ -179,7 +179,9 @@ typedef struct {
 } source_file;
 
 extern source_file kmdSourceFile;
-extern target_system* board;
+extern target_system* board;  /* TODO: the "board" has guarantees about it's 
+                                 structure, so make this struct a guarantee */
+
 extern symbol* symbol_table;  // A symbol table that is made up of symbols
 extern int symbol_count;      // TODO: increment this (misc_add_symbol)
 extern int writeToJimulator;

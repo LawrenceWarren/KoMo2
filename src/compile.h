@@ -28,7 +28,7 @@ extern "C" {
 #endif
 
 int compile(const char* pathToBin, const char* pathToS, const char* pathToKMD);
-void load(const char* pathToKMD);
+int load(const char* pathToKMD);
 
 #ifdef __cplusplus
 }

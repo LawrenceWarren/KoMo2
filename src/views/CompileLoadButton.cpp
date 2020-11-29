@@ -25,11 +25,14 @@
  */
 
 #include "CompileLoadButton.h"
+
 #include <stdio.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
 #include <iostream>
 #include <string>
+
 #include "../compile.h"
 
 /**
@@ -56,11 +59,14 @@ void CompileLoadButton::onClick() {
             makeKmdPath(absolutePathToSelectedFile).c_str());
     _exit(0);
   }
-  // The parent waits for the child and then loads.
+  // The parent waits for the child and then loads
   else {
     wait(0);
-    load(makeKmdPath(absolutePathToSelectedFile).c_str());
-    std::cout << "File loaded!" << std::endl;
+    if (load(makeKmdPath(absolutePathToSelectedFile).c_str())) {
+      std::cout << "Error loading file into KoMo2" << std::endl;
+    } else {
+      std::cout << "File loaded!" << std::endl;
+    }
   }
 }
 
