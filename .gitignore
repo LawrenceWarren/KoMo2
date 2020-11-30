@@ -1,3 +1,5 @@
-kmd
 jimulator
 aasm
+
+# Ignore compiled KMD files and main graphics binary
+*kmd

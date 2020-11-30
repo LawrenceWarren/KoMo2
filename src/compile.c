@@ -61,7 +61,8 @@ source_file source;
  * @param pathToKMD an absolute path to the `.kmd` file that will be output.
  */
 int compile(const char* pathToBin, const char* pathToS, const char* pathToKMD) {
-  execlp(pathToBin, "-lk", pathToS, pathToKMD, (char*)0);
+  printf("BIN: %s\nS:   %s\nKMD: %s\n", pathToBin, pathToS, pathToKMD);
+  execlp(pathToBin, "aasm", "-lk", pathToKMD, pathToS, (char*)0);
 
   // Should not get here!
   printf("Running ARM assembler failed. \n");
