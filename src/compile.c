@@ -6,9 +6,7 @@
  * the Jimulator ARM emulator.
  * @version 0.1
  * @date 2020-11-27
- *
  * @section LICENSE
- *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 3 of
@@ -19,9 +17,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details at
  * https://www.gnu.org/copyleft/gpl.html
- *
  * @copyright Copyright (c) 2020
- *
  */
 
 #include "compile.h"
@@ -46,10 +42,9 @@
 #include "globals.h"
 
 // Forward declaring auxiliary load functions
-int misc_count_symbols();
-void flush_sauce();
+void flush_source();
 void misc_flush_symbol_table();
-int read_sauce(const char* pathToKMD);
+int readSource(const char* pathToKMD);
 int callback_memory_refresh();
 source_file source;
 
@@ -82,11 +77,11 @@ int load(const char* pathToKMD) {
   // if nothing else is already loading
   if (load_lock == 0) {
     load_lock = 1;
-    int old_symbol_count = misc_count_symbols();  // Remember old rows
+    int old_symbol_count = symbol_count;  // Remember old rows
 
-    flush_sauce();
+    flush_source();
     misc_flush_symbol_table();
-    status = read_sauce(pathToKMD);
+    status = readSource(pathToKMD);
 
     // TODO: update views here - can use old_symbol_count
     load_lock = 0;
@@ -96,17 +91,9 @@ int load(const char* pathToKMD) {
 }
 
 /**
- * @brief Returns the global variable `symbol_count`
- * @return int `symbol_count`
- */
-int misc_count_symbols(void) {
-  return symbol_count;
-}
-
-/**
  * @brief removes all of the old references to the previous file.
  */
-void flush_sauce(void) {
+void flush_source(void) {
   source_line *pOld, *pTrash;
 
   pOld = source.pStart;
@@ -215,7 +202,7 @@ int allowed(char c) {
  * @param value
  * @param sym_type
  */
-void misc_add_symbol(char* name, long value, symbol_type sym_type) {
+void miscAddSymbol(char* name, long value, symbol_type sym_type) {
   symbol *pSym, *pNew;
 
   pNew = g_new(symbol, 1);
@@ -242,7 +229,7 @@ void misc_add_symbol(char* name, long value, symbol_type sym_type) {
  * @param fHandle
  * @return char
  */
-char get_symbol(FILE* fHandle) {
+char getSymbol(FILE* fHandle) {
   // Strip spaces
   char c;
   do {
@@ -294,7 +281,7 @@ char get_symbol(FILE* fHandle) {
     }
   }
 
-  misc_add_symbol(buffer, value, sym_type);  // Set symbol
+  miscAddSymbol(buffer, value, sym_type);  // Set symbol
   return c;                                  // ... and discard rest of line
 }
 
@@ -304,14 +291,14 @@ char get_symbol(FILE* fHandle) {
  * @param data_ptr
  * @return int number of bytes transmitted (currently always same as input)
  */
-int board_sendchararray(int char_number, unsigned char* data_ptr) {
+int boardSendCharArray(int char_number, unsigned char* data_ptr) {
   struct pollfd pollfd;
   pollfd.fd = writeToJimulator;
   pollfd.events = POLLOUT;
 
   // See if output possible
   if (!poll(&pollfd, 1, OUT_POLL_TIMEOUT)) {
-    printf("Client system not responding!\n");  // Warn; poss. comms. problem
+    printf("Client system not responding!\n");  // Warn; poss. communication problem
   }
 
   // Write char_number bytes
@@ -328,8 +315,8 @@ int board_sendchararray(int char_number, unsigned char* data_ptr) {
  * @param to_send
  * @return int
  */
-int board_sendchar(unsigned char to_send) {
-  return board_sendchararray(1, &to_send);
+int boardSendChar(unsigned char to_send) {
+  return boardSendCharArray(1, &to_send);
 }
 
 /**
@@ -338,7 +325,7 @@ int board_sendchar(unsigned char to_send) {
  * @param size
  * @return unsigned int
  */
-unsigned int board_translate_memsize(int size) {
+unsigned int boardTranslateMemsize(int size) {
   switch (size) {
     case 1:
       return 0;
@@ -359,7 +346,7 @@ unsigned int board_translate_memsize(int size) {
  * @param N
  * @return int the number of bytes believed received successfully (i.e. N=>"Ok")
  */
-int board_sendbN(int value, int N) {
+int boardSendNBytes(int value, int N) {
   unsigned char buffer[MAX_SERIAL_WORD];
   int i;
 
@@ -372,7 +359,7 @@ int board_sendbN(int value, int N) {
     value = value >> 8;        // Get next byte
   }
 
-  return board_sendchararray(N, buffer);
+  return boardSendCharArray(N, buffer);
 }
 
 /**
@@ -381,21 +368,21 @@ int board_sendbN(int value, int N) {
  * `board_version` always passed the check due to the certainty of the
  * "hardware" run under the emulator; therefore the check has been removed.
  * @param count number of elements
- * @param address pointer to the address in bytes
- * @param source pointer to the new value to be stored
- * @param size width of current memory in bytes
+ * @param address pointer to the address (in bytes)
+ * @param value pointer to the new value to be stored
+ * @param size width of current memory (in bytes)
  * @return TRUE for success, FALSE for failure
  */
-int board_set_memory(int count,
-                     unsigned char* address,
-                     unsigned char* source,
-                     int size) {
+int boardSetMemory(int count,
+                   unsigned char* address,
+                   unsigned char* value,
+                   int size) {
   int bytecount = count * size;
 
-  if ((1 != board_sendchar(BR_SET_MEM | board_translate_memsize(size))) ||
-      (4 != board_sendchararray(4, address))  // send address
-      || (2 != board_sendbN(count, 2))        // send width
-      || (bytecount != board_sendchararray(bytecount, source))) {  // send value
+  if ((1 != boardSendChar(BR_SET_MEM | boardTranslateMemsize(size))) ||
+      (4 != boardSendCharArray(4, address))  // send address
+      || (2 != boardSendNBytes(count, 2))     // send width
+      || (bytecount != boardSendCharArray(bytecount, value))) {  // send value
     printf("bad board version!\n");
     return FALSE;
   }
@@ -404,14 +391,14 @@ int board_set_memory(int count,
 }
 
 /**
- * @brief Reads the source of the file pointer to by filename
- * @param filename A path to the `.kmd` file to be loaded.
+ * @brief Reads the source of the file pointer to by pathToKMD
+ * @param pathToKMD A path to the `.kmd` file to be loaded.
  * @return int status code (1 is failure, 0 is success)
  */
-int read_sauce(const char* filename) {
+int readSource(const char* pathToKMD) {
   unsigned int address, old_address;
   unsigned int d_size[SOURCE_FIELD_COUNT], d_value[SOURCE_FIELD_COUNT];
-  int i, j, m, flag, has_old_addr;
+  int i, j, m, flag;
   int byte_total, text_length;
   char c, buffer[SOURCE_TEXT_LENGTH + 1]; /* + 1 for terminator */
   source_line *pNew, *pTemp1, *pTemp2;
@@ -425,24 +412,24 @@ int read_sauce(const char* filename) {
     return TRUE;
   }
 
-  FILE* sauce = fopen(filename, "r");
-  if (sauce == NULL) {
+  FILE* komodoSource = fopen(pathToKMD, "r");
+  if (komodoSource == NULL) {
     printf("Source could not be opened!\n");
     return TRUE;
   }
 
-  has_old_addr = FALSE;  // Don't know where we start
-  stat(filename, &status);
+  int has_old_addr = FALSE;  // Don't know where we start
+  stat(pathToKMD, &status);
 
   // Repeat until end of file
-  while (!feof(sauce)) {
+  while (!feof(komodoSource)) {
     address = 0;   // Really needed?
     flag = FALSE;  // Haven't found an address yet
-    c = getc(sauce);
+    c = getc(komodoSource);
 
     // If the first character is a colon, read a symbol record
     if (c == ':') {
-      get_symbol(sauce);
+      getSymbol(komodoSource);
       has_old_addr = FALSE;  // Don't retain position
     }
 
@@ -454,18 +441,18 @@ int read_sauce(const char* filename) {
       }
 
       byte_total = 0;
-      flag = get_number(sauce, &c, &address) != 0;  // Some digits read?
+      flag = get_number(komodoSource, &c, &address) != 0;  // Some digits read?
 
       // Read a new address - and if we got an address, try for data fields
       if (flag) {
         if (c == ':') {
-          c = getc(sauce);  // Skip colon
+          c = getc(komodoSource);  // Skip colon
         }
 
         // Loop on data fields
         // repeat several times or until `illegal' character met
         for (j = 0; j < SOURCE_FIELD_COUNT; j++) {
-          d_size[j] = get_number(sauce, &c, &d_value[j]);
+          d_size[j] = get_number(komodoSource, &c, &d_value[j]);
 
           if (d_size[j] == 0) {
             break;  // Quit if nothing found
@@ -485,24 +472,24 @@ int read_sauce(const char* filename) {
 
       // We have a record with an address
       if (flag) {
-        while ((c != ';') && (c != '\n') && !feof(sauce)) {
-          c = getc(sauce);
+        while ((c != ';') && (c != '\n') && !feof(komodoSource)) {
+          c = getc(komodoSource);
         }
 
         // Check for field separator
         if (c == ';') {
-          c = getc(sauce);
+          c = getc(komodoSource);
           if (c == ' ') {
-            c = getc(sauce);  // Skip formatting space
+            c = getc(komodoSource);  // Skip formatting space
           }
 
           text_length = 0;  // Measure (& buffer) source line
 
           // Everything to end of line (or clip)
-          while ((c != '\n') && !feof(sauce) &&
+          while ((c != '\n') && !feof(komodoSource) &&
                  (text_length < SOURCE_TEXT_LENGTH)) {
             buffer[text_length++] = c;
-            c = getc(sauce);
+            c = getc(komodoSource);
           }
 
           buffer[text_length++] = '\0';  // text_length now length incl. '\0'
@@ -528,7 +515,7 @@ int read_sauce(const char* filename) {
               }
 
               // Ignore Boolean error return value for now
-              board_set_memory(1, addr, data, pNew->data_size[j]);
+              boardSetMemory(1, addr, data, pNew->data_size[j]);
             }
 
             byte_total = byte_total + pNew->data_size[j];
@@ -589,11 +576,11 @@ int read_sauce(const char* filename) {
       }  // Source line
     }
 
-    while ((c != '\n') && !feof(sauce)) {
-      c = getc(sauce);  // Next line anyway
+    while ((c != '\n') && !feof(komodoSource)) {
+      c = getc(komodoSource);  // Next line anyway
     }
   }
 
-  fclose(sauce);
+  fclose(komodoSource);
   return FALSE;  // Return error flag
 }
