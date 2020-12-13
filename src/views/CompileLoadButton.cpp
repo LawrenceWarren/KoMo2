@@ -48,23 +48,42 @@ CompileLoadButton::CompileLoadButton(const char* labelText,
 }
 
 /**
- * @brief Compiles a `.s` file into a `.kmd` file and then load it into
+ * @brief Compiles a `.s` file into a `.kmd` file:
+ * Forks a child process, executes aasm on the child, and then load it into
  * Jimulator, if a valid file path is given.
  */
 void CompileLoadButton::onClick() {
-  // Won't evaluate `fork()` if the string compare succeeds.
-  if (absolutePathToSelectedFile.compare("") && !fork()) {
+  // If the length is zero, invalid path
+  if (!absolutePathToSelectedFile.length()) {
+    std::cout << "No file selected!" << std::endl;
+    return;
+  }
+
+  int result = fork();
+
+  // child process
+  if (!result) {
     compile((absolutePathCalledFrom + "/aasm").c_str(),
             absolutePathToSelectedFile.c_str(),
             makeKmdPath(absolutePathToSelectedFile).c_str());
     _exit(0);
   }
-  // The parent waits for the child and then loads
+
+  // parent process
   else {
-    wait(0);
-    if (load(makeKmdPath(absolutePathToSelectedFile).c_str())) {
+    int status = 0;
+    wait(&status);  // Wait for child to return
+
+    // If child process failed
+    if (status) {
+      std::cout << "aasm failed - invalid file path!" << std::endl;
+    }
+    // If load function failed
+    else if (load(makeKmdPath(absolutePathToSelectedFile).c_str())) {
       std::cout << "Error loading file into KoMo2" << std::endl;
-    } else {
+    }
+    // Success
+    else {
       std::cout << "File loaded!" << std::endl;
     }
   }

@@ -67,5 +67,6 @@
         "mutex": "cpp",
         "thread": "cpp",
         "valarray": "cpp"
-    }
+    },
+    "C_Cpp.dimInactiveRegions": false
 }

@@ -56,7 +56,6 @@ source_file source;
  * @param pathToKMD an absolute path to the `.kmd` file that will be output.
  */
 int compile(const char* pathToBin, const char* pathToS, const char* pathToKMD) {
-  printf("BIN: %s\nS:   %s\nKMD: %s\n", pathToBin, pathToS, pathToKMD);
   execlp(pathToBin, "aasm", "-lk", pathToKMD, pathToS, (char*)0);
 
   // Should not get here!
@@ -282,7 +281,7 @@ char getSymbol(FILE* fHandle) {
   }
 
   miscAddSymbol(buffer, value, sym_type);  // Set symbol
-  return c;                                  // ... and discard rest of line
+  return c;                                // ... and discard rest of line
 }
 
 /**
@@ -298,7 +297,8 @@ int boardSendCharArray(int char_number, unsigned char* data_ptr) {
 
   // See if output possible
   if (!poll(&pollfd, 1, OUT_POLL_TIMEOUT)) {
-    printf("Client system not responding!\n");  // Warn; poss. communication problem
+    printf("Client system not responding!\n");  // Warn; poss. communication
+                                                // problem
   }
 
   // Write char_number bytes
@@ -380,8 +380,8 @@ int boardSetMemory(int count,
   int bytecount = count * size;
 
   if ((1 != boardSendChar(BR_SET_MEM | boardTranslateMemsize(size))) ||
-      (4 != boardSendCharArray(4, address))  // send address
-      || (2 != boardSendNBytes(count, 2))     // send width
+      (4 != boardSendCharArray(4, address))                      // send address
+      || (2 != boardSendNBytes(count, 2))                        // send width
       || (bytecount != boardSendCharArray(bytecount, value))) {  // send value
     printf("bad board version!\n");
     return FALSE;
