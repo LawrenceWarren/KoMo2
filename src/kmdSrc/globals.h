@@ -178,9 +178,8 @@ typedef struct {
   source_line* pEnd;   /* Last line in source */
 } source_file;
 
-extern source_file kmdSourceFile;
-extern target_system* board; /* TODO: the "board" has guarantees about it's
-                                structure, so make this struct a guarantee */
+// extern source_file kmdSourceFile;
+// extern target_system* board; // TODO: make board information constant
 
 extern symbol* symbol_table;  // A symbol table that is made up of symbols
 extern int symbol_count;      // TODO: increment this (miscAddSymbol)

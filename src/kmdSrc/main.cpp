@@ -27,12 +27,13 @@
 #include <libgen.h>
 #include <sys/signal.h>
 #include <unistd.h>
+#include <fstream>
 #include <iostream>
 #include "globals.h"
 #include "views/MainWindow.h"
 
-source_file kmdSourceFile;
-target_system* board;
+// source_file kmdSourceFile;
+// target_system* board;
 symbol* symbol_table;
 int symbol_count;
 int writeToJimulator;
@@ -45,6 +46,8 @@ int board_emulation_communication_to[2];
 void initJimulator(std::string argv0);
 std::string getAbsolutePathToBinaryDirectory(char* arg);
 bool openDotKomodo(std::string pathToBinaryDir);
+int initialiseCommandLine(const Glib::RefPtr<Gio::ApplicationCommandLine>&,
+                          Glib::RefPtr<Gtk::Application>& app);
 
 /**
  * @brief The program entry point.
@@ -54,13 +57,17 @@ bool openDotKomodo(std::string pathToBinaryDir);
  */
 int main(int argc, char* argv[]) {
   std::string argv0 = getAbsolutePathToBinaryDirectory(argv[0]);
+
+  auto app = Gtk::Application::create(argc, argv, "uon.cs.KoMo2",
+                                      Gio::APPLICATION_HANDLES_COMMAND_LINE);
+  app->signal_command_line().connect(
+      sigc::bind(sigc::ptr_fun(initialiseCommandLine), app), false);
+
   openDotKomodo(argv0);
-  initJimulator(argv0);
+  initJimulator(argv0);  // Creates Jimulator
 
-  auto app = Gtk::Application::create(argc, argv, "uon.komodo");
   MainWindow KoMo2(argv0);
-  auto exit = app->run(KoMo2);
-
+  int exit = app->run(KoMo2);
   kill(emulator_PID, SIGKILL);  // Kill Jimulator
   return exit;
 }
@@ -70,11 +77,11 @@ int main(int argc, char* argv[]) {
  * @return auto exit code.
  */
 bool openDotKomodo(std::string pathToBinaryDir) {
+  // TODO: make this function do something - if it's needed
   PtrSCANNode scantopnode = nullptr;
   GScanner* scanner = nullptr;
   int use_internal = 0;
 
-  // TODO: read `bin/dotkomodo.string`
   // If internal file is used
   if (use_internal) {
     // scanner = ScanOpenSCANString(dotkomodo);
@@ -91,7 +98,6 @@ bool openDotKomodo(std::string pathToBinaryDir) {
     exit(1);
   }
 
-  // TODO: call these functions
   // scantopnode = ScanParseSCANNode(scanner, FALSE);  // Scan .komodo file
   // ScanCloseSCANFile(scanner);  // The scanner can safely be closed now
 
@@ -111,7 +117,6 @@ bool openDotKomodo(std::string pathToBinaryDir) {
  * For example, if the KoMo2 executable exists at `/home/user/demo/kmd` then
  * argv0 will have the value `/home/user/demo` and it will be assumed that the
  * Jimulator executable lives at `/home/user/demo/jimulator`.
- * @return auto.
  */
 void initJimulator(std::string argv0) {
   // Clears the symbol tables
@@ -151,7 +156,7 @@ void initJimulator(std::string argv0) {
 
 /**
  * @brief get the absolute path to the directory of the binary.
- * @return auto the directory of the KoMo2 binary - if the binary is at
+ * @return std::string the directory of the KoMo2 binary - if the binary is at
  * `/home/user/demo/kmd`, return `/home/user/demo`.
  */
 std::string getAbsolutePathToBinaryDirectory(char* arg) {
@@ -162,4 +167,100 @@ std::string getAbsolutePathToBinaryDirectory(char* arg) {
 
   argv0 = argv0.substr(0, argv0.size() - 4);
   return argv0;
+}
+
+/**
+ * @brief Returns the version number as a string.
+ * @returns std::string the version number contained in the plain text file
+ * `version` in the project root.
+ */
+std::string getVersionNumber() {
+  std::string versionString;
+  std::ifstream versionFile("version");
+
+  if (versionFile.is_open()) {
+    if (!std::getline(versionFile, versionString)) {
+      std::cout << "error!";
+    }
+    versionFile.close();
+  }
+
+  return versionString;
+}
+
+/**
+ * @brief read and print the help message.
+ */
+void getHelpMessage() {
+  // TODO: print some help message.
+}
+
+/**
+ * @brief Handles if a command line flag is set.
+ * @param isVersion If the version flag has been set.
+ * @param isHelp If the help flag has been set.
+ * @return int status code.
+ */
+int handleCommandLine(bool isVersion, bool isHelp) {
+  // TODO: potentially move version & help message to JSON?
+  if (isVersion) {
+    std::cout << "v" << getVersionNumber() << std::endl;
+    return 1;
+  }
+
+  if (isHelp) {
+    getHelpMessage();
+    return 1;
+  }
+
+  return 0;
+}
+
+/**
+ * @brief Sets up and parses custom command line arguments.
+ * To add more command line arguments, create a new boolean and a new
+ * Glib::OptionEntry object, and then add a longname, shortname, and
+ * description, then add it to the group. Then pass the boolean into the
+ * handleCommandLine function.
+ * @param cmd The apps command line object.
+ * @param app The GTK application itself.
+ * @return int status code.
+ */
+int initialiseCommandLine(const Glib::RefPtr<Gio::ApplicationCommandLine>& cmd,
+                          Glib::RefPtr<Gtk::Application>& app) {
+  Glib::OptionGroup group("options", "main options");
+  bool isVersion = false,
+       isHelp = false;              // Booleans for options being toggled
+  Glib::OptionEntry version, help;  // Option objects
+
+  // Setting the version `-v` option
+  version.set_long_name("version");
+  version.set_short_name('v');
+  version.set_description("Display version information.");
+  group.add_entry(version, isVersion);
+
+  // Setting the help `-h` option
+  help.set_long_name("help");
+  help.set_short_name('h');
+  help.set_description("Display help message.");
+  group.add_entry(help, isHelp);
+
+  Glib::OptionContext context;
+  context.add_group(group);
+
+  // Parses command line arguments.
+  Glib::OptionGroup gtkgroup(gtk_get_option_group(true));
+  context.add_group(gtkgroup);
+  int argc;
+  char** argv = cmd->get_arguments(argc);
+  context.parse(argc, argv);
+
+  int returnVal = handleCommandLine(isVersion, isHelp);
+
+  // If command line arguments were valid, activate app, else not.
+  if (!returnVal) {
+    app->activate();
+  }
+
+  return returnVal;
 }
