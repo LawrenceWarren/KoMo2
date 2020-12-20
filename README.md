@@ -12,17 +12,55 @@ _KoMoDo_ is an ARM emulator application which uses a GUI to display memory addre
 
 ### Dependencies
 
+##### Libraries
+
 _KoMo2_ is implemented using _GTKMM_, a C++ implementation of the popular GUI library _GTK-3_. This in turn has many of it's own dependencies - a full list can be found [here](https://developer.gnome.org/gtkmm-tutorial/stable/sec-installation-dependencies.html.en).
 
-These libraries are popular and can likely be found on your Linux distributions package manager. For instance:
+These libraries are popular and compiled versions can likely be found on your Linux distributions package manager. For instance, on the following distributions you can execute the respect command:
 
-Debian, Gentoo, SuSE & Ubuntu:
+_Debian, Gentoo, SuSE & Ubuntu:_
 `sudo apt-get install libgtkmm-3.0-dev`
 
-Fedora, RedHat & CentOS:
+_Fedora, RedHat & CentOS:_
 `yum install gtkmm30-docs`
 
 Alternatively, it is possible to compile them from source - instructions are readily available online - but this can be finicky and requires assembling your own toolchain.
+
+##### Toolchain
+
+To build this program from source, you **must** have a C and a C++ compiler. The makefile assumes that GCC is installed, and uses the commands `g++` and `gcc`.
+
+Furthermore, to execute the makefile, you must have GNU Make installed.
+
+##### Development environment
+
+Exactly what text editor or IDE is used for development is up to developer preference, but there are several tools that have been used in initial development of the program to increase code readability and quality:
+
+- **ClangFormat** is a C and C++ formatter that can be run on a source program to create a consistent, human-readable file, and leaves you not having to worry about styling. More information can be found [here](https://clang.llvm.org/docs/ClangFormat.html).
+
+  This program has been developed using the default settings for ClangFormat, however you can configure a custom formatter file.
+
+* **Doxygen** is a tool that allows for generation of documentation on classes, variables and functions from specially styled comments embedded in the code. Many doxygen comments can be found in the code base, but an example of a basic Doxygen comment is as follows:
+
+  ```c
+  /**
+   * @brief A function which takes a base value and a power, and returns the
+   * power to that base. For example, `baseToThePower(2, 2)` returns `4`,
+   * `baseToThePower(2, 3)` returns `8`.
+   * @param base The number that will be put to the power.
+   * @param power The power to raise the base by.
+   * @returns int - the resulting value of the base to the power.
+   */
+  int baseToThePower(int base, int power) {
+    if(!power) {
+      return 1;
+    }
+
+    return base * baseToThePower(base, power - 1);
+  }
+  ```
+
+  More information about Doxygen can be found [here](https://www.doxygen.nl/index.html).
 
 ### Binaries
 

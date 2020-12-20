@@ -8,6 +8,7 @@
         "gboolean",
         "gchar",
         "gint",
+        "libgtkmm",
         "sigc"
     ],
     "files.associations": {
