@@ -6,6 +6,10 @@
 
 ---
 
+(demo)[#demo]
+
+# demo
+
 ### A brief history
 
 1<sup>st</sup> year students at _The University of Nottingham_ are taught a compulsory module, _Systems and Architecture (SYS)_, which amongst other things teaches the basics of programming concepts, such as branches and variables, through ARM assembly language.
@@ -21,7 +25,7 @@ However, _KoMoDo_ is becoming outdated for a number of reasons, and the purpose 
 1. Install the tools described in the subsection (_Toolchain_)[#toolchain].
 2. Install the libraries described in the subsection (_Libraries_)[#libraries].
 3. Install any optional dependencies you may find in the subsection (_Development environment_)[#development-environment].
-4. Clone this repository into the directory you wish to install it into.
+4. Clone this repository.
 5. Enter the root directory of this project and execute `make`.
 
 ---
