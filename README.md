@@ -2,11 +2,11 @@
 
 ## Modernising an Advanced Reduced Instruction Set Computing Machine architecture emulator
 
-###### _A 3^rd^ year dissertation project by Lawrence Warren for Dr. Steven Bagley of the University of Nottingham._
+###### _A 3<sup>rd</sup> year dissertation project by Lawrence Warren for Dr. Steven Bagley of the University of Nottingham._
 
 ### A brief history
 
-1^st^ year students at _The University of Nottingham_ are taught a compulsory module, _Systems and Architecture (SYS)_, which, amongst other things, teaches the basics of programming concepts, such as branches and variables, through ARM assembly language.
+1<sup>st</sup> year students at _The University of Nottingham_ are taught a compulsory module, _Systems and Architecture (SYS)_, which, amongst other things, teaches the basics of programming concepts, such as branches and variables, through ARM assembly language.
 
 _KoMoDo_ is an ARM emulator application which uses a GUI to display memory addresses, registers, and the values within them at any given point in the FDE cycle of the emulated processor. However it is becoming outdated for a number of reasons, and is the _KoMo2_ project is about providing the necessary updates.
 
