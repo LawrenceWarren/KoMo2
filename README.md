@@ -16,6 +16,16 @@ However, _KoMoDo_ is becoming outdated for a number of reasons, and the purpose 
 
 ---
 
+### Installation
+
+1. Install the tools described in the subsection (_Toolchain_)[#toolchain].
+2. Install the libraries described in the subsection (_Libraries_)[#libraries].
+3. Install any optional dependencies you may find in the subsection (_Development environment_)[#development-environment].
+4. Clone this repository into the directory you wish to install it into.
+5. Enter the root directory of this project and execute `make`.
+
+---
+
 ### Dependencies
 
 #### Toolchain
@@ -67,16 +77,6 @@ Exactly what text editor or IDE is used for development is up to developer prefe
   ```
 
   More information about Doxygen can be found [here](https://www.doxygen.nl/index.html).
-
----
-
-### Installation
-
-1. Install the tools described in the subsection (_Toolchain_)[#toolchain].
-2. Install the libraries described in the subsection (_Libraries_)[#libraries].
-3. Install any optional dependencies you may find in the subsection (_Development environment_)[#development-environment].
-4. Clone this repository into the directory you wish to install it into.
-5. Enter the root directory of this project and execute `make`.
 
 ---
 
