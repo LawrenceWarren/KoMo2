@@ -22,24 +22,40 @@
  *
  */
 
+#include <gtkmm/button.h>
 #include <gtkmm/buttonbox.h>
+#include <gtkmm/label.h>
 #include <gtkmm/window.h>
-#include "BrowseButton.h"
-#include "CompileLoadButton.h"
+#include <string>
+
+class KoMo2Model;
 
 /**
  * @brief The mainWindow of the program.
  */
 class MainWindow : public Gtk::Window {
  public:
-  MainWindow(std::string argv0);
+  // Constructors
+  MainWindow();
   virtual ~MainWindow();
-  std::string absolutePathCalledFrom;
+
+  // Getters and setters
+  Gtk::Button* getCompileAndLoadButton();
+  Gtk::Button* getBrowseButton();
+  void setModel(KoMo2Model *val);
+  KoMo2Model* getModel();
+  Gtk::Label* getSelectedFileLabel();
+  void setSelectedFileLabel(std::string val);
+  void setCSS();
 
   // Child widgets & layouts
- protected:
-  // TODO: Add label for displaying currently selected path
-  Gtk::ButtonBox selectAndLoadContainer;
-  CompileLoadButton compileAndLoad;
-  BrowseButton fileSelector;
+ private:
+  // Models
+  KoMo2Model* model;
+
+  // Views
+  Gtk::VButtonBox selectAndLoadContainer;
+  Gtk::Label selectedFileLabel;
+  Gtk::Button compileAndLoadButton;
+  Gtk::Button browseButton;
 };

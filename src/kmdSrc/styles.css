@@ -1,0 +1,45 @@
+.fileLabel {
+  font-size: 16px;
+  color: #ffffff;
+  box-shadow: 5px 5px 0px #2b3035, -5px -5px 0px #2b3035, -5px 5px 0px #2b3035, 5px -5px 0px #2b3035;
+  border-width: 10px;
+  border-radius: 7px;
+
+  /*outline-color: #ff0000;
+  border-color: #ff0000;*/
+}
+
+/* For the compiler buttons */
+.compButtons {
+  /* Text colors */
+  color: #ffffff;
+  caret-color: #ffffff;
+  box-shadow: -2px 2px 0px #000000, 1px -1px 0px #3f454b;
+  text-shadow: none;
+
+  background-color: #000000; /* Weird corner bits? */
+  background-image: image(#24292e); /* Main button background */
+  border-color: #2b3035; /* border colour */
+
+  transition: box-shadow 1s;
+
+  font-size: 16px;
+
+  /* Button borders */
+  border-width: 5px;
+  border-radius: 7px;
+}
+
+.compButtons:hover {
+  box-shadow: -4px 4px 0px #000000, 1px -1px 1px #50565c;
+}
+
+.compButtons:active {
+  box-shadow: inset 1px -1px 0px #3f454b, inset -1px 1px 0px #000000;
+}
+
+/* Main window background colour */
+window {
+  background-color: #24292e;
+  color: #000000;
+}

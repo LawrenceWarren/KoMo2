@@ -23,6 +23,7 @@
  *
  */
 
+#include <glibmm/optioncontext.h>
 #include <gtkmm/application.h>
 #include <libgen.h>
 #include <sys/signal.h>
@@ -30,6 +31,9 @@
 #include <fstream>
 #include <iostream>
 #include "globals.h"
+// main Model
+#include "models/KoMo2Model.h"
+// main View
 #include "views/MainWindow.h"
 
 // source_file kmdSourceFile;
@@ -44,7 +48,7 @@ int board_emulation_communication_from[2];
 int board_emulation_communication_to[2];
 
 void initJimulator(std::string argv0);
-std::string getAbsolutePathToBinaryDirectory(char* arg);
+std::string getAbsolutePathToRootDirectory(char* arg);
 bool openDotKomodo(std::string pathToBinaryDir);
 int initialiseCommandLine(const Glib::RefPtr<Gio::ApplicationCommandLine>&,
                           Glib::RefPtr<Gtk::Application>& app);
@@ -56,7 +60,7 @@ int initialiseCommandLine(const Glib::RefPtr<Gio::ApplicationCommandLine>&,
  * @return int exit code.
  */
 int main(int argc, char* argv[]) {
-  std::string argv0 = getAbsolutePathToBinaryDirectory(argv[0]);
+  std::string argv0 = getAbsolutePathToRootDirectory(argv[0]);
 
   auto app = Gtk::Application::create(argc, argv, "uon.cs.KoMo2",
                                       Gio::APPLICATION_HANDLES_COMMAND_LINE);
@@ -66,8 +70,10 @@ int main(int argc, char* argv[]) {
   openDotKomodo(argv0);
   initJimulator(argv0);  // Creates Jimulator
 
-  MainWindow KoMo2(argv0);
-  int exit = app->run(KoMo2);
+  MainWindow koMo2Window;
+  KoMo2Model mainModel(&koMo2Window, argv0);
+
+  int exit = app->run(koMo2Window);
   kill(emulator_PID, SIGKILL);  // Kill Jimulator
   return exit;
 }
@@ -147,7 +153,7 @@ void initJimulator(std::string argv0) {
     close(0);
     dup2(board_emulation_communication_to[0], 0);
 
-    const char* jimulatorPath = argv0.append("/jimulator").c_str();
+    const char* jimulatorPath = argv0.append("/bin/jimulator").c_str();
     execlp(jimulatorPath, "", (char*)0);
     std::cout << "Jimulator launching has failed" << std::endl;
     _exit(1);
@@ -159,13 +165,13 @@ void initJimulator(std::string argv0) {
  * @return std::string the directory of the KoMo2 binary - if the binary is at
  * `/home/user/demo/kmd`, return `/home/user/demo`.
  */
-std::string getAbsolutePathToBinaryDirectory(char* arg) {
+std::string getAbsolutePathToRootDirectory(char* arg) {
   // Gets a path to this executable
   char* buf = realpath(arg, NULL);
   std::string argv0(buf);
   free(buf);
 
-  argv0 = argv0.substr(0, argv0.size() - 4);
+  argv0 = argv0.substr(0, argv0.size() - 7);
   return argv0;
 }
 

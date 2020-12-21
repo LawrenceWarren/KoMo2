@@ -24,17 +24,30 @@
  */
 
 #include "MainWindow.h"
+#include <gdkmm/rgba.h>
+#include <gtkmm/cssprovider.h>
+#include <gtkmm/frame.h>
+#include <iostream>
+#include <string>
+#include "../models/KoMo2Model.h"
 
-MainWindow::MainWindow(std::string argv0)
-    : absolutePathCalledFrom(argv0),
-      selectAndLoadContainer(),
-      compileAndLoad("Compile & Load", absolutePathCalledFrom),
-      fileSelector("Select File", &compileAndLoad) {
+/**
+ * @brief Construct a new MainWindow object.
+ */
+MainWindow::MainWindow()
+    : selectAndLoadContainer(),
+      compileAndLoadButton("Compile & Load"),
+      browseButton("Select File") {
   set_border_width(10);
   set_default_size(1150, 725);
 
-  selectAndLoadContainer.pack_end(fileSelector);
-  selectAndLoadContainer.pack_end(compileAndLoad);
+  browseButton.set_size_request(compileAndLoadButton.get_width(),
+                                compileAndLoadButton.get_height());
+
+  selectAndLoadContainer.set_layout(Gtk::BUTTONBOX_EDGE);
+  selectAndLoadContainer.pack_end(*getBrowseButton(), false, false);
+  selectAndLoadContainer.pack_end(*getSelectedFileLabel(), false, false);
+  selectAndLoadContainer.pack_end(*getCompileAndLoadButton(), false, false);
   selectAndLoadContainer.show_all_children();
 
   add(selectAndLoadContainer);
@@ -42,3 +55,52 @@ MainWindow::MainWindow(std::string argv0)
 }
 
 MainWindow::~MainWindow() {}
+
+/**
+ * @brief Sets the CSS attributes for the views.
+ */
+void MainWindow::setCSS() {
+  // Create a css provider, get the style context, load the css file
+  auto ctx = get_style_context();
+  auto css = Gtk::CssProvider::create();
+  css->load_from_path(getModel()->getAbsolutePathToProjectRoot() +
+                      "src/kmdSrc/styles.css");
+
+  // Adds a CSS class for the compile load container
+  selectAndLoadContainer.set_name("compileLoadContainer");
+  selectAndLoadContainer.get_style_context()->add_class("compileLoadContainer");
+
+  // Adds a CSS class for the buttons
+  compileAndLoadButton.set_name("compButtons");
+  browseButton.set_name("compButtons");
+  compileAndLoadButton.get_style_context()->add_class("compButtons");
+  browseButton.get_style_context()->add_class("compButtons");
+
+  // Adds a CSS class for the label
+  selectedFileLabel.set_name("fileLabel");
+  selectedFileLabel.get_style_context()->add_class("fileLabel");
+
+  // Add the CSS to the screen
+  ctx->add_provider_for_screen(Gdk::Screen::get_default(), css,
+                               GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+}
+
+// Getters and setters
+KoMo2Model* MainWindow::getModel() {
+  return model;
+}
+void MainWindow::setModel(KoMo2Model* val) {
+  model = val;
+}
+Gtk::Button* MainWindow::getCompileAndLoadButton() {
+  return &compileAndLoadButton;
+}
+Gtk::Button* MainWindow::getBrowseButton() {
+  return &browseButton;
+}
+Gtk::Label* MainWindow::getSelectedFileLabel() {
+  return &selectedFileLabel;
+}
+void MainWindow::setSelectedFileLabel(std::string val) {
+  getSelectedFileLabel()->set_text(val);
+}
