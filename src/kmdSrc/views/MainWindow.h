@@ -42,7 +42,7 @@ class MainWindow : public Gtk::Window {
   // Getters and setters
   Gtk::Button* getCompileAndLoadButton();
   Gtk::Button* getBrowseButton();
-  void setModel(KoMo2Model *val);
+  void setModel(KoMo2Model* val);
   KoMo2Model* getModel();
   Gtk::Label* getSelectedFileLabel();
   void setSelectedFileLabel(std::string val);

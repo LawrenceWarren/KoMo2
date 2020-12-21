@@ -37,14 +37,20 @@
 MainWindow::MainWindow()
     : selectAndLoadContainer(),
       compileAndLoadButton("Compile & Load"),
-      browseButton("Select File") {
-  set_border_width(10);
-  set_default_size(1150, 725);
+      browseButton("Select File"),
+      selectedFileLabel("File: ") {
+  // set_border_width(10);
+  set_default_size(1240, 700);  // ~ 16:9 ration
 
-  browseButton.set_size_request(compileAndLoadButton.get_width(),
-                                compileAndLoadButton.get_height());
+  // TODO: make fonts automatically install?
+  // https://medium.com/source-words/how-to-manually-install-update-and-uninstall-fonts-on-linux-a8d09a3853b0
 
-  selectAndLoadContainer.set_layout(Gtk::BUTTONBOX_EDGE);
+  browseButton.set_size_request(100, 33);
+  compileAndLoadButton.set_size_request(100, 33);
+  selectedFileLabel.set_size_request(100, 33);
+  selectAndLoadContainer.set_size_request(100, 100);
+
+  selectAndLoadContainer.set_layout(Gtk::BUTTONBOX_START);
   selectAndLoadContainer.pack_end(*getBrowseButton(), false, false);
   selectAndLoadContainer.pack_end(*getSelectedFileLabel(), false, false);
   selectAndLoadContainer.pack_end(*getCompileAndLoadButton(), false, false);
@@ -64,7 +70,7 @@ void MainWindow::setCSS() {
   auto ctx = get_style_context();
   auto css = Gtk::CssProvider::create();
   css->load_from_path(getModel()->getAbsolutePathToProjectRoot() +
-                      "src/kmdSrc/styles.css");
+                      "src/kmdSrc/res/styles.css");
 
   // Adds a CSS class for the compile load container
   selectAndLoadContainer.set_name("compileLoadContainer");
@@ -80,7 +86,11 @@ void MainWindow::setCSS() {
   selectedFileLabel.set_name("fileLabel");
   selectedFileLabel.get_style_context()->add_class("fileLabel");
 
-  // Add the CSS to the screen
+  // Adds a CSS class for the container
+  selectAndLoadContainer.set_name("selectLoadContainer");
+  selectAndLoadContainer.get_style_context()->add_class("selectLoadContainer");
+
+  // ! Add the CSS to the screen
   ctx->add_provider_for_screen(Gdk::Screen::get_default(), css,
                                GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 }

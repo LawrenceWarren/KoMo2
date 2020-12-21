@@ -139,6 +139,7 @@ void CompileLoadModel::handleResult(int result,
   // character. The regex_replace replaces them with "". So if we have
   // `/user/demo/someFile.s` it will resolve to simply become `someFile.s`)
   getParent()->getMainWindow()->setSelectedFileLabel(
+      "File: " +
       regex_replace(getAbsolutePathToSelectedFile(), std::regex("(.*\/)"), ""));
 }
 
