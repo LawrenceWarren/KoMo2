@@ -50,7 +50,7 @@ Alternatively, it is possible to compile them from source - instructions are rea
 
 #### Development environment
 
-Exactly what text editor or IDE is used for development is up to developer preference, but there are several tools that have been used in initial development of the program to increase code readability and quality:
+Exactly what text editor or IDE is used for development is up to developer preference, but there are several tools that have been used in initial development of _KoMo2_ to increase code readability and quality:
 
 - **ClangFormat** is a C and C++ formatter that can be run on a source program to create a consistent, human-readable file, and leaves you not having to worry about styling. More information can be found [here](https://clang.llvm.org/docs/ClangFormat.html).
 
@@ -118,7 +118,9 @@ The source code for this executable can be found in `./src/aasmSrc`, and compila
 
 ##### install fonts
 
-A shell script, `installFonts.sh`, has been included in the project root. The program uses a mono space font family known as [Fira Code](https://github.com/tonsky/FiraCode), and this shell script installs these from an archive file tracked in the `./src/kmdSrc/res` directory.
+The shell script `installFonts.sh` has been included in the project `./scripts` directory.
+
+_KoMo2_ uses a mono space font family known as [Fira Code](https://github.com/tonsky/FiraCode), and this shell script installs these from an archive file tracked in the `./res` directory.
 
 If you execute the shell script as root (`sudo ./installFonts.sh`) then these fonts will be installed for you automatically.
 
@@ -128,4 +130,4 @@ I have ensured that all fonts used can always fall back to the default "monospac
 
 ##### add to path
 
-The shell script in the root directory, `addToPath.sh`, is WIP!
+The shell script in the `./scripts` directory, `addToPath.sh`, is WIP!

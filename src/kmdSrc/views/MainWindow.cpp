@@ -134,13 +134,13 @@ void MainWindow::setStyling() {
 
   // Sets the icon
   set_icon_from_file(getModel()->getAbsolutePathToProjectRoot() +
-                     "src/kmdSrc/res/komo2Logo.png");
+                     "res/komo2Logo.png");
 
   // Create a css provider, get the style context, load the css file
   auto ctx = get_style_context();
   auto css = Gtk::CssProvider::create();
   css->load_from_path(getModel()->getAbsolutePathToProjectRoot() +
-                      "src/kmdSrc/res/styles.css");
+                      "res/styles.css");
 
   // Adds a CSS class for the main window
   set_name("mainWindow");

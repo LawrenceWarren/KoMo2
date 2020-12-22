@@ -1,22 +1,22 @@
 #!/bin/sh
 
 # /////////////////////////////////////////////////////////////////
-#
-#  hack-linux-installer.sh
-#  A shell script that installs the Hack fonts from repository
-#  releases by release version number
-#
-#  Copyright 2018 Christopher Simpkins
-#  MIT License
-#
+#                                                                 #
+#  hack-linux-installer.sh                                        #
+#  A shell script that installs the Hack fonts from repository    #
+#  releases by release version number                             #
+#                                                                 #
+#  Copyright 2018 Christopher Simpkins                            #
+#  MIT License                                                    #
+#                                                                 #
 # /////////////////////////////////////////////////////////////////
 
 # This shell script was altered by Lawrence Warren for installing the archive
 # directory for Fira-Code 5.2 release.
 
 FIRA_CODE_INSTALL_PATH="/usr/local/share/fonts"
-FIRA_CODE_ARCHIVE_PATH="./src/kmdSrc/res/FiraCode-5.2.tar.gz"
-FIRA_CODE_TTF_PATH="./FiraCode-5.2/distr/ttf"
+FIRA_CODE_ARCHIVE_PATH="../src/kmdSrc/res/FiraCode-5.2.tar.gz"
+FIRA_CODE_TTF_PATH="../FiraCode-5.2/distr/ttf"
 
 # Unzips the archive here
 echo " "

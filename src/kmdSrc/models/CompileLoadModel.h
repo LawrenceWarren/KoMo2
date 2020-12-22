@@ -24,7 +24,7 @@
 class KoMo2Model;
 
 /**
- * @brief the class definition of the compileLoadModel, a data model which
+ * @brief the class definition of the compileLoadModel class, a data model which
  * encapsulates any statefullness and logical operations associated with the
  * compile and loading section of the KoMo2 GUI. This Model is in keeping with
  * the MVC design pattern, with this class is the Model, the file display Label
