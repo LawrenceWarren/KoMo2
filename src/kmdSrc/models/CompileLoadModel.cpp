@@ -1,15 +1,23 @@
 /**
  * @file compileLoadController.cpp
- * @author your name (you@domain.com)
- * @brief
+ * @author Lawrence Warren (lawrencewarren2@gmail.com)
+ * @brief Definitions of the functions declared in the class definition, found
+ * at `CompileLoadModel.h`.
  * @version 0.1
- * @date 2020-12-21
- *
+ * @date 2020-12-22
+ * @section LICENSE
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 3 of
+ * the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details at
+ * https://www.gnu.org/copyleft/gpl.html
  * @copyright Copyright (c) 2020
- *
  */
 
-// #include "CompileLoadModel.h"
 #include <gtkmm.h>
 #include <gtkmm/filechooserdialog.h>
 #include <stdio.h>
@@ -138,7 +146,7 @@ void CompileLoadModel::handleResult(int result,
   // (specifically, this regex matches any length of characters up to a `/`
   // character. The regex_replace replaces them with "". So if we have
   // `/user/demo/someFile.s` it will resolve to simply become `someFile.s`)
-  getParent()->getMainWindow()->setSelectedFileLabel(
+  getParent()->getMainWindow()->setSelectedFileLabelText(
       "File: " +
       regex_replace(getAbsolutePathToSelectedFile(), std::regex("(.*\/)"), ""));
 }
@@ -156,15 +164,24 @@ std::string CompileLoadModel::makeKmdPath(std::string absolutePath) {
 
 // ! Getters and setters!
 
-// Absolute path to selected file
+/**
+ * @brief Sets the `absolutePathToSelectedFile` member variable.
+ * @param val The value to set the `absolutePathToSelectedFile` member to.
+ */
 void CompileLoadModel::setAbsolutePathToSelectedFile(std::string val) {
   absolutePathToSelectedFile = val;
 }
+/**
+ * @brief Gets the `absolutePathToSelectedFile` member variable.
+ * @return std::string The `absolutePathToSelectedFile` member variable.
+ */
 std::string CompileLoadModel::getAbsolutePathToSelectedFile() {
   return absolutePathToSelectedFile;
 }
-
-// parent pointer
+/**
+ * @brief Gets the `parent` member variable.
+ * @return KoMo2Model* A pointer to the `parent` member variable.
+ */
 KoMo2Model* CompileLoadModel::getParent() {
   return parent;
 }

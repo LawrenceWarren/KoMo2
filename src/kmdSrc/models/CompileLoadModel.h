@@ -1,9 +1,19 @@
 /**
  * @file compileLoadController.h
- * @author your name (you@domain.com)
- * @brief
+ * @author Lawrence Warren (lawrencewarren2@gmail.com)
+ * @brief A file containing the definition of the CompileLoadModel class.
  * @version 0.1
- * @date 2020-12-21
+ * @date 2020-12-22
+ * @section LICENSE
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 3 of
+ * the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details at
+ * https://www.gnu.org/copyleft/gpl.html
  * @copyright Copyright (c) 2020
  */
 
@@ -13,6 +23,13 @@
 
 class KoMo2Model;
 
+/**
+ * @brief the class definition of the compileLoadModel, a data model which
+ * encapsulates any statefullness and logical operations associated with the
+ * compile and loading section of the KoMo2 GUI. This Model is in keeping with
+ * the MVC design pattern, with this class is the Model, the file display Label
+ * is the View, and the compiling and file browsing buttons are the Controller.
+ */
 class CompileLoadModel {
  public:
   // Constructors
@@ -31,15 +48,31 @@ class CompileLoadModel {
   KoMo2Model* getParent();
 
  private:
-  // The path to selected file
+  /**
+   * @brief State - stores the value of the absolute file path to a `.s`
+   * file, as chosen by the file browser component.
+   */
   std::string absolutePathToSelectedFile;
-  // A pointer to the parent
+
+  /**
+   * @brief A pointer to the overall model of the entire application, in case
+   * this model needs to access any members at a larger scope.
+   */
   KoMo2Model* parent;
-  // Button pointers
+
+  /**
+   * @brief A pointer to the compile & load button, a controller which causes
+   * this model to perform some events.
+   */
   Gtk::Button* compileLoadButton;
+
+  /**
+   * @brief A pointer to the browse button, a controller which causes this model
+   * to perform some event.
+   */
   Gtk::Button* browseButton;
 
-  // General functions
+  // ! General functions
   std::string makeKmdPath(std::string absolutePath);
   void handleResult(int result, Gtk::FileChooserDialog* dialog);
 };
