@@ -100,6 +100,8 @@ void CompileLoadModel::onBrowseClick() {
   Gtk::FileChooserDialog dialog("Please choose a file",
                                 Gtk::FILE_CHOOSER_ACTION_OPEN);
 
+  // TODO: set dialogs CSS to be dark themed.
+
   // Gets the parent of the dialogue box.
   dialog.set_transient_for(*getParent()->getMainWindow());
 
@@ -138,17 +140,26 @@ void CompileLoadModel::handleResult(int result,
     }
     default: {
       // Some unexpected behaviour
+      setAbsolutePathToSelectedFile("");
       break;
     }
   }
 
-  // Sets the label text, regexing out everything but the filename
-  // (specifically, this regex matches any length of characters up to a `/`
-  // character. The regex_replace replaces them with "". So if we have
-  // `/user/demo/someFile.s` it will resolve to simply become `someFile.s`)
-  getParent()->getMainWindow()->setSelectedFileLabelText(
-      "File: " +
-      regex_replace(getAbsolutePathToSelectedFile(), std::regex("(.*\/)"), ""));
+  // This regex matches any length of characters up to a `/` character. The
+  // regex_replace replaces them with "". So if we have `/user/demo/someFile.s`
+  // it will resolve to simply become `someFile.s`
+  std::string filename =
+      regex_replace(getAbsolutePathToSelectedFile(), std::regex("(.*\\/)"), "");
+
+  // Sets the label text to the filename
+  getParent()->getMainWindow()->setSelectedFileLabelText("File: " + filename);
+
+  // Sets the window title to show the loaded file
+  if (getAbsolutePathToSelectedFile() == "") {
+    getParent()->getMainWindow()->set_title(" KoMo2");
+  } else {
+    getParent()->getMainWindow()->set_title(" KoMo2 - " + filename);
+  }
 }
 
 /**

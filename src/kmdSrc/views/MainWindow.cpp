@@ -36,29 +36,31 @@ MainWindow::MainWindow(int x, int y)
     : masterLayout(),
       selectAndLoadContainer(),
       controlsAndCompileBar(),
+      programControlsContainer(),
+      selectedFileLabel("File: "),
       compileAndLoadButton("Compile & Load"),
       browseButton("Select File"),
-      selectedFileLabel("File: ") {
-  set_title("KoMo2");
-  set_border_width(2);
+      helpButton("Help"),
+      beginRunJimulatorButton("Execute program"),
+      reloadJimulatorButton("Reload program"),
+      pauseResumeButton("Pause/resume execution"),
+      singleStepExecuteButton("Single step execution"),
+      haltExecutionButton("Halt execution") {
+  set_border_width(4);
   set_default_size(x, y);  // ~16:9 ration
 
-  // Sets sizes
-  browseButton.set_size_request(100, 33);
-  compileAndLoadButton.set_size_request(100, 33);
-  selectedFileLabel.set_size_request(100, 33);
-
+  setSizes(x, y);
   initSelectAndLoadContainer();
+  initProgramControlsContainer();
 
   // TODO: pack the program controls and status box into an ordered list
   // use `programControlsContainer`, and defer any onClicks to `ControlsModel.h`
   // Do not implement any logic
 
-  controlsAndCompileBar.set_size_request(x, 105);
-  controlsAndCompileBar.set_layout(Gtk::BUTTONBOX_START);
+  controlsAndCompileBar.set_layout(Gtk::BUTTONBOX_EDGE);
+  controlsAndCompileBar.pack_end(programControlsContainer, false, false);
   controlsAndCompileBar.pack_end(selectAndLoadContainer, false, false);
 
-  masterLayout.set_size_request(x, y);
   // masterLayout.pack_start(controlsAndCompileBar, false, false);
 
   add(controlsAndCompileBar);
@@ -76,8 +78,7 @@ MainWindow::~MainWindow() {}
  * and size of it.
  */
 void MainWindow::initSelectAndLoadContainer() {
-  selectAndLoadContainer.set_size_request(100, 100);
-  selectAndLoadContainer.set_layout(Gtk::BUTTONBOX_START);
+  selectAndLoadContainer.set_layout(Gtk::BUTTONBOX_END);
   selectAndLoadContainer.pack_end(*getBrowseButton(), false, false);
   selectAndLoadContainer.pack_end(*getSelectedFileLabel(), false, false);
   selectAndLoadContainer.pack_end(*getCompileAndLoadButton(), false, false);
@@ -86,9 +87,55 @@ void MainWindow::initSelectAndLoadContainer() {
 }
 
 /**
- * @brief Sets the CSS attributes for the views.
+ * @brief Packs children into the programControlsContainer, and sets the layouts
+ * and size of it.
  */
-void MainWindow::setCSS() {
+void MainWindow::initProgramControlsContainer() {
+  programControlsContainer.set_layout(Gtk::BUTTONBOX_EDGE);
+  programControlsContainer.pack_end(helpButton, true, true);
+  programControlsContainer.pack_end(beginRunJimulatorButton, true, true);
+  programControlsContainer.pack_end(reloadJimulatorButton, true, true);
+  programControlsContainer.pack_end(pauseResumeButton, true, true);
+  programControlsContainer.pack_end(singleStepExecuteButton, true, true);
+  programControlsContainer.pack_end(haltExecutionButton, true, true);
+  programControlsContainer.show_all_children();
+  programControlsContainer.show();
+}
+
+/**
+ * @brief Set the sizes of all views.
+ * @param x The width of the window.
+ * @param y The height of the window.
+ */
+void MainWindow::setSizes(int x, int y) {
+  // button sizes
+  browseButton.set_size_request(100, 33);
+  compileAndLoadButton.set_size_request(100, 33);
+  selectedFileLabel.set_size_request(100, 33);
+  helpButton.set_size_request(190, 33);
+  beginRunJimulatorButton.set_size_request(190, 33);
+  reloadJimulatorButton.set_size_request(190, 33);
+  pauseResumeButton.set_size_request(190, 33);
+  singleStepExecuteButton.set_size_request(190, 33);
+  haltExecutionButton.set_size_request(190, 33);
+
+  // Layout sizes
+  controlsAndCompileBar.set_size_request(x, 105);
+  masterLayout.set_size_request(x, y);
+  selectAndLoadContainer.set_size_request(100, 100);
+  programControlsContainer.set_size_request(x - 100, 100);
+}
+
+/**
+ * @brief Sets the style attributes for the views - namely any icons and CSS.
+ */
+void MainWindow::setStyling() {
+  set_title(" KoMo2");
+
+  // Sets the icon
+  set_icon_from_file(getModel()->getAbsolutePathToProjectRoot() +
+                     "src/kmdSrc/res/komo2Logo.png");
+
   // Create a css provider, get the style context, load the css file
   auto ctx = get_style_context();
   auto css = Gtk::CssProvider::create();
@@ -99,15 +146,33 @@ void MainWindow::setCSS() {
   set_name("mainWindow");
   get_style_context()->add_class("mainWindow");
 
-  // Adds a CSS class for the compile load container
-  selectAndLoadContainer.set_name("compileLoadContainer");
-  selectAndLoadContainer.get_style_context()->add_class("compileLoadContainer");
+  // Adds a CSS class for the layouts
+  programControlsContainer.set_name("layouts");
+  controlsAndCompileBar.set_name("layouts");
+  selectAndLoadContainer.set_name("layouts");
+  programControlsContainer.get_style_context()->add_class("layouts");
+  controlsAndCompileBar.get_style_context()->add_class("layouts");
+  selectAndLoadContainer.get_style_context()->add_class("layouts");
 
-  // Adds a CSS class for the buttons
+  // Adds a CSS class for the compiler buttons
   compileAndLoadButton.set_name("compButtons");
   browseButton.set_name("compButtons");
   compileAndLoadButton.get_style_context()->add_class("compButtons");
   browseButton.get_style_context()->add_class("compButtons");
+
+  // Adds a CSS class for the program running buttons
+  helpButton.set_name("controlButtons");
+  beginRunJimulatorButton.set_name("controlButtons");
+  reloadJimulatorButton.set_name("controlButtons");
+  pauseResumeButton.set_name("controlButtons");
+  singleStepExecuteButton.set_name("controlButtons");
+  haltExecutionButton.set_name("controlButtons");
+  helpButton.get_style_context()->add_class("controlButtons");
+  beginRunJimulatorButton.get_style_context()->add_class("controlButtons");
+  reloadJimulatorButton.get_style_context()->add_class("controlButtons");
+  pauseResumeButton.get_style_context()->add_class("controlButtons");
+  singleStepExecuteButton.get_style_context()->add_class("controlButtons");
+  haltExecutionButton.get_style_context()->add_class("controlButtons");
 
   // Adds a CSS class for the label
   selectedFileLabel.set_name("fileLabel");
@@ -121,6 +186,8 @@ void MainWindow::setCSS() {
   ctx->add_provider_for_screen(Gdk::Screen::get_default(), css,
                                GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
+
+// ! Getters and setters.
 
 /**
  * @brief Gets the `model` member variable.
@@ -138,7 +205,8 @@ void MainWindow::setModel(KoMo2Model* val) {
 }
 /**
  * @brief Gets the `compileAndLoadButton` member variable.
- * @return Gtk::Button* A pointer to the `compileAndLoadButton` member variable.
+ * @return Gtk::Button* A pointer to the `compileAndLoadButton` member
+ * variable.
  */
 Gtk::Button* MainWindow::getCompileAndLoadButton() {
   return &compileAndLoadButton;
@@ -163,4 +231,49 @@ Gtk::Label* MainWindow::getSelectedFileLabel() {
  */
 void MainWindow::setSelectedFileLabelText(std::string val) {
   getSelectedFileLabel()->set_text(val);
+}
+/**
+ * @brief Gets the `helpButton` member variable.
+ * @return Gtk::Button* A pointer to the `helpButton` member variable.
+ */
+Gtk::Button* MainWindow::getHelpButton() {
+  return &helpButton;
+}
+/**
+ * @brief Gets the `beginRunJimulatorButton` member variable.
+ * @return Gtk::Button* A pointer to the `beginRunJimulatorButton` member
+ * variable.
+ */
+Gtk::Button* MainWindow::getBeginRunJimulatorButton() {
+  return &beginRunJimulatorButton;
+}
+/**
+ * @brief Gets the `reloadJimulatorButton` member variable.
+ * @return Gtk::Button* A pointer to the `reloadJimulatorButton` member
+ * variable.
+ */
+Gtk::Button* MainWindow::getReloadJimulatorButton() {
+  return &reloadJimulatorButton;
+}
+/**
+ * @brief Gets the `pauseResumeButton` member variable.
+ * @return Gtk::Button* A pointer to the `pauseResumeButton` member variable.
+ */
+Gtk::Button* MainWindow::getPauseResumeButton() {
+  return &pauseResumeButton;
+}
+/**
+ * @brief Gets the `singleStepExecuteButton` member variable.
+ * @return Gtk::Button* A pointer to the `singleStepExecuteButton` member
+ * variable.
+ */
+Gtk::Button* MainWindow::getSingleStepExecuteButton() {
+  return &singleStepExecuteButton;
+}
+/**
+ * @brief Gets the `haltExecutionButton` member variable.
+ * @return Gtk::Button* A pointer to the `haltExecutionButton` member variable.
+ */
+Gtk::Button* MainWindow::getHaltExecutionButton() {
+  return &haltExecutionButton;
 }

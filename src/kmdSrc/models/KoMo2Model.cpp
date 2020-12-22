@@ -34,25 +34,65 @@ KoMo2Model::KoMo2Model(MainWindow* mainWindow, std::string argv0)
       absolutePathToProjectRoot(argv0),
       compileLoadModel(mainWindow->getCompileAndLoadButton(),
                        mainWindow->getBrowseButton(),
-                       this) {
+                       this),
+      controlsModel(mainWindow->getHelpButton(),
+                    mainWindow->getBeginRunJimulatorButton(),
+                    mainWindow->getReloadJimulatorButton(),
+                    mainWindow->getPauseResumeButton(),
+                    mainWindow->getSingleStepExecuteButton(),
+                    mainWindow->getHaltExecutionButton(),
+                    this) {
   // Updates the main window to have a pointer to its model, sets its CSS.
   getMainWindow()->setModel(this);
-  getMainWindow()->setCSS();
+  getMainWindow()->setStyling();
 
   // Set the onClick events for the browse and compile and load buttons to
   // be wired to CompileLoadModel member functions.
-  getMainWindow()->getBrowseButton()->signal_clicked().connect(
-      sigc::mem_fun(*getCompileLoadModel(), &CompileLoadModel::onBrowseClick));
+  setButtonListener(getMainWindow()->getBrowseButton(), getCompileLoadModel(),
+                    &CompileLoadModel::onBrowseClick);
 
-  getMainWindow()->getCompileAndLoadButton()->signal_clicked().connect(
-      sigc::mem_fun(*getCompileLoadModel(),
-                    &CompileLoadModel::onCompileLoadClick));
+  setButtonListener(getMainWindow()->getCompileAndLoadButton(),
+                    getCompileLoadModel(),
+                    &CompileLoadModel::onCompileLoadClick);
+
+  setButtonListener(getMainWindow()->getHelpButton(), getControlsModel(),
+                    &ControlsModel::onHelpClick);
+
+  setButtonListener(getMainWindow()->getBeginRunJimulatorButton(),
+                    getControlsModel(),
+                    &ControlsModel::onBeginRunJimulatorClick);
+
+  setButtonListener(getMainWindow()->getPauseResumeButton(), getControlsModel(),
+                    &ControlsModel::onPauseResumeClick);
+
+  setButtonListener(getMainWindow()->getHaltExecutionButton(),
+                    getControlsModel(), &ControlsModel::onHaltExecutionClick);
+
+  setButtonListener(getMainWindow()->getReloadJimulatorButton(),
+                    getControlsModel(), &ControlsModel::onReloadJimulatorClick);
+
+  setButtonListener(getMainWindow()->getSingleStepExecuteButton(),
+                    getControlsModel(),
+                    &ControlsModel::onSingleStepExecuteClick);
 }
 
 /**
  * @brief Destroys a KoMo2Model.
  */
 KoMo2Model::~KoMo2Model() {}
+
+/**
+ * @brief Connect any button to any member function of
+ * @tparam T1 A pointer type to some object of any type.
+ * @tparam T2 A pointer to a T1 member function.
+ * @param button A pointer to the button to set the `onClick` event for.
+ * @param b A pointer to some object.
+ * @param c A pointer to some member function of the b object.
+ */
+template <class T1, class T2>
+void KoMo2Model::setButtonListener(Gtk::Button* button, T1 b, T2 c) {
+  button->signal_clicked().connect(sigc::mem_fun(*b, c));
+}
 
 // ! Getter functions
 
@@ -76,4 +116,8 @@ const std::string KoMo2Model::getAbsolutePathToProjectRoot() {
  */
 CompileLoadModel* KoMo2Model::getCompileLoadModel() {
   return &compileLoadModel;
+}
+
+ControlsModel* KoMo2Model::getControlsModel() {
+  return &controlsModel;
 }

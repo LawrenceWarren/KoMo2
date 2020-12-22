@@ -18,6 +18,7 @@
  */
 
 #include "CompileLoadModel.h"
+#include "ControlsModel.h"
 
 class MainWindow;
 
@@ -37,6 +38,9 @@ class MainWindow;
  */
 class KoMo2Model {
  private:
+  template <class T1, class T2>
+  void setButtonListener(Gtk::Button* button, T1 b, T2 c);
+
   /**
    * @brief A pointer to the main window view.
    */
@@ -54,6 +58,13 @@ class KoMo2Model {
    */
   CompileLoadModel compileLoadModel;
 
+  /**
+   * @brief The data model for the controls and status functionality of the
+   * program, represented by the series of buttons and labels running along
+   * the top of the view.
+   */
+  ControlsModel controlsModel;
+
  public:
   // Constructors
   KoMo2Model(MainWindow* mainWindow, std::string argv0);
@@ -61,6 +72,7 @@ class KoMo2Model {
 
   // Getters
   CompileLoadModel* getCompileLoadModel();
+  ControlsModel* getControlsModel();
   MainWindow* getMainWindow();
   const std::string getAbsolutePathToProjectRoot();
 };

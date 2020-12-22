@@ -46,15 +46,45 @@ class MainWindow : public Gtk::Window {
   KoMo2Model* getModel();
   Gtk::Label* getSelectedFileLabel();
   void setSelectedFileLabelText(std::string val);
-  void setCSS();
+  void setStyling();
+  Gtk::Button* getHelpButton();
+  Gtk::Button* getBeginRunJimulatorButton();
+  Gtk::Button* getReloadJimulatorButton();
+  Gtk::Button* getPauseResumeButton();
+  Gtk::Button* getSingleStepExecuteButton();
+  Gtk::Button* getHaltExecutionButton();
 
  private:
   void initSelectAndLoadContainer();
+  void initProgramControlsContainer();
+  void setSizes(int x, int y);
+
+  // ! Layouts
 
   /**
-   * @brief A pointer to the main model of the program.
+   * @brief The master layout - every other view or layout should be nested
+   * within this layout.
    */
-  KoMo2Model* model;
+  Gtk::Box masterLayout;
+
+  /**
+   * @brief A box containing the browse button, the compile and load button, and
+   * the selected file label.
+   */
+  Gtk::VButtonBox selectAndLoadContainer;
+
+  /**
+   * @brief The layout for the top bar running along the screen. Contains the
+   * compile and load layout, and the program controls layout.
+   */
+  Gtk::HButtonBox controlsAndCompileBar;
+
+  /**
+   * @brief A box containing all of the programs running controls.
+   */
+  Gtk::HButtonBox programControlsContainer;
+
+  // ! Views
 
   /**
    * @brief A label which displays whatever file has been selected by the
@@ -73,28 +103,45 @@ class MainWindow : public Gtk::Window {
    */
   Gtk::Button browseButton;
 
-  // ! Layouts
+  /**
+   * @brief A button which, when clicked, opens up an about/help window.
+   */
+  Gtk::Button helpButton;
 
   /**
-   * @brief The master layout - every other view or layout should be nested
-   * within this layout.
+   * @brief A button which, when clicked, commences running of the Jimulator
+   * program.
    */
-  Gtk::Box masterLayout;
+  Gtk::Button beginRunJimulatorButton;
 
   /**
-   * @brief The layout for the top bar running along the screen. Contains the
-   * compile and load layout, and the program controls layout.
+   * @brief A button which, when clicked, reloads the program into Jimulator
+   * again.
    */
-  Gtk::HButtonBox controlsAndCompileBar;
+  Gtk::Button reloadJimulatorButton;
 
   /**
-   * @brief A box containing all of the programs running controls.
+   * @brief A button which, when clicked, toggles between playing and pausing
+   * the execution of Jimulator (i.e. if currently paused, play, and vice-versa)
    */
-  Gtk::HButtonBox programControlsContainer;
+  Gtk::Button pauseResumeButton;
 
   /**
-   * @brief A box containing the browse button, the compile and load button, and
-   * the selected file label.
+   * @brief A button which, when clicked, performs a single-step of execution IF
+   * Jimulator is already paused.
    */
-  Gtk::VButtonBox selectAndLoadContainer;
+  Gtk::Button singleStepExecuteButton;
+
+  /**
+   * @brief A button which, when clicked, halts the current execution of
+   * Jimulator.
+   */
+  Gtk::Button haltExecutionButton;
+
+  // ! Other
+
+  /**
+   * @brief A pointer to the main model of the program.
+   */
+  KoMo2Model* model;
 };
