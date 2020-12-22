@@ -70,7 +70,7 @@ int main(int argc, char* argv[]) {
   openDotKomodo(argv0);
   initJimulator(argv0);  // Creates Jimulator
 
-  MainWindow koMo2Window;
+  MainWindow koMo2Window(1240, 700);
   KoMo2Model mainModel(&koMo2Window, argv0);
 
   int exit = app->run(koMo2Window);

@@ -33,31 +33,47 @@
 
 /**
  * @brief Construct a new MainWindow object.
+ * @param x The width of the window.
+ * @param y The height of the window.
  */
-MainWindow::MainWindow()
-    : selectAndLoadContainer(),
+MainWindow::MainWindow(int x, int y)
+    : masterLayout(),
+      selectAndLoadContainer(),
+      controlsAndCompileBar(),
       compileAndLoadButton("Compile & Load"),
       browseButton("Select File"),
       selectedFileLabel("File: ") {
-  // set_border_width(10);
-  set_default_size(1240, 700);  // ~ 16:9 ration
+  set_border_width(2);
+  set_default_size(x, y);  // ~ 16:9 ration
 
-  // TODO: make fonts automatically install?
-  // https://medium.com/source-words/how-to-manually-install-update-and-uninstall-fonts-on-linux-a8d09a3853b0
+  // Set's the master layout size and layout
 
   browseButton.set_size_request(100, 33);
   compileAndLoadButton.set_size_request(100, 33);
   selectedFileLabel.set_size_request(100, 33);
-  selectAndLoadContainer.set_size_request(100, 100);
 
+  selectAndLoadContainer.set_size_request(100, 100);
   selectAndLoadContainer.set_layout(Gtk::BUTTONBOX_START);
   selectAndLoadContainer.pack_end(*getBrowseButton(), false, false);
   selectAndLoadContainer.pack_end(*getSelectedFileLabel(), false, false);
   selectAndLoadContainer.pack_end(*getCompileAndLoadButton(), false, false);
   selectAndLoadContainer.show_all_children();
-
-  add(selectAndLoadContainer);
   selectAndLoadContainer.show();
+
+  // TODO: pack the program controls and status box into an ordered list
+  // use `programControlsContainer`, and defer any onClicks to `ControlsModel.h`
+  // Do not implement any logic
+
+  controlsAndCompileBar.set_size_request(x, 105);
+  controlsAndCompileBar.set_layout(Gtk::BUTTONBOX_START);
+  controlsAndCompileBar.pack_end(selectAndLoadContainer, false, false);
+
+  masterLayout.set_size_request(x, y);
+  // masterLayout.pack_start(controlsAndCompileBar, false, false);
+
+  add(controlsAndCompileBar);
+  controlsAndCompileBar.show();
+  // masterLayout.show();
 }
 
 MainWindow::~MainWindow() {}
@@ -71,6 +87,10 @@ void MainWindow::setCSS() {
   auto css = Gtk::CssProvider::create();
   css->load_from_path(getModel()->getAbsolutePathToProjectRoot() +
                       "src/kmdSrc/res/styles.css");
+
+  // Adds a CSS class for the main window
+  set_name("mainWindow");
+  get_style_context()->add_class("mainWindow");
 
   // Adds a CSS class for the compile load container
   selectAndLoadContainer.set_name("compileLoadContainer");

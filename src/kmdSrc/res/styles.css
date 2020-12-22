@@ -1,7 +1,9 @@
 /* ! Main window background colour */
-window {
+.mainWindow {
   background-color: #24292e;
   color: #000000;
+  box-shadow: inset 4px 4px 0px #1b1f23, inset -4px -4px 0px #1b1f23,
+    inset -4px 4px 0px #1b1f23, inset 4px -4px 0px #1b1f23;
 }
 
 /* ! The label between the two file boxes */

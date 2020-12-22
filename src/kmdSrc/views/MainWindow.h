@@ -22,6 +22,7 @@
  *
  */
 
+#include <gtkmm/box.h>
 #include <gtkmm/button.h>
 #include <gtkmm/buttonbox.h>
 #include <gtkmm/label.h>
@@ -36,7 +37,7 @@ class KoMo2Model;
 class MainWindow : public Gtk::Window {
  public:
   // Constructors
-  MainWindow();
+  MainWindow(int x, int y);
   virtual ~MainWindow();
 
   // Getters and setters
@@ -54,8 +55,13 @@ class MainWindow : public Gtk::Window {
   KoMo2Model* model;
 
   // Views
-  Gtk::VButtonBox selectAndLoadContainer;
   Gtk::Label selectedFileLabel;
   Gtk::Button compileAndLoadButton;
   Gtk::Button browseButton;
+
+  // Layouts
+  Gtk::Box masterLayout;
+  Gtk::HButtonBox controlsAndCompileBar;
+  Gtk::HButtonBox programControlsContainer;
+  Gtk::VButtonBox selectAndLoadContainer;
 };

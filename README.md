@@ -111,3 +111,21 @@ The source code for this executable can be found in `./src/aasmSrc`, and compila
 ##### `./bin/mnemonics`
 
 `aasm` also has a plain text file on which it is dependant, `mnemonics`. It is always assumed that `mnemonics` is in the same directory as `aasm`.
+
+---
+
+### Shell scripts
+
+##### install fonts
+
+A shell script, `installFonts.sh`, has been included in the project root. The program uses a mono space font family known as [Fira Code](https://github.com/tonsky/FiraCode), and this shell script installs these from an archive file tracked in the `./src/kmdSrc/res` directory.
+
+If you execute the shell script as root (`sudo ./installFonts.sh`) then these fonts will be installed for you automatically.
+
+**HOWEVER**, it is worth bearing in mind that I found the guide to make this shell script online, and it does move files into a protected directory (specifically `usr/local/share/fonts`) so inspect the shell script for yourself first and make up your mind about if you want to run it.
+
+I have ensured that all fonts used can always fall back to the default "monospace" font option should you not want to install the Fira Code font family.
+
+##### add to path
+
+The shell script in the root directory, `addToPath.sh`, is WIP!
