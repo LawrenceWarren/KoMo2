@@ -53,19 +53,16 @@ MainWindow::MainWindow(int x, int y)
   initSelectAndLoadContainer();
   initProgramControlsContainer();
 
-  // TODO: pack the program controls and status box into an ordered list
-  // use `programControlsContainer`, and defer any onClicks to `ControlsModel.h`
-  // Do not implement any logic
-
   controlsAndCompileBar.set_layout(Gtk::BUTTONBOX_EDGE);
   controlsAndCompileBar.pack_end(programControlsContainer, false, false);
   controlsAndCompileBar.pack_end(selectAndLoadContainer, false, false);
-
-  // masterLayout.pack_start(controlsAndCompileBar, false, false);
-
-  add(controlsAndCompileBar);
   controlsAndCompileBar.show();
-  // masterLayout.show();
+
+  masterLayout.pack_start(controlsAndCompileBar, false, false);
+
+  masterLayout.show_all_children();
+  masterLayout.show();
+  add(masterLayout);
 }
 
 /**
@@ -92,12 +89,12 @@ void MainWindow::initSelectAndLoadContainer() {
  */
 void MainWindow::initProgramControlsContainer() {
   programControlsContainer.set_layout(Gtk::BUTTONBOX_EDGE);
-  programControlsContainer.pack_end(helpButton, true, true);
-  programControlsContainer.pack_end(beginRunJimulatorButton, true, true);
-  programControlsContainer.pack_end(reloadJimulatorButton, true, true);
-  programControlsContainer.pack_end(pauseResumeButton, true, true);
-  programControlsContainer.pack_end(singleStepExecuteButton, true, true);
-  programControlsContainer.pack_end(haltExecutionButton, true, true);
+  programControlsContainer.pack_end(helpButton, false, false);
+  programControlsContainer.pack_end(beginRunJimulatorButton, false, false);
+  programControlsContainer.pack_end(reloadJimulatorButton, false, false);
+  programControlsContainer.pack_end(pauseResumeButton, false, false);
+  programControlsContainer.pack_end(singleStepExecuteButton, false, false);
+  programControlsContainer.pack_end(haltExecutionButton, false, false);
   programControlsContainer.show_all_children();
   programControlsContainer.show();
 }
@@ -112,7 +109,7 @@ void MainWindow::setSizes(int x, int y) {
   browseButton.set_size_request(100, 33);
   compileAndLoadButton.set_size_request(100, 33);
   selectedFileLabel.set_size_request(100, 33);
-  helpButton.set_size_request(190, 33);
+  helpButton.set_size_request(40, 33);
   beginRunJimulatorButton.set_size_request(190, 33);
   reloadJimulatorButton.set_size_request(190, 33);
   pauseResumeButton.set_size_request(190, 33);
@@ -120,10 +117,10 @@ void MainWindow::setSizes(int x, int y) {
   haltExecutionButton.set_size_request(190, 33);
 
   // Layout sizes
-  controlsAndCompileBar.set_size_request(x, 105);
   masterLayout.set_size_request(x, y);
+  controlsAndCompileBar.set_size_request(x, 100);
   selectAndLoadContainer.set_size_request(100, 100);
-  programControlsContainer.set_size_request(x - 100, 100);
+  programControlsContainer.set_size_request(x - 100, 33);
 }
 
 /**
@@ -132,7 +129,7 @@ void MainWindow::setSizes(int x, int y) {
 void MainWindow::setStyling() {
   set_title(" KoMo2");
 
-  // Sets the icon
+  // Sets the icon for the window
   set_icon_from_file(getModel()->getAbsolutePathToProjectRoot() +
                      "res/komo2Logo.png");
 
@@ -143,30 +140,18 @@ void MainWindow::setStyling() {
                       "res/styles.css");
 
   // Adds a CSS class for the main window
-  set_name("mainWindow");
   get_style_context()->add_class("mainWindow");
 
   // Adds a CSS class for the layouts
-  programControlsContainer.set_name("layouts");
-  controlsAndCompileBar.set_name("layouts");
-  selectAndLoadContainer.set_name("layouts");
   programControlsContainer.get_style_context()->add_class("layouts");
   controlsAndCompileBar.get_style_context()->add_class("layouts");
   selectAndLoadContainer.get_style_context()->add_class("layouts");
 
   // Adds a CSS class for the compiler buttons
-  compileAndLoadButton.set_name("compButtons");
-  browseButton.set_name("compButtons");
   compileAndLoadButton.get_style_context()->add_class("compButtons");
   browseButton.get_style_context()->add_class("compButtons");
 
   // Adds a CSS class for the program running buttons
-  helpButton.set_name("controlButtons");
-  beginRunJimulatorButton.set_name("controlButtons");
-  reloadJimulatorButton.set_name("controlButtons");
-  pauseResumeButton.set_name("controlButtons");
-  singleStepExecuteButton.set_name("controlButtons");
-  haltExecutionButton.set_name("controlButtons");
   helpButton.get_style_context()->add_class("controlButtons");
   beginRunJimulatorButton.get_style_context()->add_class("controlButtons");
   reloadJimulatorButton.get_style_context()->add_class("controlButtons");
@@ -175,11 +160,9 @@ void MainWindow::setStyling() {
   haltExecutionButton.get_style_context()->add_class("controlButtons");
 
   // Adds a CSS class for the label
-  selectedFileLabel.set_name("fileLabel");
   selectedFileLabel.get_style_context()->add_class("fileLabel");
 
   // Adds a CSS class for the container
-  selectAndLoadContainer.set_name("selectLoadContainer");
   selectAndLoadContainer.get_style_context()->add_class("selectLoadContainer");
 
   // ! Add the CSS to the screen

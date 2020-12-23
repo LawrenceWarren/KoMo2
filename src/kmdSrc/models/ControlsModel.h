@@ -46,6 +46,12 @@ class ControlsModel {
   void onSingleStepExecuteClick();
   void onHaltExecutionClick();
 
+  /* TODO: potentially subclass out handleStateChange?
+  Every model needs this, including the KoMo2Model. They also need a parent
+  pointer (KoMo2Model can just be self) This means we can use virtual functions!
+  :D*/
+  void handleStateChange(int state);
+
  private:
   /**
    * @brief A pointer to the `helpButton` view.

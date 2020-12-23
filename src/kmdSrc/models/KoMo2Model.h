@@ -42,6 +42,11 @@ class KoMo2Model {
   void setButtonListener(Gtk::Button* button, T1 b, T2 c);
 
   /**
+   * @brief Tracks the state of Jimulator - tracks if it is or is not loaded.
+   */
+  int jimulatorState = UNLOADED;
+
+  /**
    * @brief A pointer to the main window view.
    */
   MainWindow* mainWindow;
@@ -66,11 +71,26 @@ class KoMo2Model {
   ControlsModel controlsModel;
 
  public:
+  /**
+   * @brief Describes the state of Jimulator.
+   */
+  enum JimulatorState {
+    UNLOADED = 0,  // Jimulator idle; empty
+    LOADED,        // File just loaded for first time (not yet run)
+    RUNNING,       // Jimulator is running
+    PAUSED         // Jimulator is paused
+  };
+
+  // General functions
+  void changeJimulatorState(JimulatorState newState);
+
   // Constructors
   KoMo2Model(MainWindow* mainWindow, std::string argv0);
   ~KoMo2Model();
 
-  // Getters
+  // Getters & setters
+  int getJimulatorState();
+  void setJimulatorState(int val);
   CompileLoadModel* getCompileLoadModel();
   ControlsModel* getControlsModel();
   MainWindow* getMainWindow();

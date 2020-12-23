@@ -94,6 +94,18 @@ void KoMo2Model::setButtonListener(Gtk::Button* button, T1 b, T2 c) {
   button->signal_clicked().connect(sigc::mem_fun(*b, c));
 }
 
+void KoMo2Model::changeJimulatorState(JimulatorState newState) {
+  // No state change, do nothing
+  if(getJimulatorState() == newState) {
+    return;
+  }
+
+  setJimulatorState(newState);
+  
+
+  controlsModel.handleStateChange(newState);
+}
+
 // ! Getter functions
 
 /**
@@ -118,6 +130,26 @@ CompileLoadModel* KoMo2Model::getCompileLoadModel() {
   return &compileLoadModel;
 }
 
+/**
+ * @brief Gets the `controlsModel` member variable.
+ * @return ControlsModel* A pointer to the `controlsModel`.
+ */
 ControlsModel* KoMo2Model::getControlsModel() {
   return &controlsModel;
+}
+
+/**
+ * @brief Sets the `jimulatorIsLoaded` member variable.
+ * @param val The value to set `jimulatorIsLoaded` to.
+ */
+void KoMo2Model::setJimulatorState(int val) {
+  jimulatorState = val;
+}
+
+/**
+ * @brief Gets the `jimulatorState` member variable.
+ * @return int The value of `jimulatorState`.
+ */
+int KoMo2Model::getJimulatorState() {
+  return jimulatorState;
 }

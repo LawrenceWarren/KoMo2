@@ -63,9 +63,23 @@
 .controlButtons:active {
   box-shadow: inset 1px -1px 0px #3f454b, inset -1px 1px 0px #000000;
 }
+.controlButtons:disabled {
+  box-shadow: inset 1px -1px 0px #3f454b, inset -1px 1px 0px #000000;
+  color: #3f454b;
+}
 
 /* ! For the containers */
 .layouts {
   box-shadow: inset 2px 2px 0px #1b1f23, inset -2px -2px 0px #1b1f23,
     inset -2px 2px 0px #1b1f23, inset 2px -2px 0px #1b1f23;
 }
+
+/*
+.dialog {
+  color: #1b1f23;
+  background-color: #ff00ff;
+  background-image: image(#1b1f23);
+  outline-color: #1c7428;
+  border-color: #ffff00;
+}
+*/

@@ -47,6 +47,9 @@ class CompileLoadModel {
   std::string getAbsolutePathToSelectedFile();
   KoMo2Model* getParent();
 
+  // TODO: add personal state = FILE and NO_FILE.
+  // TODO: Grey out the Compile button when JIMULATOR_RUNNING or NO_FILE
+
  private:
   /**
    * @brief State - stores the value of the absolute file path to a `.s`

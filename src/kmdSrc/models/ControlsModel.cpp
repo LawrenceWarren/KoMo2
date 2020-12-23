@@ -46,7 +46,15 @@ ControlsModel::ControlsModel(Gtk::Button* helpButton,
       pauseResumeButton(pauseResumeButton),
       singleStepExecuteButton(singleStepExecuteButton),
       haltExecutionButton(haltExecutionButton),
-      parent(parent) {}
+      parent(parent) {
+  // Set button states by default
+  helpButton->set_sensitive(true);
+  beginRunJimulatorButton->set_sensitive(false);
+  reloadJimulatorButton->set_sensitive(false);
+  pauseResumeButton->set_sensitive(false);
+  singleStepExecuteButton->set_sensitive(false);
+  haltExecutionButton->set_sensitive(false);
+}
 
 /**
  * @brief Destroys a ControlModel object.
@@ -93,4 +101,15 @@ void ControlsModel::onSingleStepExecuteClick() {
  */
 void ControlsModel::onHaltExecutionClick() {
   std::cout << "Halt Execution Button Click!" << std::endl;
+}
+
+void ControlsModel::handleStateChange(int state) {
+  if (state == KoMo2Model::LOADED) {
+    helpButton->set_sensitive(true);
+    beginRunJimulatorButton->set_sensitive(true);
+    reloadJimulatorButton->set_sensitive(true);
+    pauseResumeButton->set_sensitive(false);
+    singleStepExecuteButton->set_sensitive(true);
+    haltExecutionButton->set_sensitive(false);
+  }
 }

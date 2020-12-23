@@ -88,6 +88,7 @@ void CompileLoadModel::onCompileLoadClick() {
     }
 
     std::cout << "File loaded!" << std::endl;
+    getParent()->changeJimulatorState(KoMo2Model::LOADED);
   }
 }
 
@@ -100,7 +101,9 @@ void CompileLoadModel::onBrowseClick() {
   Gtk::FileChooserDialog dialog("Please choose a file",
                                 Gtk::FILE_CHOOSER_ACTION_OPEN);
 
-  // TODO: set dialogs CSS to be dark themed.
+  // Add class for styling
+  // dialog.get_style_context()->add_class("dialog");
+  // TODO: Add styling to the dialog box
 
   // Gets the parent of the dialogue box.
   dialog.set_transient_for(*getParent()->getMainWindow());
