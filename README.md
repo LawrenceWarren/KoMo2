@@ -23,6 +23,7 @@ However, _KoMoDo_ is becoming outdated for a number of reasons, and the purpose 
 3. Install any optional dependencies you may find in the subsection [_Development environment_](#development-environment).
 4. Clone this repository.
 5. Enter the root directory of this project and execute `make`.
+6. Run the newly generated `kmd` binary in the `bin` directory.
 
 ---
 
@@ -38,7 +39,7 @@ Furthermore, to execute the makefile, you must have GNU Make installed.
 
 _KoMo2_ is implemented using _GTKMM_, a C++ implementation of the popular GUI library _GTK-3_. This in turn has many of it's own dependencies - a full list can be found [here](https://developer.gnome.org/gtkmm-tutorial/stable/sec-installation-dependencies.html.en).
 
-These libraries are popular and compiled versions can likely be found on your Linux distributions package manager. For instance, on the following distributions you can execute the respect command:
+These libraries are popular and compiled versions can likely be found on your Linux distributions package manager. For instance, in the following distributions you can execute the following commands:
 
 _Debian, Gentoo, SuSE & Ubuntu:_
 `sudo apt-get install libgtkmm-3.0-dev`
@@ -82,33 +83,33 @@ Exactly what text editor or IDE is used for development is up to developer prefe
 
 ### Binaries
 
-_KoMo2_ includes a `makefile` in it's root which generates 3 binaries in the `bin` when executed using the make command. It is always assumed that the 3 binaries exist in the same directory:
+_KoMo2_ includes a `makefile` in it's root which generates 3 binaries in the `bin` directory when executed using GNU Make. It is always assumed that the 3 binaries exist in the same directory:
 
-##### `./bin/kmd`
+##### `bin/kmd`
 
 `kmd` is the main executable _KoMo2_.
 
 Running this binary will launch the GUI, and the following 2 binaries will be forked from it when necessary.
 
-The source for this binary is any found in `src/kmdSrc`.
+The source for this binary can be found in `src/kmdSrc`.
 
-##### `./bin/jimulator`
+##### `bin/jimulator`
 
 `jimulator` is the executable for the ARM emulation unit.
 
 This binary is forked at the very beginning of `kmd`'s main function, and the two processes should always run in parallel.
 
-The source code for this executable can be found in `./src/jimulatorSrc`.
+The source code for this binary can be found in `src/jimulatorSrc`.
 
-##### `./bin/aasm`
+##### `bin/aasm`
 
 `aasm` is an arm assembler, which takes an input `.s` file and compiles it into an output `.kmd` file, which can be read into `jimulator`.
 
-This binary is forked upon pressing the _"compile and load button"_ present in the GUI, and runs briefly until the output `.kmd` file is generated.
+This binary is forked upon pressing the _"compile & load button"_ present in the GUI, and runs briefly until the output `.kmd` file is generated.
 
-The source code for this executable can be found in `./src/aasmSrc`, and compilation is performed in the make file.
+The source code for this executable can be found in `src/aasmSrc`, and compilation is performed in the make file.
 
-##### `./bin/mnemonics`
+##### `bin/mnemonics`
 
 `aasm` also has a plain text file on which it is dependant, `mnemonics`. It is always assumed that `mnemonics` is in the same directory as `aasm`.
 
@@ -118,11 +119,11 @@ The source code for this executable can be found in `./src/aasmSrc`, and compila
 
 ##### install fonts
 
-The shell script `installFonts.sh` has been included in the project `./scripts` directory.
+The shell script `installFonts.sh` has been included in the project `scripts` directory.
 
-_KoMo2_ uses a mono space font family known as [Fira Code](https://github.com/tonsky/FiraCode), and this shell script installs these from an archive file tracked in the `./res` directory.
+_KoMo2_ uses a mono space font family known as [Fira Code](https://github.com/tonsky/FiraCode), and this shell script installs these from an archive file tracked in the `res` directory.
 
-If you execute the shell script as root (`sudo ./installFonts.sh`) then these fonts will be installed for you automatically.
+If you execute the shell script as root (`sudo installFonts.sh`) then these fonts will be installed for you automatically.
 
 **HOWEVER**, it is worth bearing in mind that I found the guide to make this shell script online, and it does move files into a protected directory (specifically `usr/local/share/fonts`) so inspect the shell script for yourself first and make up your mind about if you want to run it.
 
@@ -130,4 +131,5 @@ I have ensured that all fonts used can always fall back to the default "monospac
 
 ##### add to path
 
-The shell script in the `./scripts` directory, `addToPath.sh`, is WIP!
+The shell script in the `scripts` directory, `addToPath.sh`, is WIP!
+TODO: MAKE THIS SCRIPT & DESCRIBE IT HERE
