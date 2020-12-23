@@ -17,7 +17,6 @@
  * @copyright Copyright (c) 2020
  */
 
-#include "CompileLoadModel.h"
 #include "ControlsModel.h"
 
 class MainWindow;
@@ -36,15 +35,10 @@ class MainWindow;
  * the Model, and the main KoMo2 window contains all of the Controllers and
  * Views.
  */
-class KoMo2Model {
+class KoMo2Model : private Model {
  private:
   template <class T1, class T2>
   void setButtonListener(Gtk::Button* button, T1 b, T2 c);
-
-  /**
-   * @brief Tracks the state of Jimulator - tracks if it is or is not loaded.
-   */
-  int jimulatorState = UNLOADED;
 
   /**
    * @brief A pointer to the main window view.
@@ -71,17 +65,6 @@ class KoMo2Model {
   ControlsModel controlsModel;
 
  public:
-  /**
-   * @brief Describes the state of Jimulator.
-   */
-  enum JimulatorState {
-    UNLOADED = 0,  // Jimulator idle; empty
-    LOADED,        // File just loaded for first time (not yet run)
-    RUNNING,       // Jimulator is running
-    PAUSED         // Jimulator is paused
-  };
-
-  // General functions
   void changeJimulatorState(JimulatorState newState);
 
   // Constructors
@@ -89,8 +72,6 @@ class KoMo2Model {
   ~KoMo2Model();
 
   // Getters & setters
-  int getJimulatorState();
-  void setJimulatorState(int val);
   CompileLoadModel* getCompileLoadModel();
   ControlsModel* getControlsModel();
   MainWindow* getMainWindow();

@@ -39,6 +39,10 @@
 .compButtons:active {
   box-shadow: inset 1px -1px 0px #3f454b, inset -1px 1px 0px #000000;
 }
+.compButtons:disabled {
+  box-shadow: inset 1px -1px 0px #3f454b, inset -1px 1px 0px #000000;
+  color: #3f454b;
+}
 
 /* ! For the control buttons */
 .controlButtons {

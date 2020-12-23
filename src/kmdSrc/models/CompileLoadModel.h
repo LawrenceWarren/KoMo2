@@ -20,8 +20,9 @@
 #include <gtkmm/button.h>
 #include <gtkmm/filechooserdialog.h>
 #include <string>
+#include "Model.h"
 
-class KoMo2Model;
+enum CompileLoadInnerState { FILE_SELECTED = 0, NO_FILE };
 
 /**
  * @brief the class definition of the compileLoadModel class, a data model which
@@ -30,8 +31,11 @@ class KoMo2Model;
  * the MVC design pattern, with this class is the Model, the file display Label
  * is the View, and the compiling and file browsing buttons are the Controller.
  */
-class CompileLoadModel {
+class CompileLoadModel : private Model {
  public:
+  void changeJimulatorState(JimulatorState newState);
+  void changeInnerState(CompileLoadInnerState newState);
+
   // Constructors
   CompileLoadModel(Gtk::Button* compileLoadButton,
                    Gtk::Button* browseButton,
@@ -43,25 +47,19 @@ class CompileLoadModel {
   void onBrowseClick();
 
   // Getters and setters
+  void setInnerState(CompileLoadInnerState val);
+  CompileLoadInnerState getInnerState();
   void setAbsolutePathToSelectedFile(std::string val);
   std::string getAbsolutePathToSelectedFile();
-  KoMo2Model* getParent();
-
-  // TODO: add personal state = FILE and NO_FILE.
-  // TODO: Grey out the Compile button when JIMULATOR_RUNNING or NO_FILE
 
  private:
+  CompileLoadInnerState innerState;
+
   /**
    * @brief State - stores the value of the absolute file path to a `.s`
    * file, as chosen by the file browser component.
    */
   std::string absolutePathToSelectedFile;
-
-  /**
-   * @brief A pointer to the overall model of the entire application, in case
-   * this model needs to access any members at a larger scope.
-   */
-  KoMo2Model* parent;
 
   /**
    * @brief A pointer to the compile & load button, a controller which causes

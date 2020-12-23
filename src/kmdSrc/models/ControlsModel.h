@@ -18,8 +18,7 @@
  */
 
 #include <gtkmm/button.h>
-
-class KoMo2Model;
+#include "CompileLoadModel.h"
 
 /**
  * @brief The class definition of the ControlsModel class, a data model which
@@ -28,7 +27,7 @@ class KoMo2Model;
  * this class is a Model, the status display label is a View, and the Jimulator
  * control buttons are Controllers.
  */
-class ControlsModel {
+class ControlsModel : private Model {
  public:
   ControlsModel(Gtk::Button* helpButton,
                 Gtk::Button* beginRunJimulatorButton,
@@ -39,6 +38,7 @@ class ControlsModel {
                 KoMo2Model* parent);
   ~ControlsModel();
 
+  // Click handlers
   void onHelpClick();
   void onBeginRunJimulatorClick();
   void onReloadJimulatorClick();
@@ -46,11 +46,7 @@ class ControlsModel {
   void onSingleStepExecuteClick();
   void onHaltExecutionClick();
 
-  /* TODO: potentially subclass out handleStateChange?
-  Every model needs this, including the KoMo2Model. They also need a parent
-  pointer (KoMo2Model can just be self) This means we can use virtual functions!
-  :D*/
-  void handleStateChange(int state);
+  void changeJimulatorState(JimulatorState newState);
 
  private:
   /**
@@ -82,9 +78,4 @@ class ControlsModel {
    * @brief A pointer to the `haltExecuteButton` view.
    */
   Gtk::Button* haltExecutionButton;
-
-  /**
-   * @brief A pointer to the parent `KoMo2Model` model.
-   */
-  KoMo2Model* parent;
 };

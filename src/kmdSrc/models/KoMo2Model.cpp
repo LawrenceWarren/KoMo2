@@ -32,6 +32,7 @@
 KoMo2Model::KoMo2Model(MainWindow* mainWindow, std::string argv0)
     : mainWindow(mainWindow),
       absolutePathToProjectRoot(argv0),
+
       compileLoadModel(mainWindow->getCompileAndLoadButton(),
                        mainWindow->getBrowseButton(),
                        this),
@@ -42,6 +43,8 @@ KoMo2Model::KoMo2Model(MainWindow* mainWindow, std::string argv0)
                     mainWindow->getSingleStepExecuteButton(),
                     mainWindow->getHaltExecutionButton(),
                     this) {
+  setParent(this);
+
   // Updates the main window to have a pointer to its model, sets its CSS.
   getMainWindow()->setModel(this);
   getMainWindow()->setStyling();
@@ -74,6 +77,8 @@ KoMo2Model::KoMo2Model(MainWindow* mainWindow, std::string argv0)
   setButtonListener(getMainWindow()->getSingleStepExecuteButton(),
                     getControlsModel(),
                     &ControlsModel::onSingleStepExecuteClick);
+
+  this->changeJimulatorState(UNLOADED);
 }
 
 /**
@@ -96,14 +101,14 @@ void KoMo2Model::setButtonListener(Gtk::Button* button, T1 b, T2 c) {
 
 void KoMo2Model::changeJimulatorState(JimulatorState newState) {
   // No state change, do nothing
-  if(getJimulatorState() == newState) {
+  if (getJimulatorState() == newState) {
     return;
   }
 
   setJimulatorState(newState);
-  
-
-  controlsModel.handleStateChange(newState);
+  compileLoadModel.changeJimulatorState(newState);
+  controlsModel.changeJimulatorState(newState);
+  // TODO: add other models here as they come
 }
 
 // ! Getter functions
@@ -136,20 +141,4 @@ CompileLoadModel* KoMo2Model::getCompileLoadModel() {
  */
 ControlsModel* KoMo2Model::getControlsModel() {
   return &controlsModel;
-}
-
-/**
- * @brief Sets the `jimulatorIsLoaded` member variable.
- * @param val The value to set `jimulatorIsLoaded` to.
- */
-void KoMo2Model::setJimulatorState(int val) {
-  jimulatorState = val;
-}
-
-/**
- * @brief Gets the `jimulatorState` member variable.
- * @return int The value of `jimulatorState`.
- */
-int KoMo2Model::getJimulatorState() {
-  return jimulatorState;
 }

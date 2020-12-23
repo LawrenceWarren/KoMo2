@@ -45,15 +45,8 @@ ControlsModel::ControlsModel(Gtk::Button* helpButton,
       reloadJimulatorButton(reloadJimulatorButton),
       pauseResumeButton(pauseResumeButton),
       singleStepExecuteButton(singleStepExecuteButton),
-      haltExecutionButton(haltExecutionButton),
-      parent(parent) {
-  // Set button states by default
-  helpButton->set_sensitive(true);
-  beginRunJimulatorButton->set_sensitive(false);
-  reloadJimulatorButton->set_sensitive(false);
-  pauseResumeButton->set_sensitive(false);
-  singleStepExecuteButton->set_sensitive(false);
-  haltExecutionButton->set_sensitive(false);
+      haltExecutionButton(haltExecutionButton) {
+  setParent(parent);
 }
 
 /**
@@ -73,6 +66,7 @@ void ControlsModel::onHelpClick() {
  */
 void ControlsModel::onBeginRunJimulatorClick() {
   std::cout << "begin Run Jimulator Button Click!" << std::endl;
+  getParent()->changeJimulatorState(RUNNING);
 }
 
 /**
@@ -80,6 +74,7 @@ void ControlsModel::onBeginRunJimulatorClick() {
  */
 void ControlsModel::onReloadJimulatorClick() {
   std::cout << "Reload Jimulator Button Click!" << std::endl;
+  getParent()->changeJimulatorState(LOADED);
 }
 
 /**
@@ -87,13 +82,24 @@ void ControlsModel::onReloadJimulatorClick() {
  */
 void ControlsModel::onPauseResumeClick() {
   std::cout << "pause/Resume Button Click!" << std::endl;
+  // TODO: Handle some internal state here
+
+  std::cout << getJimulatorState() << std::endl;
+
+  if (getJimulatorState() == RUNNING) {
+    getParent()->changeJimulatorState(PAUSED);
+  } else if (getJimulatorState() == PAUSED) {
+    getParent()->changeJimulatorState(RUNNING);
+  } else {
+    std::cout << "SOME ERROR STATE." << std::endl;
+  }
 }
 
 /**
  * @brief Handles the `singleStepExecuteButton` click events.
  */
 void ControlsModel::onSingleStepExecuteClick() {
-  std::cout << "Single Step execution Button Click!" << std::endl;
+  std::cout << "single step execute click!" << std::endl;
 }
 
 /**
@@ -101,15 +107,56 @@ void ControlsModel::onSingleStepExecuteClick() {
  */
 void ControlsModel::onHaltExecutionClick() {
   std::cout << "Halt Execution Button Click!" << std::endl;
+  getParent()->changeJimulatorState(UNLOADED);
 }
 
-void ControlsModel::handleStateChange(int state) {
-  if (state == KoMo2Model::LOADED) {
-    helpButton->set_sensitive(true);
-    beginRunJimulatorButton->set_sensitive(true);
-    reloadJimulatorButton->set_sensitive(true);
-    pauseResumeButton->set_sensitive(false);
-    singleStepExecuteButton->set_sensitive(true);
-    haltExecutionButton->set_sensitive(false);
+void ControlsModel::changeJimulatorState(JimulatorState newState) {
+  std::cout << "controls model state change!" << std::endl;
+
+  switch (newState) {
+    // some unloaded state
+    case UNLOADED:
+      helpButton->set_sensitive(true);
+      beginRunJimulatorButton->set_sensitive(false);
+      reloadJimulatorButton->set_sensitive(false);
+      pauseResumeButton->set_sensitive(false);
+      singleStepExecuteButton->set_sensitive(false);
+      haltExecutionButton->set_sensitive(false);
+      break;
+
+    // loaded, not yet run state
+    case LOADED:
+      helpButton->set_sensitive(true);
+      beginRunJimulatorButton->set_sensitive(true);
+      reloadJimulatorButton->set_sensitive(true);
+      pauseResumeButton->set_sensitive(false);
+      singleStepExecuteButton->set_sensitive(true);
+      haltExecutionButton->set_sensitive(false);
+      break;
+
+    // Currently running
+    case RUNNING:
+      helpButton->set_sensitive(true);
+      beginRunJimulatorButton->set_sensitive(false);
+      reloadJimulatorButton->set_sensitive(false);
+      pauseResumeButton->set_sensitive(true);
+      singleStepExecuteButton->set_sensitive(false);
+      haltExecutionButton->set_sensitive(true);
+      break;
+
+    // Has been running; is paused
+    case PAUSED:
+      helpButton->set_sensitive(true);
+      beginRunJimulatorButton->set_sensitive(false);
+      reloadJimulatorButton->set_sensitive(true);
+      pauseResumeButton->set_sensitive(true);
+      singleStepExecuteButton->set_sensitive(true);
+      haltExecutionButton->set_sensitive(true);
+      break;
+
+    // Error state
+    default:
+      // TODO: Error
+      break;
   }
 }

@@ -40,9 +40,10 @@
 CompileLoadModel::CompileLoadModel(Gtk::Button* compileLoadButton,
                                    Gtk::Button* browseButton,
                                    KoMo2Model* parent)
-    : parent(parent),
-      compileLoadButton(compileLoadButton),
-      browseButton(browseButton) {}
+    : compileLoadButton(compileLoadButton), browseButton(browseButton) {
+  setParent(parent);
+  changeInnerState(NO_FILE);
+}
 
 /**
  * @brief Destroys a CompileLoadModel.
@@ -88,7 +89,7 @@ void CompileLoadModel::onCompileLoadClick() {
     }
 
     std::cout << "File loaded!" << std::endl;
-    getParent()->changeJimulatorState(KoMo2Model::LOADED);
+    getParent()->changeJimulatorState(LOADED);
   }
 }
 
@@ -135,33 +136,20 @@ void CompileLoadModel::handleResult(int result,
   switch (result) {
     case (Gtk::RESPONSE_OK): {
       setAbsolutePathToSelectedFile(dialog->get_filename());
+      changeInnerState(FILE_SELECTED);
       break;
     }
     case (Gtk::RESPONSE_CANCEL): {
       setAbsolutePathToSelectedFile("");
+      changeInnerState(NO_FILE);
       break;
     }
     default: {
       // Some unexpected behaviour
       setAbsolutePathToSelectedFile("");
+      changeInnerState(NO_FILE);
       break;
     }
-  }
-
-  // This regex matches any length of characters up to a `/` character. The
-  // regex_replace replaces them with "". So if we have `/user/demo/someFile.s`
-  // it will resolve to simply become `someFile.s`
-  std::string filename =
-      regex_replace(getAbsolutePathToSelectedFile(), std::regex("(.*\\/)"), "");
-
-  // Sets the label text to the filename
-  getParent()->getMainWindow()->setSelectedFileLabelText("File: " + filename);
-
-  // Sets the window title to show the loaded file
-  if (getAbsolutePathToSelectedFile() == "") {
-    getParent()->getMainWindow()->set_title(" KoMo2");
-  } else {
-    getParent()->getMainWindow()->set_title(" KoMo2 - " + filename);
   }
 }
 
@@ -174,6 +162,80 @@ void CompileLoadModel::handleResult(int result,
  */
 std::string CompileLoadModel::makeKmdPath(std::string absolutePath) {
   return absolutePath.substr(0, absolutePath.size() - 1).append("kmd");
+}
+
+/**
+ * @brief
+ * @param newState
+ */
+void CompileLoadModel::changeJimulatorState(JimulatorState newState) {
+  std::cout << "compile load state change!" << std::endl;
+
+  if (getInnerState() == NO_FILE) {
+    compileLoadButton->set_sensitive(false);
+  } else {
+    compileLoadButton->set_sensitive(true);
+  }
+
+  switch (newState) {
+    // some unloaded state
+    case UNLOADED:
+      browseButton->set_sensitive(true);
+      break;
+
+    // loaded, not yet run state
+    case LOADED:
+      browseButton->set_sensitive(true);
+      break;
+
+    // Currently running
+    case RUNNING:
+      browseButton->set_sensitive(false);
+      compileLoadButton->set_sensitive(false);
+      break;
+
+    // Has been running; is paused
+    case PAUSED:
+      browseButton->set_sensitive(true);
+      break;
+
+    // Error state
+    default:
+      // TODO: Error
+      break;
+  }
+}
+
+/**
+ * @brief
+ */
+void CompileLoadModel::changeInnerState(CompileLoadInnerState val) {
+  // TODO: must consider main kmd state also
+
+  // This regex matches any length of characters up to a `/` character. The
+  // regex_replace replaces them with "". So if we have `/user/demo/someFile.s`
+  // it will resolve to simply become `someFile.s`
+  std::string filename =
+      regex_replace(getAbsolutePathToSelectedFile(), std::regex("(.*\\/)"), "");
+
+  // Sets the label text to the filename
+  getParent()->getMainWindow()->setSelectedFileLabelText("File: " + filename);
+
+  setInnerState(val);
+
+  switch (val) {
+    case FILE_SELECTED:
+      compileLoadButton->set_sensitive(true);
+      getParent()->getMainWindow()->set_title(" KoMo2 - " + filename);
+      break;
+    case NO_FILE:
+      compileLoadButton->set_sensitive(false);
+      getParent()->getMainWindow()->set_title(" KoMo2");
+      break;
+    default:
+      // Error state
+      break;
+  }
 }
 
 // ! Getters and setters!
@@ -193,9 +255,16 @@ std::string CompileLoadModel::getAbsolutePathToSelectedFile() {
   return absolutePathToSelectedFile;
 }
 /**
- * @brief Gets the `parent` member variable.
- * @return KoMo2Model* A pointer to the `parent` member variable.
+ * @brief Get the Inner State object
+ * @return CompileLoadInnerState
  */
-KoMo2Model* CompileLoadModel::getParent() {
-  return parent;
+CompileLoadInnerState CompileLoadModel::getInnerState() {
+  return innerState;
+}
+/**
+ * @brief Set the Inner State object
+ * @param val
+ */
+void CompileLoadModel::setInnerState(CompileLoadInnerState val) {
+  innerState = val;
 }
