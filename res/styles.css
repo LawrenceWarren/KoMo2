@@ -49,7 +49,7 @@
   /* Text colors */
   color: #ffffff;
   text-shadow: none;
-  font-size: 12px;
+  font-size: 20px;
 
   background-color: #000000; /* Weird corner bits? */
   background-image: image(#1f2428); /* Main button background */
@@ -68,6 +68,7 @@
   box-shadow: inset 1px -1px 0px #3f454b, inset -1px 1px 0px #000000;
 }
 .controlButtons:disabled {
+  background-image: image(#24292e);
   box-shadow: inset 1px -1px 0px #3f454b, inset -1px 1px 0px #000000;
   color: #3f454b;
 }

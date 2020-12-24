@@ -23,6 +23,7 @@
 #include <gdkmm/rgba.h>
 #include <gtkmm/cssprovider.h>
 #include <gtkmm/frame.h>
+#include <gtkmm/image.h>
 #include <iostream>
 #include <string>
 #include "../models/KoMo2Model.h"
@@ -40,18 +41,37 @@ MainWindow::MainWindow(int x, int y)
       selectedFileLabel("File: "),
       compileAndLoadButton("Compile & Load"),
       browseButton("Select File"),
-      helpButton("Help"),
-      beginRunJimulatorButton("Execute program"),
-      reloadJimulatorButton("Reload program"),
-      pauseResumeButton("Pause/resume execution"),
-      singleStepExecuteButton("Single step execution"),
-      haltExecutionButton("Halt execution") {
+      helpButton(),
+      reloadJimulatorButton("RLD"),
+      pauseResumeButton(),
+      singleStepExecuteButton(),
+      haltExecutionButton() {
   set_border_width(4);
   set_default_size(x, y);  // ~16:9 ration
 
   setSizes(x, y);
   initSelectAndLoadContainer();
   initProgramControlsContainer();
+
+  Gtk::Image* haltImg = new Gtk::Image("res/haltSymbol.png");
+  haltExecutionButton.set_image_position(Gtk::POS_LEFT);
+  haltExecutionButton.set_image(*haltImg);
+  haltImg->show();
+
+  Gtk::Image* pauseImg = new Gtk::Image("res/pauseSymbol.png");
+  pauseResumeButton.set_image_position(Gtk::POS_LEFT);
+  pauseResumeButton.set_image(*pauseImg);
+  pauseImg->show();
+
+  Gtk::Image* helpImg = new Gtk::Image("res/helpSymbol.png");
+  helpButton.set_image_position(Gtk::POS_LEFT);
+  helpButton.set_image(*helpImg);
+  haltImg->show();
+
+  Gtk::Image* sseImg = new Gtk::Image("res/singleStepSymbol.png");
+  singleStepExecuteButton.set_image_position(Gtk::POS_LEFT);
+  singleStepExecuteButton.set_image(*sseImg);
+  haltImg->show();
 
   controlsAndCompileBar.set_layout(Gtk::BUTTONBOX_EDGE);
   controlsAndCompileBar.pack_end(programControlsContainer, false, false);
@@ -88,9 +108,8 @@ void MainWindow::initSelectAndLoadContainer() {
  * and size of it.
  */
 void MainWindow::initProgramControlsContainer() {
-  programControlsContainer.set_layout(Gtk::BUTTONBOX_EDGE);
+  programControlsContainer.set_layout(Gtk::BUTTONBOX_CENTER);
   programControlsContainer.pack_end(helpButton, false, false);
-  programControlsContainer.pack_end(beginRunJimulatorButton, false, false);
   programControlsContainer.pack_end(reloadJimulatorButton, false, false);
   programControlsContainer.pack_end(pauseResumeButton, false, false);
   programControlsContainer.pack_end(singleStepExecuteButton, false, false);
@@ -109,12 +128,11 @@ void MainWindow::setSizes(int x, int y) {
   browseButton.set_size_request(100, 33);
   compileAndLoadButton.set_size_request(100, 33);
   selectedFileLabel.set_size_request(100, 33);
-  helpButton.set_size_request(40, 33);
-  beginRunJimulatorButton.set_size_request(190, 33);
-  reloadJimulatorButton.set_size_request(190, 33);
-  pauseResumeButton.set_size_request(190, 33);
-  singleStepExecuteButton.set_size_request(190, 33);
-  haltExecutionButton.set_size_request(190, 33);
+  helpButton.set_size_request(40, 40);
+  reloadJimulatorButton.set_size_request(40, 40);
+  pauseResumeButton.set_size_request(40, 40);
+  singleStepExecuteButton.set_size_request(40, 40);
+  haltExecutionButton.set_size_request(40, 40);
 
   // Layout sizes
   masterLayout.set_size_request(x, y);
@@ -153,7 +171,6 @@ void MainWindow::setStyling() {
 
   // Adds a CSS class for the program running buttons
   helpButton.get_style_context()->add_class("controlButtons");
-  beginRunJimulatorButton.get_style_context()->add_class("controlButtons");
   reloadJimulatorButton.get_style_context()->add_class("controlButtons");
   pauseResumeButton.get_style_context()->add_class("controlButtons");
   singleStepExecuteButton.get_style_context()->add_class("controlButtons");
@@ -222,14 +239,7 @@ void MainWindow::setSelectedFileLabelText(std::string val) {
 Gtk::Button* MainWindow::getHelpButton() {
   return &helpButton;
 }
-/**
- * @brief Gets the `beginRunJimulatorButton` member variable.
- * @return Gtk::Button* A pointer to the `beginRunJimulatorButton` member
- * variable.
- */
-Gtk::Button* MainWindow::getBeginRunJimulatorButton() {
-  return &beginRunJimulatorButton;
-}
+
 /**
  * @brief Gets the `reloadJimulatorButton` member variable.
  * @return Gtk::Button* A pointer to the `reloadJimulatorButton` member

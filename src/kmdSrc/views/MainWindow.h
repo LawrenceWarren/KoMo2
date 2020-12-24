@@ -48,7 +48,6 @@ class MainWindow : public Gtk::Window {
   void setSelectedFileLabelText(std::string val);
   void setStyling();
   Gtk::Button* getHelpButton();
-  Gtk::Button* getBeginRunJimulatorButton();
   Gtk::Button* getReloadJimulatorButton();
   Gtk::Button* getPauseResumeButton();
   Gtk::Button* getSingleStepExecuteButton();
@@ -107,12 +106,6 @@ class MainWindow : public Gtk::Window {
    * @brief A button which, when clicked, opens up an about/help window.
    */
   Gtk::Button helpButton;
-
-  /**
-   * @brief A button which, when clicked, commences running of the Jimulator
-   * program.
-   */
-  Gtk::Button beginRunJimulatorButton;
 
   /**
    * @brief A button which, when clicked, reloads the program into Jimulator

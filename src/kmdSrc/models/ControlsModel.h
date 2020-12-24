@@ -30,7 +30,6 @@
 class ControlsModel : private Model {
  public:
   ControlsModel(Gtk::Button* helpButton,
-                Gtk::Button* beginRunJimulatorButton,
                 Gtk::Button* reloadJimulatorButton,
                 Gtk::Button* pauseResumeButton,
                 Gtk::Button* singleStepExecuteButton,
@@ -53,11 +52,6 @@ class ControlsModel : private Model {
    * @brief A pointer to the `helpButton` view.
    */
   Gtk::Button* helpButton;
-
-  /**
-   * @brief A pointer to the `beginRunJimulatorButton` view.
-   */
-  Gtk::Button* beginRunJimulatorButton;
 
   /**
    * @brief A pointer to the `reloadJimulatorButton` view.

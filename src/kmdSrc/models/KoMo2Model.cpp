@@ -37,7 +37,6 @@ KoMo2Model::KoMo2Model(MainWindow* mainWindow, std::string argv0)
                        mainWindow->getBrowseButton(),
                        this),
       controlsModel(mainWindow->getHelpButton(),
-                    mainWindow->getBeginRunJimulatorButton(),
                     mainWindow->getReloadJimulatorButton(),
                     mainWindow->getPauseResumeButton(),
                     mainWindow->getSingleStepExecuteButton(),
@@ -58,10 +57,6 @@ KoMo2Model::KoMo2Model(MainWindow* mainWindow, std::string argv0)
 
   setButtonListener(getMainWindow()->getHelpButton(), getControlsModel(),
                     &ControlsModel::onHelpClick);
-
-  setButtonListener(getMainWindow()->getBeginRunJimulatorButton(),
-                    getControlsModel(),
-                    &ControlsModel::onBeginRunJimulatorClick);
 
   setButtonListener(getMainWindow()->getPauseResumeButton(), getControlsModel(),
                     &ControlsModel::onPauseResumeClick);

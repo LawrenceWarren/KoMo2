@@ -26,7 +26,6 @@
 /**
  * @brief Construct a new ControlsModel object.
  * @param helpButton A pointer to the helpButton.
- * @param beginRunJimulatorButton A pointer to the beginRunJimulatorButton.
  * @param reloadJimulatorButton A pointer to the reloadJimulatorButton.
  * @param pauseResumeButton A pointer to the pauseResumeButton.
  * @param singleStepExecuteButton A pointer to the singleStepExecutionButton.
@@ -34,7 +33,6 @@
  * @param parent A pointer to the parent model, KoMo2Model.
  */
 ControlsModel::ControlsModel(Gtk::Button* helpButton,
-                             Gtk::Button* beginRunJimulatorButton,
                              Gtk::Button* reloadJimulatorButton,
                              Gtk::Button* pauseResumeButton,
                              Gtk::Button* singleStepExecuteButton,
@@ -42,7 +40,6 @@ ControlsModel::ControlsModel(Gtk::Button* helpButton,
                              KoMo2Model* parent)
     : Model(parent),
       helpButton(helpButton),
-      beginRunJimulatorButton(beginRunJimulatorButton),
       reloadJimulatorButton(reloadJimulatorButton),
       pauseResumeButton(pauseResumeButton),
       singleStepExecuteButton(singleStepExecuteButton),
@@ -60,14 +57,6 @@ void ControlsModel::onHelpClick() {
   std::cout << "Help Button click!" << std::endl;
 }
 
-/**
- * @brief Handles the `beginRunJimulatorButton` click events.
- * Changes JimulatorState to "RUNNING".
- */
-void ControlsModel::onBeginRunJimulatorClick() {
-  std::cout << "begin Run Jimulator Button Click!" << std::endl;
-  getParent()->changeJimulatorState(RUNNING);
-}
 
 /**
  * @brief Handles the `reloadJimulatorButton` click events.
@@ -85,16 +74,23 @@ void ControlsModel::onReloadJimulatorClick() {
  */
 void ControlsModel::onPauseResumeClick() {
   std::cout << "pause/Resume Button Click!" << std::endl;
-  // TODO: Handle some internal state here
 
-  std::cout << getJimulatorState() << std::endl;
-
-  if (getJimulatorState() == RUNNING) {
-    getParent()->changeJimulatorState(PAUSED);
-  } else if (getJimulatorState() == PAUSED) {
-    getParent()->changeJimulatorState(RUNNING);
-  } else {
-    std::cout << "SOME ERROR STATE." << std::endl;
+  switch (getJimulatorState()) {
+    case RUNNING:
+      getParent()->changeJimulatorState(PAUSED);
+      // TODO: handle some other stuff
+      break;
+    case PAUSED:
+      getParent()->changeJimulatorState(RUNNING);
+      // TODO: handle some other stuff
+      break;
+    case LOADED:
+      getParent()->changeJimulatorState(RUNNING);
+      // TODO: Handle some other stuff?
+      break;
+    default:
+      // TODO: error state
+      break;
   }
 }
 
@@ -103,6 +99,10 @@ void ControlsModel::onPauseResumeClick() {
  */
 void ControlsModel::onSingleStepExecuteClick() {
   std::cout << "single step execute click!" << std::endl;
+
+  if (getJimulatorState() == LOADED) {
+    getParent()->changeJimulatorState(PAUSED);
+  }
 }
 
 /**
@@ -125,7 +125,6 @@ void ControlsModel::changeJimulatorState(JimulatorState newState) {
     // some unloaded state
     case UNLOADED:
       helpButton->set_sensitive(true);
-      beginRunJimulatorButton->set_sensitive(false);
       reloadJimulatorButton->set_sensitive(false);
       pauseResumeButton->set_sensitive(false);
       singleStepExecuteButton->set_sensitive(false);
@@ -136,9 +135,8 @@ void ControlsModel::changeJimulatorState(JimulatorState newState) {
     // loaded, not yet run state
     case LOADED:
       helpButton->set_sensitive(true);
-      beginRunJimulatorButton->set_sensitive(true);
-      reloadJimulatorButton->set_sensitive(true);
-      pauseResumeButton->set_sensitive(false);
+      reloadJimulatorButton->set_sensitive(false);
+      pauseResumeButton->set_sensitive(true);
       singleStepExecuteButton->set_sensitive(true);
       haltExecutionButton->set_sensitive(false);
       break;
@@ -146,7 +144,6 @@ void ControlsModel::changeJimulatorState(JimulatorState newState) {
     // Currently running
     case RUNNING:
       helpButton->set_sensitive(true);
-      beginRunJimulatorButton->set_sensitive(false);
       reloadJimulatorButton->set_sensitive(false);
       pauseResumeButton->set_sensitive(true);
       singleStepExecuteButton->set_sensitive(false);
@@ -157,7 +154,6 @@ void ControlsModel::changeJimulatorState(JimulatorState newState) {
     // Has been running; is paused
     case PAUSED:
       helpButton->set_sensitive(true);
-      beginRunJimulatorButton->set_sensitive(false);
       reloadJimulatorButton->set_sensitive(true);
       pauseResumeButton->set_sensitive(true);
       singleStepExecuteButton->set_sensitive(true);
