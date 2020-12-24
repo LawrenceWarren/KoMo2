@@ -80,6 +80,18 @@ KoMo2Model::KoMo2Model(MainWindow* mainWindow, std::string argv0)
 KoMo2Model::~KoMo2Model() {}
 
 /**
+ * @brief Changes an existing image, `toChange,` to refer to a new image, and
+ * deletes the old memory in the heap.
+ * @param toChange A pointer to the image that is to change.
+ * @param newImg The new image to change to.
+ */
+void KoMo2Model::changeImage(Gtk::Image* toChange, Gtk::Image* newImg) {
+  Gtk::Image* temp = toChange;
+  toChange = newImg;
+  delete (temp);
+}
+
+/**
  * @brief Connect any button to any member function of
  * @tparam T1 A pointer type to some object of any type.
  * @tparam T2 A pointer to a T1 member function.

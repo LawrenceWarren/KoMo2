@@ -70,6 +70,7 @@ class KoMo2Model : private Model {
   ~KoMo2Model();
 
   // General functions
+  void changeImage(Gtk::Image* toChange, Gtk::Image* newImg);
   void changeJimulatorState(JimulatorState newState);
 
   // Getters & setters

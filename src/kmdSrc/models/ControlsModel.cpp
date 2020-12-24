@@ -19,6 +19,7 @@
  */
 
 #include <gtkmm.h>
+#include <gtkmm/image.h>
 #include <iostream>
 #include <string>
 #include "KoMo2Model.h"
@@ -56,7 +57,6 @@ ControlsModel::~ControlsModel() {}
 void ControlsModel::onHelpClick() {
   std::cout << "Help Button click!" << std::endl;
 }
-
 
 /**
  * @brief Handles the `reloadJimulatorButton` click events.
@@ -129,7 +129,8 @@ void ControlsModel::changeJimulatorState(JimulatorState newState) {
       pauseResumeButton->set_sensitive(false);
       singleStepExecuteButton->set_sensitive(false);
       haltExecutionButton->set_sensitive(false);
-      // Send some signal to Jimulator.
+
+      pauseResumeButton->set_image(*new Gtk::Image("res/commenceSymbol.png"));
       break;
 
     // loaded, not yet run state
@@ -139,6 +140,8 @@ void ControlsModel::changeJimulatorState(JimulatorState newState) {
       pauseResumeButton->set_sensitive(true);
       singleStepExecuteButton->set_sensitive(true);
       haltExecutionButton->set_sensitive(false);
+
+      pauseResumeButton->set_image(*new Gtk::Image("res/commenceSymbol.png"));
       break;
 
     // Currently running
@@ -148,6 +151,8 @@ void ControlsModel::changeJimulatorState(JimulatorState newState) {
       pauseResumeButton->set_sensitive(true);
       singleStepExecuteButton->set_sensitive(false);
       haltExecutionButton->set_sensitive(true);
+
+      pauseResumeButton->set_image(*new Gtk::Image("res/pauseSymbol.png"));
       // Send some signal to Jimulator
       break;
 
@@ -158,6 +163,8 @@ void ControlsModel::changeJimulatorState(JimulatorState newState) {
       pauseResumeButton->set_sensitive(true);
       singleStepExecuteButton->set_sensitive(true);
       haltExecutionButton->set_sensitive(true);
+
+      pauseResumeButton->set_image(*new Gtk::Image("res/playSymbol.png"));
       // Send some signal to Jimulator
       break;
 

@@ -21,6 +21,7 @@
 #include <gtkmm/box.h>
 #include <gtkmm/button.h>
 #include <gtkmm/buttonbox.h>
+#include <gtkmm/image.h>
 #include <gtkmm/label.h>
 #include <gtkmm/window.h>
 #include <string>

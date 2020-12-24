@@ -42,7 +42,7 @@ MainWindow::MainWindow(int x, int y)
       compileAndLoadButton("Compile & Load"),
       browseButton("Select File"),
       helpButton(),
-      reloadJimulatorButton("RLD"),
+      reloadJimulatorButton(),
       pauseResumeButton(),
       singleStepExecuteButton(),
       haltExecutionButton() {
@@ -53,25 +53,18 @@ MainWindow::MainWindow(int x, int y)
   initSelectAndLoadContainer();
   initProgramControlsContainer();
 
-  Gtk::Image* haltImg = new Gtk::Image("res/haltSymbol.png");
   haltExecutionButton.set_image_position(Gtk::POS_LEFT);
-  haltExecutionButton.set_image(*haltImg);
-  haltImg->show();
+  haltExecutionButton.set_image(*new Gtk::Image("res/haltSymbol.png"));
 
-  Gtk::Image* pauseImg = new Gtk::Image("res/pauseSymbol.png");
-  pauseResumeButton.set_image_position(Gtk::POS_LEFT);
-  pauseResumeButton.set_image(*pauseImg);
-  pauseImg->show();
-
-  Gtk::Image* helpImg = new Gtk::Image("res/helpSymbol.png");
   helpButton.set_image_position(Gtk::POS_LEFT);
-  helpButton.set_image(*helpImg);
-  haltImg->show();
+  helpButton.set_image(*new Gtk::Image("res/helpSymbol.png"));
 
-  Gtk::Image* sseImg = new Gtk::Image("res/singleStepSymbol.png");
   singleStepExecuteButton.set_image_position(Gtk::POS_LEFT);
-  singleStepExecuteButton.set_image(*sseImg);
-  haltImg->show();
+  singleStepExecuteButton.set_image(
+      *new Gtk::Image("res/singleStepSymbol.png"));
+
+  reloadJimulatorButton.set_image_position(Gtk::POS_LEFT);
+  reloadJimulatorButton.set_image(*new Gtk::Image("res/refreshSymbol.png"));
 
   controlsAndCompileBar.set_layout(Gtk::BUTTONBOX_EDGE);
   controlsAndCompileBar.pack_end(programControlsContainer, false, false);
