@@ -44,8 +44,9 @@
 //		'record'/'structure' directive for creating offsets
 
 #include <stdio.h>
-#include <stdlib.h> /* For {malloc, exit} */
-#include <string.h> /* For {strcat, strlen, strcpy} */
+#include <stdlib.h>  /* For {malloc, exit} */
+#include <string.h>  /* For {strcat, strlen, strcpy} */
+#include <unistd.h>  // for readlink
 
 #define TRUE (0 == 0)
 #define FALSE (0 != 0)
@@ -320,14 +321,14 @@ typedef struct size_record_name /* Size of variable length operation */
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-const SYM_RECORD_SIZE = sizeof(sym_record);
-const SYM_TABLE_SIZE = sizeof(sym_table);
-const SYM_TABLE_ITEM_SIZE = sizeof(sym_table_item);
-const LIT_RECORD_SIZE = sizeof(literal_record);
-const LOCAL_LABEL_SIZE = sizeof(local_label);
-const ELF_TEMP_SIZE = sizeof(elf_temp);
-const ELF_INFO_SIZE = sizeof(elf_info);
-const SIZE_RECORD_SIZE = sizeof(size_record);
+const int SYM_RECORD_SIZE = sizeof(sym_record);
+const int SYM_TABLE_SIZE = sizeof(sym_table);
+const int SYM_TABLE_ITEM_SIZE = sizeof(sym_table_item);
+const int LIT_RECORD_SIZE = sizeof(literal_record);
+const int LOCAL_LABEL_SIZE = sizeof(local_label);
+const int ELF_TEMP_SIZE = sizeof(elf_temp);
+const int ELF_INFO_SIZE = sizeof(elf_info);
+const int SIZE_RECORD_SIZE = sizeof(size_record);
 
 /*----------------------------------------------------------------------------*/
 
@@ -528,12 +529,11 @@ sym_table* shift_table;
 
 int main(int argc, char* argv[]) {
   FILE *fMnemonics, *fSource;
-  char c, line[LINE_LENGTH + 1];
+  char line[LINE_LENGTH + 1];
 
   sym_table *arm_mnemonic_table, *thumb_mnemonic_table, *directive_table;
   sym_table* symbol_table;
   sym_table_item *arm_mnemonic_list, *thumb_mnemonic_list; /* Real lists */
-  int i, *j;
   boolean finished, last_pass;
   unsigned int error_code;
 
@@ -1155,7 +1155,7 @@ void print_error(char* line,
                  unsigned int error_code,
                  char* filename,
                  boolean last_pass) {
-  unsigned int error, position;
+  unsigned int  position;
   int i;
 
   if ((error_code & WARNING_ONLY) != 0) {
@@ -1568,7 +1568,6 @@ unsigned int parse_source_line(char* line,
   int pos, j;
   own_label label_this_line;
   sym_record* ptr;
-  label_type label;
   char buffer[LINE_LENGTH];
   unsigned int value, error_code;
   boolean mnemonic;
@@ -1918,14 +1917,13 @@ unsigned int assemble_line(char* line,
                            char* include_file_path) {
   unsigned int operand, error_code;
   unsigned int temp;
-  int first_pass, i;
+  int first_pass;
 
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
    * -*/
 
   void assemble_define(int size) { /* Elongated by string definition */
     boolean terminate, escape;
-    int i;
     char delimiter, c;
 
     terminate = FALSE;
@@ -2908,7 +2906,7 @@ dump) unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
         {
           void adr_loop(int value, int count) /* Local procedure */
           {
-            int i, fixed, size;
+            int i, fixed;
 
             fixed = count >= 0; /* Flag for loop termination */
 
@@ -4126,8 +4124,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
 
         case 0xF00C0000: /* IF */
         {
-          char name[SYM_NAME_MAX];  // @@@ Size of buffer (also below)
-          int j, condition;
+          int condition;
 
           if (if_SP >= IF_STACK_SIZE)
             error_code = SYM_MANY_IFS;
@@ -4710,11 +4707,10 @@ void byte_dump(unsigned int address, unsigned int value, char* line, int size) {
 /* `limit' is a dump address not to exceed, unless 0 which indicates no limit */
 
 void literal_dump(boolean last_pass, char* line, unsigned int limit) {
-  literal_record* pTemp;
   unsigned int address; /* Needed because assembly pointer is static */
                         /*  for each `instruction' in the list file */
   unsigned int size;    /* Each plant aligns to the appropriate boundary */
-  int i, message_flag;
+  int i;
   char* align_message = "(padding)";
   char* my_message;
 
@@ -5184,8 +5180,6 @@ void list_mid_line(unsigned int value, char* line, int size) {
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
 void list_end_line(char* line) {
-  int i;
-
   if (list_byte == 0)
     list_buffer_init(line, list_byte, TRUE);
   /* No bytes were dumped */
@@ -5878,7 +5872,7 @@ void sym_print_table(sym_table* table,
       if ((ptr->flags & SYM_REC_DEF_FLAG) != 0)
         fprintf(handle, "  %08X", ptr->value);
       else
-        fprintf(handle, " Undefined", ptr->value);
+        fprintf(handle, " Undefined %d", ptr->value);
 
       if ((ptr->flags & SYM_REC_USR_FLAG) != 0)
         fprintf(handle, "  Constant   ");
@@ -6408,7 +6402,6 @@ int get_operator(char* input,
                  operator,
                  int * priority) {
   int status;
-  char* temp;
   unsigned int ii;
 
   *pos = skip_spc(input, *pos); /* In case of error want this at next item */

@@ -13,8 +13,6 @@
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
 #include <stdio.h>
-#include "Pixmaps/pcpixmap.xpm"
-#include "Pixmaps/sppixmap.xpm"
 #include "chump.h"
 #include "global.h"
 
