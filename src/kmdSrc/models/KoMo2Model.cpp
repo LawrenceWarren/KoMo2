@@ -30,9 +30,9 @@
  * @param argv0 The absolutePathToProjectRoot - parsed from argv[0].
  */
 KoMo2Model::KoMo2Model(MainWindow* mainWindow, std::string argv0)
-    : mainWindow(mainWindow),
+    : Model(this),
+      mainWindow(mainWindow),
       absolutePathToProjectRoot(argv0),
-
       compileLoadModel(mainWindow->getCompileAndLoadButton(),
                        mainWindow->getBrowseButton(),
                        this),
@@ -43,8 +43,6 @@ KoMo2Model::KoMo2Model(MainWindow* mainWindow, std::string argv0)
                     mainWindow->getSingleStepExecuteButton(),
                     mainWindow->getHaltExecutionButton(),
                     this) {
-  setParent(this);
-
   // Updates the main window to have a pointer to its model, sets its CSS.
   getMainWindow()->setModel(this);
   getMainWindow()->setStyling();
@@ -99,6 +97,11 @@ void KoMo2Model::setButtonListener(Gtk::Button* button, T1 b, T2 c) {
   button->signal_clicked().connect(sigc::mem_fun(*b, c));
 }
 
+/**
+ * @brief Changes the Jimulator state and calls each child models own
+ * `changeJimulatorState` function.
+ * @param newState The state to change into.
+ */
 void KoMo2Model::changeJimulatorState(JimulatorState newState) {
   // No state change, do nothing
   if (getJimulatorState() == newState) {

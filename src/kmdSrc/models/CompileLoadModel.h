@@ -22,7 +22,14 @@
 #include <string>
 #include "Model.h"
 
-enum CompileLoadInnerState { FILE_SELECTED = 0, NO_FILE };
+/**
+ * @brief An enum indicating the state of the specific compile and load section
+ * of the GUI - specifically, whether a file had been selected or not.
+ */
+enum CompileLoadInnerState {
+  FILE_SELECTED = 0,  // A file has been selected.
+  NO_FILE             // No file has been selected.
+};
 
 /**
  * @brief the class definition of the compileLoadModel class, a data model which
@@ -53,6 +60,9 @@ class CompileLoadModel : private Model {
   std::string getAbsolutePathToSelectedFile();
 
  private:
+  /**
+   * @brief Stores the state of the compile and load section of the GUI.
+   */
   CompileLoadInnerState innerState;
 
   /**

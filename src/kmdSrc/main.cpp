@@ -4,23 +4,18 @@
  * @brief The entry point of the program. Should have as little logic as
  * possible.
  * @version 0.1
- * @date 2020-11-27
- *
+ * @date 2020-12-23
  * @section LICENSE
- *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 3 of
  * the License, or (at your option) any later version.
- *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details at
  * https://www.gnu.org/copyleft/gpl.html
- *
  * @copyright Copyright (c) 2020
- *
  */
 
 #include <glibmm/optioncontext.h>
@@ -83,7 +78,7 @@ int main(int argc, char* argv[]) {
  * @return auto exit code.
  */
 bool openDotKomodo(std::string pathToBinaryDir) {
-  // TODO: make this function do something - if it's needed
+  // TODO: is this function necessary?
   PtrSCANNode scantopnode = nullptr;
   GScanner* scanner = nullptr;
   int use_internal = 0;

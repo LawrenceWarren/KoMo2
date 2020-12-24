@@ -65,11 +65,12 @@ class KoMo2Model : private Model {
   ControlsModel controlsModel;
 
  public:
-  void changeJimulatorState(JimulatorState newState);
-
   // Constructors
   KoMo2Model(MainWindow* mainWindow, std::string argv0);
   ~KoMo2Model();
+
+  // General functions
+  void changeJimulatorState(JimulatorState newState);
 
   // Getters & setters
   CompileLoadModel* getCompileLoadModel();

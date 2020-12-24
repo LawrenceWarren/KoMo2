@@ -40,8 +40,9 @@
 CompileLoadModel::CompileLoadModel(Gtk::Button* compileLoadButton,
                                    Gtk::Button* browseButton,
                                    KoMo2Model* parent)
-    : compileLoadButton(compileLoadButton), browseButton(browseButton) {
-  setParent(parent);
+    : Model(parent),
+      compileLoadButton(compileLoadButton),
+      browseButton(browseButton) {
   changeInnerState(NO_FILE);
 }
 
@@ -165,18 +166,20 @@ std::string CompileLoadModel::makeKmdPath(std::string absolutePath) {
 }
 
 /**
- * @brief
- * @param newState
+ * @brief Handles a changing JimulatorState for this model.
+ * @param newState The state that has been changed into.
  */
 void CompileLoadModel::changeJimulatorState(JimulatorState newState) {
   std::cout << "compile load state change!" << std::endl;
 
+  // Sets the default button state for compileLoadButton
   if (getInnerState() == NO_FILE) {
     compileLoadButton->set_sensitive(false);
   } else {
     compileLoadButton->set_sensitive(true);
   }
 
+  // Sets the state of the browseButton
   switch (newState) {
     // some unloaded state
     case UNLOADED:
@@ -207,11 +210,11 @@ void CompileLoadModel::changeJimulatorState(JimulatorState newState) {
 }
 
 /**
- * @brief
+ * @brief Handles changing the inner state of this model (whether a file is
+ * selected or not)
+ * @param val The value to set the inner state to.
  */
 void CompileLoadModel::changeInnerState(CompileLoadInnerState val) {
-  // TODO: must consider main kmd state also
-
   // This regex matches any length of characters up to a `/` character. The
   // regex_replace replaces them with "". So if we have `/user/demo/someFile.s`
   // it will resolve to simply become `someFile.s`

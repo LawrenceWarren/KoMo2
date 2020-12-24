@@ -40,14 +40,13 @@ ControlsModel::ControlsModel(Gtk::Button* helpButton,
                              Gtk::Button* singleStepExecuteButton,
                              Gtk::Button* haltExecutionButton,
                              KoMo2Model* parent)
-    : helpButton(helpButton),
+    : Model(parent),
+      helpButton(helpButton),
       beginRunJimulatorButton(beginRunJimulatorButton),
       reloadJimulatorButton(reloadJimulatorButton),
       pauseResumeButton(pauseResumeButton),
       singleStepExecuteButton(singleStepExecuteButton),
-      haltExecutionButton(haltExecutionButton) {
-  setParent(parent);
-}
+      haltExecutionButton(haltExecutionButton) {}
 
 /**
  * @brief Destroys a ControlModel object.
@@ -63,6 +62,7 @@ void ControlsModel::onHelpClick() {
 
 /**
  * @brief Handles the `beginRunJimulatorButton` click events.
+ * Changes JimulatorState to "RUNNING".
  */
 void ControlsModel::onBeginRunJimulatorClick() {
   std::cout << "begin Run Jimulator Button Click!" << std::endl;
@@ -71,6 +71,7 @@ void ControlsModel::onBeginRunJimulatorClick() {
 
 /**
  * @brief Handles the `reloadJimulatorButton` click events.
+ * Changes JimulatorState to "LOADED".
  */
 void ControlsModel::onReloadJimulatorClick() {
   std::cout << "Reload Jimulator Button Click!" << std::endl;
@@ -79,6 +80,8 @@ void ControlsModel::onReloadJimulatorClick() {
 
 /**
  * @brief Handles the `pauseResumeButton` click events.
+ * Changes JimulatorState to "RUNNING" if currently PAUSED, and "PAUSED" if
+ * currently RUNNING.
  */
 void ControlsModel::onPauseResumeClick() {
   std::cout << "pause/Resume Button Click!" << std::endl;
@@ -104,12 +107,17 @@ void ControlsModel::onSingleStepExecuteClick() {
 
 /**
  * @brief Handles the `haltExecutionButton` click events.
+ * Changes JimulatorState to "UNLOADED".
  */
 void ControlsModel::onHaltExecutionClick() {
   std::cout << "Halt Execution Button Click!" << std::endl;
   getParent()->changeJimulatorState(UNLOADED);
 }
 
+/**
+ * @brief Handles the Jimulator state change for this model.
+ * @param newState The state to change into.
+ */
 void ControlsModel::changeJimulatorState(JimulatorState newState) {
   std::cout << "controls model state change!" << std::endl;
 
@@ -122,6 +130,7 @@ void ControlsModel::changeJimulatorState(JimulatorState newState) {
       pauseResumeButton->set_sensitive(false);
       singleStepExecuteButton->set_sensitive(false);
       haltExecutionButton->set_sensitive(false);
+      // Send some signal to Jimulator.
       break;
 
     // loaded, not yet run state
@@ -142,6 +151,7 @@ void ControlsModel::changeJimulatorState(JimulatorState newState) {
       pauseResumeButton->set_sensitive(true);
       singleStepExecuteButton->set_sensitive(false);
       haltExecutionButton->set_sensitive(true);
+      // Send some signal to Jimulator
       break;
 
     // Has been running; is paused
@@ -152,6 +162,7 @@ void ControlsModel::changeJimulatorState(JimulatorState newState) {
       pauseResumeButton->set_sensitive(true);
       singleStepExecuteButton->set_sensitive(true);
       haltExecutionButton->set_sensitive(true);
+      // Send some signal to Jimulator
       break;
 
     // Error state
