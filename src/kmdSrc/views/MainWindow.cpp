@@ -53,19 +53,6 @@ MainWindow::MainWindow(int x, int y)
   initSelectAndLoadContainer();
   initProgramControlsContainer();
 
-  haltExecutionButton.set_image_position(Gtk::POS_LEFT);
-  haltExecutionButton.set_image(*new Gtk::Image("res/haltSymbol.png"));
-
-  helpButton.set_image_position(Gtk::POS_LEFT);
-  helpButton.set_image(*new Gtk::Image("res/helpSymbol.png"));
-
-  singleStepExecuteButton.set_image_position(Gtk::POS_LEFT);
-  singleStepExecuteButton.set_image(
-      *new Gtk::Image("res/singleStepSymbol.png"));
-
-  reloadJimulatorButton.set_image_position(Gtk::POS_LEFT);
-  reloadJimulatorButton.set_image(*new Gtk::Image("res/refreshSymbol.png"));
-
   controlsAndCompileBar.set_layout(Gtk::BUTTONBOX_EDGE);
   controlsAndCompileBar.pack_end(programControlsContainer, false, false);
   controlsAndCompileBar.pack_end(selectAndLoadContainer, false, false);
@@ -88,6 +75,10 @@ MainWindow::~MainWindow() {}
  * and size of it.
  */
 void MainWindow::initSelectAndLoadContainer() {
+  browseButton.set_tooltip_text("Browse for an ARM assembly file (CTRL+L)");
+  compileAndLoadButton.set_tooltip_text(
+      "Compile and load your file into Jimulator (CTRL+R)");
+
   selectAndLoadContainer.set_layout(Gtk::BUTTONBOX_END);
   selectAndLoadContainer.pack_end(*getBrowseButton(), false, false);
   selectAndLoadContainer.pack_end(*getSelectedFileLabel(), false, false);
@@ -98,9 +89,31 @@ void MainWindow::initSelectAndLoadContainer() {
 
 /**
  * @brief Packs children into the programControlsContainer, and sets the layouts
- * and size of it.
+ * and size of it. Initialises the look images of buttons.
  */
 void MainWindow::initProgramControlsContainer() {
+  // Set halt button image
+  haltExecutionButton.set_image_position(Gtk::POS_LEFT);
+  haltExecutionButton.set_image(*new Gtk::Image("res/haltSymbol.png"));
+  haltExecutionButton.set_tooltip_text("Halt Jimulator (F1)");
+
+  // Set help button image
+  helpButton.set_image_position(Gtk::POS_LEFT);
+  helpButton.set_image(*new Gtk::Image("res/helpSymbol.png"));
+  helpButton.set_tooltip_text("About KoMo2 (F12)");
+
+  // Set the single step execution button image
+  singleStepExecuteButton.set_image_position(Gtk::POS_LEFT);
+  singleStepExecuteButton.set_image(
+      *new Gtk::Image("res/singleStepSymbol.png"));
+  singleStepExecuteButton.set_tooltip_text("Execute 1 instruction (F6)");
+
+  // Set the reload button image
+  reloadJimulatorButton.set_image_position(Gtk::POS_LEFT);
+  reloadJimulatorButton.set_image(*new Gtk::Image("res/refreshSymbol.png"));
+  reloadJimulatorButton.set_tooltip_text("Reload program (Ctrl+R)");
+
+  // Pack buttons into a container
   programControlsContainer.set_layout(Gtk::BUTTONBOX_CENTER);
   programControlsContainer.pack_end(helpButton, false, false);
   programControlsContainer.pack_end(reloadJimulatorButton, false, false);

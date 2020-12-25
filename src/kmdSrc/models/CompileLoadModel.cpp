@@ -174,32 +174,32 @@ void CompileLoadModel::changeJimulatorState(JimulatorState newState) {
 
   // Sets the default button state for compileLoadButton
   if (getInnerState() == NO_FILE) {
-    compileLoadButton->set_sensitive(false);
+    setButtonState(compileLoadButton, false);
   } else {
-    compileLoadButton->set_sensitive(true);
+    setButtonState(compileLoadButton, true);
   }
 
   // Sets the state of the browseButton
   switch (newState) {
     // some unloaded state
     case UNLOADED:
-      browseButton->set_sensitive(true);
+      setButtonState(browseButton, true);
       break;
 
     // loaded, not yet run state
     case LOADED:
-      browseButton->set_sensitive(true);
+      setButtonState(browseButton, true);
       break;
 
     // Currently running
     case RUNNING:
-      browseButton->set_sensitive(false);
-      compileLoadButton->set_sensitive(false);
+      setButtonState(browseButton, false);
+      setButtonState(compileLoadButton, false);
       break;
 
     // Has been running; is paused
     case PAUSED:
-      browseButton->set_sensitive(true);
+      setButtonState(browseButton, true);
       break;
 
     // Error state
@@ -228,11 +228,11 @@ void CompileLoadModel::changeInnerState(CompileLoadInnerState val) {
 
   switch (val) {
     case FILE_SELECTED:
-      compileLoadButton->set_sensitive(true);
+      setButtonState(compileLoadButton, true);
       getParent()->getMainWindow()->set_title(" KoMo2 - " + filename);
       break;
     case NO_FILE:
-      compileLoadButton->set_sensitive(false);
+      setButtonState(compileLoadButton, false);
       getParent()->getMainWindow()->set_title(" KoMo2");
       break;
     default:

@@ -20,10 +20,11 @@ However, _KoMoDo_ is becoming outdated for a number of reasons, and the purpose 
 
 1. Install the tools described in the subsection [_Toolchain_](#toolchain).
 2. Install the libraries described in the subsection [_Libraries_](#libraries).
-3. Install any optional dependencies you may find in the subsection [_Development environment_](#development-environment).
+3. **Optional** - Install any dependencies you may find in the subsection [_Development environment_](#development-environment).
 4. Clone this repository.
-5. Enter the root directory of this project and execute `make`.
-6. Run the newly generated `kmd` binary in the `bin` directory.
+5. **Optional** - Execute any scripts found in the `scripts` directory. Information can be found in the subsection [_Shell scripts_](#shell-scripts).
+6. Enter the root directory of this project and execute `make`.
+7. Run the newly generated `kmd` binary in the `bin` directory.
 
 ---
 
@@ -133,3 +134,47 @@ I have ensured that all fonts used can always fall back to the default "monospac
 
 The shell script in the `scripts` directory, `addToPath.sh`, is WIP!
 TODO: MAKE THIS SCRIPT & DESCRIBE IT HERE
+
+---
+
+### User Manual
+
+#### Operating _KoMo2_
+
+_KoMo2_ is simply an interface for _Jimulator_ - if there is some action you would like to perform on _Jimulator_, there is a button in _KoMo2_ for it:
+
+##### Selecting, compiling, and loading an ARM assembly file
+
+You must write your own ARM assembly programs (_.s_ file extension) in an external text editor, and save them to somewhere on your filesystem.
+
+In the top right corner of _KoMo2_ there is a button labelled "Select File", which will open a fill browser that allows you to select any _.s_ file.
+
+Once a file is selected, a label below this button will display the file name and a button below this, labelled "Compile & Load", will create a compiled _.kmd_ file in the same directory, which will subsequently be loaded into _Jimulator_ automatically.
+
+The "Select File" and "Compile & Load" buttons are only accessible while _Jimulator_ is in certain states, and can be executed using the shortcuts **Ctrl+L** and **CTRL+R** respectively.
+
+#### Commencing, pausing, and resuming _Jimulator_ execution
+
+Once a program has been compiled and loaded into _Jimulator_, execution of the program can commence.
+
+A button at the top of the screen with a green play symbol will commence execution of _Jimulator_. Upon clicking this button, the button will display a blue pause symbol. Upon clicking this button execution will pause and the program will pause executing.
+
+The state of the button will change upon every click, alternating between pausing and playing, and the operation it performs will change similarly.
+
+The commence, pause, and play buttons are only accessible when _Jimulator_ is in certain states, and can be executed using the shortcut **F5**.
+
+#### Perform a single _Jimulator_ execution
+
+The single step execution button is only accessible when _Jimulator_ is in certain states, and can be executed using the shortcut **F6**.
+
+#### Halt program execution
+
+The halt execution button is only accessible when _Jimulator_ is in certain states, and can be executed using the shortcut **F1**.
+
+#### Reload the program
+
+The reload program button is only accessible when _Jimulator_ is in certain states, and can be executed using the shortcut **Ctrl+R**.
+
+#### Get help & about _KoMo2_
+
+The about button is accessible in all _Jimulator_ states, and can be executed using the shortcut **F12**.

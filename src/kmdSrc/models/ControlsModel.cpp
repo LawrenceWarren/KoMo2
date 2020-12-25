@@ -124,47 +124,43 @@ void ControlsModel::changeJimulatorState(JimulatorState newState) {
   switch (newState) {
     // some unloaded state
     case UNLOADED:
-      helpButton->set_sensitive(true);
-      reloadJimulatorButton->set_sensitive(false);
-      pauseResumeButton->set_sensitive(false);
-      singleStepExecuteButton->set_sensitive(false);
-      haltExecutionButton->set_sensitive(false);
-
-      pauseResumeButton->set_image(*new Gtk::Image("res/commenceSymbol.png"));
+      setButtonState(helpButton, true);
+      setButtonState(reloadJimulatorButton, false);
+      setButtonState(pauseResumeButton, false, "Commence execution (F5)",
+                     new Gtk::Image("res/commenceSymbol.png"));
+      setButtonState(singleStepExecuteButton, false);
+      setButtonState(haltExecutionButton, false);
       break;
 
     // loaded, not yet run state
     case LOADED:
-      helpButton->set_sensitive(true);
-      reloadJimulatorButton->set_sensitive(false);
-      pauseResumeButton->set_sensitive(true);
-      singleStepExecuteButton->set_sensitive(true);
-      haltExecutionButton->set_sensitive(false);
-
-      pauseResumeButton->set_image(*new Gtk::Image("res/commenceSymbol.png"));
+      setButtonState(helpButton, true);
+      setButtonState(reloadJimulatorButton, false);
+      setButtonState(pauseResumeButton, true, "Commence execution (F5)",
+                     new Gtk::Image("res/commenceSymbol.png"));
+      setButtonState(singleStepExecuteButton, true);
+      setButtonState(haltExecutionButton, false);
       break;
 
     // Currently running
     case RUNNING:
-      helpButton->set_sensitive(true);
-      reloadJimulatorButton->set_sensitive(false);
-      pauseResumeButton->set_sensitive(true);
-      singleStepExecuteButton->set_sensitive(false);
-      haltExecutionButton->set_sensitive(true);
-
-      pauseResumeButton->set_image(*new Gtk::Image("res/pauseSymbol.png"));
+      setButtonState(helpButton, true);
+      setButtonState(reloadJimulatorButton, false);
+      setButtonState(pauseResumeButton, true, "Pause execution (F5)",
+                     new Gtk::Image("res/pauseSymbol.png"));
+      setButtonState(singleStepExecuteButton, false);
+      setButtonState(haltExecutionButton, true);
       // Send some signal to Jimulator
       break;
 
     // Has been running; is paused
     case PAUSED:
-      helpButton->set_sensitive(true);
-      reloadJimulatorButton->set_sensitive(true);
-      pauseResumeButton->set_sensitive(true);
-      singleStepExecuteButton->set_sensitive(true);
-      haltExecutionButton->set_sensitive(true);
-
-      pauseResumeButton->set_image(*new Gtk::Image("res/playSymbol.png"));
+      setButtonState(helpButton, true);
+      setButtonState(reloadJimulatorButton, true);
+      setButtonState(pauseResumeButton, true, "Resume execution (F5)",
+                     new Gtk::Image("res/playSymbol.png"));
+      setButtonState(singleStepExecuteButton, true);
+      setButtonState(haltExecutionButton, true);
       // Send some signal to Jimulator
       break;
 

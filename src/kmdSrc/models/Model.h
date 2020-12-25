@@ -18,6 +18,11 @@
  * @copyright Copyright (c) 2020
  */
 
+#include <gtkmm.h>
+#include <gtkmm/button.h>
+#include <gtkmm/image.h>
+#include <string>
+
 /**
  * @brief Describe the 5 states of Jimulator
  */
@@ -41,6 +46,12 @@ class Model {
  public:
   Model(KoMo2Model* parent);
   friend class KoMo2Model;  // Only KoMo2Model can access setJimulatorState()
+
+ protected:
+  void setButtonState(Gtk::Button* button,
+                      bool state,
+                      std::string newText = "",
+                      Gtk::Image* img = nullptr);
 
   /**
    * @brief Changes the state of Jimulator into newState.

@@ -46,6 +46,8 @@ KoMo2Model::KoMo2Model(MainWindow* mainWindow, std::string argv0)
   getMainWindow()->setModel(this);
   getMainWindow()->setStyling();
 
+  // TODO: set some key-presses linked to buttons
+
   // Set the onClick events for the browse and compile and load buttons to
   // be wired to CompileLoadModel member functions.
   setButtonListener(getMainWindow()->getBrowseButton(), getCompileLoadModel(),

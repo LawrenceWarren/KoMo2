@@ -19,9 +19,48 @@
  */
 
 #include "Model.h"
+#include <gtkmm.h>
+#include <gtkmm/button.h>
+#include <gtkmm/image.h>
+#include <string>
 
 // Sets the static jimulatorState to its initial value
 JimulatorState Model::jimulatorState = INITIAL;
+
+/**
+ * @brief Constructs a new Model object - just assigns the parent variable.
+ * @param parent The parent pointer.
+ */
+Model::Model(KoMo2Model* parent) : parent(parent) {}
+
+/**
+ * @brief Sets the state of a button to some boolean - the assumption is that if
+ * a button is not meant to be sensitive (`get_sensitive() == false`) then it
+ * should also not have a tooltip or many other attributes.
+ * You can also optionally update the buttons image or tooltip text.
+ * @param button The button to set the attributes of.
+ * @param state What value to set the attributes to - specifically, if the
+ * button should be sensitive or display a tooltip.
+ * @param newText The new tooltip text to display.
+ * @param img The new image to display.
+ */
+void Model::setButtonState(Gtk::Button* button,
+                           bool state,
+                           std::string newText,
+                           Gtk::Image* img) {
+  button->set_sensitive(state);
+  button->set_has_tooltip(state);
+
+  if (newText != "") {
+    button->set_tooltip_text(newText);
+  }
+
+  if (img != nullptr) {
+    button->set_image(*img);
+  }
+}
+
+// ! Getters and setters
 
 /**
  * @brief Returns the parent pointer.
@@ -30,12 +69,6 @@ JimulatorState Model::jimulatorState = INITIAL;
 KoMo2Model* Model::getParent() {
   return parent;
 }
-
-/**
- * @brief Constructs a new Model object - just assigns the parent variable.
- * @param parent The parent pointer.
- */
-Model::Model(KoMo2Model* parent) : parent(parent) {}
 
 /**
  * @brief Return the jimulatorState member object.
