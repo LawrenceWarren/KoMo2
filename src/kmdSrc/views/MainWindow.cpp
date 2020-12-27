@@ -20,6 +20,7 @@
  */
 
 #include "MainWindow.h"
+#include <atkmm.h>
 #include <gdkmm/rgba.h>
 #include <gtkmm/cssprovider.h>
 #include <gtkmm/frame.h>
@@ -101,6 +102,13 @@ void MainWindow::initProgramControlsContainer() {
   helpButton.set_image_position(Gtk::POS_LEFT);
   helpButton.set_image(*new Gtk::Image("res/helpSymbol.png"));
   helpButton.set_tooltip_text("About KoMo2 (F12)");
+  // TODO: does this accessibility work?
+  helpButton.get_accessible()->set_name("Help Button");
+  helpButton.get_accessible()->set_description(
+      "This button will display a help window.");
+
+  // TODO: help button is focused by default. Stop that
+  // TODO: the focus outline shows up NO MATTER WHAT. stop that
 
   // Set the single step execution button image
   singleStepExecuteButton.set_image_position(Gtk::POS_LEFT);

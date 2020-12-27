@@ -82,7 +82,6 @@ int load(const char* pathToKMD) {
     misc_flush_symbol_table();
     status = readSource(pathToKMD);
 
-    // TODO: update views here - can use old_symbol_count
     load_lock = 0;
   }
 

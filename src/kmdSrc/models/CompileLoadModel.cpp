@@ -83,8 +83,11 @@ void CompileLoadModel::onCompileLoadClick() {
       return;
     }
 
+    // Perform the load
+    status = load(makeKmdPath(getAbsolutePathToSelectedFile()).c_str());
+
     // If load function failed
-    else if (load(makeKmdPath(getAbsolutePathToSelectedFile()).c_str())) {
+    if (status) {
       std::cout << "Error loading file into KoMo2" << std::endl;
       return;
     }
@@ -100,7 +103,7 @@ void CompileLoadModel::onCompileLoadClick() {
  */
 void CompileLoadModel::onBrowseClick() {
   // Creates a new file browser dialogue box.
-  Gtk::FileChooserDialog dialog("Please choose a file",
+  Gtk::FileChooserDialog dialog(" File explorer",
                                 Gtk::FILE_CHOOSER_ACTION_OPEN);
 
   // Add class for styling
@@ -138,6 +141,7 @@ void CompileLoadModel::handleResult(int result,
     case (Gtk::RESPONSE_OK): {
       setAbsolutePathToSelectedFile(dialog->get_filename());
       changeInnerState(FILE_SELECTED);
+      getParent()->changeJimulatorState(UNLOADED);
       break;
     }
     case (Gtk::RESPONSE_CANCEL): {
@@ -202,7 +206,7 @@ void CompileLoadModel::changeJimulatorState(JimulatorState newState) {
 
     // Error state
     default:
-      // TODO: Error
+      // TODO: Handle some error state gracefully
       break;
   }
 }

@@ -49,11 +49,9 @@ KoMo2Model::KoMo2Model(MainWindow* mainWindow, std::string argv0)
   getMainWindow()->setModel(this);
   getMainWindow()->setStyling();
 
+  // Sets key down events to fire on this handleKeyPress method
   getMainWindow()->signal_key_press_event().connect(
       sigc::mem_fun(*this, &KoMo2Model::handleKeyPress), false);
-
-  // TODO: set some key-presses linked to buttons
-  // https://developer.gnome.org/gtkmm-tutorial/stable/sec-keyboardevents-overview.html.en
 
   // Set the onClick events for the browse and compile and load buttons to
   // be wired to CompileLoadModel member functions.
@@ -188,6 +186,9 @@ void KoMo2Model::changeJimulatorState(JimulatorState newState) {
   if (getJimulatorState() == newState) {
     return;
   }
+
+  // TODO: if newState == LOADED, update views
+  // TODO: Updating views - KMD src, viewfuncs.c, function view_updatememwindow
 
   setJimulatorState(newState);
   compileLoadModel.changeJimulatorState(newState);

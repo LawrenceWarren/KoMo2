@@ -43,6 +43,9 @@
   box-shadow: inset 1px -1px 0px #3f454b, inset -1px 1px 0px #000000;
   color: #3f454b;
 }
+.compButtons:focus {
+  border-color: #258eb8;
+}
 
 /* ! For the control buttons */
 .controlButtons {
@@ -71,6 +74,9 @@
   background-image: image(#24292e);
   box-shadow: inset 1px -1px 0px #3f454b, inset -1px 1px 0px #000000;
   color: #3f454b;
+}
+.controlButtons:focus {
+  border-color: #258eb8;
 }
 
 /* ! For the containers */

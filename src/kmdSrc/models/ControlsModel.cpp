@@ -78,18 +78,15 @@ void ControlsModel::onPauseResumeClick() {
   switch (getJimulatorState()) {
     case RUNNING:
       getParent()->changeJimulatorState(PAUSED);
-      // TODO: handle some other stuff
       break;
     case PAUSED:
       getParent()->changeJimulatorState(RUNNING);
-      // TODO: handle some other stuff
       break;
     case LOADED:
       getParent()->changeJimulatorState(RUNNING);
-      // TODO: Handle some other stuff?
       break;
     default:
-      // TODO: error state
+      // TODO: Handle error state gracefully
       break;
   }
 }
@@ -164,7 +161,7 @@ void ControlsModel::changeJimulatorState(JimulatorState newState) {
 
     // Error state
     default:
-      // TODO: Error
+      // TODO: Handle the error state gracefully
       break;
   }
 }
