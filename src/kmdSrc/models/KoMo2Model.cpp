@@ -19,10 +19,9 @@
  */
 
 #include "KoMo2Model.h"
-#include <gtkmm.h>
-#include <gtkmm/entry.h>
 #include <iostream>
-#include "../views/MainWindow.h"
+#include "../views/MainWindowView.h"
+
 
 /**
  * @brief Construct a new KoMo2Model - this constructor initialises the
@@ -32,19 +31,14 @@
  * @param mainWindow A pointer to the mainWindow view object.
  * @param argv0 The absolutePathToProjectRoot - parsed from argv[0].
  */
-KoMo2Model::KoMo2Model(MainWindow* mainWindow, std::string argv0)
+KoMo2Model::KoMo2Model(MainWindowView* mainWindow, std::string argv0)
     : Model(this),
       mainWindow(mainWindow),
       absolutePathToProjectRoot(argv0),
       compileLoadModel(mainWindow->getCompileAndLoadButton(),
                        mainWindow->getBrowseButton(),
                        this),
-      controlsModel(mainWindow->getHelpButton(),
-                    mainWindow->getReloadJimulatorButton(),
-                    mainWindow->getPauseResumeButton(),
-                    mainWindow->getSingleStepExecuteButton(),
-                    mainWindow->getHaltExecutionButton(),
-                    this) {
+      controlsModel(mainWindow->getControlsView(), this) {
   // Updates the main window to have a pointer to its model, sets its CSS.
   getMainWindow()->setModel(this);
   getMainWindow()->setStyling();
@@ -61,22 +55,6 @@ KoMo2Model::KoMo2Model(MainWindow* mainWindow, std::string argv0)
   setButtonListener(getMainWindow()->getCompileAndLoadButton(),
                     getCompileLoadModel(),
                     &CompileLoadModel::onCompileLoadClick);
-
-  setButtonListener(getMainWindow()->getHelpButton(), getControlsModel(),
-                    &ControlsModel::onHelpClick);
-
-  setButtonListener(getMainWindow()->getPauseResumeButton(), getControlsModel(),
-                    &ControlsModel::onPauseResumeClick);
-
-  setButtonListener(getMainWindow()->getHaltExecutionButton(),
-                    getControlsModel(), &ControlsModel::onHaltExecutionClick);
-
-  setButtonListener(getMainWindow()->getReloadJimulatorButton(),
-                    getControlsModel(), &ControlsModel::onReloadJimulatorClick);
-
-  setButtonListener(getMainWindow()->getSingleStepExecuteButton(),
-                    getControlsModel(),
-                    &ControlsModel::onSingleStepExecuteClick);
 
   this->changeJimulatorState(UNLOADED);
 }
@@ -200,9 +178,9 @@ void KoMo2Model::changeJimulatorState(JimulatorState newState) {
 
 /**
  * @brief Gets the `mainWindow` member variable.
- * @return MainWindow* A pointer to the `MainWindow.`
+ * @return MainWindowView* A pointer to the `MainWindow.`
  */
-MainWindow* KoMo2Model::getMainWindow() {
+MainWindowView* KoMo2Model::getMainWindow() {
   return mainWindow;
 }
 /**

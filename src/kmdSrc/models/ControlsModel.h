@@ -20,6 +20,8 @@
 #include <gtkmm/button.h>
 #include "CompileLoadModel.h"
 
+class ControlsView;
+
 /**
  * @brief The class definition of the ControlsModel class, a data model which
  * encapsulates all state, data and functionality of the Jimulator controls of
@@ -29,12 +31,7 @@
  */
 class ControlsModel : private Model {
  public:
-  ControlsModel(Gtk::Button* helpButton,
-                Gtk::Button* reloadJimulatorButton,
-                Gtk::Button* pauseResumeButton,
-                Gtk::Button* singleStepExecuteButton,
-                Gtk::Button* haltExecutionButton,
-                KoMo2Model* parent);
+  ControlsModel(ControlsView* view, KoMo2Model* parent);
   ~ControlsModel();
 
   // Click handlers
@@ -47,28 +44,8 @@ class ControlsModel : private Model {
   void changeJimulatorState(JimulatorState newState);
 
  private:
-  /**
-   * @brief A pointer to the `helpButton` view.
-   */
-  Gtk::Button* helpButton;
+  template <class T1, class T2>
+  void setButtonListener(Gtk::Button* button, T1 b, T2 c);
 
-  /**
-   * @brief A pointer to the `reloadJimulatorButton` view.
-   */
-  Gtk::Button* reloadJimulatorButton;
-
-  /**
-   * @brief A pointer to the `pauseResumeButton` view.
-   */
-  Gtk::Button* pauseResumeButton;
-
-  /**
-   * @brief A pointer to the `singleStepButton` view.
-   */
-  Gtk::Button* singleStepExecuteButton;
-
-  /**
-   * @brief A pointer to the `haltExecuteButton` view.
-   */
-  Gtk::Button* haltExecutionButton;
+  ControlsView* view;
 };

@@ -1,8 +1,8 @@
 /**
- * @file MainWindow.h
+ * @file MainWindowView.h
  * @author Lawrence Warren (lawrencewarren2@gmail.com)
- * @brief A class declaration for the `MainWindow` class, which inherits from
- * `GTK::Window`.
+ * @brief A class declaration for the `MainWindowView` class, which inherits
+ * from `GTK::Window`.
  * @version 0.1
  * @date 2020-12-22
  * @section LICENSE
@@ -25,6 +25,7 @@
 #include <gtkmm/label.h>
 #include <gtkmm/window.h>
 #include <string>
+#include "ControlsView.h"
 
 class KoMo2Model;
 
@@ -34,11 +35,11 @@ class KoMo2Model;
  * child views, controllers, and a pointer to the master model, as keeping
  * with MVC.
  */
-class MainWindow : public Gtk::Window {
+class MainWindowView : public Gtk::Window {
  public:
   // Constructors
-  MainWindow(int x, int y);
-  virtual ~MainWindow();
+  MainWindowView(int x, int y);
+  virtual ~MainWindowView();
 
   // Getters and setters
   Gtk::Button* getCompileAndLoadButton();
@@ -48,15 +49,10 @@ class MainWindow : public Gtk::Window {
   Gtk::Label* getSelectedFileLabel();
   void setSelectedFileLabelText(std::string val);
   void setStyling();
-  Gtk::Button* getHelpButton();
-  Gtk::Button* getReloadJimulatorButton();
-  Gtk::Button* getPauseResumeButton();
-  Gtk::Button* getSingleStepExecuteButton();
-  Gtk::Button* getHaltExecutionButton();
+  ControlsView* getControlsView();
 
  private:
   void initSelectAndLoadContainer();
-  void initProgramControlsContainer();
   void setSizes(int x, int y);
 
   // ! Layouts
@@ -82,7 +78,7 @@ class MainWindow : public Gtk::Window {
   /**
    * @brief A box containing all of the programs running controls.
    */
-  Gtk::HButtonBox programControlsContainer;
+  ControlsView programControlsContainer;
 
   // ! Views
 
@@ -102,35 +98,6 @@ class MainWindow : public Gtk::Window {
    * @brief A button which allows you to browse the file system for .s files.
    */
   Gtk::Button browseButton;
-
-  /**
-   * @brief A button which, when clicked, opens up an about/help window.
-   */
-  Gtk::Button helpButton;
-
-  /**
-   * @brief A button which, when clicked, reloads the program into Jimulator
-   * again.
-   */
-  Gtk::Button reloadJimulatorButton;
-
-  /**
-   * @brief A button which, when clicked, toggles between playing and pausing
-   * the execution of Jimulator (i.e. if currently paused, play, and vice-versa)
-   */
-  Gtk::Button pauseResumeButton;
-
-  /**
-   * @brief A button which, when clicked, performs a single-step of execution IF
-   * Jimulator is already paused.
-   */
-  Gtk::Button singleStepExecuteButton;
-
-  /**
-   * @brief A button which, when clicked, halts the current execution of
-   * Jimulator.
-   */
-  Gtk::Button haltExecutionButton;
 
   // ! Other
 

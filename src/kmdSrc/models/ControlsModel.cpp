@@ -18,10 +18,9 @@
  * @copyright Copyright (c) 2020
  */
 
-#include <gtkmm.h>
-#include <gtkmm/image.h>
 #include <iostream>
 #include <string>
+#include "../views/ControlsView.h"
 #include "KoMo2Model.h"
 
 /**
@@ -33,23 +32,40 @@
  * @param haltExecutionButton A pointer to the haltExecutionButton.
  * @param parent A pointer to the parent model, KoMo2Model.
  */
-ControlsModel::ControlsModel(Gtk::Button* helpButton,
-                             Gtk::Button* reloadJimulatorButton,
-                             Gtk::Button* pauseResumeButton,
-                             Gtk::Button* singleStepExecuteButton,
-                             Gtk::Button* haltExecutionButton,
-                             KoMo2Model* parent)
-    : Model(parent),
-      helpButton(helpButton),
-      reloadJimulatorButton(reloadJimulatorButton),
-      pauseResumeButton(pauseResumeButton),
-      singleStepExecuteButton(singleStepExecuteButton),
-      haltExecutionButton(haltExecutionButton) {}
+ControlsModel::ControlsModel(ControlsView* view, KoMo2Model* parent)
+    : Model(parent), view(view) {
+  setButtonListener(view->getHelpButton(), this, &ControlsModel::onHelpClick);
+
+  setButtonListener(view->getPauseResumeButton(), this,
+                    &ControlsModel::onPauseResumeClick);
+
+  setButtonListener(view->getHaltExecutionButton(), this,
+                    &ControlsModel::onHaltExecutionClick);
+
+  setButtonListener(view->getReloadJimulatorButton(), this,
+                    &ControlsModel::onReloadJimulatorClick);
+
+  setButtonListener(view->getSingleStepExecuteButton(), this,
+                    &ControlsModel::onSingleStepExecuteClick);
+}
 
 /**
  * @brief Destroys a ControlModel object.
  */
 ControlsModel::~ControlsModel() {}
+
+/**
+ * @brief Connect any button to any member function of
+ * @tparam T1 A pointer type to some object of any type.
+ * @tparam T2 A pointer to a T1 member function.
+ * @param button A pointer to the button to set the `onClick` event for.
+ * @param b A pointer to some object.
+ * @param c A pointer to some member function of the b object.
+ */
+template <class T1, class T2>
+void ControlsModel::setButtonListener(Gtk::Button* button, T1 b, T2 c) {
+  button->signal_clicked().connect(sigc::mem_fun(*b, c));
+}
 
 /**
  * @brief Handles the `helpButton` click events.
@@ -119,43 +135,46 @@ void ControlsModel::changeJimulatorState(JimulatorState newState) {
   switch (newState) {
     // some unloaded state
     case UNLOADED:
-      setButtonState(helpButton, true);
-      setButtonState(reloadJimulatorButton, false);
-      setButtonState(pauseResumeButton, false, "Commence execution (F5)",
+      setButtonState(view->getHelpButton(), true);
+      setButtonState(view->getReloadJimulatorButton(), false);
+      setButtonState(view->getPauseResumeButton(), false,
+                     "Commence execution (F5)",
                      new Gtk::Image("res/commenceSymbol.png"));
-      setButtonState(singleStepExecuteButton, false);
-      setButtonState(haltExecutionButton, false);
+      setButtonState(view->getHaltExecutionButton(), false);
+      setButtonState(view->getSingleStepExecuteButton(), false);
       break;
 
     // loaded, not yet run state
     case LOADED:
-      setButtonState(helpButton, true);
-      setButtonState(reloadJimulatorButton, false);
-      setButtonState(pauseResumeButton, true, "Commence execution (F5)",
+      setButtonState(view->getHelpButton(), true);
+      setButtonState(view->getReloadJimulatorButton(), false);
+      setButtonState(view->getPauseResumeButton(), true,
+                     "Commence execution (F5)",
                      new Gtk::Image("res/commenceSymbol.png"));
-      setButtonState(singleStepExecuteButton, true);
-      setButtonState(haltExecutionButton, false);
+      setButtonState(view->getSingleStepExecuteButton(), true);
+      setButtonState(view->getHaltExecutionButton(), false);
       break;
 
     // Currently running
     case RUNNING:
-      setButtonState(helpButton, true);
-      setButtonState(reloadJimulatorButton, false);
-      setButtonState(pauseResumeButton, true, "Pause execution (F5)",
+      setButtonState(view->getHelpButton(), true);
+      setButtonState(view->getReloadJimulatorButton(), false);
+      setButtonState(view->getPauseResumeButton(), true, "Pause execution (F5)",
                      new Gtk::Image("res/pauseSymbol.png"));
-      setButtonState(singleStepExecuteButton, false);
-      setButtonState(haltExecutionButton, true);
+      setButtonState(view->getSingleStepExecuteButton(), false);
+      setButtonState(view->getHaltExecutionButton(), true);
       // Send some signal to Jimulator
       break;
 
     // Has been running; is paused
     case PAUSED:
-      setButtonState(helpButton, true);
-      setButtonState(reloadJimulatorButton, true);
-      setButtonState(pauseResumeButton, true, "Resume execution (F5)",
+      setButtonState(view->getHelpButton(), true);
+      setButtonState(view->getReloadJimulatorButton(), true);
+      setButtonState(view->getPauseResumeButton(), true,
+                     "Resume execution (F5)",
                      new Gtk::Image("res/playSymbol.png"));
-      setButtonState(singleStepExecuteButton, true);
-      setButtonState(haltExecutionButton, true);
+      setButtonState(view->getSingleStepExecuteButton(), true);
+      setButtonState(view->getHaltExecutionButton(), true);
       // Send some signal to Jimulator
       break;
 

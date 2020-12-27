@@ -19,7 +19,6 @@
  */
 
 #include "Model.h"
-#include <gtkmm.h>
 #include <gtkmm/button.h>
 #include <gtkmm/image.h>
 #include <string>

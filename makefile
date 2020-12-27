@@ -7,8 +7,8 @@ all: kmd aasm jimulator
 # ! as of 24/12/2020.
 # ! If any bugs are found, please attempt to compile with -O2 or -O1 and
 # ! recreate the bug, before assuming fault of the program
-kmd: src/kmdSrc/models/ControlsModel.cpp src/kmdSrc/compile.c src/kmdSrc/views/MainWindow.cpp src/kmdSrc/models/Model.cpp src/kmdSrc/models/CompileLoadModel.cpp src/kmdSrc/models/KoMo2Model.cpp src/kmdSrc/main.cpp 
-	g++ `pkg-config --cflags gtkmm-3.0` -o bin/kmd src/kmdSrc/compile.c src/kmdSrc/models/KoMo2Model.cpp  src/kmdSrc/models/CompileLoadModel.cpp src/kmdSrc/models/Model.cpp  src/kmdSrc/models/ControlsModel.cpp src/kmdSrc/views/MainWindow.cpp src/kmdSrc/main.cpp `pkg-config --libs gtkmm-3.0` -Wall -O3
+kmd: src/kmdSrc/views/ControlsView.cpp src/kmdSrc/models/ControlsModel.cpp src/kmdSrc/compile.c src/kmdSrc/views/MainWindowView.cpp src/kmdSrc/models/Model.cpp src/kmdSrc/models/CompileLoadModel.cpp src/kmdSrc/models/KoMo2Model.cpp src/kmdSrc/main.cpp 
+	g++ `pkg-config --cflags gtkmm-3.0` -o bin/kmd src/kmdSrc/views/ControlsView.cpp src/kmdSrc/compile.c src/kmdSrc/models/KoMo2Model.cpp  src/kmdSrc/models/CompileLoadModel.cpp src/kmdSrc/models/Model.cpp  src/kmdSrc/models/ControlsModel.cpp src/kmdSrc/views/MainWindowView.cpp src/kmdSrc/main.cpp `pkg-config --libs gtkmm-3.0` -Wall -O3
 
 # Compile the arm assember binary.
 aasm: src/aasmSrc/aasm.c

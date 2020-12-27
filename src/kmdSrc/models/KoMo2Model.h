@@ -17,10 +17,11 @@
  * @copyright Copyright (c) 2020
  */
 
-#include <gtkmm/entry.h>
 #include "ControlsModel.h"
 
-class MainWindow;
+class MainWindowView;
+class ControlsView;
+class CompileLoadView;
 
 /**
  * @brief The logical model of the entire application. All other models should
@@ -38,14 +39,12 @@ class MainWindow;
  */
 class KoMo2Model : private Model {
  private:
-  template <class T1, class T2>
-  void setButtonListener(Gtk::Button* button, T1 b, T2 c);
   bool handleKeyPress(GdkEventKey* e);
 
   /**
    * @brief A pointer to the main window view.
    */
-  MainWindow* mainWindow;
+  MainWindowView* mainWindow;
 
   /**
    * @brief The absolute path to the project root directory.
@@ -67,8 +66,11 @@ class KoMo2Model : private Model {
   ControlsModel controlsModel;
 
  public:
+  template <class T1, class T2>
+  void setButtonListener(Gtk::Button* button, T1 b, T2 c);
+
   // Constructors
-  KoMo2Model(MainWindow* mainWindow, std::string argv0);
+  KoMo2Model(MainWindowView* mainWindow, std::string argv0);
   ~KoMo2Model();
 
   // General functions
@@ -78,6 +80,6 @@ class KoMo2Model : private Model {
   // Getters & setters
   CompileLoadModel* getCompileLoadModel();
   ControlsModel* getControlsModel();
-  MainWindow* getMainWindow();
+  MainWindowView* getMainWindow();
   const std::string getAbsolutePathToProjectRoot();
 };

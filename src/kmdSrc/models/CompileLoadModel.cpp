@@ -18,16 +18,14 @@
  * @copyright Copyright (c) 2020
  */
 
-#include <gtkmm.h>
 #include <gtkmm/filechooserdialog.h>
-#include <stdio.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <iostream>
 #include <regex>
 #include <string>
 #include "../compile.h"
-#include "../views/MainWindow.h"
+#include "../views/MainWindowView.h"
 #include "KoMo2Model.h"
 
 /**
