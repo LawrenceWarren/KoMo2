@@ -170,8 +170,6 @@ std::string CompileLoadModel::makeKmdPath(std::string absolutePath) {
  * @param newState The state that has been changed into.
  */
 void CompileLoadModel::changeJimulatorState(JimulatorState newState) {
-  std::cout << "compile load state change!" << std::endl;
-
   // Sets the default button state for compileLoadButton
   if (getInnerState() == NO_FILE) {
     setButtonState(compileLoadButton, false);

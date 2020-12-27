@@ -50,8 +50,9 @@ class Model {
  protected:
   void setButtonState(Gtk::Button* button,
                       bool state,
-                      std::string newText = "",
-                      Gtk::Image* img = nullptr);
+                      std::string newTooltip = "",
+                      Gtk::Image* img = nullptr,
+                      std::string newLabelText = "");
 
   /**
    * @brief Changes the state of Jimulator into newState.

@@ -17,6 +17,7 @@
  * @copyright Copyright (c) 2020
  */
 
+#include <gtkmm/entry.h>
 #include "ControlsModel.h"
 
 class MainWindow;
@@ -39,6 +40,7 @@ class KoMo2Model : private Model {
  private:
   template <class T1, class T2>
   void setButtonListener(Gtk::Button* button, T1 b, T2 c);
+  bool handleKeyPress(GdkEventKey* e);
 
   /**
    * @brief A pointer to the main window view.

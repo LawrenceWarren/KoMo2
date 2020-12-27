@@ -39,7 +39,6 @@ class ControlsModel : private Model {
 
   // Click handlers
   void onHelpClick();
-  void onBeginRunJimulatorClick();
   void onReloadJimulatorClick();
   void onPauseResumeClick();
   void onSingleStepExecuteClick();

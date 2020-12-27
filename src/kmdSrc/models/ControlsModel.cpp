@@ -119,8 +119,6 @@ void ControlsModel::onHaltExecutionClick() {
  * @param newState The state to change into.
  */
 void ControlsModel::changeJimulatorState(JimulatorState newState) {
-  std::cout << "controls model state change!" << std::endl;
-
   switch (newState) {
     // some unloaded state
     case UNLOADED:

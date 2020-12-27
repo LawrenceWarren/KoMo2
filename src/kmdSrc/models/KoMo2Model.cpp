@@ -19,6 +19,9 @@
  */
 
 #include "KoMo2Model.h"
+#include <gtkmm.h>
+#include <gtkmm/entry.h>
+#include <iostream>
 #include "../views/MainWindow.h"
 
 /**
@@ -46,7 +49,11 @@ KoMo2Model::KoMo2Model(MainWindow* mainWindow, std::string argv0)
   getMainWindow()->setModel(this);
   getMainWindow()->setStyling();
 
+  getMainWindow()->signal_key_press_event().connect(
+      sigc::mem_fun(*this, &KoMo2Model::handleKeyPress), false);
+
   // TODO: set some key-presses linked to buttons
+  // https://developer.gnome.org/gtkmm-tutorial/stable/sec-keyboardevents-overview.html.en
 
   // Set the onClick events for the browse and compile and load buttons to
   // be wired to CompileLoadModel member functions.
@@ -82,8 +89,73 @@ KoMo2Model::KoMo2Model(MainWindow* mainWindow, std::string argv0)
 KoMo2Model::~KoMo2Model() {}
 
 /**
- * @brief Changes an existing image, `toChange,` to refer to a new image, and
- * deletes the old memory in the heap.
+ * @brief Handles any key press events.
+ * @param e The key press event.
+ * @return bool always false.
+ */
+bool KoMo2Model::handleKeyPress(GdkEventKey* e) {
+  switch (e->keyval) {
+    // Ctrl + (lower case l)
+    case 108:
+      if (e->state == 4 && getJimulatorState() != RUNNING) {
+        getCompileLoadModel()->onBrowseClick();
+      }
+      break;
+    // ctrl + (upper case L)
+    case 76:
+      if (e->state == 6 && getJimulatorState() != RUNNING) {
+        getCompileLoadModel()->onBrowseClick();
+      }
+      break;
+    // Ctrl + (lower case r)
+    case 114:
+      if (e->state == 4 &&
+          (getJimulatorState() != RUNNING &&
+           getCompileLoadModel()->getInnerState() != NO_FILE)) {
+        getCompileLoadModel()->onCompileLoadClick();
+      }
+      break;
+    // Ctrl + (upper case R)
+    case 82:
+      if (e->state == 6 &&
+          (getJimulatorState() != RUNNING &&
+           getCompileLoadModel()->getInnerState() != NO_FILE)) {
+        getCompileLoadModel()->onCompileLoadClick();
+      }
+      break;
+    // F5
+    case 65474:
+      if (getJimulatorState() != UNLOADED) {
+        getControlsModel()->onPauseResumeClick();
+      }
+      break;
+    // F6
+    case 65475:
+      if (getJimulatorState() == LOADED || getJimulatorState() == PAUSED) {
+        getControlsModel()->onSingleStepExecuteClick();
+      }
+      break;
+    // F1
+    case 65470:
+      if (getJimulatorState() == RUNNING || getJimulatorState() == PAUSED) {
+        getControlsModel()->onHaltExecutionClick();
+      }
+      break;
+    // F12
+    case 65481:
+      getControlsModel()->onHelpClick();
+      break;
+    // Otherwise
+    default:
+      break;
+  }
+
+  return false;
+}
+
+/**
+ * @brief Changes an existing image, `toChange,` to refer to a new image,
+ * and deletes the old memory in the heap.
  * @param toChange A pointer to the image that is to change.
  * @param newImg The new image to change to.
  */
