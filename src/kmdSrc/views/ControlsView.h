@@ -3,12 +3,12 @@
 #include <gtkmm/buttonbox.h>
 
 class MainWindowView;
-class ControlsViewModel;
+class ControlsModel;
 
 class ControlsView : public Gtk::HButtonBox {
  private:
   MainWindowView* parent;
-  ControlsViewModel* model;
+  ControlsModel* model;
 
   /**
    * @brief A button which, when clicked, opens up an about/help window.
@@ -51,5 +51,5 @@ class ControlsView : public Gtk::HButtonBox {
   Gtk::Button* getSingleStepExecuteButton();
   Gtk::Button* getHaltExecutionButton();
 
-  void setModel(ControlsViewModel* val);
+  void setModel(ControlsModel* val);
 };

@@ -22,6 +22,8 @@
 #include <string>
 #include "Model.h"
 
+class CompileLoadView;
+
 /**
  * @brief An enum indicating the state of the specific compile and load section
  * of the GUI - specifically, whether a file had been selected or not.
@@ -44,9 +46,7 @@ class CompileLoadModel : private Model {
   void changeInnerState(CompileLoadInnerState newState);
 
   // Constructors
-  CompileLoadModel(Gtk::Button* compileLoadButton,
-                   Gtk::Button* browseButton,
-                   KoMo2Model* parent);
+  CompileLoadModel(CompileLoadView* view, KoMo2Model* parent);
   ~CompileLoadModel();
 
   // Click handlers
@@ -60,6 +60,11 @@ class CompileLoadModel : private Model {
   std::string getAbsolutePathToSelectedFile();
 
  private:
+  template <class T1, class T2>
+  void setButtonListener(Gtk::Button* button, T1 b, T2 c);
+
+  CompileLoadView* view;
+
   /**
    * @brief Stores the state of the compile and load section of the GUI.
    */
@@ -70,18 +75,6 @@ class CompileLoadModel : private Model {
    * file, as chosen by the file browser component.
    */
   std::string absolutePathToSelectedFile;
-
-  /**
-   * @brief A pointer to the compile & load button, a controller which causes
-   * this model to perform some events.
-   */
-  Gtk::Button* compileLoadButton;
-
-  /**
-   * @brief A pointer to the browse button, a controller which causes this model
-   * to perform some event.
-   */
-  Gtk::Button* browseButton;
 
   // ! General functions
   std::string makeKmdPath(std::string absolutePath);

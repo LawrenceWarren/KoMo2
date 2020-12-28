@@ -47,6 +47,8 @@ ControlsModel::ControlsModel(ControlsView* view, KoMo2Model* parent)
 
   setButtonListener(view->getSingleStepExecuteButton(), this,
                     &ControlsModel::onSingleStepExecuteClick);
+
+  view->setModel(this);
 }
 
 /**

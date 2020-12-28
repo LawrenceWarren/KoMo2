@@ -25,6 +25,7 @@
 #include <gtkmm/label.h>
 #include <gtkmm/window.h>
 #include <string>
+#include "CompileLoadView.h"
 #include "ControlsView.h"
 
 class KoMo2Model;
@@ -42,17 +43,13 @@ class MainWindowView : public Gtk::Window {
   virtual ~MainWindowView();
 
   // Getters and setters
-  Gtk::Button* getCompileAndLoadButton();
-  Gtk::Button* getBrowseButton();
   void setModel(KoMo2Model* val);
   KoMo2Model* getModel();
-  Gtk::Label* getSelectedFileLabel();
-  void setSelectedFileLabelText(std::string val);
   void setStyling();
+  CompileLoadView* getCompileLoadView();
   ControlsView* getControlsView();
 
  private:
-  void initSelectAndLoadContainer();
   void setSizes(int x, int y);
 
   // ! Layouts
@@ -67,7 +64,7 @@ class MainWindowView : public Gtk::Window {
    * @brief A box containing the browse button, the compile and load button, and
    * the selected file label.
    */
-  Gtk::VButtonBox selectAndLoadContainer;
+  CompileLoadView selectAndLoadContainer;
 
   /**
    * @brief The layout for the top bar running along the screen. Contains the
@@ -79,25 +76,6 @@ class MainWindowView : public Gtk::Window {
    * @brief A box containing all of the programs running controls.
    */
   ControlsView programControlsContainer;
-
-  // ! Views
-
-  /**
-   * @brief A label which displays whatever file has been selected by the
-   * browse button, to be compiled & loaded.
-   */
-  Gtk::Label selectedFileLabel;
-
-  /**
-   * @brief A button which, when clicked, will read a .s file, compile it to
-   * .kmd, and the load it into Jimulator.
-   */
-  Gtk::Button compileAndLoadButton;
-
-  /**
-   * @brief A button which allows you to browse the file system for .s files.
-   */
-  Gtk::Button browseButton;
 
   // ! Other
 

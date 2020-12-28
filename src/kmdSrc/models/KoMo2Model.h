@@ -17,7 +17,9 @@
  * @copyright Copyright (c) 2020
  */
 
+#include <gtkmm/filechooserdialog.h>
 #include "ControlsModel.h"
+#include <string>
 
 class MainWindowView;
 class ControlsView;

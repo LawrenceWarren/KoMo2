@@ -72,7 +72,7 @@ void ControlsView::initProgramControlsContainer() {
   this->show();
 }
 
-void ControlsView::setModel(ControlsViewModel* val) {
+void ControlsView::setModel(ControlsModel* val) {
   model = val;
 }
 

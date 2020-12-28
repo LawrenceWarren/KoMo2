@@ -19,9 +19,10 @@
  */
 
 #include "KoMo2Model.h"
+
+#include <gtkmm/filechooserdialog.h>
 #include <iostream>
 #include "../views/MainWindowView.h"
-
 
 /**
  * @brief Construct a new KoMo2Model - this constructor initialises the
@@ -35,9 +36,7 @@ KoMo2Model::KoMo2Model(MainWindowView* mainWindow, std::string argv0)
     : Model(this),
       mainWindow(mainWindow),
       absolutePathToProjectRoot(argv0),
-      compileLoadModel(mainWindow->getCompileAndLoadButton(),
-                       mainWindow->getBrowseButton(),
-                       this),
+      compileLoadModel(mainWindow->getCompileLoadView(), this),
       controlsModel(mainWindow->getControlsView(), this) {
   // Updates the main window to have a pointer to its model, sets its CSS.
   getMainWindow()->setModel(this);
@@ -46,15 +45,6 @@ KoMo2Model::KoMo2Model(MainWindowView* mainWindow, std::string argv0)
   // Sets key down events to fire on this handleKeyPress method
   getMainWindow()->signal_key_press_event().connect(
       sigc::mem_fun(*this, &KoMo2Model::handleKeyPress), false);
-
-  // Set the onClick events for the browse and compile and load buttons to
-  // be wired to CompileLoadModel member functions.
-  setButtonListener(getMainWindow()->getBrowseButton(), getCompileLoadModel(),
-                    &CompileLoadModel::onBrowseClick);
-
-  setButtonListener(getMainWindow()->getCompileAndLoadButton(),
-                    getCompileLoadModel(),
-                    &CompileLoadModel::onCompileLoadClick);
 
   this->changeJimulatorState(UNLOADED);
 }

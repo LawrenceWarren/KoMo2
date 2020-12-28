@@ -35,12 +35,17 @@
  * @param browseButton a pointer to the browseButton.
  * @param parent a pointer to the parent KoMo2Model.
  */
-CompileLoadModel::CompileLoadModel(Gtk::Button* compileLoadButton,
-                                   Gtk::Button* browseButton,
-                                   KoMo2Model* parent)
-    : Model(parent),
-      compileLoadButton(compileLoadButton),
-      browseButton(browseButton) {
+CompileLoadModel::CompileLoadModel(CompileLoadView* view, KoMo2Model* parent)
+    : Model(parent), view(view) {
+  // Set the onClick events for the browse and compile and load buttons to
+  // be wired to CompileLoadModel member functions.
+  setButtonListener(view->getBrowseButton(), this,
+                    &CompileLoadModel::onBrowseClick);
+
+  setButtonListener(view->getCompileAndLoadButton(), this,
+                    &CompileLoadModel::onCompileLoadClick);
+
+  view->setModel(this);
   changeInnerState(NO_FILE);
 }
 
@@ -48,6 +53,19 @@ CompileLoadModel::CompileLoadModel(Gtk::Button* compileLoadButton,
  * @brief Destroys a CompileLoadModel.
  */
 CompileLoadModel::~CompileLoadModel() {}
+
+/**
+ * @brief Connect any button to any member function of
+ * @tparam T1 A pointer type to some object of any type.
+ * @tparam T2 A pointer to a T1 member function.
+ * @param button A pointer to the button to set the `onClick` event for.
+ * @param b A pointer to some object.
+ * @param c A pointer to some member function of the b object.
+ */
+template <class T1, class T2>
+void CompileLoadModel::setButtonListener(Gtk::Button* button, T1 b, T2 c) {
+  button->signal_clicked().connect(sigc::mem_fun(*b, c));
+}
 
 /**
  * @brief Compiles a `.s` file into a `.kmd` file:
@@ -174,32 +192,32 @@ std::string CompileLoadModel::makeKmdPath(std::string absolutePath) {
 void CompileLoadModel::changeJimulatorState(JimulatorState newState) {
   // Sets the default button state for compileLoadButton
   if (getInnerState() == NO_FILE) {
-    setButtonState(compileLoadButton, false);
+    setButtonState(view->getCompileAndLoadButton(), false);
   } else {
-    setButtonState(compileLoadButton, true);
+    setButtonState(view->getCompileAndLoadButton(), true);
   }
 
   // Sets the state of the browseButton
   switch (newState) {
     // some unloaded state
     case UNLOADED:
-      setButtonState(browseButton, true);
+      setButtonState(view->getBrowseButton(), true);
       break;
 
     // loaded, not yet run state
     case LOADED:
-      setButtonState(browseButton, true);
+      setButtonState(view->getBrowseButton(), true);
       break;
 
     // Currently running
     case RUNNING:
-      setButtonState(browseButton, false);
-      setButtonState(compileLoadButton, false);
+      setButtonState(view->getBrowseButton(), false);
+      setButtonState(view->getCompileAndLoadButton(), false);
       break;
 
     // Has been running; is paused
     case PAUSED:
-      setButtonState(browseButton, true);
+      setButtonState(view->getBrowseButton(), true);
       break;
 
     // Error state
@@ -222,17 +240,17 @@ void CompileLoadModel::changeInnerState(CompileLoadInnerState val) {
       regex_replace(getAbsolutePathToSelectedFile(), std::regex("(.*\\/)"), "");
 
   // Sets the label text to the filename
-  getParent()->getMainWindow()->setSelectedFileLabelText("File: " + filename);
+  view->setSelectedFileLabelText("File: " + filename);
 
   setInnerState(val);
 
   switch (val) {
     case FILE_SELECTED:
-      setButtonState(compileLoadButton, true);
+      setButtonState(view->getCompileAndLoadButton(), true);
       getParent()->getMainWindow()->set_title(" KoMo2 - " + filename);
       break;
     case NO_FILE:
-      setButtonState(compileLoadButton, false);
+      setButtonState(view->getCompileAndLoadButton(), false);
       getParent()->getMainWindow()->set_title(" KoMo2");
       break;
     default:

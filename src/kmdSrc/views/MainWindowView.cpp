@@ -34,17 +34,13 @@
  */
 MainWindowView::MainWindowView(int x, int y)
     : masterLayout(),
-      selectAndLoadContainer(),
       controlsAndCompileBar(),
-      programControlsContainer(this),
-      selectedFileLabel("File: "),
-      compileAndLoadButton("Compile & Load"),
-      browseButton("Select File") {
+      selectAndLoadContainer(this),
+      programControlsContainer(this) {
   set_border_width(4);
   set_default_size(x, y);  // ~16:9 ration
 
   setSizes(x, y);
-  initSelectAndLoadContainer();
 
   controlsAndCompileBar.set_layout(Gtk::BUTTONBOX_EDGE);
   controlsAndCompileBar.pack_end(programControlsContainer, false, false);
@@ -64,33 +60,11 @@ MainWindowView::MainWindowView(int x, int y)
 MainWindowView::~MainWindowView() {}
 
 /**
- * @brief Packs children into the selectAndLoadContainer, and sets the layouts
- * and size of it.
- */
-void MainWindowView::initSelectAndLoadContainer() {
-  browseButton.set_tooltip_text("Browse for an ARM assembly file (CTRL+L)");
-  compileAndLoadButton.set_tooltip_text(
-      "Compile and load your file into Jimulator (CTRL+R)");
-
-  selectAndLoadContainer.set_layout(Gtk::BUTTONBOX_END);
-  selectAndLoadContainer.pack_end(*getBrowseButton(), false, false);
-  selectAndLoadContainer.pack_end(*getSelectedFileLabel(), false, false);
-  selectAndLoadContainer.pack_end(*getCompileAndLoadButton(), false, false);
-  selectAndLoadContainer.show_all_children();
-  selectAndLoadContainer.show();
-}
-
-/**
  * @brief Set the sizes of all views.
  * @param x The width of the window.
  * @param y The height of the window.
  */
 void MainWindowView::setSizes(int x, int y) {
-  // button sizes
-  browseButton.set_size_request(100, 33);
-  compileAndLoadButton.set_size_request(100, 33);
-  selectedFileLabel.set_size_request(100, 33);
-
   // Layout sizes
   masterLayout.set_size_request(x, y);
   controlsAndCompileBar.set_size_request(x, 100);
@@ -122,22 +96,16 @@ void MainWindowView::setStyling() {
   controlsAndCompileBar.get_style_context()->add_class("layouts");
   selectAndLoadContainer.get_style_context()->add_class("layouts");
 
-  // Adds a CSS class for the compiler buttons
-  compileAndLoadButton.get_style_context()->add_class("compButtons");
-  browseButton.get_style_context()->add_class("compButtons");
-
-  // Adds a CSS class for the label
-  selectedFileLabel.get_style_context()->add_class("fileLabel");
-
-  // Adds a CSS class for the container
-  selectAndLoadContainer.get_style_context()->add_class("selectLoadContainer");
-
   // ! Add the CSS to the screen
   ctx->add_provider_for_screen(Gdk::Screen::get_default(), css,
                                GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
 
 // ! Getters and setters.
+
+CompileLoadView* MainWindowView::getCompileLoadView() {
+  return &selectAndLoadContainer;
+}
 
 ControlsView* MainWindowView::getControlsView() {
   return &programControlsContainer;
@@ -156,33 +124,4 @@ KoMo2Model* MainWindowView::getModel() {
  */
 void MainWindowView::setModel(KoMo2Model* val) {
   model = val;
-}
-/**
- * @brief Gets the `compileAndLoadButton` member variable.
- * @return Gtk::Button* A pointer to the `compileAndLoadButton` member
- * variable.
- */
-Gtk::Button* MainWindowView::getCompileAndLoadButton() {
-  return &compileAndLoadButton;
-}
-/**
- * @brief Gets the `browseButton` member variable.
- * @return Gtk::Button* A pointer to the `browseButton` member variable.
- */
-Gtk::Button* MainWindowView::getBrowseButton() {
-  return &browseButton;
-}
-/**
- * @brief Gets the `selectedFileLabel` member variable.
- * @return Gtk::Label* A pointer to the `selectedFileLabel` member variable.
- */
-Gtk::Label* MainWindowView::getSelectedFileLabel() {
-  return &selectedFileLabel;
-}
-/**
- * @brief Sets the text displayed by the `selectedFileLabel` member variable.
- * @param val The text to display in the `selectedFileLabel`.
- */
-void MainWindowView::setSelectedFileLabelText(std::string val) {
-  getSelectedFileLabel()->set_text(val);
 }
