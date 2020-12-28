@@ -14,7 +14,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details at
  * https://www.gnu.org/copyleft/gpl.html
- * @copyright Copyright (c) 2020
  */
 
 #include <gtkmm/button.h>
@@ -31,8 +30,21 @@ class ControlsView;
  */
 class ControlsModel : private Model {
  public:
+  // Constructors
   ControlsModel(ControlsView* view, KoMo2Model* parent);
   ~ControlsModel();
+
+  // Key handler
+  bool handleKeyPress(GdkEventKey* e);
+
+  // General functions
+  void changeJimulatorState(JimulatorState newState);
+
+ private:
+  /**
+   * @brief A pointer to the view which this model represents.
+   */
+  ControlsView* view;
 
   // Click handlers
   void onHelpClick();
@@ -40,12 +52,4 @@ class ControlsModel : private Model {
   void onPauseResumeClick();
   void onSingleStepExecuteClick();
   void onHaltExecutionClick();
-
-  void changeJimulatorState(JimulatorState newState);
-
- private:
-  template <class T1, class T2>
-  void setButtonListener(Gtk::Button* button, T1 b, T2 c);
-
-  ControlsView* view;
 };

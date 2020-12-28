@@ -10,12 +10,13 @@
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 3 of
  * the License, or (at your option) any later version.
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details at
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * See the GNU General Public License for more details at
  * https://www.gnu.org/copyleft/gpl.html
- * @copyright Copyright (c) 2020
  */
 
 #include <gtkmm/filechooserdialog.h>
@@ -53,19 +54,6 @@ CompileLoadModel::CompileLoadModel(CompileLoadView* view, KoMo2Model* parent)
  * @brief Destroys a CompileLoadModel.
  */
 CompileLoadModel::~CompileLoadModel() {}
-
-/**
- * @brief Connect any button to any member function of
- * @tparam T1 A pointer type to some object of any type.
- * @tparam T2 A pointer to a T1 member function.
- * @param button A pointer to the button to set the `onClick` event for.
- * @param b A pointer to some object.
- * @param c A pointer to some member function of the b object.
- */
-template <class T1, class T2>
-void CompileLoadModel::setButtonListener(Gtk::Button* button, T1 b, T2 c) {
-  button->signal_clicked().connect(sigc::mem_fun(*b, c));
-}
 
 /**
  * @brief Compiles a `.s` file into a `.kmd` file:
@@ -109,6 +97,8 @@ void CompileLoadModel::onCompileLoadClick() {
     }
 
     std::cout << "File loaded!" << std::endl;
+
+    // ! Update the overall program state
     getParent()->changeJimulatorState(LOADED);
   }
 }
@@ -154,19 +144,21 @@ void CompileLoadModel::onBrowseClick() {
 void CompileLoadModel::handleResult(int result,
                                     Gtk::FileChooserDialog* dialog) {
   switch (result) {
+    // A file was selected - update inner state and overall state
     case (Gtk::RESPONSE_OK): {
       setAbsolutePathToSelectedFile(dialog->get_filename());
       changeInnerState(FILE_SELECTED);
       getParent()->changeJimulatorState(UNLOADED);
       break;
     }
+    // Dialog was cancelled - update inner state but not overall state
     case (Gtk::RESPONSE_CANCEL): {
       setAbsolutePathToSelectedFile("");
       changeInnerState(NO_FILE);
       break;
     }
     default: {
-      // Some unexpected behaviour
+      // Some unexpected behaviour - update inner state but not overall state
       setAbsolutePathToSelectedFile("");
       changeInnerState(NO_FILE);
       break;
@@ -207,6 +199,7 @@ void CompileLoadModel::changeJimulatorState(JimulatorState newState) {
     // loaded, not yet run state
     case LOADED:
       setButtonState(view->getBrowseButton(), true);
+      setButtonState(view->getCompileAndLoadButton(), false);
       break;
 
     // Currently running
@@ -228,6 +221,47 @@ void CompileLoadModel::changeJimulatorState(JimulatorState newState) {
 }
 
 /**
+ * @brief Handles a key press event for this model.
+ * @param e The key press event in question.
+ * @return bool was the key pressed or not?
+ */
+bool CompileLoadModel::handleKeyPress(GdkEventKey* e) {
+  switch (e->keyval) {
+    // Ctrl + (lower case l)
+    case 108:
+      if (e->state == 4 && getJimulatorState() != RUNNING) {
+        onBrowseClick();
+      }
+      return true;
+    // ctrl + (upper case L)
+    case 76:
+      if (e->state == 6 && getJimulatorState() != RUNNING) {
+        onBrowseClick();
+      }
+      return true;
+    // Ctrl + (lower case r)
+    case 114:
+      if (e->state == 4 &&
+          (getJimulatorState() != RUNNING && getInnerState() != NO_FILE)) {
+        onCompileLoadClick();
+      }
+      return true;
+    // Ctrl + (upper case R)
+    case 82:
+      if (e->state == 6 &&
+          (getJimulatorState() != RUNNING && getInnerState() != NO_FILE)) {
+        onCompileLoadClick();
+      }
+      return true;
+      // NOTHING
+    default:
+      return false;
+  }
+
+  return false;
+}
+
+/**
  * @brief Handles changing the inner state of this model (whether a file is
  * selected or not)
  * @param val The value to set the inner state to.
@@ -242,7 +276,7 @@ void CompileLoadModel::changeInnerState(CompileLoadInnerState val) {
   // Sets the label text to the filename
   view->setSelectedFileLabelText("File: " + filename);
 
-  setInnerState(val);
+  innerState = val;
 
   switch (val) {
     case FILE_SELECTED:
@@ -281,11 +315,4 @@ std::string CompileLoadModel::getAbsolutePathToSelectedFile() {
  */
 CompileLoadInnerState CompileLoadModel::getInnerState() {
   return innerState;
-}
-/**
- * @brief Set the Inner State object
- * @param val
- */
-void CompileLoadModel::setInnerState(CompileLoadInnerState val) {
-  innerState = val;
 }

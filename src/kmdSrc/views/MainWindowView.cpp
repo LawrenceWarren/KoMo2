@@ -4,19 +4,19 @@
  * @brief Definitions of the functions declared in the class definition, found
  * at `MainWindowView.h`.
  * @version 0.1
- * @date 2020-12-22
+ * @date 2020-12-28
  * @section LICENSE
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 3 of
  * the License, or (at your option) any later version.
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details at
- * https://www.gnu.org/copyleft/gpl.html
- * @copyright Copyright (c) 2020
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
+ * See the GNU General Public License for more details at
+ * https://www.gnu.org/copyleft/gpl.html
  */
 
 #include "MainWindowView.h"
@@ -34,14 +34,14 @@
  */
 MainWindowView::MainWindowView(int x, int y)
     : masterLayout(),
-      controlsAndCompileBar(),
       selectAndLoadContainer(this),
+      controlsAndCompileBar(),
       programControlsContainer(this) {
   set_border_width(4);
-  set_default_size(x, y);  // ~16:9 ration
-
   setSizes(x, y);
 
+  // Packs the programControlContainer and the selectAndLoadContainer next to
+  // each other in a parent view.
   controlsAndCompileBar.set_layout(Gtk::BUTTONBOX_EDGE);
   controlsAndCompileBar.pack_end(programControlsContainer, false, false);
   controlsAndCompileBar.pack_end(selectAndLoadContainer, false, false);
@@ -65,6 +65,8 @@ MainWindowView::~MainWindowView() {}
  * @param y The height of the window.
  */
 void MainWindowView::setSizes(int x, int y) {
+  set_default_size(x, y);  // ~16:9 ration
+
   // Layout sizes
   masterLayout.set_size_request(x, y);
   controlsAndCompileBar.set_size_request(x, 100);
@@ -103,14 +105,20 @@ void MainWindowView::setStyling() {
 
 // ! Getters and setters.
 
+/**
+ * @brief Get the CompileLoadView.
+ * @return CompileLoadView* A pointer to the compileLoadView.
+ */
 CompileLoadView* MainWindowView::getCompileLoadView() {
   return &selectAndLoadContainer;
 }
-
+/**
+ * @brief Get the ControlsView.
+ * @return ControlsView* A pointer to the controlsView.
+ */
 ControlsView* MainWindowView::getControlsView() {
   return &programControlsContainer;
 }
-
 /**
  * @brief Gets the `model` member variable.
  * @return KoMo2Model* A pointer to the `model` member variable.

@@ -4,18 +4,19 @@
  * @brief Definitions of the functions declared in the class declaration, found
  * in the file `ControlsModel.h`.
  * @version 0.1
- * @date 2020-12-22
+ * @date 2020-12-28
  * @section LICENSE
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 3 of
  * the License, or (at your option) any later version.
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details at
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * See the GNU General Public License for more details at
  * https://www.gnu.org/copyleft/gpl.html
- * @copyright Copyright (c) 2020
  */
 
 #include <iostream>
@@ -57,16 +58,44 @@ ControlsModel::ControlsModel(ControlsView* view, KoMo2Model* parent)
 ControlsModel::~ControlsModel() {}
 
 /**
- * @brief Connect any button to any member function of
- * @tparam T1 A pointer type to some object of any type.
- * @tparam T2 A pointer to a T1 member function.
- * @param button A pointer to the button to set the `onClick` event for.
- * @param b A pointer to some object.
- * @param c A pointer to some member function of the b object.
+ * @brief Handles a key press event pertaining to this model.
+ * @param e The key press event.
+ * @return bool Was a key pressed or not?
  */
-template <class T1, class T2>
-void ControlsModel::setButtonListener(Gtk::Button* button, T1 b, T2 c) {
-  button->signal_clicked().connect(sigc::mem_fun(*b, c));
+bool ControlsModel::handleKeyPress(GdkEventKey* e) {
+  switch (e->keyval) {
+    // F5
+    case 65474:
+      if (getJimulatorState() != UNLOADED) {
+        onPauseResumeClick();
+      }
+      return true;
+
+    // F6
+    case 65475:
+      if (getJimulatorState() == LOADED || getJimulatorState() == PAUSED) {
+        onSingleStepExecuteClick();
+      }
+      return true;
+
+    // F1
+    case 65470:
+      onHelpClick();
+      return true;
+
+    // F12
+    case 65481:
+      if (getJimulatorState() == RUNNING || getJimulatorState() == PAUSED) {
+        onHaltExecutionClick();
+      }
+      return true;
+
+    // Otherwise
+    default:
+      return false;
+  }
+
+  return false;
 }
 
 /**

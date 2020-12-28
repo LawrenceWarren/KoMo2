@@ -9,12 +9,13 @@
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 3 of
  * the License, or (at your option) any later version.
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details at
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * See the GNU General Public License for more details at
  * https://www.gnu.org/copyleft/gpl.html
- * @copyright Copyright (c) 2020
  */
 
 #include <gtkmm/button.h>
@@ -42,27 +43,20 @@ enum CompileLoadInnerState {
  */
 class CompileLoadModel : private Model {
  public:
-  void changeJimulatorState(JimulatorState newState);
-  void changeInnerState(CompileLoadInnerState newState);
-
   // Constructors
   CompileLoadModel(CompileLoadView* view, KoMo2Model* parent);
   ~CompileLoadModel();
 
-  // Click handlers
-  void onCompileLoadClick();
-  void onBrowseClick();
+  // General functions
+  void changeJimulatorState(JimulatorState newState);
 
-  // Getters and setters
-  void setInnerState(CompileLoadInnerState val);
-  CompileLoadInnerState getInnerState();
-  void setAbsolutePathToSelectedFile(std::string val);
-  std::string getAbsolutePathToSelectedFile();
+  // Key press handler
+  bool handleKeyPress(GdkEventKey* e);
 
  private:
-  template <class T1, class T2>
-  void setButtonListener(Gtk::Button* button, T1 b, T2 c);
-
+  /**
+   * @brief A pointer to the view that this model represents.
+   */
   CompileLoadView* view;
 
   /**
@@ -76,7 +70,17 @@ class CompileLoadModel : private Model {
    */
   std::string absolutePathToSelectedFile;
 
-  // ! General functions
+  // Click handlers
+  void onCompileLoadClick();
+  void onBrowseClick();
+
+  // Getters and setters
+  CompileLoadInnerState getInnerState();
+  std::string getAbsolutePathToSelectedFile();
+  void setAbsolutePathToSelectedFile(std::string val);
+  void changeInnerState(CompileLoadInnerState newState);
+
+  // General functions
   std::string makeKmdPath(std::string absolutePath);
   void handleResult(int result, Gtk::FileChooserDialog* dialog);
 };

@@ -1,3 +1,22 @@
+/**
+ * @file ControlsView.h
+ * @author Lawrence Warren (lawrencewarren@gmail.com)
+ * @brief A definition of the class `ControlsView`.
+ * @version 0.1
+ * @date 2020-12-28
+ * @section LICENSE
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 3 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * See the GNU General Public License for more details at
+ * https://www.gnu.org/copyleft/gpl.html
+ */
 
 #include <gtkmm/button.h>
 #include <gtkmm/buttonbox.h>
@@ -5,9 +24,24 @@
 class MainWindowView;
 class ControlsModel;
 
+// TODO: define a abstract View.h class
+
+/**
+ * @brief `ControlsView` is the visual aspect of the controls that run along the
+ * top of the KoMo2 GUI. This class contains information and functionality
+ * relating to the getting and setting of visual information, such as the layout
+ * and styling. Little or no logic or data is kept in this class.
+ */
 class ControlsView : public Gtk::HButtonBox {
  private:
+  /**
+   * @brief A pointer to the parent view.
+   */
   MainWindowView* parent;
+
+  /**
+   * @brief A pointer to the related model.
+   */
   ControlsModel* model;
 
   /**
@@ -40,16 +74,19 @@ class ControlsView : public Gtk::HButtonBox {
    */
   Gtk::Button haltExecutionButton;
 
- public:
+  // General functions
   void initProgramControlsContainer();
+
+ public:
+  // Constructors and destructors
   ControlsView(MainWindowView* parent);
   ~ControlsView();
 
+  // Getters and setters
   Gtk::Button* getHelpButton();
   Gtk::Button* getReloadJimulatorButton();
   Gtk::Button* getPauseResumeButton();
   Gtk::Button* getSingleStepExecuteButton();
   Gtk::Button* getHaltExecutionButton();
-
   void setModel(ControlsModel* val);
 };

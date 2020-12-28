@@ -3,19 +3,20 @@
  * @author Lawrence Warren (lawrencewarren2@gmail.com)
  * @brief A file containing the declaration of the class `Model` and the
  * enumerable type `JimulatorState`.
- * @version 0.1
- * @date 2020-12-23
+ * @version 0.2
+ * @date 2020-12-28
  * @section LICENSE
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 3 of
  * the License, or (at your option) any later version.
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details at
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * See the GNU General Public License for more details at
  * https://www.gnu.org/copyleft/gpl.html
- * @copyright Copyright (c) 2020
  */
 
 #include <gtkmm.h>
@@ -48,11 +49,31 @@ class Model {
   friend class KoMo2Model;  // Only KoMo2Model can access setJimulatorState()
 
  protected:
+  /**
+   * @brief Connect any button to any member function of
+   * @tparam T1 A pointer type to some object of any type.
+   * @tparam T2 A pointer to a T1 member function.
+   * @param button A pointer to the button to set the `onClick` event for.
+   * @param b A pointer to some object.
+   * @param c A pointer to some member function of the b object.
+   */
+  template <class T1, class T2>
+  void setButtonListener(Gtk::Button* button, T1 b, T2 c) {
+    button->signal_clicked().connect(sigc::mem_fun(*b, c));
+  }
+
   void setButtonState(Gtk::Button* button,
                       bool state,
                       std::string newTooltip = "",
                       Gtk::Image* img = nullptr,
                       std::string newLabelText = "");
+
+  /**
+   * @brief Handles key presses for each model.
+   * @param e The key press event.
+   * @return bool If a key pressed.
+   */
+  virtual bool handleKeyPress(GdkEventKey* e) = 0;
 
   /**
    * @brief Changes the state of Jimulator into newState.

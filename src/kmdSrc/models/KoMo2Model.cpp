@@ -10,16 +10,16 @@
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 3 of
  * the License, or (at your option) any later version.
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details at
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * See the GNU General Public License for more details at
  * https://www.gnu.org/copyleft/gpl.html
- * @copyright Copyright (c) 2020
  */
 
 #include "KoMo2Model.h"
-
 #include <gtkmm/filechooserdialog.h>
 #include <iostream>
 #include "../views/MainWindowView.h"
@@ -44,7 +44,7 @@ KoMo2Model::KoMo2Model(MainWindowView* mainWindow, std::string argv0)
 
   // Sets key down events to fire on this handleKeyPress method
   getMainWindow()->signal_key_press_event().connect(
-      sigc::mem_fun(*this, &KoMo2Model::handleKeyPress), false);
+      sigc::mem_fun(*this, &Model::handleKeyPress), false);
 
   this->changeJimulatorState(UNLOADED);
 }
@@ -55,93 +55,18 @@ KoMo2Model::KoMo2Model(MainWindowView* mainWindow, std::string argv0)
 KoMo2Model::~KoMo2Model() {}
 
 /**
- * @brief Handles any key press events.
+ * @brief Passes the key press event off to other
  * @param e The key press event.
- * @return bool always false.
+ * @return bool if a key was pressed.
  */
 bool KoMo2Model::handleKeyPress(GdkEventKey* e) {
-  switch (e->keyval) {
-    // Ctrl + (lower case l)
-    case 108:
-      if (e->state == 4 && getJimulatorState() != RUNNING) {
-        getCompileLoadModel()->onBrowseClick();
-      }
-      break;
-    // ctrl + (upper case L)
-    case 76:
-      if (e->state == 6 && getJimulatorState() != RUNNING) {
-        getCompileLoadModel()->onBrowseClick();
-      }
-      break;
-    // Ctrl + (lower case r)
-    case 114:
-      if (e->state == 4 &&
-          (getJimulatorState() != RUNNING &&
-           getCompileLoadModel()->getInnerState() != NO_FILE)) {
-        getCompileLoadModel()->onCompileLoadClick();
-      }
-      break;
-    // Ctrl + (upper case R)
-    case 82:
-      if (e->state == 6 &&
-          (getJimulatorState() != RUNNING &&
-           getCompileLoadModel()->getInnerState() != NO_FILE)) {
-        getCompileLoadModel()->onCompileLoadClick();
-      }
-      break;
-    // F5
-    case 65474:
-      if (getJimulatorState() != UNLOADED) {
-        getControlsModel()->onPauseResumeClick();
-      }
-      break;
-    // F6
-    case 65475:
-      if (getJimulatorState() == LOADED || getJimulatorState() == PAUSED) {
-        getControlsModel()->onSingleStepExecuteClick();
-      }
-      break;
-    // F1
-    case 65470:
-      if (getJimulatorState() == RUNNING || getJimulatorState() == PAUSED) {
-        getControlsModel()->onHaltExecutionClick();
-      }
-      break;
-    // F12
-    case 65481:
-      getControlsModel()->onHelpClick();
-      break;
-    // Otherwise
-    default:
-      break;
+  if (getCompileLoadModel()->handleKeyPress(e)) {
+    return true;
+  } else if (getControlsModel()->handleKeyPress(e)) {
+    return true;
   }
 
   return false;
-}
-
-/**
- * @brief Changes an existing image, `toChange,` to refer to a new image,
- * and deletes the old memory in the heap.
- * @param toChange A pointer to the image that is to change.
- * @param newImg The new image to change to.
- */
-void KoMo2Model::changeImage(Gtk::Image* toChange, Gtk::Image* newImg) {
-  Gtk::Image* temp = toChange;
-  toChange = newImg;
-  delete (temp);
-}
-
-/**
- * @brief Connect any button to any member function of
- * @tparam T1 A pointer type to some object of any type.
- * @tparam T2 A pointer to a T1 member function.
- * @param button A pointer to the button to set the `onClick` event for.
- * @param b A pointer to some object.
- * @param c A pointer to some member function of the b object.
- */
-template <class T1, class T2>
-void KoMo2Model::setButtonListener(Gtk::Button* button, T1 b, T2 c) {
-  button->signal_clicked().connect(sigc::mem_fun(*b, c));
 }
 
 /**

@@ -63,9 +63,9 @@ Exactly what text editor or IDE is used for development is up to developer prefe
   ```c
   /**
    * @brief A function which takes a base value and a power, and returns the
-   * power to that base. For example, `baseToThePower(2, 2)` returns `4`,
+   * base to that power. For example, `baseToThePower(2, 2)` returns `4`,
    * `baseToThePower(2, 3)` returns `8`.
-   * @param base The number that will be put to the power.
+   * @param base The base that will be put to the power.
    * @param power The power to raise the base by.
    * @returns int - the resulting value of the base to the power.
    */

@@ -9,17 +9,18 @@
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 3 of
  * the License, or (at your option) any later version.
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details at
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * See the GNU General Public License for more details at
  * https://www.gnu.org/copyleft/gpl.html
- * @copyright Copyright (c) 2020
  */
 
 #include <gtkmm/filechooserdialog.h>
-#include "ControlsModel.h"
 #include <string>
+#include "ControlsModel.h"
 
 class MainWindowView;
 class ControlsView;
@@ -39,7 +40,7 @@ class CompileLoadView;
  * the Model, and the main KoMo2 window contains all of the Controllers and
  * Views.
  */
-class KoMo2Model : private Model {
+class KoMo2Model : public Model {
  private:
   bool handleKeyPress(GdkEventKey* e);
 
@@ -68,15 +69,11 @@ class KoMo2Model : private Model {
   ControlsModel controlsModel;
 
  public:
-  template <class T1, class T2>
-  void setButtonListener(Gtk::Button* button, T1 b, T2 c);
-
   // Constructors
   KoMo2Model(MainWindowView* mainWindow, std::string argv0);
   ~KoMo2Model();
 
   // General functions
-  void changeImage(Gtk::Image* toChange, Gtk::Image* newImg);
   void changeJimulatorState(JimulatorState newState);
 
   // Getters & setters
