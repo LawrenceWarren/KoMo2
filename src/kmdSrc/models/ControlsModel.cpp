@@ -21,6 +21,7 @@
 
 #include <iostream>
 #include <string>
+#include "../compile.h"
 #include "../views/ControlsView.h"
 #include "KoMo2Model.h"
 
@@ -110,7 +111,10 @@ void ControlsModel::onHelpClick() {
  * Changes JimulatorState to "LOADED".
  */
 void ControlsModel::onReloadJimulatorClick() {
-  std::cout << "Reload Jimulator Button Click!" << std::endl;
+  std::cout << "Reload clicked!" << std::endl;
+  // getParent()->getCompileLoadModel()->onCompileLoadClick();
+  resetJimulator();
+  // TODO: Update some views
   getParent()->changeJimulatorState(LOADED);
 }
 
@@ -124,12 +128,17 @@ void ControlsModel::onPauseResumeClick() {
 
   switch (getJimulatorState()) {
     case RUNNING:
+      pauseJimulator();
+      // TODO: update some views
       getParent()->changeJimulatorState(PAUSED);
       break;
     case PAUSED:
+      continueJimulator();
+      // TODO: update some views
       getParent()->changeJimulatorState(RUNNING);
       break;
     case LOADED:
+      start(0);
       getParent()->changeJimulatorState(RUNNING);
       break;
     default:

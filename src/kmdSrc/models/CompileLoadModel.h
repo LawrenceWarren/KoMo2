@@ -71,8 +71,8 @@ class CompileLoadModel : private Model {
   std::string absolutePathToSelectedFile;
 
   // Click handlers
-  void onCompileLoadClick();
   void onBrowseClick();
+  void onCompileLoadClick();
 
   // Getters and setters
   CompileLoadInnerState getInnerState();

@@ -16,7 +16,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details at
  * https://www.gnu.org/copyleft/gpl.html
- 
+
  */
 
 #ifdef __cplusplus
@@ -25,6 +25,10 @@ extern "C" {
 
 int compile(const char* pathToBin, const char* pathToS, const char* pathToKMD);
 int load(const char* pathToKMD);
+void start(int steps);
+void pauseJimulator();
+void continueJimulator();
+void resetJimulator();
 
 #ifdef __cplusplus
 }

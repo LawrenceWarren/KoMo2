@@ -20,6 +20,7 @@
  */
 
 #include "KoMo2Model.h"
+#include <glibmm.h>
 #include <gtkmm/filechooserdialog.h>
 #include <iostream>
 #include "../views/MainWindowView.h"
@@ -47,12 +48,26 @@ KoMo2Model::KoMo2Model(MainWindowView* mainWindow, std::string argv0)
       sigc::mem_fun(*this, &Model::handleKeyPress), false);
 
   this->changeJimulatorState(UNLOADED);
+
+  // Calls refreshViews every 300ms
+  Glib::signal_timeout().connect(sigc::mem_fun(this, &KoMo2Model::refreshViews),
+                                 300);
 }
 
 /**
  * @brief Destroys a KoMo2Model.
  */
 KoMo2Model::~KoMo2Model() {}
+
+/**
+ * @brief This function calls on a 300 second timer to refresh views.
+ * @return true
+ */
+bool KoMo2Model::refreshViews() {
+  // TODO: look at KoMoDo function callback_updateall()
+  std::cout << "refresh views on this timer!" << std::endl;
+  return true;
+}
 
 /**
  * @brief Passes the key press event off to other

@@ -17,7 +17,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details at
  * https://www.gnu.org/copyleft/gpl.html
- 
+
  */
 
 #include "compile.h"
@@ -43,10 +43,14 @@
 
 // Forward declaring auxiliary load functions
 void flush_source();
+int board_sendchar(unsigned char to_send);
 void misc_flush_symbol_table();
 int readSource(const char* pathToKMD);
 int callback_memory_refresh();
+int run_board(int* steps);
+int board_enq();
 source_file source;
+unsigned char board_runflags = RUN_FLAG_INIT;
 
 /**
  * @brief Stolen from the original KMD source - runs the file specified by
@@ -70,23 +74,273 @@ int compile(const char* pathToBin, const char* pathToS, const char* pathToKMD) {
  * @param pathToKMD an absolute path to the `.kmd` file that will be loaded.
  */
 int load(const char* pathToKMD) {
-  static int load_lock = 0;  // Mutex
-  int status = 1;
+  int old_symbol_count = symbol_count;  // Remember old rows
 
-  // if nothing else is already loading
-  if (load_lock == 0) {
-    load_lock = 1;
-    int old_symbol_count = symbol_count;  // Remember old rows
-
-    flush_source();
-    misc_flush_symbol_table();
-    status = readSource(pathToKMD);
-
-    load_lock = 0;
-  }
+  flush_source();
+  misc_flush_symbol_table();
+  int status = readSource(pathToKMD);
 
   return status;
 }
+
+/**
+ * @brief Commences running the emulator.
+ * @param steps
+ */
+void start(int steps) {
+  if (run_board(&steps)) {
+    printf("Need to update some views 🔥\n");
+    // TODO: refresh views
+  }
+}
+
+/**
+ * @brief Continues running Jimulator.
+ */
+void continueJimulator() {
+  board_enq();
+  board_sendchar(BR_CONTINUE);
+  printf("CONTINUED!😜\n");
+}
+
+/**
+ * @brief Pauses the emulator running.
+ */
+void pauseJimulator() {
+  board_sendchar(BR_STOP);
+  board_enq();
+  printf("Paused!🚀\n");
+}
+
+/**
+ * @brief Reset the emulators running.
+ */
+void resetJimulator() {
+  board_sendchar(BR_RESET);
+  // board_micro_ping();
+  // set_refresh(FALSE, 0); /* Unset refresh button */
+  // board_micro_ping();    /* Why TWICE?? @@@ */
+  board_enq(); /* Update client behaviour report */
+
+  printf("Emulator reset!🤯\n");
+}
+
+/**
+ * @brief Sends char_number bytes located at data_ptr to current client
+ * @param char_number
+ * @param data_ptr
+ * @return int number of bytes transmitted (currently always same as input)
+ */
+int board_sendchararray(int char_number, unsigned char* data_ptr) {
+  struct pollfd pollfd;
+  int blocked_flag;
+
+  pollfd.fd = writeToJimulator;
+  pollfd.events = POLLOUT;
+  blocked_flag = FALSE; /* Hasn't timed out */
+
+  while (poll(&pollfd, 1, OUT_POLL_TIMEOUT) == 0) /* See if output possible */
+  {
+    if (!blocked_flag) {
+      g_print(
+          "Client system not responding!\n"); /* Warn; poss. comms. problem */
+      blocked_flag = TRUE;                    /* Hasn't timed out */
+    }
+  }
+
+  if (blocked_flag) {
+    g_print("Client system okay!\n");
+  }
+
+  if (write(writeToJimulator, data_ptr, char_number) == -1) {
+    printf("Pipe write error!\n");
+  }
+
+  return char_number; /* Return No of chars written (always same as input) */
+}
+
+/**
+ * @brief send a single character/byte to the board using the general case of
+ * sending an array of bytes.
+ * @param to_send
+ * @return int
+ */
+int board_sendchar(unsigned char to_send) {
+  return board_sendchararray(1, &to_send);
+}
+
+/**
+ * @brief Gets a character array from the board.
+ * @param char_number
+ * @param data_ptr
+ * @return int Number of bytes received, up to char_number number of
+ * characters in array at data_ptr.
+ */
+int board_getchararray(int char_number, unsigned char* data_ptr) {
+  int reply_count; /* Number of chars fetched in latest attempt */
+  int reply_total; /* Total number of chars fetched during invocation */
+  struct pollfd pollfd;
+
+  pollfd.fd = readFromJimulator;
+  pollfd.events = POLLIN;
+  reply_total = 0;
+
+  // while there is more to get
+  while (char_number > 0) {
+    // If nothing available
+    if (!poll(&pollfd, 1, IN_POLL_TIMEOUT)) {
+      reply_count = 0;  // Will force loop termination
+    }
+
+    // attempt to read the number of bytes requested  and store the number of
+    // bytes received
+    else {
+      reply_count = read(readFromJimulator, data_ptr, char_number);
+    }
+
+    if (reply_count == 0) {
+      char_number = -1;  // Set to terminate
+    }
+
+    // Set minimum to 0
+    if (reply_count < 0) {
+      reply_count = 0;
+    }
+
+    reply_total += reply_count;
+    char_number -= reply_count;  // Update No. bytes that are still required
+    data_ptr += reply_count;     // Move the data pointer to its new location
+  }
+
+  return reply_total;  // return the number of bytes received
+}
+
+/**
+ * @brief get a single character/byte from the board using the general case of
+ * getting an array of bytes.
+ * @param to_get
+ * @return int
+ */
+int board_getchar(unsigned char* to_get) {
+  return board_getchararray(1, to_get);
+}
+
+/**
+ * @brief Gets N bytes from the board into the indicated val_ptr, LSB first.
+ * If error suspected sets `board_version' to not present
+ * @param val_ptr
+ * @param N
+ * @return int The number of bytes received successfully (i.e. N=>"Ok")
+ */
+int board_getbN(int* val_ptr, int N) {
+  char unsigned buffer[MAX_SERIAL_WORD];
+
+  if (N > MAX_SERIAL_WORD) {
+    N = MAX_SERIAL_WORD;  // Clip, just in case ...
+  }
+
+  int No_received = board_getchararray(N, buffer);
+
+  *val_ptr = 0;
+
+  for (int i = 0; i < No_received; i++) {
+    *val_ptr = *val_ptr | ((buffer[i] & 0xFF) << (i * 8));  // Assemble integer
+  }
+
+  // if (No_received != N) {
+  //  board_version = -1; /* Really do this here? @@@ */
+  //}
+
+  return No_received;
+}
+
+/**
+ * @brief Find the current execution state of the client
+ * @return int client response if stopped, running, error, else "BROKEN"
+ */
+int board_enq() {
+  unsigned char clientStatus = 0;
+  int stepsSinceReset;
+  int leftOfWalk;
+  char* string;
+
+  // If the board sends back the wrong the amount of data
+  board_sendchar(BR_WOT_U_DO);
+  if (board_getchar(&clientStatus) != 1 ||
+      board_getbN(&leftOfWalk, 4) != 4 ||       // Steps remaining
+      board_getbN(&stepsSinceReset, 4) != 4) {  // Steps since reset
+    printf("board not responding\n");
+    return CLIENT_STATE_BROKEN;
+  }
+
+  string = g_strdup_printf("Total steps: %u", stepsSinceReset);
+  printf("%s\n", string);
+  g_free(string);
+
+  return clientStatus;
+}
+
+/**
+ * @brief Sends N bytes from the supplied value to the board, LSB first.
+ * @param value The values to send.
+ * @param N The number of bytes.
+ * @return int The number of bytes believed received successfully (i.e.
+ * N=>"Ok")
+ */
+int board_sendbN(int value, int N) {
+  unsigned char buffer[MAX_SERIAL_WORD];
+  int i;
+
+  if (N > MAX_SERIAL_WORD) {
+    N = MAX_SERIAL_WORD; /* Clip, just in case ... */
+  }
+
+  for (i = 0; i < N; i++) {
+    buffer[i] = value & 0xFF; /* Byte into buffer */
+    value = value >> 8;       /* Get next byte */
+  }
+
+  return board_sendchararray(N, buffer);
+}
+
+/**
+ * @brief Signals the board to start/run from steps
+ * @param the number of steps to run for (0 if indefinite)
+ * @return int TRUE for success.
+ */
+int run_board(int* steps) {
+  int board_state = board_enq();
+
+  switch (board_state) {
+    case CLIENT_STATE_RUNNING_SWI:
+      printf("⚠board running SWI\n");
+      return FALSE;
+    case CLIENT_STATE_RUNNING:
+      printf("⚠board running\n");
+      return FALSE;
+    case CLIENT_STATE_STEPPING:
+      printf("⚠board stepping\n");
+      return FALSE;
+    case CLIENT_STATE_MEMFAULT:
+      printf("⚠board memory fault\n");
+      return FALSE;
+    case CLIENT_STATE_BUSY:
+      printf("⚠board is busy");
+      return FALSE;
+    default:
+      break;
+  }
+
+  // Sends a start signal
+  board_sendchar(BR_START | board_runflags);
+  /* Send definition at start e.g. breakpoints on? */
+  board_sendbN(*steps, 4); /* Send step count */
+  return TRUE;
+}
+
+// ! Compiling stuff below!
+// ! COMPILING STUFF BELOW!
+// ! COMPILING StuFf Below!
 
 /**
  * @brief removes all of the old references to the previous file.
@@ -319,8 +573,8 @@ int boardSendChar(unsigned char to_send) {
 }
 
 /**
- * @brief Look-up function to encode length of memory transfer: Only four legal
- * sizes at present.
+ * @brief Look-up function to encode length of memory transfer: Only four
+ * legal sizes at present.
  * @param size
  * @return unsigned int
  */
@@ -343,7 +597,8 @@ unsigned int boardTranslateMemsize(int size) {
  * @brief Sends N bytes from the supplied value to the board, LSB first.
  * @param value
  * @param N
- * @return int the number of bytes believed received successfully (i.e. N=>"Ok")
+ * @return int the number of bytes believed received successfully (i.e.
+ * N=>"Ok")
  */
 int boardSendNBytes(int value, int N) {
   unsigned char buffer[MAX_SERIAL_WORD];
@@ -363,8 +618,8 @@ int boardSendNBytes(int value, int N) {
 
 /**
  * @brief Sets a memory value of a given address to a new value.
- * This code is LEGACY. It used to run with a check on `board_version`: however
- * `board_version` always passed the check due to the certainty of the
+ * This code is LEGACY. It used to run with a check on `board_version`:
+ * however `board_version` always passed the check due to the certainty of the
  * "hardware" run under the emulator; therefore the check has been removed.
  * @param count number of elements
  * @param address pointer to the address (in bytes)
@@ -404,8 +659,8 @@ int readSource(const char* pathToKMD) {
   struct stat status;
 
   // `system` runs the string given as a shell command. `pidof` checks to
-  // see if a process by the name `jimulator` is running. If it fails (non-zero)
-  // It will print an error and return failure.
+  // see if a process by the name `jimulator` is running. If it fails
+  // (non-zero) It will print an error and return failure.
   if (system("pidof -x jimulator > /dev/null")) {
     printf("Jimulator is not running!\n");
     return TRUE;
@@ -539,8 +794,8 @@ int readSource(const char* pathToKMD) {
             // FIXME
             printf("OVERFLOW %d %d %d %d  %d\n", d_size[0], d_size[1],
                    d_size[2], d_size[3], byte_total);
-            // Extend with some more records here? @@@ (plant in memory, above,
-            // also)
+            // Extend with some more records here? @@@ (plant in memory,
+            // above, also)
           }
 
           // Copy text to buffer

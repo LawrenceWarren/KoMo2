@@ -42,6 +42,7 @@ class CompileLoadView;
  */
 class KoMo2Model : public Model {
  private:
+  bool refreshViews();
   bool handleKeyPress(GdkEventKey* e);
 
   /**

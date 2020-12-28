@@ -88,6 +88,7 @@ void CompileLoadModel::onCompileLoadClick() {
     }
 
     // Perform the load
+    resetJimulator();
     status = load(makeKmdPath(getAbsolutePathToSelectedFile()).c_str());
 
     // If load function failed
