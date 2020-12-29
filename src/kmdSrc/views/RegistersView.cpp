@@ -1,5 +1,6 @@
 #include "RegistersView.h"
 #include <string>
+#include "../jimulatorInterface.h"
 
 RegistersView::RegistersView(MainWindowView* parent) : grid(), parent(parent) {
   grid.set_column_homogeneous(false);
@@ -67,6 +68,6 @@ void RegistersView::refreshViews() {
   // callback_register_refresh()
 
   for (int i = 0; i < 18; i++) {
-    
+    getRegisterValueFromJimulator(i);
   }
 }

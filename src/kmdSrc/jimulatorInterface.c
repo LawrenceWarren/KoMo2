@@ -174,7 +174,7 @@ int boardSendChar(unsigned char to_send) {
  * @return int Number of bytes received, up to char_number number of
  * characters in array at data_ptr.
  */
-int board_getchararray(int char_number, unsigned char* data_ptr) {
+int boardGetCharArray(int char_number, unsigned char* data_ptr) {
   int reply_count; /* Number of chars fetched in latest attempt */
   int reply_total; /* Total number of chars fetched during invocation */
   struct pollfd pollfd;
@@ -219,8 +219,8 @@ int board_getchararray(int char_number, unsigned char* data_ptr) {
  * @param to_get
  * @return int
  */
-int board_getchar(unsigned char* to_get) {
-  return board_getchararray(1, to_get);
+int boardGetChar(unsigned char* to_get) {
+  return boardGetCharArray(1, to_get);
 }
 
 /**
@@ -230,14 +230,14 @@ int board_getchar(unsigned char* to_get) {
  * @param N
  * @return int The number of bytes received successfully (i.e. N=>"Ok")
  */
-int board_getbN(int* val_ptr, int N) {
+int board_get_n_bytes(int* val_ptr, int N) {
   char unsigned buffer[MAX_SERIAL_WORD];
 
   if (N > MAX_SERIAL_WORD) {
     N = MAX_SERIAL_WORD;  // Clip, just in case ...
   }
 
-  int No_received = board_getchararray(N, buffer);
+  int No_received = boardGetCharArray(N, buffer);
 
   *val_ptr = 0;
 
@@ -264,9 +264,9 @@ int board_enq() {
 
   // If the board sends back the wrong the amount of data
   boardSendChar(BR_WOT_U_DO);
-  if (board_getchar(&clientStatus) != 1 ||
-      board_getbN(&leftOfWalk, 4) != 4 ||       // Steps remaining
-      board_getbN(&stepsSinceReset, 4) != 4) {  // Steps since reset
+  if (boardGetChar(&clientStatus) != 1 ||
+      board_get_n_bytes(&leftOfWalk, 4) != 4 ||       // Steps remaining
+      board_get_n_bytes(&stepsSinceReset, 4) != 4) {  // Steps since reset
     printf("board not responding\n");
     return CLIENT_STATE_BROKEN;
   }
@@ -359,11 +359,11 @@ int read_registers(unsigned int address,
                    unsigned int count) {
   if (board_sendchar(BR_GET_REG) != 1) {
     // FAILURE STATE, do nothing else
-  } else if (board_sendbN(address, 4) != 4) {
+  } else if (board_send_n_bytes(address, 4) != 4) {
     // Some further failure state, do nothing else
-  } else if (board_sendbN(count, 2) != 2) {
+  } else if (board_send_n_bytes(count, 2) != 2) {
     // Another failure state, do nothing else
-  } else if (count * width != board_getchararray(count * width, data)) {
+  } else if (count * width != boardGetCharArray(count * width, data)) {
     // A final failure state, do nothing else
   }
 
@@ -375,55 +375,54 @@ int read_registers(unsigned int address,
   /* send the address of the requested register */
   //     && (2 == board_sendbN(count, 2))
   /* send 1 - number of register values following and return status */
-  //     && (count * width == board_getchararray(count * width, data));
+  //     && (count * width == boardGetCharArray(count * width, data));
 }
 
 /**
- * @brief Updates a given register bank on the screen given its number
- * @param regbanknumber The register bank to get
- * @return int 1 if successful, 0 otherwise
+ * @brief Queries a register in Jimulator to get it's current value.
+ * @param registerNumber The register to read the value from.
+ * @return int 1 if successful, 0 otherwise.
  */
-int board_get_regbank(int regbanknumber) {
+int getRegisterValueFromJimulator(int registerNumber) {
   unsigned char* message;  // reg bank values are kept in the regbank struct
   int length_message;
   int gran;
   int okay;  // Used to indicate comms. protcol still functioning correctly
 
   // if regbank is not a bit field
-  if (board->reg_banks[regbanknumber].width > 0) {
+  if (board->reg_banks[registerNumber].width > 0) {
     // TODO: investigate using printf in real KoMoDo
     // TODO: put this line into KoMoDo
     // printf("Regbanknumber %d is NOT a bitfield\n", regbanknumber);
-    okay = read_registers(board->reg_banks[regbanknumber].offset,
-                          board->reg_banks[regbanknumber].values,
-                          board->reg_banks[regbanknumber].width,
-                          board->reg_banks[regbanknumber].number);
-
-    board->reg_banks[regbanknumber].valid = TRUE;  // Indicate value may be used
+    okay = read_registers(board->reg_banks[registerNumber].offset,
+                          board->reg_banks[registerNumber].values,
+                          board->reg_banks[registerNumber].width,
+                          board->reg_banks[registerNumber].number);
   }
 
   // Get regbank if it's a bit field
   // complex messy stuff to do with bit field - ask Charlie
   else {
+    // TODO: put this into KoMoDo
     // printf("Regbanknumber %d IS a bitfield\n", regbanknumber);
     gran = board->regbanks_gran << 3;
-    length_message = (((board->reg_banks[regbanknumber].number +
-                        board->reg_banks[regbanknumber].offset - 1) /
+    length_message = (((board->reg_banks[registerNumber].number +
+                        board->reg_banks[registerNumber].offset - 1) /
                        gran) -
-                      (board->reg_banks[regbanknumber].offset / gran) + 1);
+                      (board->reg_banks[registerNumber].offset / gran) + 1);
 
     message = g_new(unsigned char, length_message);  // Allocate space
 
-    okay = read_registers(board->reg_banks[regbanknumber].offset / gran,
+    okay = read_registers(board->reg_banks[registerNumber].offset / gran,
                           message, board->regbanks_gran, length_message);
 
     // This needs some cleaning-up!
     if (okay) {
-      length_message = board->reg_banks[regbanknumber].number;
-      gran = board->reg_banks[regbanknumber].offset % gran;
+      length_message = board->reg_banks[registerNumber].number;
+      gran = board->reg_banks[registerNumber].offset % gran;
 
-      for (int i = 0; i < board->reg_banks[regbanknumber].number; i++)
-        board->reg_banks[regbanknumber].values[i] =
+      for (int i = 0; i < board->reg_banks[registerNumber].number; i++)
+        board->reg_banks[registerNumber].values[i] =
             message[(i + gran) >> 3] >> ((i + gran) & 7) & 1;
     }
     g_free(message);
