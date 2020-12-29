@@ -1,8 +1,10 @@
 {
     "cmake.configureOnOpen": false,
     "cSpell.words": [
+        "CPSR",
         "GTKMM",
         "Jimulator",
+        "SPSR",
         "aasm",
         "dotkomodo",
         "gboolean",
@@ -10,7 +12,8 @@
         "gint",
         "komo",
         "libgtkmm",
-        "sigc"
+        "sigc",
+        "xalign"
     ],
     "files.associations": {
         "array": "cpp",

@@ -49,10 +49,6 @@ KoMo2Model::KoMo2Model(MainWindowView* mainWindow, std::string argv0)
       sigc::mem_fun(*this, &Model::handleKeyPress), false);
 
   this->changeJimulatorState(UNLOADED);
-
-  // Calls refreshViews every 300ms
-  Glib::signal_timeout().connect(sigc::mem_fun(this, &KoMo2Model::refreshViews),
-                                 300);
 }
 
 /**
@@ -62,9 +58,14 @@ KoMo2Model::~KoMo2Model() {}
 
 /**
  * @brief This function calls on a 300 second timer to refresh views.
- * @return true
+ * @return bool True if the views were refreshed.
  */
 bool KoMo2Model::refreshViews() {
+  if (getJimulatorState() != RUNNING) {
+    std::cout << "not running" << std::endl;
+    return false;
+  }
+
   // TODO: look at KoMoDo function callback_updateall()
   std::cout << "refresh views on this timer!" << std::endl;
   return true;
@@ -94,6 +95,16 @@ void KoMo2Model::changeJimulatorState(JimulatorState newState) {
   // No state change, do nothing
   if (getJimulatorState() == newState) {
     return;
+  }
+
+  switch (newState) {
+    case RUNNING:
+      // Calls refreshViews every 300ms
+      Glib::signal_timeout().connect(
+          sigc::mem_fun(this, &KoMo2Model::refreshViews), 300);
+      break;
+    default:
+      break;
   }
 
   // TODO: if newState == LOADED, update views

@@ -35,10 +35,6 @@
 .compButtons:hover {
   background-image: image(#24292e);
 }
-/* Set border and box shadow when active 
-.compButtons:active {
-  box-shadow: inset 1px -1px 0px #3f454b, inset -1px 1px 0px #000000;
-}*/
 /* Set look when disabled */
 .compButtons:disabled {
   background-image: image(#24292e);
@@ -84,10 +80,6 @@
 .controlButtons:hover {
   background-image: image(#24292e);
 }
-/* Set border and box shadow when active 
-.controlButtons:active {
-  box-shadow: inset 1px -1px 0px #3f454b, inset -1px 1px 0px #000000;
-}*/
 /* Set look when disabled */
 .controlButtons:disabled {
   background-image: image(#24292e);
@@ -126,8 +118,13 @@
 .grid {
   border-radius: 0px;
   border: 3px solid;
-  color: #ffffff;
-  font-size: 16px;
+  border-color: #24292e;
+}
+
+.tableLabels {
+  box-shadow: inset 1px -1px 2px #596166, inset -4px 4px 2px #1d2024;
   font-family: "Fira Code Retina", "Fira Code", monospace;
-  border-color: #1b1f23;
+  color: #ffffff;
+  font-size: 14px;
+  background-color: #444d56;
 }
