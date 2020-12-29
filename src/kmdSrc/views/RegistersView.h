@@ -10,6 +10,7 @@ class RegistersView : public Gtk::VButtonBox {
   RegistersView(MainWindowView* parent);
   ~RegistersView();
   void setModel(RegistersModel* val);
+  void refreshViews();
 
  private:
   Gtk::Grid grid;

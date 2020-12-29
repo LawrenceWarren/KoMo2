@@ -9,6 +9,7 @@ class RegistersModel : private Model {
 
   void changeJimulatorState(JimulatorState newState);
   bool handleKeyPress(GdkEventKey* e);
+  RegistersView* getView();
 
  private:
   RegistersView* view;

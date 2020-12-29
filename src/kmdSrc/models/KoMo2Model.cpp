@@ -61,14 +61,16 @@ KoMo2Model::~KoMo2Model() {}
  * @return bool True if the views were refreshed.
  */
 bool KoMo2Model::refreshViews() {
-  if (getJimulatorState() != RUNNING) {
-    std::cout << "not running" << std::endl;
+  if (getJimulatorState() == RUNNING) {
+    // TODO: look at KoMoDo function callback_updateall()
+    std::cout << "refresh views on this timer!" << std::endl;
+    registersModel.getView()->refreshViews();
+    return true;
+  } else {
+    // TODO: Refresh views once
+    std::cout << "refreshing views once" << std::endl;
     return false;
   }
-
-  // TODO: look at KoMoDo function callback_updateall()
-  std::cout << "refresh views on this timer!" << std::endl;
-  return true;
 }
 
 /**
@@ -103,16 +105,19 @@ void KoMo2Model::changeJimulatorState(JimulatorState newState) {
       Glib::signal_timeout().connect(
           sigc::mem_fun(this, &KoMo2Model::refreshViews), 300);
       break;
+    case LOADED:
+      // Calls refreshViews once
+      refreshViews();
     default:
       break;
   }
 
-  // TODO: if newState == LOADED, update views
   // TODO: Updating views - KMD src, viewfuncs.c, function view_updatememwindow
 
   setJimulatorState(newState);
   compileLoadModel.changeJimulatorState(newState);
   controlsModel.changeJimulatorState(newState);
+  registersModel.changeJimulatorState(newState);
   // TODO: add other models here as they come
 }
 

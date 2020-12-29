@@ -345,6 +345,93 @@ int checkBoardState() {
   return TRUE;
 }
 
+/**
+ * @brief Reads register information from the board.
+ * @param address
+ * @param data
+ * @param width
+ * @param count
+ * @return int
+ */
+int read_registers(unsigned int address,
+                   unsigned char* data,
+                   unsigned int width,
+                   unsigned int count) {
+  if (board_sendchar(BR_GET_REG) != 1) {
+    // FAILURE STATE, do nothing else
+  } else if (board_sendbN(address, 4) != 4) {
+    // Some further failure state, do nothing else
+  } else if (board_sendbN(count, 2) != 2) {
+    // Another failure state, do nothing else
+  } else if (count * width != board_getchararray(count * width, data)) {
+    // A final failure state, do nothing else
+  }
+
+  return 1;
+
+  // return (1 == board_sendchar(BR_GET_REG))
+  /* if unable to send a BR_GET_REG byte to the board */
+  // &&(4 == board_sendbN(address, 4))
+  /* send the address of the requested register */
+  //     && (2 == board_sendbN(count, 2))
+  /* send 1 - number of register values following and return status */
+  //     && (count * width == board_getchararray(count * width, data));
+}
+
+/**
+ * @brief Updates a given register bank on the screen given its number
+ * @param regbanknumber The register bank to get
+ * @return int 1 if successful, 0 otherwise
+ */
+int board_get_regbank(int regbanknumber) {
+  unsigned char* message;  // reg bank values are kept in the regbank struct
+  int length_message;
+  int gran;
+  int okay;  // Used to indicate comms. protcol still functioning correctly
+
+  // if regbank is not a bit field
+  if (board->reg_banks[regbanknumber].width > 0) {
+    // TODO: investigate using printf in real KoMoDo
+    // TODO: put this line into KoMoDo
+    // printf("Regbanknumber %d is NOT a bitfield\n", regbanknumber);
+    okay = read_registers(board->reg_banks[regbanknumber].offset,
+                          board->reg_banks[regbanknumber].values,
+                          board->reg_banks[regbanknumber].width,
+                          board->reg_banks[regbanknumber].number);
+
+    board->reg_banks[regbanknumber].valid = TRUE;  // Indicate value may be used
+  }
+
+  // Get regbank if it's a bit field
+  // complex messy stuff to do with bit field - ask Charlie
+  else {
+    // printf("Regbanknumber %d IS a bitfield\n", regbanknumber);
+    gran = board->regbanks_gran << 3;
+    length_message = (((board->reg_banks[regbanknumber].number +
+                        board->reg_banks[regbanknumber].offset - 1) /
+                       gran) -
+                      (board->reg_banks[regbanknumber].offset / gran) + 1);
+
+    message = g_new(unsigned char, length_message);  // Allocate space
+
+    okay = read_registers(board->reg_banks[regbanknumber].offset / gran,
+                          message, board->regbanks_gran, length_message);
+
+    // This needs some cleaning-up!
+    if (okay) {
+      length_message = board->reg_banks[regbanknumber].number;
+      gran = board->reg_banks[regbanknumber].offset % gran;
+
+      for (int i = 0; i < board->reg_banks[regbanknumber].number; i++)
+        board->reg_banks[regbanknumber].values[i] =
+            message[(i + gran) >> 3] >> ((i + gran) & 7) & 1;
+    }
+    g_free(message);
+  }
+
+  return 1;
+}
+
 // ! Compiling stuff below!
 // ! COMPILING STUFF BELOW!
 // ! COMPILING StuFf Below!

@@ -6,12 +6,14 @@ RegistersView::RegistersView(MainWindowView* parent) : grid(), parent(parent) {
   grid.set_column_spacing(3);
   grid.set_row_spacing(3);
 
+  // TODO: refactor this
+
   // Sets up each member of the array
   for (int i = 0; i < 2; i++) {
     for (int j = 0; j < 18; j++) {
       // Set the left hand labels
       if (i == 0) {
-        labelArray[i][j].set_size_request(70, 25);
+        labelArray[i][j].set_size_request(70, 22);
 
         // First 15 are R registers
         if (j < 15) {
@@ -37,7 +39,7 @@ RegistersView::RegistersView(MainWindowView* parent) : grid(), parent(parent) {
       // Right hand column
       else {
         labelArray[i][j].set_text("0xFEDCBA98");
-        labelArray[i][j].set_size_request(120, 25);
+        labelArray[i][j].set_size_request(120, 22);
         labelArray[i][j].set_xalign(0.1);
       }
 
@@ -59,4 +61,12 @@ RegistersView::~RegistersView() {}
 
 void RegistersView::setModel(RegistersModel* val) {
   model = val;
+}
+
+void RegistersView::refreshViews() {
+  // callback_register_refresh()
+
+  for (int i = 0; i < 18; i++) {
+    
+  }
 }

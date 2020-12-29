@@ -3,7 +3,6 @@
 
 RegistersModel::RegistersModel(RegistersView* view, KoMo2Model* parent)
     : Model(parent), view(view) {
-      
   view->setModel(this);
 }
 
@@ -13,4 +12,8 @@ void RegistersModel::changeJimulatorState(JimulatorState newState) {}
 
 bool RegistersModel::handleKeyPress(GdkEventKey* e) {
   return false;
+}
+
+RegistersView* RegistersModel::getView() {
+  return view;
 }
