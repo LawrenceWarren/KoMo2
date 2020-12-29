@@ -20,11 +20,12 @@
 
 #include <gtkmm/filechooserdialog.h>
 #include <string>
-#include "ControlsModel.h"
+#include "RegistersModel.h"
 
 class MainWindowView;
 class ControlsView;
 class CompileLoadView;
+class RegistersView;
 
 /**
  * @brief The logical model of the entire application. All other models should
@@ -68,6 +69,8 @@ class KoMo2Model : public Model {
    * the top of the view.
    */
   ControlsModel controlsModel;
+
+  RegistersModel registersModel;
 
  public:
   // Constructors

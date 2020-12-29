@@ -1,5 +1,5 @@
 /**
- * @file compile.c
+ * @file jimulatorInterface.c
  * @author Lawrence Warren (lawrencewarren2@gmail.com)
  * @brief Contains functions related to the compilation of ARM assembly `.s`
  * files to KoMoDo readable `.kmd` files, and their subsequent loading into
@@ -14,14 +14,13 @@
  *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details at
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * See the GNU General Public License for more details at
  * https://www.gnu.org/copyleft/gpl.html
-
  */
 
-#include "compile.h"
-
+#include "jimulatorInterface.h"
 #include <ctype.h>
 #include <fcntl.h>
 #include <gdk/gdkkeysyms.h>  // Definitions of `special' keys
@@ -38,17 +37,17 @@
 #include <sys/types.h>
 #include <termios.h>
 #include <unistd.h>
-
 #include "globals.h"
 
 // Forward declaring auxiliary load functions
 void flush_source();
-int board_sendchar(unsigned char to_send);
+int boardSendChar(unsigned char to_send);
 void misc_flush_symbol_table();
 int readSource(const char* pathToKMD);
 int callback_memory_refresh();
-int run_board(int* steps);
+void run_board(int steps);
 int board_enq();
+int checkBoardState();
 source_file source;
 unsigned char board_runflags = RUN_FLAG_INIT;
 
@@ -85,21 +84,22 @@ int load(const char* pathToKMD) {
 
 /**
  * @brief Commences running the emulator.
- * @param steps
+ * @param steps The number of steps to run for (0 if indefinite)
  */
 void start(int steps) {
-  if (run_board(&steps)) {
-    printf("Need to update some views 🔥\n");
-    // TODO: refresh views
-  }
+  run_board(steps);
+  printf("RUNNING!🔥\n");
 }
 
 /**
  * @brief Continues running Jimulator.
  */
 void continueJimulator() {
-  board_enq();
-  board_sendchar(BR_CONTINUE);
+  if (!checkBoardState()) {
+    return;
+  }
+
+  boardSendChar(BR_CONTINUE);
   printf("CONTINUED!😜\n");
 }
 
@@ -107,8 +107,12 @@ void continueJimulator() {
  * @brief Pauses the emulator running.
  */
 void pauseJimulator() {
-  board_sendchar(BR_STOP);
-  board_enq();
+  boardSendChar(BR_STOP);
+
+  if (!checkBoardState()) {
+    return;
+  }
+
   printf("Paused!🚀\n");
 }
 
@@ -116,47 +120,41 @@ void pauseJimulator() {
  * @brief Reset the emulators running.
  */
 void resetJimulator() {
-  board_sendchar(BR_RESET);
+  boardSendChar(BR_RESET);
   // board_micro_ping();
   // set_refresh(FALSE, 0); /* Unset refresh button */
   // board_micro_ping();    /* Why TWICE?? @@@ */
-  board_enq(); /* Update client behaviour report */
+
+  if (!checkBoardState()) {
+    return;
+  }
 
   printf("Emulator reset!🤯\n");
 }
 
 /**
  * @brief Sends char_number bytes located at data_ptr to current client
- * @param char_number
- * @param data_ptr
+ * @param char_number The number of bytes to send from data_ptr.
+ * @param data_ptr The data to send.
  * @return int number of bytes transmitted (currently always same as input)
  */
-int board_sendchararray(int char_number, unsigned char* data_ptr) {
+int boardSendCharArray(int char_number, unsigned char* data_ptr) {
   struct pollfd pollfd;
-  int blocked_flag;
-
   pollfd.fd = writeToJimulator;
   pollfd.events = POLLOUT;
-  blocked_flag = FALSE; /* Hasn't timed out */
 
-  while (poll(&pollfd, 1, OUT_POLL_TIMEOUT) == 0) /* See if output possible */
-  {
-    if (!blocked_flag) {
-      g_print(
-          "Client system not responding!\n"); /* Warn; poss. comms. problem */
-      blocked_flag = TRUE;                    /* Hasn't timed out */
-    }
+  // See if output possible
+  if (!poll(&pollfd, 1, OUT_POLL_TIMEOUT)) {
+    printf("Client system not responding!\n");  // Warn; poss. communication
+                                                // problem
   }
 
-  if (blocked_flag) {
-    g_print("Client system okay!\n");
-  }
-
+  // Write char_number bytes
   if (write(writeToJimulator, data_ptr, char_number) == -1) {
     printf("Pipe write error!\n");
   }
 
-  return char_number; /* Return No of chars written (always same as input) */
+  return char_number;
 }
 
 /**
@@ -165,8 +163,8 @@ int board_sendchararray(int char_number, unsigned char* data_ptr) {
  * @param to_send
  * @return int
  */
-int board_sendchar(unsigned char to_send) {
-  return board_sendchararray(1, &to_send);
+int boardSendChar(unsigned char to_send) {
+  return boardSendCharArray(1, &to_send);
 }
 
 /**
@@ -265,7 +263,7 @@ int board_enq() {
   char* string;
 
   // If the board sends back the wrong the amount of data
-  board_sendchar(BR_WOT_U_DO);
+  boardSendChar(BR_WOT_U_DO);
   if (board_getchar(&clientStatus) != 1 ||
       board_getbN(&leftOfWalk, 4) != 4 ||       // Steps remaining
       board_getbN(&stepsSinceReset, 4) != 4) {  // Steps since reset
@@ -287,20 +285,20 @@ int board_enq() {
  * @return int The number of bytes believed received successfully (i.e.
  * N=>"Ok")
  */
-int board_sendbN(int value, int N) {
+int board_send_n_bytes(int value, int N) {
   unsigned char buffer[MAX_SERIAL_WORD];
   int i;
 
   if (N > MAX_SERIAL_WORD) {
-    N = MAX_SERIAL_WORD; /* Clip, just in case ... */
+    N = MAX_SERIAL_WORD;  // Clip, just in case...
   }
 
   for (i = 0; i < N; i++) {
-    buffer[i] = value & 0xFF; /* Byte into buffer */
-    value = value >> 8;       /* Get next byte */
+    buffer[i] = value & 0xFF;  // Byte into buffer
+    value = value >> 8;        // Get next byte
   }
 
-  return board_sendchararray(N, buffer);
+  return boardSendCharArray(N, buffer);
 }
 
 /**
@@ -308,9 +306,22 @@ int board_sendbN(int value, int N) {
  * @param the number of steps to run for (0 if indefinite)
  * @return int TRUE for success.
  */
-int run_board(int* steps) {
+void run_board(int steps) {
+  if (!checkBoardState()) {
+    return;
+  }
+
+  // Sends a start signal
+  boardSendChar(BR_START | board_runflags);
+
+  // Send definition at start e.g. breakpoints on?
+  board_send_n_bytes(steps, 4);  // Send step count
+}
+
+int checkBoardState() {
   int board_state = board_enq();
 
+  // Check and log error states
   switch (board_state) {
     case CLIENT_STATE_RUNNING_SWI:
       printf("⚠board running SWI\n");
@@ -331,10 +342,6 @@ int run_board(int* steps) {
       break;
   }
 
-  // Sends a start signal
-  board_sendchar(BR_START | board_runflags);
-  /* Send definition at start e.g. breakpoints on? */
-  board_sendbN(*steps, 4); /* Send step count */
   return TRUE;
 }
 
@@ -535,41 +542,6 @@ char getSymbol(FILE* fHandle) {
 
   miscAddSymbol(buffer, value, sym_type);  // Set symbol
   return c;                                // ... and discard rest of line
-}
-
-/**
- * @brief Sends char_number bytes located at data_ptr to current client
- * @param char_number
- * @param data_ptr
- * @return int number of bytes transmitted (currently always same as input)
- */
-int boardSendCharArray(int char_number, unsigned char* data_ptr) {
-  struct pollfd pollfd;
-  pollfd.fd = writeToJimulator;
-  pollfd.events = POLLOUT;
-
-  // See if output possible
-  if (!poll(&pollfd, 1, OUT_POLL_TIMEOUT)) {
-    printf("Client system not responding!\n");  // Warn; poss. communication
-                                                // problem
-  }
-
-  // Write char_number bytes
-  if (write(writeToJimulator, data_ptr, char_number) == -1) {
-    printf("Pipe write error!\n");
-  }
-
-  return char_number;
-}
-
-/**
- * @brief send a single character/byte to the board using the general case of
- * sending an array of bytes.
- * @param to_send
- * @return int
- */
-int boardSendChar(unsigned char to_send) {
-  return boardSendCharArray(1, &to_send);
 }
 
 /**

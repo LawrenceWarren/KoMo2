@@ -34,9 +34,10 @@
  */
 MainWindowView::MainWindowView(int x, int y)
     : masterLayout(),
-      selectAndLoadContainer(this),
       controlsAndCompileBar(),
-      programControlsContainer(this) {
+      selectAndLoadContainer(this),
+      programControlsContainer(this),
+      registersView(this) {
   set_border_width(4);
   setSizes(x, y);
 
@@ -48,7 +49,9 @@ MainWindowView::MainWindowView(int x, int y)
   controlsAndCompileBar.show();
 
   masterLayout.pack_start(controlsAndCompileBar, false, false);
+  masterLayout.pack_start(registersView, false, false);
 
+  masterLayout.set_layout(Gtk::BUTTONBOX_START);
   masterLayout.show_all_children();
   masterLayout.show();
   add(masterLayout);
@@ -69,6 +72,7 @@ void MainWindowView::setSizes(int x, int y) {
 
   // Layout sizes
   masterLayout.set_size_request(x, y);
+  registersView.set_size_request(300, y - 200);
   controlsAndCompileBar.set_size_request(x, 100);
   selectAndLoadContainer.set_size_request(100, 100);
   programControlsContainer.set_size_request(x - 100, 33);
@@ -97,6 +101,7 @@ void MainWindowView::setStyling() {
   programControlsContainer.get_style_context()->add_class("layouts");
   controlsAndCompileBar.get_style_context()->add_class("layouts");
   selectAndLoadContainer.get_style_context()->add_class("layouts");
+  registersView.get_style_context()->add_class("layouts");
 
   // ! Add the CSS to the screen
   ctx->add_provider_for_screen(Gdk::Screen::get_default(), css,
@@ -105,6 +110,9 @@ void MainWindowView::setStyling() {
 
 // ! Getters and setters.
 
+RegistersView* MainWindowView::getRegistersView() {
+  return &registersView;
+}
 /**
  * @brief Get the CompileLoadView.
  * @return CompileLoadView* A pointer to the compileLoadView.

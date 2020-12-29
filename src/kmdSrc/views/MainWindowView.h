@@ -28,6 +28,7 @@
 #include <string>
 #include "CompileLoadView.h"
 #include "ControlsView.h"
+#include "RegistersView.h"
 
 class KoMo2Model;
 
@@ -49,6 +50,7 @@ class MainWindowView : public Gtk::Window {
   void setStyling();
   CompileLoadView* getCompileLoadView();
   ControlsView* getControlsView();
+  RegistersView* getRegistersView();
 
  private:
   void setSizes(int x, int y);
@@ -59,13 +61,7 @@ class MainWindowView : public Gtk::Window {
    * @brief The master layout - every other view or layout should be nested
    * within this layout.
    */
-  Gtk::Box masterLayout;
-
-  /**
-   * @brief A box containing the browse button, the compile and load button, and
-   * the selected file label.
-   */
-  CompileLoadView selectAndLoadContainer;
+  Gtk::VButtonBox masterLayout;
 
   /**
    * @brief The layout for the top bar running along the screen. Contains the
@@ -74,9 +70,20 @@ class MainWindowView : public Gtk::Window {
   Gtk::HButtonBox controlsAndCompileBar;
 
   /**
+   * @brief A box containing the browse button, the compile and load button, and
+   * the selected file label.
+   */
+  CompileLoadView selectAndLoadContainer;
+
+  /**
    * @brief A box containing all of the programs running controls.
    */
   ControlsView programControlsContainer;
+
+  /**
+   * @brief A box containing all of the registers
+   */
+  RegistersView registersView;
 
   // ! Other
 

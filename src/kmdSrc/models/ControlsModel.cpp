@@ -21,7 +21,7 @@
 
 #include <iostream>
 #include <string>
-#include "../compile.h"
+#include "../jimulatorInterface.h"
 #include "../views/ControlsView.h"
 #include "KoMo2Model.h"
 
@@ -152,6 +152,9 @@ void ControlsModel::onPauseResumeClick() {
  */
 void ControlsModel::onSingleStepExecuteClick() {
   std::cout << "single step execute click!" << std::endl;
+
+  start(1);
+  // TODO: Update views
 
   if (getJimulatorState() == LOADED) {
     getParent()->changeJimulatorState(PAUSED);

@@ -1,5 +1,5 @@
 /**
- * @file compile.h
+ * @file jimulatorInterface.h
  * @author Lawrence Warren (lawrencewarren2@gmail.com)
  * @brief The header file associated with the `compile.c` file. Forward
  * declares functions.
@@ -13,10 +13,10 @@
  *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details at
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ * 
+ * See the GNU General Public License for more details at
  * https://www.gnu.org/copyleft/gpl.html
-
  */
 
 #ifdef __cplusplus

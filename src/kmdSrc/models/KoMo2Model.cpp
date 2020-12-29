@@ -38,7 +38,8 @@ KoMo2Model::KoMo2Model(MainWindowView* mainWindow, std::string argv0)
       mainWindow(mainWindow),
       absolutePathToProjectRoot(argv0),
       compileLoadModel(mainWindow->getCompileLoadView(), this),
-      controlsModel(mainWindow->getControlsView(), this) {
+      controlsModel(mainWindow->getControlsView(), this),
+      registersModel(mainWindow->getRegistersView(), this) {
   // Updates the main window to have a pointer to its model, sets its CSS.
   getMainWindow()->setModel(this);
   getMainWindow()->setStyling();
