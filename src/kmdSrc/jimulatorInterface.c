@@ -1,11 +1,11 @@
 /**
  * @file jimulatorInterface.c
  * @author Lawrence Warren (lawrencewarren2@gmail.com)
- * @brief Contains functions related to the compilation of ARM assembly `.s`
- * files to KoMoDo readable `.kmd` files, and their subsequent loading into
- * the Jimulator ARM emulator.
+ * @brief Contains functionality relating to the serialization, transmission and
+ * reception of data to and from Jimulator, with a minor amount of processing
+ * done either way.
  * @version 0.1
- * @date 2020-11-27
+ * @date 2020-12-29
  * @section LICENSE
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -58,7 +58,9 @@ unsigned char board_runflags = RUN_FLAG_INIT;
  * @param pathToS An absolute path to the `.s` file to be compiled.
  * @param pathToKMD an absolute path to the `.kmd` file that will be output.
  */
-int compile(const char* pathToBin, const char* pathToS, const char* pathToKMD) {
+int compileJimulator(const char* pathToBin,
+                     const char* pathToS,
+                     const char* pathToKMD) {
   execlp(pathToBin, "aasm", "-lk", pathToKMD, pathToS, (char*)0);
 
   // Should not get here!
@@ -72,7 +74,7 @@ int compile(const char* pathToBin, const char* pathToS, const char* pathToKMD) {
  * networking, etc - it is pure emulation.
  * @param pathToKMD an absolute path to the `.kmd` file that will be loaded.
  */
-int load(const char* pathToKMD) {
+int loadJimulator(const char* pathToKMD) {
   int old_symbol_count = symbol_count;  // Remember old rows
 
   flush_source();
@@ -86,7 +88,7 @@ int load(const char* pathToKMD) {
  * @brief Commences running the emulator.
  * @param steps The number of steps to run for (0 if indefinite)
  */
-void start(int steps) {
+void startJimulator(int steps) {
   run_board(steps);
   printf("RUNNING!🔥\n");
 }
@@ -227,29 +229,29 @@ int boardGetChar(unsigned char* to_get) {
  * @brief Gets N bytes from the board into the indicated val_ptr, LSB first.
  * If error suspected sets `board_version' to not present
  * @param val_ptr
- * @param N
+ * @param n
  * @return int The number of bytes received successfully (i.e. N=>"Ok")
  */
-int board_get_n_bytes(int* val_ptr, int N) {
+int board_get_n_bytes(int* val_ptr, int n) {
   char unsigned buffer[MAX_SERIAL_WORD];
 
-  if (N > MAX_SERIAL_WORD) {
-    N = MAX_SERIAL_WORD;  // Clip, just in case ...
+  if (n > MAX_SERIAL_WORD) {
+    n = MAX_SERIAL_WORD;  // Clip, just in case ...
   }
 
-  int No_received = boardGetCharArray(N, buffer);
+  int numberOfReceivedBytes = boardGetCharArray(n, buffer);
 
   *val_ptr = 0;
 
-  for (int i = 0; i < No_received; i++) {
+  for (int i = 0; i < numberOfReceivedBytes; i++) {
     *val_ptr = *val_ptr | ((buffer[i] & 0xFF) << (i * 8));  // Assemble integer
   }
 
-  // if (No_received != N) {
+  // if (No_received != n) {
   //  board_version = -1; /* Really do this here? @@@ */
   //}
 
-  return No_received;
+  return numberOfReceivedBytes;
 }
 
 /**
@@ -264,6 +266,7 @@ int board_enq() {
 
   // If the board sends back the wrong the amount of data
   boardSendChar(BR_WOT_U_DO);
+
   if (boardGetChar(&clientStatus) != 1 ||
       board_get_n_bytes(&leftOfWalk, 4) != 4 ||       // Steps remaining
       board_get_n_bytes(&stepsSinceReset, 4) != 4) {  // Steps since reset
@@ -281,24 +284,23 @@ int board_enq() {
 /**
  * @brief Sends N bytes from the supplied value to the board, LSB first.
  * @param value The values to send.
- * @param N The number of bytes.
+ * @param n The number of bytes.
  * @return int The number of bytes believed received successfully (i.e.
  * N=>"Ok")
  */
-int board_send_n_bytes(int value, int N) {
+int board_send_n_bytes(int value, int n) {
   unsigned char buffer[MAX_SERIAL_WORD];
-  int i;
 
-  if (N > MAX_SERIAL_WORD) {
-    N = MAX_SERIAL_WORD;  // Clip, just in case...
+  if (n > MAX_SERIAL_WORD) {
+    n = MAX_SERIAL_WORD;  // Clip, just in case...
   }
 
-  for (i = 0; i < N; i++) {
+  for (int i = 0; i < n; i++) {
     buffer[i] = value & 0xFF;  // Byte into buffer
     value = value >> 8;        // Get next byte
   }
 
-  return boardSendCharArray(N, buffer);
+  return boardSendCharArray(n, buffer);
 }
 
 /**
@@ -318,6 +320,10 @@ void run_board(int steps) {
   board_send_n_bytes(steps, 4);  // Send step count
 }
 
+/**
+ * @brief Check the state of the board - logs what it is doing.
+ * @return int 0 if the board is in a failed state. else 1.
+ */
 int checkBoardState() {
   int board_state = board_enq();
 
@@ -438,12 +444,12 @@ int getRegisterValueFromJimulator(int registerNumber) {
 /**
  * @brief removes all of the old references to the previous file.
  */
-void flush_source(void) {
+void flush_source() {
   source_line *pOld, *pTrash;
 
   pOld = source.pStart;
   source.pStart = NULL;
-  source.pEnd = NULL;  // Backward links never used in anger @@@
+  source.pEnd = NULL;
 
   while (pOld != NULL) {
     if (pOld->text != NULL) {
@@ -459,7 +465,7 @@ void flush_source(void) {
 /**
  * @brief Deletes old symbol table data and resets the pointers.
  */
-void misc_flush_symbol_table(void) {
+void misc_flush_symbol_table() {
   symbol* pTrash;
   symbol* pSym = symbol_table;
 
@@ -482,19 +488,19 @@ void misc_flush_symbol_table(void) {
  * @return int the hex value or -1 if not a legal hex digit
  */
 int check_hex(char character) {
-  if ((character >= '0') && (character <= '9'))
+  if ((character >= '0') && (character <= '9')) {
     return character - '0';
-  else if ((character >= 'A') && (character <= 'F'))
+  } else if ((character >= 'A') && (character <= 'F')) {
     return character - 'A' + 10;
-  else if ((character >= 'a') && (character <= 'f'))
+  } else if ((character >= 'a') && (character <= 'f')) {
     return character - 'a' + 10;
-  // Ignore prefix characters AT ANY POINT   @@@ (for JNZ)
-  else
+  } else {
     return -1;
+  }
 }
 
 /**
- * @brief Read hex number and return #bytes (2^N) also
+ * @brief Read hex number and return bytes (2^N) also
  * @param fHandle
  * @param pC
  * @param number
@@ -652,29 +658,6 @@ unsigned int boardTranslateMemsize(int size) {
 }
 
 /**
- * @brief Sends N bytes from the supplied value to the board, LSB first.
- * @param value
- * @param N
- * @return int the number of bytes believed received successfully (i.e.
- * N=>"Ok")
- */
-int boardSendNBytes(int value, int N) {
-  unsigned char buffer[MAX_SERIAL_WORD];
-  int i;
-
-  if (N > MAX_SERIAL_WORD) {
-    N = MAX_SERIAL_WORD;  // Clip, just in case ...
-  }
-
-  for (i = 0; i < N; i++) {
-    buffer[i] = value & 0xFF;  // Byte into buffer
-    value = value >> 8;        // Get next byte
-  }
-
-  return boardSendCharArray(N, buffer);
-}
-
-/**
  * @brief Sets a memory value of a given address to a new value.
  * This code is LEGACY. It used to run with a check on `board_version`:
  * however `board_version` always passed the check due to the certainty of the
@@ -693,7 +676,7 @@ int boardSetMemory(int count,
 
   if ((1 != boardSendChar(BR_SET_MEM | boardTranslateMemsize(size))) ||
       (4 != boardSendCharArray(4, address))                      // send address
-      || (2 != boardSendNBytes(count, 2))                        // send width
+      || (2 != board_send_n_bytes(count, 2))                     // send width
       || (bytecount != boardSendCharArray(bytecount, value))) {  // send value
     printf("bad board version!\n");
     return FALSE;
@@ -721,13 +704,13 @@ int readSource(const char* pathToKMD) {
   // (non-zero) It will print an error and return failure.
   if (system("pidof -x jimulator > /dev/null")) {
     printf("Jimulator is not running!\n");
-    return TRUE;
+    return 1;
   }
 
   FILE* komodoSource = fopen(pathToKMD, "r");
   if (komodoSource == NULL) {
     printf("Source could not be opened!\n");
-    return TRUE;
+    return 1;
   }
 
   int has_old_addr = FALSE;  // Don't know where we start
@@ -894,5 +877,5 @@ int readSource(const char* pathToKMD) {
   }
 
   fclose(komodoSource);
-  return FALSE;  // Return error flag
+  return 0;
 }

@@ -138,7 +138,7 @@ void ControlsModel::onPauseResumeClick() {
       getParent()->changeJimulatorState(RUNNING);
       break;
     case LOADED:
-      start(0);
+      startJimulator(0);
       getParent()->changeJimulatorState(RUNNING);
       break;
     default:
@@ -153,7 +153,7 @@ void ControlsModel::onPauseResumeClick() {
 void ControlsModel::onSingleStepExecuteClick() {
   std::cout << "single step execute click!" << std::endl;
 
-  start(1);
+  startJimulator(1);
   // TODO: Update views
 
   if (getJimulatorState() == LOADED) {

@@ -1,6 +1,7 @@
 #include <gtkmm/buttonbox.h>
 #include <gtkmm/grid.h>
 #include <gtkmm/label.h>
+#include <string>
 
 class MainWindowView;
 class RegistersModel;
@@ -13,6 +14,7 @@ class RegistersView : public Gtk::VButtonBox {
   void refreshViews();
 
  private:
+  std::string padHex(std::string hex);
   Gtk::Grid grid;
   Gtk::Label labelArray[2][18];
 

@@ -1,4 +1,5 @@
 #include "RegistersView.h"
+#include <sstream>
 #include <string>
 #include "../jimulatorInterface.h"
 
@@ -64,10 +65,33 @@ void RegistersView::setModel(RegistersModel* val) {
   model = val;
 }
 
+/**
+ * @brief Pads a string representation of a hexadecimal number. It is assumed
+ * the hexadecimal number represents a 32-bit integer (or 4-byte), and therefore
+ * will be padded to be 8 characters long (1 hex character can encode 4-bits
+ * worth of data, 4-bit * 8 = 32-bit)
+ * It will also append the hexadecimal number notation ('0x') to the front.
+ * @param hex The string representation of a hexidecimal number, which will be
+ * padded to the left.
+ * @return std::string The padded string.
+ */
+std::string RegistersView::padHex(std::string hex) {
+  int toPad = 8 - hex.length();
+
+  // If somehow is too long
+  if (toPad < 0) {
+    return hex.insert(0, "0x");
+  }
+
+  hex = hex.insert(0, std::string(toPad, '0'));
+  return hex.insert(0, "0x");
+}
+
 void RegistersView::refreshViews() {
-  // callback_register_refresh()
+  std::stringstream ss;
 
   for (int i = 0; i < 18; i++) {
-    getRegisterValueFromJimulator(i);
+    ss << std::hex << getRegisterValueFromJimulator(i);
+    labelArray[1][i].set_text(padHex(ss.str()));
   }
 }
