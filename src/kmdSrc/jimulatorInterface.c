@@ -363,7 +363,7 @@ int read_registers(unsigned int address,
                    unsigned char* data,
                    unsigned int width,
                    unsigned int count) {
-  if (board_sendchar(BR_GET_REG) != 1) {
+  if (boardSendChar(BR_GET_REG) != 1) {
     // FAILURE STATE, do nothing else
   } else if (board_send_n_bytes(address, 4) != 4) {
     // Some further failure state, do nothing else
@@ -375,7 +375,7 @@ int read_registers(unsigned int address,
 
   return 1;
 
-  // return (1 == board_sendchar(BR_GET_REG))
+  // return (1 == boardSendChar(BR_GET_REG))
   /* if unable to send a BR_GET_REG byte to the board */
   // &&(4 == board_sendbN(address, 4))
   /* send the address of the requested register */
@@ -390,7 +390,7 @@ int read_registers(unsigned int address,
  * @return int 1 if successful, 0 otherwise.
  */
 int getRegisterValueFromJimulator(int registerNumber) {
-  unsigned char* message;  // reg bank values are kept in the regbank struct
+  /*unsigned char* message;  // reg bank values are kept in the regbank struct
   int length_message;
   int gran;
   int okay;  // Used to indicate comms. protcol still functioning correctly
@@ -434,7 +434,7 @@ int getRegisterValueFromJimulator(int registerNumber) {
     g_free(message);
   }
 
-  return 1;
+  */return 1;
 }
 
 // ! Compiling stuff below!

@@ -124,7 +124,7 @@ The shell script `installFonts.sh` has been included in the project `scripts` di
 
 _KoMo2_ uses a mono space font family known as [Fira Code](https://github.com/tonsky/FiraCode), and this shell script installs these from an archive file tracked in the `res` directory.
 
-If you execute the shell script as root (`sudo installFonts.sh`) then these fonts will be installed for you automatically.
+If you enter the `scripts` directory and execute the shell script as root (`sudo ./installFonts.sh`) then these fonts will be installed for you automatically.
 
 **HOWEVER**, it is worth bearing in mind that I found the guide to make this shell script online, and it does move files into a protected directory (specifically `usr/local/share/fonts`) so inspect the shell script for yourself first and make up your mind about if you want to run it.
 
