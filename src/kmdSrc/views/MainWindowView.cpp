@@ -72,7 +72,7 @@ void MainWindowView::setSizes(int x, int y) {
 
   // Layout sizes
   masterLayout.set_size_request(x, y);
-  registersView.set_size_request(300, y - 200);
+  registersView.set_size_request(300, y - 300);
   controlsAndCompileBar.set_size_request(x, 100);
   selectAndLoadContainer.set_size_request(100, 100);
   programControlsContainer.set_size_request(x - 100, 33);

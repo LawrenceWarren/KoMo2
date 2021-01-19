@@ -48,14 +48,12 @@ ControlsView::~ControlsView() {}
 void ControlsView::initProgramControlsContainer() {
   // Set halt button image
   getHaltExecutionButton()->set_image_position(Gtk::POS_LEFT);
-  getHaltExecutionButton()->set_image(*new Gtk::Image("res/haltSymbol.png"));
   getHaltExecutionButton()->set_tooltip_text("Halt Jimulator (F1)");
 
   // Set help button image
-  getHelpButton()->set_image_position(Gtk::POS_LEFT);
-  getHelpButton()->set_image(*new Gtk::Image("res/helpSymbol.png"));
-  getHelpButton()->set_tooltip_text("About KoMo2 (F12)");
   // TODO: does this accessibility work?
+  getHelpButton()->set_image_position(Gtk::POS_LEFT);
+  getHelpButton()->set_tooltip_text("About KoMo2 (F12)");
   getHelpButton()->get_accessible()->set_name("Help Button");
   getHelpButton()->get_accessible()->set_description(
       "This button will display a help window.");
@@ -65,14 +63,10 @@ void ControlsView::initProgramControlsContainer() {
 
   // Set the single step execution button image
   getSingleStepExecuteButton()->set_image_position(Gtk::POS_LEFT);
-  getSingleStepExecuteButton()->set_image(
-      *new Gtk::Image("res/singleStepSymbol.png"));
   getSingleStepExecuteButton()->set_tooltip_text("Execute 1 instruction (F6)");
 
   // Set the reload button image
   getReloadJimulatorButton()->set_image_position(Gtk::POS_LEFT);
-  getReloadJimulatorButton()->set_image(
-      *new Gtk::Image("res/refreshSymbol.png"));
   getReloadJimulatorButton()->set_tooltip_text("Reload program (Ctrl+R)");
 
   // Set sizes
@@ -104,12 +98,26 @@ void ControlsView::initProgramControlsContainer() {
 // ! Getters and setters
 
 /**
- * @brief Set the model member variable.
+ * @brief Set the model member variable. Also sets the initial button states.
  * @param val The value to set model to.
+ * @param projectRoot An absolute path to the root of the project.
  */
-void ControlsView::setModel(ControlsModel* val) {
+void ControlsView::setModel(ControlsModel* val, std::string projectRoot) {
   model = val;
+
+  getHaltExecutionButton()->set_image(
+      *new Gtk::Image(projectRoot + "/res/haltSymbol.png"));
+
+  getHelpButton()->set_image(
+      *new Gtk::Image(projectRoot + "/res/helpSymbol.png"));
+
+  getSingleStepExecuteButton()->set_image(
+      *new Gtk::Image(projectRoot + "/res/singleStepSymbol.png"));
+
+  getReloadJimulatorButton()->set_image(
+      *new Gtk::Image(projectRoot + "/res/refreshSymbol.png"));
 }
+
 /**
  * @brief Gets the `helpButton` member variable.
  * @return Gtk::Button* A pointer to the `helpButton` member variable.

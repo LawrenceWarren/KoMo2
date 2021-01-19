@@ -47,6 +47,7 @@ class Model {
  public:
   Model(KoMo2Model* parent);
   friend class KoMo2Model;  // Only KoMo2Model can access setJimulatorState()
+  KoMo2Model* getParent();
 
  protected:
   /**
@@ -85,7 +86,7 @@ class Model {
   virtual void changeJimulatorState(JimulatorState newState) = 0;
 
   // Getters and setters
-  KoMo2Model* getParent();
+
   JimulatorState getJimulatorState();
 
  private:

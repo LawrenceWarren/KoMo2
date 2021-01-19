@@ -50,7 +50,7 @@ ControlsModel::ControlsModel(ControlsView* view, KoMo2Model* parent)
   setButtonListener(view->getSingleStepExecuteButton(), this,
                     &ControlsModel::onSingleStepExecuteClick);
 
-  view->setModel(this);
+  view->setModel(this, getParent()->getAbsolutePathToProjectRoot());
 }
 
 /**
@@ -180,9 +180,10 @@ void ControlsModel::changeJimulatorState(JimulatorState newState) {
     case UNLOADED:
       setButtonState(view->getHelpButton(), true);
       setButtonState(view->getReloadJimulatorButton(), false);
-      setButtonState(view->getPauseResumeButton(), false,
-                     "Commence execution (F5)",
-                     new Gtk::Image("res/commenceSymbol.png"));
+      setButtonState(
+          view->getPauseResumeButton(), false, "Commence execution (F5)",
+          new Gtk::Image(getParent()->getAbsolutePathToProjectRoot() +
+                         "res/commenceSymbol.png"));
       setButtonState(view->getHaltExecutionButton(), false);
       setButtonState(view->getSingleStepExecuteButton(), false);
       break;
@@ -191,9 +192,10 @@ void ControlsModel::changeJimulatorState(JimulatorState newState) {
     case LOADED:
       setButtonState(view->getHelpButton(), true);
       setButtonState(view->getReloadJimulatorButton(), false);
-      setButtonState(view->getPauseResumeButton(), true,
-                     "Commence execution (F5)",
-                     new Gtk::Image("res/commenceSymbol.png"));
+      setButtonState(
+          view->getPauseResumeButton(), true, "Commence execution (F5)",
+          new Gtk::Image(getParent()->getAbsolutePathToProjectRoot() +
+                         "res/commenceSymbol.png"));
       setButtonState(view->getSingleStepExecuteButton(), true);
       setButtonState(view->getHaltExecutionButton(), false);
       break;
@@ -202,8 +204,10 @@ void ControlsModel::changeJimulatorState(JimulatorState newState) {
     case RUNNING:
       setButtonState(view->getHelpButton(), true);
       setButtonState(view->getReloadJimulatorButton(), false);
-      setButtonState(view->getPauseResumeButton(), true, "Pause execution (F5)",
-                     new Gtk::Image("res/pauseSymbol.png"));
+      setButtonState(
+          view->getPauseResumeButton(), true, "Pause execution (F5)",
+          new Gtk::Image(getParent()->getAbsolutePathToProjectRoot() +
+                         "res/pauseSymbol.png"));
       setButtonState(view->getSingleStepExecuteButton(), false);
       setButtonState(view->getHaltExecutionButton(), true);
       // Send some signal to Jimulator
@@ -213,9 +217,10 @@ void ControlsModel::changeJimulatorState(JimulatorState newState) {
     case PAUSED:
       setButtonState(view->getHelpButton(), true);
       setButtonState(view->getReloadJimulatorButton(), true);
-      setButtonState(view->getPauseResumeButton(), true,
-                     "Resume execution (F5)",
-                     new Gtk::Image("res/playSymbol.png"));
+      setButtonState(
+          view->getPauseResumeButton(), true, "Resume execution (F5)",
+          new Gtk::Image(getParent()->getAbsolutePathToProjectRoot() +
+                         "res/playSymbol.png"));
       setButtonState(view->getSingleStepExecuteButton(), true);
       setButtonState(view->getHaltExecutionButton(), true);
       // Send some signal to Jimulator

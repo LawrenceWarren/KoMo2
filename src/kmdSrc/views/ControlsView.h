@@ -88,5 +88,5 @@ class ControlsView : public Gtk::HButtonBox {
   Gtk::Button* getPauseResumeButton();
   Gtk::Button* getSingleStepExecuteButton();
   Gtk::Button* getHaltExecutionButton();
-  void setModel(ControlsModel* val);
+  void setModel(ControlsModel* val, std::string projectRoot);
 };

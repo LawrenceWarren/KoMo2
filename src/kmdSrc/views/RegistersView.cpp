@@ -75,23 +75,27 @@ void RegistersView::setModel(RegistersModel* val) {
  * padded to the left.
  * @return std::string The padded string.
  */
-std::string RegistersView::padHex(std::string hex) {
+std::string RegistersView::padHexToEightDigits(std::string hex) {
   int toPad = 8 - hex.length();
 
   // If somehow is too long
   if (toPad < 0) {
-    return hex.insert(0, "0x");
+    // TODO: handle graceful failure state
+    return "0x🙃FAIL🙃";
   }
 
   hex = hex.insert(0, std::string(toPad, '0'));
   return hex.insert(0, "0x");
 }
 
+/**
+ * @brief
+ */
 void RegistersView::refreshViews() {
   std::stringstream ss;
 
   for (int i = 0; i < 18; i++) {
-    ss << std::hex << getRegisterValueFromJimulator(i);
-    labelArray[1][i].set_text(padHex(ss.str()));
+    ss << std::hex << getRegisterValueFromJimulator(9);
+    labelArray[1][i].set_text(padHexToEightDigits(ss.str()));
   }
 }

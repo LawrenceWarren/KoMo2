@@ -14,7 +14,7 @@ class RegistersView : public Gtk::VButtonBox {
   void refreshViews();
 
  private:
-  std::string padHex(std::string hex);
+  std::string padHexToEightDigits(std::string hex);
   Gtk::Grid grid;
   Gtk::Label labelArray[2][18];
 
