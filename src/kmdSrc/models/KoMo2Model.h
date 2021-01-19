@@ -43,7 +43,6 @@ class RegistersView;
  */
 class KoMo2Model : public Model {
  private:
-  bool refreshViews();
   bool handleKeyPress(GdkEventKey* e);
 
   /**
@@ -79,6 +78,7 @@ class KoMo2Model : public Model {
 
   // General functions
   void changeJimulatorState(JimulatorState newState);
+  bool refreshViews();
 
   // Getters & setters
   CompileLoadModel* getCompileLoadModel();

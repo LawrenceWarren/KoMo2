@@ -68,6 +68,7 @@ bool KoMo2Model::refreshViews() {
     return true;
   } else {
     // TODO: Refresh views once
+    registersModel.getView()->refreshViews();
     std::cout << "refreshing views once" << std::endl;
     return false;
   }

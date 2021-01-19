@@ -154,7 +154,7 @@ void ControlsModel::onSingleStepExecuteClick() {
   std::cout << "single step execute click!" << std::endl;
 
   startJimulator(1);
-  // TODO: Update views
+  getParent()->refreshViews();
 
   if (getJimulatorState() == LOADED) {
     getParent()->changeJimulatorState(PAUSED);

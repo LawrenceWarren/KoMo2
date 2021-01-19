@@ -1,4 +1,5 @@
 #include "RegistersView.h"
+#include <iostream>
 #include <sstream>
 #include <string>
 #include "../jimulatorInterface.h"
@@ -94,8 +95,31 @@ std::string RegistersView::padHexToEightDigits(std::string hex) {
 void RegistersView::refreshViews() {
   std::stringstream ss;
 
+  unsigned char* read = getRegisterValueFromJimulator();
+
   for (int i = 0; i < 18; i++) {
-    ss << std::hex << getRegisterValueFromJimulator(9);
-    labelArray[1][i].set_text(padHexToEightDigits(ss.str()));
+    std::cout << "here" << i << std::endl;
+    char* ret = something(4, &read[i * 4]);
+    std::cout << "or here" << std::endl << std::endl;
+
+    std::string val = std::string(ret);
+    // free(ret);
+
+    ss << std::hex << 6;
+    labelArray[1][i].set_text(val);
   }
+
+  // free(read);
+}
+
+char* RegistersView::something(int count, unsigned char* values) {
+  char* ret = g_new(char, count * 2 + 1); /* Allocates memory */
+  char* ptr = ret;
+
+  while (count--) {
+    g_snprintf(ptr, 3, "%02X",
+               (int)values[count]); /* This also terminates \0 */
+    ptr += 2;                       /* Step string pointer */
+  }
+  return ret; /* Must g_free result */
 }

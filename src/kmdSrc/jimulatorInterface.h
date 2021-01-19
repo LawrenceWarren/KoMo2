@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-int getRegisterValueFromJimulator(int registerNumber);
+unsigned char* getRegisterValueFromJimulator();
 int compileJimulator(const char* pathToBin,
                      const char* pathToS,
                      const char* pathToKMD);

@@ -18,6 +18,8 @@ class RegistersView : public Gtk::VButtonBox {
   Gtk::Grid grid;
   Gtk::Label labelArray[2][18];
 
+  char* something(int count, unsigned char* values);
+
   /**
    * @brief A pointer to the parent view.
    */
