@@ -16,5 +16,5 @@ main
   MOV R12, #12
   MOV R13, #13
   MOV R14, #14
-  SWI 4
+  B main
   SWI 2

@@ -68,14 +68,14 @@ bool KoMo2Model::refreshViews() {
     return true;
   } else {
     // TODO: Refresh views once
-    registersModel.getView()->refreshViews();
     std::cout << "refreshing views once" << std::endl;
+    registersModel.getView()->refreshViews();
     return false;
   }
 }
 
 /**
- * @brief Passes the key press event off to other
+ * @brief Passes the key press event off to other child models.
  * @param e The key press event.
  * @return bool if a key was pressed.
  */

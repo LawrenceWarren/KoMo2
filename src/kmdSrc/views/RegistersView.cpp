@@ -13,35 +13,26 @@ RegistersView::RegistersView(MainWindowView* parent) : grid(), parent(parent) {
 
   // Sets up each member of the array
   for (int i = 0; i < 2; i++) {
-    for (int j = 0; j < 18; j++) {
+    for (int j = 0; j < 16; j++) {
       // Set the left hand labels
       if (i == 0) {
         labelArray[i][j].set_size_request(70, 22);
 
-        // First 15 are R registers
+        // First 0 through 14 are R registers
         if (j < 15) {
           labelArray[i][j].set_text("R" + std::to_string(j));
         }
 
-        // 16th is the Program Counter
-        else if (j == 15) {
+        // final is the Program Counter
+        else {
           labelArray[i][j].set_text("PC");
         }
 
-        // 17th is CPSR
-        else if (j == 16) {
-          labelArray[i][j].set_text("CPSR");
-        }
-
-        // 18th is SPSR
-        else {
-          labelArray[i][j].set_text("SPSR");
-        }
       }
 
       // Right hand column
       else {
-        labelArray[i][j].set_text("0xFEDCBA98");
+        labelArray[i][j].set_text("0x00000000");
         labelArray[i][j].set_size_request(120, 22);
         labelArray[i][j].set_xalign(0.1);
       }
@@ -67,59 +58,13 @@ void RegistersView::setModel(RegistersModel* val) {
 }
 
 /**
- * @brief Pads a string representation of a hexadecimal number. It is assumed
- * the hexadecimal number represents a 32-bit integer (or 4-byte), and therefore
- * will be padded to be 8 characters long (1 hex character can encode 4-bits
- * worth of data, 4-bit * 8 = 32-bit)
- * It will also append the hexadecimal number notation ('0x') to the front.
- * @param hex The string representation of a hexidecimal number, which will be
- * padded to the left.
- * @return std::string The padded string.
- */
-std::string RegistersView::padHexToEightDigits(std::string hex) {
-  int toPad = 8 - hex.length();
-
-  // If somehow is too long
-  if (toPad < 0) {
-    // TODO: handle graceful failure state
-    return "0x🙃FAIL🙃";
-  }
-
-  hex = hex.insert(0, std::string(toPad, '0'));
-  return hex.insert(0, "0x");
-}
-
-/**
  * @brief
  */
 void RegistersView::refreshViews() {
-  std::stringstream ss;
+  std::vector<std::string> v = getRegisterValueFromJimulator();
 
-  unsigned char* read = getRegisterValueFromJimulator();
-
-  for (int i = 0; i < 18; i++) {
-    std::cout << "here" << i << std::endl;
-    char* ret = something(4, &read[i * 4]);
-    std::cout << "or here" << std::endl << std::endl;
-
-    std::string val = std::string(ret);
-    // free(ret);
-
-    ss << std::hex << 6;
-    labelArray[1][i].set_text(val);
+  // For each register in the array
+  for (int i = 0; i < 16; i++) {
+    labelArray[1][i].set_text(v[i]);
   }
-
-  // free(read);
-}
-
-char* RegistersView::something(int count, unsigned char* values) {
-  char* ret = g_new(char, count * 2 + 1); /* Allocates memory */
-  char* ptr = ret;
-
-  while (count--) {
-    g_snprintf(ptr, 3, "%02X",
-               (int)values[count]); /* This also terminates \0 */
-    ptr += 2;                       /* Step string pointer */
-  }
-  return ret; /* Must g_free result */
 }

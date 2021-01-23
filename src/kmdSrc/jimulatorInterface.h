@@ -20,11 +20,10 @@
  * https://www.gnu.org/copyleft/gpl.html
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <vector>
+#include <string>
 
-unsigned char* getRegisterValueFromJimulator();
+std::vector<std::string> getRegisterValueFromJimulator();
 int compileJimulator(const char* pathToBin,
                      const char* pathToS,
                      const char* pathToKMD);
@@ -33,7 +32,3 @@ void startJimulator(int steps);
 void pauseJimulator();
 void continueJimulator();
 void resetJimulator();
-
-#ifdef __cplusplus
-}
-#endif

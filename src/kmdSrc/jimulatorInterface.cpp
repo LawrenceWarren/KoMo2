@@ -37,6 +37,9 @@
 #include <sys/types.h>
 #include <termios.h>
 #include <unistd.h>
+#include <iostream>
+#include <string>
+#include <vector>
 #include "globals.h"
 
 // Forward declaring auxiliary load functions
@@ -355,26 +358,51 @@ int checkBoardState() {
  * @brief Reads register information from the board.
  * @param data The pointer to read the register values into.
  */
-void read_registers(unsigned char* data, unsigned int count) {
+void readRegistersIntoArray(unsigned char* data, unsigned int count) {
   boardSendChar(BR_GET_REG);
   board_send_n_bytes(0, 4);
-  board_send_n_bytes(count, 2);
-  boardGetCharArray(count * 4, data);
+  board_send_n_bytes(16, 2);
+  boardGetCharArray(64, data);
+}
+
+/**
+ * @brief Reads the values from the array of register values into a C++ string.
+ * @warning This function does some bit-level trickery. This is very low level,
+ * study carefully before altering control flow.
+ * @param values The particular register value to read.
+ * @return std::string A hexadecimal formatted register value.
+ */
+std::string readValuesFromRegisterArray(unsigned char* values) {
+  char ret[8], *ptr = ret;
+  int x = 4;
+
+  while (x--) {
+    g_snprintf(ptr, 3, "%02X", (int)values[x]);
+    ptr += 2;  // Step string pointer
+  }
+
+  return std::string(ret).insert(0, "0x");
 }
 
 /**
  * @brief Queries a register in Jimulator to get it's current value.
- * @return int 1 if successful, 0 otherwise.
+ * @return The values read from the registers.
  */
-unsigned char* getRegisterValueFromJimulator() {
-  unsigned char* readRegHere = (unsigned char*)malloc(sizeof(unsigned char));
-  read_registers(readRegHere, 16);
-  return readRegHere;
+std::vector<std::string> getRegisterValueFromJimulator() {
+  unsigned char regVals[64];            // 64-byte array
+  readRegistersIntoArray(regVals, 16);  // regVals now has reg values
+  std::vector<std::string> vector;      // vector of strings
+
+  for (int i = 0; i < 16; i++) {
+    vector.push_back(readValuesFromRegisterArray(&regVals[i * 4]));
+  }
+
+  return vector;
 }
 
-// ! Compiling stuff below!
-// ! COMPILING STUFF BELOW!
-// ! COMPILING StuFf Below!
+// ! COMPILING STUFF BELOW! !
+// ! COMPILING STUFF BELOW! !
+// ! COMPILING STUFF BELOW! !
 
 /**
  * @brief removes all of the old references to the previous file.
