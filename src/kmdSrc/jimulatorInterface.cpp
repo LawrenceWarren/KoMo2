@@ -100,7 +100,7 @@ void startJimulator(int steps) {
  * @brief Continues running Jimulator.
  */
 void continueJimulator() {
-  if (!checkBoardState()) {
+  if (not checkBoardState()) {
     return;
   }
 
@@ -114,7 +114,7 @@ void continueJimulator() {
 void pauseJimulator() {
   boardSendChar(BR_STOP);
 
-  if (!checkBoardState()) {
+  if (not checkBoardState()) {
     return;
   }
 
@@ -130,7 +130,7 @@ void resetJimulator() {
   // set_refresh(FALSE, 0); /* Unset refresh button */
   // board_micro_ping();    /* Why TWICE?? @@@ */
 
-  if (!checkBoardState()) {
+  if (not checkBoardState()) {
     return;
   }
 
@@ -149,7 +149,7 @@ int boardSendCharArray(int char_number, unsigned char* data_ptr) {
   pollfd.events = POLLOUT;
 
   // See if output possible
-  if (!poll(&pollfd, 1, OUT_POLL_TIMEOUT)) {
+  if (not poll(&pollfd, 1, OUT_POLL_TIMEOUT)) {
     printf("Client system not responding!\n");  // Warn; poss. communication
                                                 // problem
   }
@@ -191,7 +191,7 @@ int boardGetCharArray(int char_number, unsigned char* data_ptr) {
   // while there is more to get
   while (char_number > 0) {
     // If nothing available
-    if (!poll(&pollfd, 1, IN_POLL_TIMEOUT)) {
+    if (not poll(&pollfd, 1, IN_POLL_TIMEOUT)) {
       reply_count = 0;  // Will force loop termination
     }
 
@@ -312,7 +312,7 @@ int board_send_n_bytes(int value, int n) {
  * @return int TRUE for success.
  */
 void run_board(int steps) {
-  if (!checkBoardState()) {
+  if (not checkBoardState()) {
     return;
   }
 
@@ -572,7 +572,7 @@ char getSymbol(FILE* fHandle) {
   }
 
   symbol_type sym_type;
-  if (!defined) {
+  if (not defined) {
     sym_type = SYM_UNDEFINED;  // Value missing
   } else {
     // Bodge - just first character
@@ -680,7 +680,7 @@ int readSource(const char* pathToKMD) {
   stat(pathToKMD, &status);
 
   // Repeat until end of file
-  while (!feof(komodoSource)) {
+  while (not feof(komodoSource)) {
     address = 0;   // Really needed?
     flag = FALSE;  // Haven't found an address yet
     c = getc(komodoSource);
@@ -730,7 +730,7 @@ int readSource(const char* pathToKMD) {
 
       // We have a record with an address
       if (flag) {
-        while ((c != ';') && (c != '\n') && !feof(komodoSource)) {
+        while ((c != ';') && (c != '\n') && not feof(komodoSource)) {
           c = getc(komodoSource);
         }
 
@@ -744,7 +744,7 @@ int readSource(const char* pathToKMD) {
           text_length = 0;  // Measure (& buffer) source line
 
           // Everything to end of line (or clip)
-          while ((c != '\n') && !feof(komodoSource) &&
+          while ((c != '\n') && not feof(komodoSource) &&
                  (text_length < SOURCE_TEXT_LENGTH)) {
             buffer[text_length++] = c;
             c = getc(komodoSource);
@@ -834,7 +834,7 @@ int readSource(const char* pathToKMD) {
       }  // Source line
     }
 
-    while ((c != '\n') && !feof(komodoSource)) {
+    while ((c != '\n') && not feof(komodoSource)) {
       c = getc(komodoSource);  // Next line anyway
     }
   }

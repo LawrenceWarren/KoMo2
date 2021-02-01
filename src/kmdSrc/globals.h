@@ -211,5 +211,5 @@ extern int symbol_count;      // TODO: increment this (miscAddSymbol)
 extern int writeToJimulator;
 extern int readFromJimulator;
 extern int emulator_PID;
-extern int board_emulation_communication_from[2];
-extern int board_emulation_communication_to[2];
+extern int communicationFromPipe[2];
+extern int communicationToPipe[2];

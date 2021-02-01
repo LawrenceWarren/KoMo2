@@ -15,7 +15,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details at
  * https://www.gnu.org/copyleft/gpl.html
- 
+
  */
 
 #include <glibmm/optioncontext.h>
@@ -26,25 +26,24 @@
 #include <fstream>
 #include <iostream>
 #include "globals.h"
-// main Model
 #include "models/KoMo2Model.h"
-// main View
 #include "views/MainWindowView.h"
 
-// source_file kmdSourceFile;
-// target_system* board;
+// Init global variables
 symbol* symbol_table;
 int symbol_count;
 int writeToJimulator;
 int readFromJimulator;
 int emulator_PID = -1;
 
-int board_emulation_communication_from[2];
-int board_emulation_communication_to[2];
+// Communication pipes
+// ! Originally board_emulation_communication_from
+int communicationFromPipe[2];
+// ! Originally board_emulation_communication_to
+int communicationToPipe[2];
 
 void initJimulator(std::string argv0);
 std::string getAbsolutePathToRootDirectory(char* arg);
-bool openDotKomodo(std::string pathToBinaryDir);
 int initialiseCommandLine(const Glib::RefPtr<Gio::ApplicationCommandLine>&,
                           Glib::RefPtr<Gtk::Application>& app);
 
@@ -62,7 +61,6 @@ int main(int argc, char* argv[]) {
   app->signal_command_line().connect(
       sigc::bind(sigc::ptr_fun(initialiseCommandLine), app), false);
 
-  // openDotKomodo(argv0);
   initJimulator(argv0);  // Creates Jimulator
 
   MainWindowView koMo2Window(1240, 700);
@@ -71,43 +69,6 @@ int main(int argc, char* argv[]) {
   int exit = app->run(koMo2Window);
   kill(emulator_PID, SIGKILL);  // Kill Jimulator
   return exit;
-}
-
-/**
- * @brief Opens `bin/dotkomodo.string` file.
- * @return auto exit code.
- */
-bool openDotKomodo(std::string pathToBinaryDir) {
-  // TODO: is this function necessary?
-  PtrSCANNode scantopnode = nullptr;
-  GScanner* scanner = nullptr;
-  int use_internal = 0;
-
-  // If internal file is used
-  if (use_internal) {
-    // scanner = ScanOpenSCANString(dotkomodo);
-  } else {
-    // scanner = ScanOpenSCANFile(rcfile);
-  }
-
-  // Check the state of file scanner
-  if (scanner) {
-    std::cout
-        << "Cannot find set up file `.komodo'" << std::endl
-        << "If you would like to create one then start komodo with -c flag"
-        << std::endl;
-    exit(1);
-  }
-
-  // scantopnode = ScanParseSCANNode(scanner, FALSE);  // Scan .komodo file
-  // ScanCloseSCANFile(scanner);  // The scanner can safely be closed now
-
-  // Check if the parse was successful
-  if (scantopnode) {
-    return true;  // Success
-  } else {
-    return false;  // failure
-  }
 }
 
 /**
@@ -126,14 +87,13 @@ void initJimulator(std::string argv0) {
 
   // sets up the pipes to allow communication between Jimulator and
   // KoMo2 processes.
-  if (pipe(board_emulation_communication_from) ||
-      pipe(board_emulation_communication_to)) {
+  if (pipe(communicationFromPipe) || pipe(communicationToPipe)) {
     std::cout << "A pipe error ocurred." << std::endl;
     exit(1);
   }
 
-  readFromJimulator = board_emulation_communication_from[0];
-  writeToJimulator = board_emulation_communication_to[1];
+  readFromJimulator = communicationFromPipe[0];
+  writeToJimulator = communicationToPipe[1];
 
   // Stores the emulator_PID for later.
   emulator_PID = fork();
@@ -142,11 +102,11 @@ void initJimulator(std::string argv0) {
   if (emulator_PID == 0) {
     // Closes Jimulator stdout - Jimulator can write to this pipe using printf
     close(1);
-    dup2(board_emulation_communication_from[1], 1);
+    dup2(communicationFromPipe[1], 1);
 
     // Closes Jimulator stdin - Jimulator can write to this pipe using scanf
     close(0);
-    dup2(board_emulation_communication_to[0], 0);
+    dup2(communicationToPipe[0], 0);
 
     const char* jimulatorPath = argv0.append("/bin/jimulator").c_str();
     execlp(jimulatorPath, "", (char*)0);
@@ -180,7 +140,7 @@ std::string getVersionNumber() {
   std::ifstream versionFile("version");
 
   if (versionFile.is_open()) {
-    if (!std::getline(versionFile, versionString)) {
+    if (not std::getline(versionFile, versionString)) {
       std::cout << "error!";
     }
     versionFile.close();
@@ -193,7 +153,7 @@ std::string getVersionNumber() {
  * @brief read and print the help message.
  */
 void getHelpMessage() {
-  // TODO: print some help message.
+  // TODO: stub - read a help message and print it from somewhere
 }
 
 /**
@@ -243,7 +203,7 @@ int initialiseCommandLine(const Glib::RefPtr<Gio::ApplicationCommandLine>& cmd,
   // Setting the help `-h` option
   help.set_long_name("help");
   help.set_short_name('h');
-  help.set_description("Display help message.");
+  help.set_description("Display a help message.");
   group.add_entry(help, isHelp);
 
   Glib::OptionContext context;
@@ -259,7 +219,7 @@ int initialiseCommandLine(const Glib::RefPtr<Gio::ApplicationCommandLine>& cmd,
   int returnVal = handleCommandLine(isVersion, isHelp);
 
   // If command line arguments were valid, activate app, else not.
-  if (!returnVal) {
+  if (not returnVal) {
     app->activate();
   }
 

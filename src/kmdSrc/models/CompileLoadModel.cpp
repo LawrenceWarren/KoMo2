@@ -62,13 +62,13 @@ CompileLoadModel::~CompileLoadModel() {}
  */
 void CompileLoadModel::onCompileLoadClick() {
   // If the length is zero, invalid path
-  if (!getAbsolutePathToSelectedFile().length()) {
+  if (not getAbsolutePathToSelectedFile().length()) {
     std::cout << "No file selected!" << std::endl;
     return;
   }
 
   // child process
-  if (!fork()) {
+  if (not fork()) {
     // Compile the .s program to .kmd
     compileJimulator(
         (getParent()->getAbsolutePathToProjectRoot() + "/bin/aasm").c_str(),
