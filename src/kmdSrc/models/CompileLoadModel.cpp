@@ -51,11 +51,6 @@ CompileLoadModel::CompileLoadModel(CompileLoadView* view, KoMo2Model* parent)
 }
 
 /**
- * @brief Destroys a CompileLoadModel.
- */
-CompileLoadModel::~CompileLoadModel() {}
-
-/**
  * @brief Compiles a `.s` file into a `.kmd` file:
  * Forks a child process, executes aasm on the child, and then load it into
  * Jimulator, if a valid file path is given.

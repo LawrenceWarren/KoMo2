@@ -58,11 +58,6 @@ MainWindowView::MainWindowView(int x, int y)
 }
 
 /**
- * @brief Destroys a main window object.
- */
-MainWindowView::~MainWindowView() {}
-
-/**
  * @brief Set the sizes of all views.
  * @param x The width of the window.
  * @param y The height of the window.

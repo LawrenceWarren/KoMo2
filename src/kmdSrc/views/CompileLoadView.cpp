@@ -34,11 +34,6 @@ CompileLoadView::CompileLoadView(MainWindowView* parent)
 }
 
 /**
- * @brief Destroy a Compile Load View.
- */
-CompileLoadView::~CompileLoadView() {}
-
-/**
  * @brief Packs children into the selectAndLoadContainer, and sets the
  * layouts and size of it.
  */

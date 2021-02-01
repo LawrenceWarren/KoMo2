@@ -37,11 +37,6 @@ ControlsView::ControlsView(MainWindowView* parent)
 }
 
 /**
- * @brief Destroy a Controls View object.
- */
-ControlsView::~ControlsView() {}
-
-/**
  * @brief Packs children into the programControlsContainer, and sets the layouts
  * and size of it. Initialises the look images of buttons.
  */

@@ -51,10 +51,7 @@ KoMo2Model::KoMo2Model(MainWindowView* mainWindow, std::string argv0)
   this->changeJimulatorState(UNLOADED);
 }
 
-/**
- * @brief Destroys a KoMo2Model.
- */
-KoMo2Model::~KoMo2Model() {}
+
 
 /**
  * @brief Refreshes the views. May be called on a looping timer.

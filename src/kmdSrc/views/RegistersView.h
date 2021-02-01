@@ -9,7 +9,6 @@ class RegistersModel;
 class RegistersView : public Gtk::VButtonBox {
  public:
   RegistersView(MainWindowView* parent);
-  ~RegistersView();
   void setModel(RegistersModel* val);
   void refreshViews();
 
@@ -27,4 +26,10 @@ class RegistersView : public Gtk::VButtonBox {
    * @brief A pointer to the related model.
    */
   RegistersModel* model;
+
+  // Deleted SMFS - stops these from being misused, creates a sensible error
+  RegistersView(const RegistersView&) = delete;
+  RegistersView(const RegistersView&&) = delete;
+  RegistersView& operator=(const RegistersView&) = delete;
+  RegistersView& operator=(const RegistersView&&) = delete;
 };

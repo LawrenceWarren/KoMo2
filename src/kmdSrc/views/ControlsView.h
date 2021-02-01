@@ -33,6 +33,18 @@ class ControlsModel;
  * and styling. Little or no logic or data is kept in this class.
  */
 class ControlsView : public Gtk::HButtonBox {
+ public:
+  // Constructors and destructors
+  ControlsView(MainWindowView* parent);
+
+  // Getters and setters
+  Gtk::Button* getHelpButton();
+  Gtk::Button* getReloadJimulatorButton();
+  Gtk::Button* getPauseResumeButton();
+  Gtk::Button* getSingleStepExecuteButton();
+  Gtk::Button* getHaltExecutionButton();
+  void setModel(ControlsModel* val, std::string projectRoot);
+
  private:
   /**
    * @brief A pointer to the parent view.
@@ -77,16 +89,9 @@ class ControlsView : public Gtk::HButtonBox {
   // General functions
   void initProgramControlsContainer();
 
- public:
-  // Constructors and destructors
-  ControlsView(MainWindowView* parent);
-  ~ControlsView();
-
-  // Getters and setters
-  Gtk::Button* getHelpButton();
-  Gtk::Button* getReloadJimulatorButton();
-  Gtk::Button* getPauseResumeButton();
-  Gtk::Button* getSingleStepExecuteButton();
-  Gtk::Button* getHaltExecutionButton();
-  void setModel(ControlsModel* val, std::string projectRoot);
+  // Deleted SMFS - stops these from being misused, creates a sensible error
+  ControlsView(const ControlsView&) = delete;
+  ControlsView(const ControlsView&&) = delete;
+  ControlsView& operator=(const ControlsView&) = delete;
+  ControlsView& operator=(const ControlsView&&) = delete;
 };

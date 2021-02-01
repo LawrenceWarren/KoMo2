@@ -32,6 +32,17 @@ class CompileLoadModel;
  * functionality.
  */
 class CompileLoadView : public Gtk::VButtonBox {
+ public:
+  // Constructors and destructors
+  CompileLoadView(MainWindowView* parent);
+
+  // Getters and setters
+  Gtk::Button* getCompileAndLoadButton();
+  Gtk::Button* getBrowseButton();
+  Gtk::Label* getSelectedFileLabel();
+  void setSelectedFileLabelText(std::string val);
+  void setModel(CompileLoadModel* val);
+
  private:
   /**
    * @brief A pointer to the parent view.
@@ -63,15 +74,9 @@ class CompileLoadView : public Gtk::VButtonBox {
   // General functions
   void initSelectAndLoadContainer();
 
- public:
-  // Constructors and destructors
-  CompileLoadView(MainWindowView* parent);
-  ~CompileLoadView();
-
-  // Getters and setters
-  Gtk::Button* getCompileAndLoadButton();
-  Gtk::Button* getBrowseButton();
-  Gtk::Label* getSelectedFileLabel();
-  void setSelectedFileLabelText(std::string val);
-  void setModel(CompileLoadModel* val);
+  // Deleted SMFS - stops these from being misused, creates a sensible error
+  CompileLoadView(const CompileLoadView&) = delete;
+  CompileLoadView(const CompileLoadView&&) = delete;
+  CompileLoadView& operator=(const CompileLoadView&) = delete;
+  CompileLoadView& operator=(const CompileLoadView&&) = delete;
 };

@@ -42,7 +42,6 @@ class MainWindowView : public Gtk::Window {
  public:
   // Constructors
   MainWindowView(int x, int y);
-  virtual ~MainWindowView();
 
   // Getters and setters
   void setModel(KoMo2Model* val);
@@ -91,4 +90,10 @@ class MainWindowView : public Gtk::Window {
    * @brief A pointer to the main model of the program.
    */
   KoMo2Model* model;
+
+  // Deleted SMFS - stops these from being misused, creates a sensible error
+  MainWindowView(const MainWindowView&) = delete;
+  MainWindowView(const MainWindowView&&) = delete;
+  MainWindowView& operator=(const MainWindowView&) = delete;
+  MainWindowView& operator=(const MainWindowView&&) = delete;
 };

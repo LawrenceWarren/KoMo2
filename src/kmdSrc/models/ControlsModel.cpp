@@ -54,11 +54,6 @@ ControlsModel::ControlsModel(ControlsView* view, KoMo2Model* parent)
 }
 
 /**
- * @brief Destroys a ControlModel object.
- */
-ControlsModel::~ControlsModel() {}
-
-/**
  * @brief Handles a key press event pertaining to this model.
  * @param e The key press event.
  * @return bool Was a key pressed or not?

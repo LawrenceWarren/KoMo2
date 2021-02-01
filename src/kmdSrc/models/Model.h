@@ -106,4 +106,10 @@ class Model {
    * `getState()` on themselves and have the expected value.
    */
   static JimulatorState jimulatorState;
+
+  // Deleted SMFS - stops these from being misused, creates a sensible error
+  Model(const Model&) = delete;
+  Model(const Model&&) = delete;
+  Model& operator=(const Model&) = delete;
+  Model& operator=(const Model&&) = delete;
 };

@@ -45,7 +45,6 @@ class CompileLoadModel : private Model {
  public:
   // Constructors
   CompileLoadModel(CompileLoadView* view, KoMo2Model* parent);
-  ~CompileLoadModel();
 
   // General functions
   virtual void changeJimulatorState(JimulatorState newState) override;
@@ -83,4 +82,10 @@ class CompileLoadModel : private Model {
   // General functions
   std::string makeKmdPath(std::string absolutePath);
   void handleResult(int result, Gtk::FileChooserDialog* dialog);
+
+  // Deleted SMFS - stops these from being misused, creates a sensible error
+  CompileLoadModel(const CompileLoadModel&) = delete;
+  CompileLoadModel(const CompileLoadModel&&) = delete;
+  CompileLoadModel& operator=(const CompileLoadModel&) = delete;
+  CompileLoadModel& operator=(const CompileLoadModel&&) = delete;
 };

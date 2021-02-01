@@ -42,6 +42,20 @@ class RegistersView;
  * Views.
  */
 class KoMo2Model : public Model {
+ public:
+  // Constructors
+  KoMo2Model(MainWindowView* mainWindow, std::string argv0);
+
+  // General functions
+  virtual void changeJimulatorState(JimulatorState newState) override;
+  bool refreshViews();
+
+  // Getters & setters
+  CompileLoadModel* getCompileLoadModel();
+  ControlsModel* getControlsModel();
+  MainWindowView* getMainWindow();
+  const std::string getAbsolutePathToProjectRoot();
+
  private:
   virtual bool handleKeyPress(GdkEventKey* e) override;
 
@@ -75,18 +89,9 @@ class KoMo2Model : public Model {
    */
   RegistersModel registersModel;
 
- public:
-  // Constructors
-  KoMo2Model(MainWindowView* mainWindow, std::string argv0);
-  ~KoMo2Model();
-
-  // General functions
-  virtual void changeJimulatorState(JimulatorState newState) override;
-  bool refreshViews();
-
-  // Getters & setters
-  CompileLoadModel* getCompileLoadModel();
-  ControlsModel* getControlsModel();
-  MainWindowView* getMainWindow();
-  const std::string getAbsolutePathToProjectRoot();
+  // Deleted SMFS - stops these from being misused, creates a sensible error
+  KoMo2Model(const KoMo2Model&) = delete;
+  KoMo2Model(const KoMo2Model&&) = delete;
+  KoMo2Model& operator=(const KoMo2Model&) = delete;
+  KoMo2Model& operator=(const KoMo2Model&&) = delete;
 };

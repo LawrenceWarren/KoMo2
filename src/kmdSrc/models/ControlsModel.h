@@ -32,7 +32,6 @@ class ControlsModel : private Model {
  public:
   // Constructors
   ControlsModel(ControlsView* view, KoMo2Model* parent);
-  ~ControlsModel();
 
   // Key handler
   virtual bool handleKeyPress(GdkEventKey* e) override;
@@ -52,4 +51,10 @@ class ControlsModel : private Model {
   void onPauseResumeClick();
   void onSingleStepExecuteClick();
   void onHaltExecutionClick();
+
+  // Deleted SMFS - stops these from being misused, creates a sensible error
+  ControlsModel(const ControlsModel&) = delete;
+  ControlsModel(const ControlsModel&&) = delete;
+  ControlsModel& operator=(const ControlsModel&) = delete;
+  ControlsModel& operator=(const ControlsModel&&) = delete;
 };

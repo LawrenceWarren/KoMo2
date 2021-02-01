@@ -12,11 +12,6 @@ RegistersModel::RegistersModel(RegistersView* view, KoMo2Model* parent)
 }
 
 /**
- * @brief Destroys an existing registers model object.
- */
-RegistersModel::~RegistersModel() {}
-
-/**
  * @brief Handles changes in the Jimulator state.
  * @param newState The state being changed into.
  */

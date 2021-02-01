@@ -55,11 +55,7 @@ RegistersView::RegistersView(MainWindowView* parent) : grid(), parent(parent) {
   show_all_children();
 }
 
-/**
- * @brief Deletes the registerView object.
- *
- */
-RegistersView::~RegistersView() {}
+
 
 /**
  * @brief Sets the model for this view.
