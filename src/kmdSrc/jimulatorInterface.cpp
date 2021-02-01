@@ -78,13 +78,9 @@ int compileJimulator(const char* pathToBin,
  * @param pathToKMD an absolute path to the `.kmd` file that will be loaded.
  */
 int loadJimulator(const char* pathToKMD) {
-  int old_symbol_count = symbol_count;  // Remember old rows
-
-  flush_source();
-  misc_flush_symbol_table();
-  int status = readSource(pathToKMD);
-
-  return status;
+  // flush_source();
+  // misc_flush_symbol_table();
+  return readSource(pathToKMD);
 }
 
 /**
@@ -406,6 +402,7 @@ std::vector<std::string> getRegisterValueFromJimulator() {
 
 /**
  * @brief removes all of the old references to the previous file.
+ * @deprecated Could be deleted?
  */
 void flush_source() {
   source_line *pOld, *pTrash;
@@ -427,6 +424,7 @@ void flush_source() {
 
 /**
  * @brief Deletes old symbol table data and resets the pointers.
+ * @deprecated Could be deleted?
  */
 void misc_flush_symbol_table() {
   symbol* pTrash;
