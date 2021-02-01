@@ -7,13 +7,13 @@ class RegistersModel : private Model {
   RegistersModel(RegistersView* view, KoMo2Model* parent);
   ~RegistersModel();
 
-  void changeJimulatorState(JimulatorState newState);
-  bool handleKeyPress(GdkEventKey* e);
+  virtual void changeJimulatorState(JimulatorState newState) override;
+  virtual bool handleKeyPress(GdkEventKey* e) override;
   RegistersView* getView();
 
  private:
- /**
-  * @brief The view this model represents.
-  */
+  /**
+   * @brief The view this model represents.
+   */
   RegistersView* view;
 };

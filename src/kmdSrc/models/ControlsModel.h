@@ -35,10 +35,10 @@ class ControlsModel : private Model {
   ~ControlsModel();
 
   // Key handler
-  bool handleKeyPress(GdkEventKey* e);
+  virtual bool handleKeyPress(GdkEventKey* e) override;
 
   // General functions
-  void changeJimulatorState(JimulatorState newState);
+  virtual void changeJimulatorState(JimulatorState newState) override;
 
  private:
   /**

@@ -48,10 +48,10 @@ class CompileLoadModel : private Model {
   ~CompileLoadModel();
 
   // General functions
-  void changeJimulatorState(JimulatorState newState);
+  virtual void changeJimulatorState(JimulatorState newState) override;
 
   // Key press handler
-  bool handleKeyPress(GdkEventKey* e);
+  virtual bool handleKeyPress(GdkEventKey* e) override;
 
  private:
   /**

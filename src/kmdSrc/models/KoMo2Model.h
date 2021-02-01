@@ -43,7 +43,7 @@ class RegistersView;
  */
 class KoMo2Model : public Model {
  private:
-  bool handleKeyPress(GdkEventKey* e);
+  virtual bool handleKeyPress(GdkEventKey* e) override;
 
   /**
    * @brief A pointer to the main window view.
@@ -81,7 +81,7 @@ class KoMo2Model : public Model {
   ~KoMo2Model();
 
   // General functions
-  void changeJimulatorState(JimulatorState newState);
+  virtual void changeJimulatorState(JimulatorState newState) override;
   bool refreshViews();
 
   // Getters & setters
