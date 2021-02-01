@@ -24,7 +24,7 @@
 
 /**
  * @brief Construct a new Controls View.
- * @param parent
+ * @param parent A reference to the parent view.
  */
 ControlsView::ControlsView(MainWindowView* parent)
     : parent(parent),

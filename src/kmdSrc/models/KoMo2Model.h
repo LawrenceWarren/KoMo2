@@ -69,6 +69,10 @@ class KoMo2Model : public Model {
    */
   ControlsModel controlsModel;
 
+  /**
+   * @brief The data model for the registers view. Represented by the table
+   * of values on the left hand side of the main view.
+   */
   RegistersModel registersModel;
 
  public:

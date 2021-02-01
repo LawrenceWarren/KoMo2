@@ -44,9 +44,10 @@ class KoMo2Model;
  * This class provides basic data that are needed by all other
  */
 class Model {
+  friend class KoMo2Model;  // Only KoMo2Model can access setJimulatorState()
+
  public:
   Model(KoMo2Model* parent);
-  friend class KoMo2Model;  // Only KoMo2Model can access setJimulatorState()
   KoMo2Model* getParent();
 
  protected:

@@ -62,7 +62,7 @@ int main(int argc, char* argv[]) {
   app->signal_command_line().connect(
       sigc::bind(sigc::ptr_fun(initialiseCommandLine), app), false);
 
-  openDotKomodo(argv0);
+  // openDotKomodo(argv0);
   initJimulator(argv0);  // Creates Jimulator
 
   MainWindowView koMo2Window(1240, 700);

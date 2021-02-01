@@ -4,6 +4,10 @@
 #include <string>
 #include "../jimulatorInterface.h"
 
+/**
+ * @brief Constructs a new RegisterView object.
+ * @param parent A pointer to the parent view.
+ */
 RegistersView::RegistersView(MainWindowView* parent) : grid(), parent(parent) {
   grid.set_column_homogeneous(false);
   grid.set_column_spacing(3);
@@ -51,14 +55,24 @@ RegistersView::RegistersView(MainWindowView* parent) : grid(), parent(parent) {
   show_all_children();
 }
 
+/**
+ * @brief Deletes the registerView object.
+ *
+ */
 RegistersView::~RegistersView() {}
 
+/**
+ * @brief Sets the model for this view.
+ * @param val The model.
+ */
 void RegistersView::setModel(RegistersModel* val) {
   model = val;
 }
 
 /**
- * @brief
+ * @brief Handles updating this particular view.
+ * Reads register values from Jimulator, sets the label values of this view
+ * to reflect those values.
  */
 void RegistersView::refreshViews() {
   std::vector<std::string> v = getRegisterValueFromJimulator();

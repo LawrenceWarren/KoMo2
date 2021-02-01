@@ -12,5 +12,8 @@ class RegistersModel : private Model {
   RegistersView* getView();
 
  private:
+ /**
+  * @brief The view this model represents.
+  */
   RegistersView* view;
 };

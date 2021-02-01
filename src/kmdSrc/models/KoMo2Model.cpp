@@ -57,8 +57,8 @@ KoMo2Model::KoMo2Model(MainWindowView* mainWindow, std::string argv0)
 KoMo2Model::~KoMo2Model() {}
 
 /**
- * @brief This function calls on a 300 second timer to refresh views.
- * @return bool True if the views were refreshed.
+ * @brief Refreshes the views. May be called on a looping timer.
+ * @return bool True if to be called in a loop.
  */
 bool KoMo2Model::refreshViews() {
   if (getJimulatorState() == RUNNING) {
@@ -100,6 +100,7 @@ void KoMo2Model::changeJimulatorState(JimulatorState newState) {
     return;
   }
 
+  // Handles refreshing the views
   switch (newState) {
     case RUNNING:
       // Calls refreshViews every 300ms
@@ -107,15 +108,18 @@ void KoMo2Model::changeJimulatorState(JimulatorState newState) {
           sigc::mem_fun(this, &KoMo2Model::refreshViews), 300);
       break;
     case LOADED:
-      // Calls refreshViews once
-      refreshViews();
+      this->refreshViews();
+      break;
+    case UNLOADED:
+      this->refreshViews();
+      break;
     default:
       break;
   }
 
-  // TODO: Updating views - KMD src, viewfuncs.c, function view_updatememwindow
-
   setJimulatorState(newState);
+
+  // Change the state of each child model
   compileLoadModel.changeJimulatorState(newState);
   controlsModel.changeJimulatorState(newState);
   registersModel.changeJimulatorState(newState);
