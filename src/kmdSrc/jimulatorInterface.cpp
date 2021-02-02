@@ -44,13 +44,13 @@
 
 // ! Forward declaring auxiliary load functions
 void flush_source();
-int boardSendChar(unsigned char to_send);
+const int boardSendChar(unsigned char to_send);
 void misc_flush_symbol_table();
-int readSource(const char* pathToKMD);
-int callback_memory_refresh();
-void run_board(int steps);
-int board_enq();
-int checkBoardState();
+const int readSource(const char* pathToKMD);
+const int callback_memory_refresh();
+void run_board(const int steps);
+const int board_enq();
+const int checkBoardState();
 source_file source;
 unsigned char board_runflags = RUN_FLAG_INIT;
 
@@ -158,7 +158,7 @@ int boardSendCharArray(int char_number, unsigned char* data_ptr) {
  * @param to_send
  * @return int
  */
-int boardSendChar(unsigned char to_send) {
+const int boardSendChar(unsigned char to_send) {
   return boardSendCharArray(1, &to_send);
 }
 
@@ -226,23 +226,17 @@ int boardGetChar(unsigned char* to_get) {
  * @return int The number of bytes received successfully (i.e. N=>"Ok")
  */
 int board_get_n_bytes(int* val_ptr, int n) {
-  char unsigned buffer[MAX_SERIAL_WORD];
-
   if (n > MAX_SERIAL_WORD) {
-    n = MAX_SERIAL_WORD;  // Clip, just in case ...
+    n = MAX_SERIAL_WORD;  // Clip, just in case
   }
 
+  char unsigned buffer[MAX_SERIAL_WORD];
   int numberOfReceivedBytes = boardGetCharArray(n, buffer);
-
   *val_ptr = 0;
 
   for (int i = 0; i < numberOfReceivedBytes; i++) {
     *val_ptr = *val_ptr | ((buffer[i] & 0xFF) << (i * 8));  // Assemble integer
   }
-
-  // if (No_received != n) {
-  //  board_version = -1; /* Really do this here? @@@ */
-  //}
 
   return numberOfReceivedBytes;
 }
@@ -251,7 +245,7 @@ int board_get_n_bytes(int* val_ptr, int n) {
  * @brief Find the current execution state of the client
  * @return int client response if stopped, running, error, else "BROKEN"
  */
-int board_enq() {
+const int board_enq() {
   unsigned char clientStatus = 0;
   int stepsSinceReset;
   int leftOfWalk;
@@ -301,24 +295,22 @@ int board_send_n_bytes(int value, int n) {
  * @param the number of steps to run for (0 if indefinite)
  * @return int TRUE for success.
  */
-void run_board(int steps) {
-  if (not checkBoardState()) {
-    return;
+void run_board(const int steps) {
+  if (checkBoardState()) {
+    // Sends a start signal
+    boardSendChar(BR_START | board_runflags);
+
+    // Send definition at start e.g. breakpoints on?
+    board_send_n_bytes(steps, 4);  // Send step count
   }
-
-  // Sends a start signal
-  boardSendChar(BR_START | board_runflags);
-
-  // Send definition at start e.g. breakpoints on?
-  board_send_n_bytes(steps, 4);  // Send step count
 }
 
 /**
  * @brief Check the state of the board - logs what it is doing.
  * @return int 0 if the board is in a failed state. else 1.
  */
-int checkBoardState() {
-  int board_state = board_enq();
+const int checkBoardState() {
+  const int board_state = board_enq();
 
   // Check and log error states
   switch (board_state) {
@@ -444,7 +436,7 @@ void misc_flush_symbol_table() {
  * @param character the character under test
  * @return int the hex value or -1 if not a legal hex digit
  */
-int check_hex(char character) {
+const int check_hex(const char character) {
   if ((character >= '0') && (character <= '9')) {
     return character - '0';
   } else if ((character >= 'A') && (character <= 'F')) {
@@ -463,7 +455,9 @@ int check_hex(char character) {
  * @param number
  * @return int
  */
-int get_number(FILE* fHandle, char* pC, unsigned int* number) {
+const int get_number(FILE* const fHandle,
+                     char* const pC,
+                     unsigned int* const number) {
   while ((*pC == ' ') || (*pC == '\t')) {
     *pC = getc(fHandle);  // Skip spaces
   }
@@ -499,7 +493,7 @@ int get_number(FILE* fHandle, char* pC, unsigned int* number) {
  * @param c the character to determine.
  * @return int
  */
-int allowed(char c) {
+const int allowed(const char c) {
   return (c == '_') || ((c >= '0') && (c <= '9')) ||
          (((c & 0xDF) >= 'A') && ((c & 0xDF) <= 'Z'));
 }
@@ -510,7 +504,9 @@ int allowed(char c) {
  * @param value
  * @param sym_type
  */
-void miscAddSymbol(char* name, long value, symbol_type sym_type) {
+void miscAddSymbol(const char* name,
+                   const long value,
+                   const symbol_type sym_type) {
   symbol *pSym, *pNew;
 
   pNew = g_new(symbol, 1);
@@ -537,7 +533,7 @@ void miscAddSymbol(char* name, long value, symbol_type sym_type) {
  * @param fHandle
  * @return char
  */
-char getSymbol(FILE* fHandle) {
+const char getSymbol(FILE* const fHandle) {
   // Strip spaces
   char c;
   do {
@@ -599,7 +595,7 @@ char getSymbol(FILE* fHandle) {
  * @param size
  * @return unsigned int
  */
-unsigned int boardTranslateMemsize(int size) {
+constexpr const unsigned int boardTranslateMemsize(const int size) {
   switch (size) {
     case 1:
       return 0;
@@ -625,11 +621,11 @@ unsigned int boardTranslateMemsize(int size) {
  * @param size width of current memory (in bytes)
  * @return TRUE for success, FALSE for failure
  */
-int boardSetMemory(int count,
-                   unsigned char* address,
-                   unsigned char* value,
-                   int size) {
-  int bytecount = count * size;
+const int boardSetMemory(const int count,
+                         unsigned char* const address,
+                         unsigned char* const value,
+                         const int size) {
+  const int bytecount = count * size;
 
   if ((1 != boardSendChar(BR_SET_MEM | boardTranslateMemsize(size))) ||
       (4 != boardSendCharArray(4, address))                      // send address
@@ -647,7 +643,7 @@ int boardSetMemory(int count,
  * @param pathToKMD A path to the `.kmd` file to be loaded.
  * @return int status code (1 is failure, 0 is success)
  */
-int readSource(const char* pathToKMD) {
+const int readSource(const char* pathToKMD) {
   unsigned int address, old_address;
   unsigned int d_size[SOURCE_FIELD_COUNT], d_value[SOURCE_FIELD_COUNT];
   int i, j, m, flag;
