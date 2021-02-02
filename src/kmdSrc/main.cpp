@@ -43,9 +43,10 @@ int communicationFromPipe[2];
 int communicationToPipe[2];
 
 void initJimulator(std::string argv0);
-std::string getAbsolutePathToRootDirectory(char* arg);
-int initialiseCommandLine(const Glib::RefPtr<Gio::ApplicationCommandLine>&,
-                          Glib::RefPtr<Gtk::Application>& app);
+const std::string getAbsolutePathToRootDirectory(const char* const arg);
+const int initialiseCommandLine(
+    const Glib::RefPtr<Gio::ApplicationCommandLine>&,
+    const Glib::RefPtr<Gtk::Application>& app);
 
 /**
  * @brief The program entry point.
@@ -54,7 +55,7 @@ int initialiseCommandLine(const Glib::RefPtr<Gio::ApplicationCommandLine>&,
  * @return int exit code.
  */
 int main(int argc, char* argv[]) {
-  std::string argv0 = getAbsolutePathToRootDirectory(argv[0]);
+  auto argv0 = getAbsolutePathToRootDirectory(argv[0]);
 
   auto app = Gtk::Application::create(argc, argv, "uon.cs.KoMo2",
                                       Gio::APPLICATION_HANDLES_COMMAND_LINE);
@@ -66,7 +67,7 @@ int main(int argc, char* argv[]) {
   MainWindowView koMo2Window(1240, 700);
   KoMo2Model mainModel(&koMo2Window, argv0);
 
-  int exit = app->run(koMo2Window);
+  auto exit = app->run(koMo2Window);
   kill(emulator_PID, SIGKILL);  // Kill Jimulator
   return exit;
 }
@@ -108,7 +109,7 @@ void initJimulator(std::string argv0) {
     close(0);
     dup2(communicationToPipe[0], 0);
 
-    const char* jimulatorPath = argv0.append("/bin/jimulator").c_str();
+    auto jimulatorPath = argv0.append("/bin/jimulator").c_str();
     execlp(jimulatorPath, "", (char*)0);
     std::cout << "Jimulator launching has failed" << std::endl;
     _exit(1);
@@ -120,14 +121,13 @@ void initJimulator(std::string argv0) {
  * @return std::string the directory of the KoMo2 binary - if the binary is at
  * `/home/user/demo/kmd`, return `/home/user/demo`.
  */
-std::string getAbsolutePathToRootDirectory(char* arg) {
+const std::string getAbsolutePathToRootDirectory(const char* const arg) {
   // Gets a path to this executable
-  char* buf = realpath(arg, NULL);
-  std::string argv0(buf);
+  auto buf = realpath(arg, NULL);
+  const std::string argv0(buf);
   free(buf);
 
-  argv0 = argv0.substr(0, argv0.size() - 7);
-  return argv0;
+  return argv0.substr(0, argv0.size() - 7);
 }
 
 /**
@@ -135,7 +135,7 @@ std::string getAbsolutePathToRootDirectory(char* arg) {
  * @returns std::string the version number contained in the plain text file
  * `version` in the project root.
  */
-std::string getVersionNumber() {
+const std::string getVersionNumber() {
   std::string versionString;
   std::ifstream versionFile("version");
 
@@ -152,7 +152,8 @@ std::string getVersionNumber() {
 /**
  * @brief read and print the help message.
  */
-void getHelpMessage() {
+void printHelpMessage() {
+  std::cout << "TODO: Help message!" << std::endl;
   // TODO: stub - read a help message and print it from somewhere
 }
 
@@ -162,7 +163,7 @@ void getHelpMessage() {
  * @param isHelp If the help flag has been set.
  * @return int status code.
  */
-int handleCommandLine(bool isVersion, bool isHelp) {
+const int handleCommandLine(const bool isVersion, const bool isHelp) {
   // TODO: potentially move version & help message to JSON?
   if (isVersion) {
     std::cout << "v" << getVersionNumber() << std::endl;
@@ -170,7 +171,7 @@ int handleCommandLine(bool isVersion, bool isHelp) {
   }
 
   if (isHelp) {
-    getHelpMessage();
+    printHelpMessage();
     return 1;
   }
 
@@ -187,8 +188,9 @@ int handleCommandLine(bool isVersion, bool isHelp) {
  * @param app The GTK application itself.
  * @return int status code.
  */
-int initialiseCommandLine(const Glib::RefPtr<Gio::ApplicationCommandLine>& cmd,
-                          Glib::RefPtr<Gtk::Application>& app) {
+const int initialiseCommandLine(
+    const Glib::RefPtr<Gio::ApplicationCommandLine>& cmd,
+    const Glib::RefPtr<Gtk::Application>& app) {
   Glib::OptionGroup group("options", "main options");
   bool isVersion = false,
        isHelp = false;              // Booleans for options being toggled
