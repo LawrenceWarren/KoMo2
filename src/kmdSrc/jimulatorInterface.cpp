@@ -42,7 +42,7 @@
 #include <vector>
 #include "globals.h"
 
-// Forward declaring auxiliary load functions
+// ! Forward declaring auxiliary load functions
 void flush_source();
 int boardSendChar(unsigned char to_send);
 void misc_flush_symbol_table();
@@ -61,13 +61,11 @@ unsigned char board_runflags = RUN_FLAG_INIT;
  * @param pathToS An absolute path to the `.s` file to be compiled.
  * @param pathToKMD an absolute path to the `.kmd` file that will be output.
  */
-int compileJimulator(const char* pathToBin,
-                     const char* pathToS,
-                     const char* pathToKMD) {
+const int compileJimulator(const char* const pathToBin,
+                           const char* const pathToS,
+                           const char* const pathToKMD) {
   execlp(pathToBin, "aasm", "-lk", pathToKMD, pathToS, (char*)0);
-
-  // Should not get here!
-  printf("Running ARM assembler failed. \n");
+  std::cout << "Running ARM assembler failed." << std::endl;
   return 1;
 }
 
@@ -77,7 +75,7 @@ int compileJimulator(const char* pathToBin,
  * networking, etc - it is pure emulation.
  * @param pathToKMD an absolute path to the `.kmd` file that will be loaded.
  */
-int loadJimulator(const char* pathToKMD) {
+const int loadJimulator(const char* const pathToKMD) {
   // flush_source();
   // misc_flush_symbol_table();
   return readSource(pathToKMD);
@@ -87,21 +85,19 @@ int loadJimulator(const char* pathToKMD) {
  * @brief Commences running the emulator.
  * @param steps The number of steps to run for (0 if indefinite)
  */
-void startJimulator(int steps) {
+void startJimulator(const int steps) {
   run_board(steps);
-  printf("RUNNING!🔥\n");
+  std::cout << "RUNNING!🔥" << std::endl;
 }
 
 /**
  * @brief Continues running Jimulator.
  */
 void continueJimulator() {
-  if (not checkBoardState()) {
-    return;
+  if (checkBoardState()) {
+    boardSendChar(BR_CONTINUE);
+    std::cout << "CONTINUED!😜" << std::endl;
   }
-
-  boardSendChar(BR_CONTINUE);
-  printf("CONTINUED!😜\n");
 }
 
 /**
@@ -110,11 +106,9 @@ void continueJimulator() {
 void pauseJimulator() {
   boardSendChar(BR_STOP);
 
-  if (not checkBoardState()) {
-    return;
+  if (checkBoardState()) {
+    std::cout << "Paused!🚀" << std::endl;
   }
-
-  printf("Paused!🚀\n");
 }
 
 /**
@@ -384,17 +378,18 @@ std::string readValuesFromRegisterArray(unsigned char* values) {
  * @brief Queries a register in Jimulator to get it's current value.
  * @return The values read from the registers.
  */
-std::vector<std::string> getRegisterValueFromJimulator() {
-  // TODO: make std::array
+const std::array<std::string, 16> getJimulatorRegisterValues() {
   unsigned char regVals[64];            // 64-byte array
   readRegistersIntoArray(regVals, 16);  // regVals now has reg values
-  std::vector<std::string> vector;      // vector of strings
 
-  for (int i = 0; i < 16; i++) {
-    vector.push_back(readValuesFromRegisterArray(&regVals[i * 4]));
+  std::array<std::string, 16> a;  // vector of strings
+
+  // Loop through the array
+  for (long unsigned int j = 0; j < a.size(); j++) {
+    a[j] = readValuesFromRegisterArray(&regVals[j * 4]);
   }
 
-  return vector;
+  return a;
 }
 
 // ! COMPILING STUFF BELOW! !

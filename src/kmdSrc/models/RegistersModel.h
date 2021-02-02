@@ -8,6 +8,7 @@ class RegistersModel : private Model {
   virtual void changeJimulatorState(const JimulatorState newState) override;
   virtual const bool handleKeyPress(const GdkEventKey* const e) override;
   RegistersView* const getView();
+  const std::array<std::string, 16> getRegisterValueFromJimulator() const;
 
  private:
   /**

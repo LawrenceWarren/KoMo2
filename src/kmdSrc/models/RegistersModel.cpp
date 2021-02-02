@@ -1,3 +1,4 @@
+#include "../jimulatorInterface.h"
 #include "../views/RegistersView.h"
 #include "KoMo2Model.h"
 
@@ -33,4 +34,14 @@ const bool RegistersModel::handleKeyPress(const GdkEventKey* const e) {
  */
 RegistersView* const RegistersModel::getView() {
   return view;
+}
+
+/**
+ * @brief Gets the register values out of Jimulator.
+ * @return const std::array<std::string, 16> An array containing all of the
+ * register values.
+ */
+const std::array<std::string, 16>
+RegistersModel::getRegisterValueFromJimulator() const {
+  return getJimulatorRegisterValues();
 }

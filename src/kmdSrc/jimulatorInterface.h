@@ -20,15 +20,15 @@
  * https://www.gnu.org/copyleft/gpl.html
  */
 
-#include <vector>
+#include <array>
 #include <string>
 
-std::vector<std::string> getRegisterValueFromJimulator();
-int compileJimulator(const char* pathToBin,
-                     const char* pathToS,
-                     const char* pathToKMD);
-int loadJimulator(const char* pathToKMD);
-void startJimulator(int steps);
+const std::array<std::string, 16> getJimulatorRegisterValues();
+const int compileJimulator(const char* const pathToBin,
+                           const char* const pathToS,
+                           const char* const pathToKMD);
+const int loadJimulator(const char* const pathToKMD);
+void startJimulator(const int steps);
 void pauseJimulator();
 void continueJimulator();
 void resetJimulator();

@@ -106,7 +106,7 @@ void CompileLoadModel::onCompileLoadClick() const {
  * @brief Opens a file selection dialog upon the `BrowseButtonView` being
  * clicked.
  */
-void CompileLoadModel::onBrowseClick()  {
+void CompileLoadModel::onBrowseClick() {
   // Creates a new file browser dialogue box.
   Gtk::FileChooserDialog dialog(" File explorer",
                                 Gtk::FILE_CHOOSER_ACTION_OPEN);

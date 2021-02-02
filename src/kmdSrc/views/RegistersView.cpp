@@ -2,7 +2,6 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include "../jimulatorInterface.h"
 
 /**
  * @brief Constructs a new RegisterView object.
@@ -14,17 +13,15 @@ RegistersView::RegistersView(MainWindowView* const parent)
   grid.set_column_spacing(3);
   grid.set_row_spacing(3);
 
-  // TODO: refactor this
-
   // Sets up each member of the array
-  for (int i = 0; i < 2; i++) {
-    for (int j = 0; j < 16; j++) {
+  for (long unsigned int i = 0; i < labelArray.size(); i++) {
+    for (long unsigned int j = 0; j < labelArray[i].size(); j++) {
       // Set the left hand labels
       if (i == 0) {
         labelArray[i][j].set_size_request(70, 22);
 
         // First 0 through 14 are R registers
-        if (j < 15) {
+        if (j != 15) {
           labelArray[i][j].set_text("R" + std::to_string(j));
         }
 
@@ -32,10 +29,9 @@ RegistersView::RegistersView(MainWindowView* const parent)
         else {
           labelArray[i][j].set_text("PC");
         }
-
       }
 
-      // Right hand column
+      // Set the left hand labels
       else {
         labelArray[i][j].set_text("0x00000000");
         labelArray[i][j].set_size_request(120, 22);
@@ -65,16 +61,20 @@ void RegistersView::setModel(RegistersModel* const val) {
 }
 
 /**
+ * @brief gets the model for this view.
+ * @return RegistersModel* The model.
+ */
+RegistersModel* const RegistersView::getModel() const {
+  return model;
+}
+
+/**
  * @brief Handles updating this particular view.
  * Reads register values from Jimulator, sets the label values of this view
  * to reflect those values.
  */
-void RegistersView::refreshViews() {
-  std::vector<std::string> v = getRegisterValueFromJimulator();
-  // TODO: make std::array
-
-  // For each register in the array
+void RegistersView::refreshViews(const std::array<std::string, 16> a) {
   for (int i = 0; i < 16; i++) {
-    labelArray[1][i].set_text(v[i]);
+    labelArray[1][i].set_text(a[i]);
   }
 }

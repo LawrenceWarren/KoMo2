@@ -60,12 +60,14 @@ const bool KoMo2Model::refreshViews() {
   if (getJimulatorState() == RUNNING) {
     // TODO: look at KoMoDo function callback_updateall()
     std::cout << "refresh views on this timer!" << std::endl;
-    registersModel.getView()->refreshViews();
+    registersModel.getView()->refreshViews(
+        registersModel.getRegisterValueFromJimulator());
     return true;
   } else {
     // TODO: Refresh views once
     std::cout << "refreshing views once" << std::endl;
-    registersModel.getView()->refreshViews();
+    registersModel.getView()->refreshViews(
+        registersModel.getRegisterValueFromJimulator());
     return false;
   }
 }
