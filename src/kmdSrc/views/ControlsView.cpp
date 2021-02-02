@@ -26,7 +26,7 @@
  * @brief Construct a new Controls View.
  * @param parent A reference to the parent view.
  */
-ControlsView::ControlsView(MainWindowView* parent)
+ControlsView::ControlsView(MainWindowView* const parent)
     : parent(parent),
       helpButton(),
       reloadJimulatorButton(),
@@ -97,7 +97,8 @@ void ControlsView::initProgramControlsContainer() {
  * @param val The value to set model to.
  * @param projectRoot An absolute path to the root of the project.
  */
-void ControlsView::setModel(ControlsModel* val, std::string projectRoot) {
+void ControlsView::setModel(ControlsModel* const val,
+                            const std::string projectRoot) {
   model = val;
 
   getHaltExecutionButton()->set_image(
@@ -117,7 +118,7 @@ void ControlsView::setModel(ControlsModel* val, std::string projectRoot) {
  * @brief Gets the `helpButton` member variable.
  * @return Gtk::Button* A pointer to the `helpButton` member variable.
  */
-Gtk::Button* ControlsView::getHelpButton() {
+Gtk::Button* const ControlsView::getHelpButton() {
   return &helpButton;
 }
 /**
@@ -125,14 +126,14 @@ Gtk::Button* ControlsView::getHelpButton() {
  * @return Gtk::Button* A pointer to the `reloadJimulatorButton` member
  * variable.
  */
-Gtk::Button* ControlsView::getReloadJimulatorButton() {
+Gtk::Button* const ControlsView::getReloadJimulatorButton() {
   return &reloadJimulatorButton;
 }
 /**
  * @brief Gets the `pauseResumeButton` member variable.
  * @return Gtk::Button* A pointer to the `pauseResumeButton` member variable.
  */
-Gtk::Button* ControlsView::getPauseResumeButton() {
+Gtk::Button* const ControlsView::getPauseResumeButton() {
   return &pauseResumeButton;
 }
 /**
@@ -140,13 +141,13 @@ Gtk::Button* ControlsView::getPauseResumeButton() {
  * @return Gtk::Button* A pointer to the `singleStepExecuteButton` member
  * variable.
  */
-Gtk::Button* ControlsView::getSingleStepExecuteButton() {
+Gtk::Button* const ControlsView::getSingleStepExecuteButton() {
   return &singleStepExecuteButton;
 }
 /**
  * @brief Gets the `haltExecutionButton` member variable.
  * @return Gtk::Button* A pointer to the `haltExecutionButton` member variable.
  */
-Gtk::Button* ControlsView::getHaltExecutionButton() {
+Gtk::Button* const ControlsView::getHaltExecutionButton() {
   return &haltExecutionButton;
 }

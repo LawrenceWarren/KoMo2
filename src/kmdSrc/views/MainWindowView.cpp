@@ -32,7 +32,7 @@
  * @param x The width of the window.
  * @param y The height of the window.
  */
-MainWindowView::MainWindowView(int x, int y)
+MainWindowView::MainWindowView(const int x, const int y)
     : masterLayout(),
       controlsAndCompileBar(),
       selectAndLoadContainer(this),
@@ -62,7 +62,7 @@ MainWindowView::MainWindowView(int x, int y)
  * @param x The width of the window.
  * @param y The height of the window.
  */
-void MainWindowView::setSizes(int x, int y) {
+void MainWindowView::setSizes(const int x, const int y) {
   set_default_size(x, y);  // ~16:9 ration
 
   // Layout sizes
@@ -105,34 +105,34 @@ void MainWindowView::setStyling() {
 
 // ! Getters and setters.
 
-RegistersView* MainWindowView::getRegistersView() {
+RegistersView* const MainWindowView::getRegistersView() {
   return &registersView;
 }
 /**
  * @brief Get the CompileLoadView.
  * @return CompileLoadView* A pointer to the compileLoadView.
  */
-CompileLoadView* MainWindowView::getCompileLoadView() {
+CompileLoadView* const MainWindowView::getCompileLoadView() {
   return &selectAndLoadContainer;
 }
 /**
  * @brief Get the ControlsView.
  * @return ControlsView* A pointer to the controlsView.
  */
-ControlsView* MainWindowView::getControlsView() {
+ControlsView* const MainWindowView::getControlsView() {
   return &programControlsContainer;
 }
 /**
  * @brief Gets the `model` member variable.
  * @return KoMo2Model* A pointer to the `model` member variable.
  */
-KoMo2Model* MainWindowView::getModel() {
+KoMo2Model* const MainWindowView::getModel() const {
   return model;
 }
 /**
  * @brief Sets the `model` member variable.
  * @param val The pointer to set the model member variable to.
  */
-void MainWindowView::setModel(KoMo2Model* val) {
+void MainWindowView::setModel(KoMo2Model* const val) {
   model = val;
 }

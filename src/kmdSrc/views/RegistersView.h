@@ -8,13 +8,13 @@ class RegistersModel;
 
 class RegistersView : public Gtk::VButtonBox {
  public:
-  RegistersView(MainWindowView* parent);
-  void setModel(RegistersModel* val);
+  RegistersView(MainWindowView* const parent);
+  void setModel(RegistersModel* const val);
   void refreshViews();
 
  private:
   Gtk::Grid grid;
-  Gtk::Label labelArray[2][16];
+  Gtk::Label labelArray[2][16];  // TODO: make std::array
   char* something(int count, unsigned char* values);
 
   /**
@@ -27,7 +27,7 @@ class RegistersView : public Gtk::VButtonBox {
    */
   RegistersModel* model;
 
-  //   // ! Deleted special member functions
+  // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error
   RegistersView(const RegistersView&) = delete;
   RegistersView(const RegistersView&&) = delete;

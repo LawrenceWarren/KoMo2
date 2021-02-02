@@ -34,20 +34,20 @@ class CompileLoadModel;
 class CompileLoadView : public Gtk::VButtonBox {
  public:
   // Constructors and destructors
-  CompileLoadView(MainWindowView* parent);
+  CompileLoadView(MainWindowView* const parent);
 
   // Getters and setters
-  Gtk::Button* getCompileAndLoadButton();
-  Gtk::Button* getBrowseButton();
-  Gtk::Label* getSelectedFileLabel();
-  void setSelectedFileLabelText(std::string val);
-  void setModel(CompileLoadModel* val);
+  Gtk::Button* const getCompileAndLoadButton();
+  Gtk::Button* const getBrowseButton();
+  Gtk::Label* const getSelectedFileLabel();
+  void setSelectedFileLabelText(const std::string val);
+  void setModel(CompileLoadModel* const val);
 
  private:
   /**
    * @brief A pointer to the parent view.
    */
-  MainWindowView* parent;
+  MainWindowView* const parent;
 
   /**
    * @brief A pointer to the related model.
@@ -74,7 +74,7 @@ class CompileLoadView : public Gtk::VButtonBox {
   // General functions
   void initSelectAndLoadContainer();
 
-  //   // ! Deleted special member functions
+  // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error
   CompileLoadView(const CompileLoadView&) = delete;
   CompileLoadView(const CompileLoadView&&) = delete;

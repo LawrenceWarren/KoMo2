@@ -30,29 +30,24 @@ class ControlsView;
  */
 class ControlsModel : private Model {
  public:
-  // Constructors
-  ControlsModel(ControlsView* view, KoMo2Model* parent);
-
-  // Key handler
+  ControlsModel(ControlsView* const view, KoMo2Model* const parent);
   virtual const bool handleKeyPress(const GdkEventKey* const e) override;
-
-  // General functions
   virtual void changeJimulatorState(const JimulatorState newState) override;
 
  private:
   /**
    * @brief A pointer to the view which this model represents.
    */
-  ControlsView* view;
+  ControlsView* const view;
 
   // Click handlers
-  void onHelpClick();
+  void onHelpClick() const;
   void onReloadJimulatorClick();
   void onPauseResumeClick();
   void onSingleStepExecuteClick();
   void onHaltExecutionClick();
 
-  //   // ! Deleted special member functions
+  // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error
   ControlsModel(const ControlsModel&) = delete;
   ControlsModel(const ControlsModel&&) = delete;

@@ -43,7 +43,7 @@ enum CompileLoadInnerState : int {
  */
 class CompileLoadModel : private Model {
  public:
-  CompileLoadModel(CompileLoadView* view, KoMo2Model* parent);
+  CompileLoadModel(CompileLoadView* const view, KoMo2Model* const parent);
   virtual void changeJimulatorState(const JimulatorState newState) override;
   virtual const bool handleKeyPress(const GdkEventKey* const e) override;
 
@@ -74,11 +74,11 @@ class CompileLoadModel : private Model {
   void setAbsolutePathToSelectedFile(const std::string val);
 
   // ! General functions
+  void onBrowseClick();
+  void onCompileLoadClick() const;
   const std::string makeKmdPath(const std::string absolutePath) const;
   void handleResult(const int result,
                     const Gtk::FileChooserDialog* const dialog);
-  void onBrowseClick();       // TODO: make const?
-  void onCompileLoadClick();  // TODO: make const?
 
   // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error

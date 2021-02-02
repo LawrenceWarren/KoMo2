@@ -41,18 +41,18 @@ class KoMo2Model;
 class MainWindowView : public Gtk::Window {
  public:
   // Constructors
-  MainWindowView(int x, int y);
+  MainWindowView(const int x, const int y);
 
   // Getters and setters
-  void setModel(KoMo2Model* val);
-  KoMo2Model* getModel();
+  void setModel(KoMo2Model* const val);
+  KoMo2Model* const getModel() const;
   void setStyling();
-  CompileLoadView* getCompileLoadView();
-  ControlsView* getControlsView();
-  RegistersView* getRegistersView();
+  CompileLoadView* const getCompileLoadView();
+  ControlsView* const getControlsView();
+  RegistersView* const getRegistersView();
 
  private:
-  void setSizes(int x, int y);
+  void setSizes(const int x, const int y);
 
   // ! Layouts
 
@@ -91,7 +91,7 @@ class MainWindowView : public Gtk::Window {
    */
   KoMo2Model* model;
 
-  //   // ! Deleted special member functions
+  // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error
   MainWindowView(const MainWindowView&) = delete;
   MainWindowView(const MainWindowView&&) = delete;

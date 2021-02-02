@@ -8,7 +8,8 @@
  * @brief Constructs a new RegisterView object.
  * @param parent A pointer to the parent view.
  */
-RegistersView::RegistersView(MainWindowView* parent) : grid(), parent(parent) {
+RegistersView::RegistersView(MainWindowView* const parent)
+    : grid(), parent(parent) {
   grid.set_column_homogeneous(false);
   grid.set_column_spacing(3);
   grid.set_row_spacing(3);
@@ -55,13 +56,11 @@ RegistersView::RegistersView(MainWindowView* parent) : grid(), parent(parent) {
   show_all_children();
 }
 
-
-
 /**
  * @brief Sets the model for this view.
  * @param val The model.
  */
-void RegistersView::setModel(RegistersModel* val) {
+void RegistersView::setModel(RegistersModel* const val) {
   model = val;
 }
 
@@ -72,6 +71,7 @@ void RegistersView::setModel(RegistersModel* val) {
  */
 void RegistersView::refreshViews() {
   std::vector<std::string> v = getRegisterValueFromJimulator();
+  // TODO: make std::array
 
   // For each register in the array
   for (int i = 0; i < 16; i++) {

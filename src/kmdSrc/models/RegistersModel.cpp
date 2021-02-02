@@ -6,7 +6,8 @@
  * @param view A pointer to the view this register represents.
  * @param parent A pointer to the parent model.
  */
-RegistersModel::RegistersModel(RegistersView* view, KoMo2Model* parent)
+RegistersModel::RegistersModel(RegistersView* const view,
+                               KoMo2Model* const parent)
     : Model(parent), view(view) {
   view->setModel(this);
 }
@@ -30,6 +31,6 @@ const bool RegistersModel::handleKeyPress(const GdkEventKey* const e) {
  * @brief Returns the view for this model.
  * @return RegistersView* The view for this model.
  */
-RegistersView* RegistersModel::getView() {
+RegistersView* const RegistersModel::getView() {
   return view;
 }

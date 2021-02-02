@@ -34,7 +34,7 @@
  * @param haltExecutionButton A pointer to the haltExecutionButton.
  * @param parent A pointer to the parent model, KoMo2Model.
  */
-ControlsModel::ControlsModel(ControlsView* view, KoMo2Model* parent)
+ControlsModel::ControlsModel(ControlsView* const view, KoMo2Model* const parent)
     : Model(parent), view(view) {
   setButtonListener(view->getHelpButton(), this, &ControlsModel::onHelpClick);
 
@@ -54,50 +54,9 @@ ControlsModel::ControlsModel(ControlsView* view, KoMo2Model* parent)
 }
 
 /**
- * @brief Handles a key press event pertaining to this model.
- * @param e The key press event.
- * @return bool Was a key pressed or not?
- */
-const bool ControlsModel::handleKeyPress(const GdkEventKey* const e) {
-  switch (e->keyval) {
-    // F5
-    case 65474:
-      if (getJimulatorState() != UNLOADED) {
-        onPauseResumeClick();
-      }
-      return true;
-
-    // F6
-    case 65475:
-      if (getJimulatorState() == LOADED || getJimulatorState() == PAUSED) {
-        onSingleStepExecuteClick();
-      }
-      return true;
-
-    // F1
-    case 65470:
-      onHelpClick();
-      return true;
-
-    // F12
-    case 65481:
-      if (getJimulatorState() == RUNNING || getJimulatorState() == PAUSED) {
-        onHaltExecutionClick();
-      }
-      return true;
-
-    // Otherwise
-    default:
-      return false;
-  }
-
-  return false;
-}
-
-/**
  * @brief Handles the `helpButton` click events.
  */
-void ControlsModel::onHelpClick() {
+void ControlsModel::onHelpClick() const {
   std::cout << "Help Button click!" << std::endl;
 }
 
@@ -163,6 +122,49 @@ void ControlsModel::onSingleStepExecuteClick() {
 void ControlsModel::onHaltExecutionClick() {
   std::cout << "Halt Execution Button Click!" << std::endl;
   getParent()->changeJimulatorState(UNLOADED);
+}
+
+// ! Virtual functions
+
+/**
+ * @brief Handles a key press event pertaining to this model.
+ * @param e The key press event.
+ * @return bool Was a key pressed or not?
+ */
+const bool ControlsModel::handleKeyPress(const GdkEventKey* const e) {
+  switch (e->keyval) {
+    // F5
+    case 65474:
+      if (getJimulatorState() != UNLOADED) {
+        onPauseResumeClick();
+      }
+      return true;
+
+    // F6
+    case 65475:
+      if (getJimulatorState() == LOADED || getJimulatorState() == PAUSED) {
+        onSingleStepExecuteClick();
+      }
+      return true;
+
+    // F1
+    case 65470:
+      onHelpClick();
+      return true;
+
+    // F12
+    case 65481:
+      if (getJimulatorState() == RUNNING || getJimulatorState() == PAUSED) {
+        onHaltExecutionClick();
+      }
+      return true;
+
+    // Otherwise
+    default:
+      return false;
+  }
+
+  return false;
 }
 
 /**

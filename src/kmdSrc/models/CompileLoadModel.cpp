@@ -36,7 +36,8 @@
  * @param browseButton a pointer to the browseButton.
  * @param parent a pointer to the parent KoMo2Model.
  */
-CompileLoadModel::CompileLoadModel(CompileLoadView* view, KoMo2Model* parent)
+CompileLoadModel::CompileLoadModel(CompileLoadView* const view,
+                                   KoMo2Model* const parent)
     : Model(parent), view(view) {
   // Set the onClick events for the browse and compile and load buttons to
   // be wired to CompileLoadModel member functions.
@@ -55,7 +56,7 @@ CompileLoadModel::CompileLoadModel(CompileLoadView* view, KoMo2Model* parent)
  * Forks a child process, executes aasm on the child, and then load it into
  * Jimulator, if a valid file path is given.
  */
-void CompileLoadModel::onCompileLoadClick() {
+void CompileLoadModel::onCompileLoadClick() const {
   // If the length is zero, invalid path
   if (not getAbsolutePathToSelectedFile().length()) {
     std::cout << "No file selected!" << std::endl;
@@ -105,7 +106,7 @@ void CompileLoadModel::onCompileLoadClick() {
  * @brief Opens a file selection dialog upon the `BrowseButtonView` being
  * clicked.
  */
-void CompileLoadModel::onBrowseClick() {
+void CompileLoadModel::onBrowseClick()  {
   // Creates a new file browser dialogue box.
   Gtk::FileChooserDialog dialog(" File explorer",
                                 Gtk::FILE_CHOOSER_ACTION_OPEN);

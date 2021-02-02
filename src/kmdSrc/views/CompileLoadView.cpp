@@ -25,7 +25,7 @@
  * @brief Construct a new CompileLoadView.
  * @param parent A pointer to the parent.
  */
-CompileLoadView::CompileLoadView(MainWindowView* parent)
+CompileLoadView::CompileLoadView(MainWindowView* const parent)
     : parent(parent),
       selectedFileLabel("File: "),
       compileAndLoadButton("Compile & Load"),
@@ -67,39 +67,38 @@ void CompileLoadView::initSelectAndLoadContainer() {
 }
 
 /**
- * @brief Set the model pointer.
- * @param val The value to set the pointer to.
- */
-void CompileLoadView::setModel(CompileLoadModel* val) {
-  model = val;
-}
-
-/**
  * @brief Gets the `compileAndLoadButton` member variable.
  * @return Gtk::Button* A pointer to the `compileAndLoadButton` member
  * variable.
  */
-Gtk::Button* CompileLoadView::getCompileAndLoadButton() {
+Gtk::Button* const CompileLoadView::getCompileAndLoadButton() {
   return &compileAndLoadButton;
 }
 /**
  * @brief Gets the `browseButton` member variable.
  * @return Gtk::Button* A pointer to the `browseButton` member variable.
  */
-Gtk::Button* CompileLoadView::getBrowseButton() {
+Gtk::Button* const CompileLoadView::getBrowseButton() {
   return &browseButton;
 }
 /**
  * @brief Gets the `selectedFileLabel` member variable.
  * @return Gtk::Label* A pointer to the `selectedFileLabel` member variable.
  */
-Gtk::Label* CompileLoadView::getSelectedFileLabel() {
+Gtk::Label* const CompileLoadView::getSelectedFileLabel() {
   return &selectedFileLabel;
 }
 /**
  * @brief Sets the text displayed by the `selectedFileLabel` member variable.
  * @param val The text to display in the `selectedFileLabel`.
  */
-void CompileLoadView::setSelectedFileLabelText(std::string val) {
+void CompileLoadView::setSelectedFileLabelText(const std::string val) {
   getSelectedFileLabel()->set_text(val);
+}
+/**
+ * @brief Set the model pointer.
+ * @param val The value to set the pointer to.
+ */
+void CompileLoadView::setModel(CompileLoadModel* const val) {
+  model = val;
 }

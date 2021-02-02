@@ -385,6 +385,7 @@ std::string readValuesFromRegisterArray(unsigned char* values) {
  * @return The values read from the registers.
  */
 std::vector<std::string> getRegisterValueFromJimulator() {
+  // TODO: make std::array
   unsigned char regVals[64];            // 64-byte array
   readRegistersIntoArray(regVals, 16);  // regVals now has reg values
   std::vector<std::string> vector;      // vector of strings

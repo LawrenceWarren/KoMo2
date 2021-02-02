@@ -35,21 +35,21 @@ class ControlsModel;
 class ControlsView : public Gtk::HButtonBox {
  public:
   // Constructors and destructors
-  ControlsView(MainWindowView* parent);
+  ControlsView(MainWindowView* const parent);
 
   // Getters and setters
-  Gtk::Button* getHelpButton();
-  Gtk::Button* getReloadJimulatorButton();
-  Gtk::Button* getPauseResumeButton();
-  Gtk::Button* getSingleStepExecuteButton();
-  Gtk::Button* getHaltExecutionButton();
-  void setModel(ControlsModel* val, std::string projectRoot);
+  Gtk::Button* const getHelpButton();
+  Gtk::Button* const getReloadJimulatorButton();
+  Gtk::Button* const getPauseResumeButton();
+  Gtk::Button* const getSingleStepExecuteButton();
+  Gtk::Button* const getHaltExecutionButton();
+  void setModel(ControlsModel* const val, const std::string projectRoot);
 
  private:
   /**
    * @brief A pointer to the parent view.
    */
-  MainWindowView* parent;
+  MainWindowView* const parent;
 
   /**
    * @brief A pointer to the related model.
@@ -89,7 +89,7 @@ class ControlsView : public Gtk::HButtonBox {
   // General functions
   void initProgramControlsContainer();
 
-  //   // ! Deleted special member functions
+  // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error
   ControlsView(const ControlsView&) = delete;
   ControlsView(const ControlsView&&) = delete;

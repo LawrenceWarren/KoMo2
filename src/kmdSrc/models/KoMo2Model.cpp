@@ -33,7 +33,8 @@
  * @param mainWindow A pointer to the mainWindow view object.
  * @param argv0 The absolutePathToProjectRoot - parsed from argv[0].
  */
-KoMo2Model::KoMo2Model(MainWindowView* mainWindow, std::string argv0)
+KoMo2Model::KoMo2Model(MainWindowView* const mainWindow,
+                       const std::string argv0)
     : Model(this),
       mainWindow(mainWindow),
       absolutePathToProjectRoot(argv0),
@@ -55,7 +56,7 @@ KoMo2Model::KoMo2Model(MainWindowView* mainWindow, std::string argv0)
  * @brief Refreshes the views. May be called on a looping timer.
  * @return bool True if to be called in a loop.
  */
-bool KoMo2Model::refreshViews() {
+const bool KoMo2Model::refreshViews() {
   if (getJimulatorState() == RUNNING) {
     // TODO: look at KoMoDo function callback_updateall()
     std::cout << "refresh views on this timer!" << std::endl;
@@ -127,28 +128,34 @@ void KoMo2Model::changeJimulatorState(const JimulatorState newState) {
  * @brief Gets the `mainWindow` member variable.
  * @return MainWindowView* A pointer to the `MainWindow.`
  */
-MainWindowView* KoMo2Model::getMainWindow() {
+MainWindowView* const KoMo2Model::getMainWindow() const {
   return mainWindow;
-}
-/**
- * @brief Gets the `absolutePathToProjectRoot` member variable.
- * @return const std::string The absolute path to the project root.
- */
-const std::string KoMo2Model::getAbsolutePathToProjectRoot() {
-  return absolutePathToProjectRoot;
 }
 /**
  * @brief Gets the `compileLoadModel` member variable.
  * @return CompileLoadModel* A pointer to the `compileLoadModel`.
  */
-CompileLoadModel* KoMo2Model::getCompileLoadModel() {
+CompileLoadModel* const KoMo2Model::getCompileLoadModel() {
   return &compileLoadModel;
 }
-
 /**
  * @brief Gets the `controlsModel` member variable.
  * @return ControlsModel* A pointer to the `controlsModel`.
  */
-ControlsModel* KoMo2Model::getControlsModel() {
+ControlsModel* const KoMo2Model::getControlsModel() {
   return &controlsModel;
+}
+/**
+ * @brief Gets the `RegistersModel` member variable.
+ * @return RegistersModel* A pointer to the `RegistersModel`.
+ */
+RegistersModel* const KoMo2Model::getRegistersModel() {
+  return &registersModel;
+}
+/**
+ * @brief Gets the `absolutePathToProjectRoot` member variable.
+ * @return const std::string The absolute path to the project root.
+ */
+const std::string KoMo2Model::getAbsolutePathToProjectRoot() const {
+  return absolutePathToProjectRoot;
 }
