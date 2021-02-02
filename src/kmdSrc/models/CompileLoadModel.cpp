@@ -47,7 +47,7 @@ CompileLoadModel::CompileLoadModel(CompileLoadView* view, KoMo2Model* parent)
                     &CompileLoadModel::onCompileLoadClick);
 
   view->setModel(this);
-  changeInnerState(NO_FILE);
+  setInnerState(NO_FILE);
 }
 
 /**
@@ -139,26 +139,27 @@ void CompileLoadModel::onBrowseClick() {
  * @param dialog A pointer to the dialog box itself - frees itself in its
  * destructor.
  */
-void CompileLoadModel::handleResult(int result,
-                                    Gtk::FileChooserDialog* dialog) {
+void CompileLoadModel::handleResult(
+    const int result,
+    const Gtk::FileChooserDialog* const dialog) {
   switch (result) {
     // A file was selected - update inner state and overall state
     case (Gtk::RESPONSE_OK): {
       setAbsolutePathToSelectedFile(dialog->get_filename());
-      changeInnerState(FILE_SELECTED);
+      setInnerState(FILE_SELECTED);
       getParent()->changeJimulatorState(UNLOADED);
       break;
     }
     // Dialog was cancelled - update inner state but not overall state
     case (Gtk::RESPONSE_CANCEL): {
       setAbsolutePathToSelectedFile("");
-      changeInnerState(NO_FILE);
+      setInnerState(NO_FILE);
       break;
     }
     default: {
       // Some unexpected behaviour - update inner state but not overall state
       setAbsolutePathToSelectedFile("");
-      changeInnerState(NO_FILE);
+      setInnerState(NO_FILE);
       break;
     }
   }
@@ -171,7 +172,8 @@ void CompileLoadModel::handleResult(int result,
  * @param absolutePath The absolute path to the `.s` program.
  * @return std::string The absolute path with just the file name.
  */
-std::string CompileLoadModel::makeKmdPath(std::string absolutePath) {
+const std::string CompileLoadModel::makeKmdPath(
+    const std::string absolutePath) const {
   return absolutePath.substr(0, absolutePath.size() - 1).append("kmd");
 }
 
@@ -179,7 +181,7 @@ std::string CompileLoadModel::makeKmdPath(std::string absolutePath) {
  * @brief Handles a changing JimulatorState for this model.
  * @param newState The state that has been changed into.
  */
-void CompileLoadModel::changeJimulatorState(JimulatorState newState) {
+void CompileLoadModel::changeJimulatorState(const JimulatorState newState) {
   // Sets the default button state for compileLoadButton
   if (getInnerState() == NO_FILE) {
     setButtonState(view->getCompileAndLoadButton(), false);
@@ -223,7 +225,7 @@ void CompileLoadModel::changeJimulatorState(JimulatorState newState) {
  * @param e The key press event in question.
  * @return bool was the key pressed or not?
  */
-bool CompileLoadModel::handleKeyPress(GdkEventKey* e) {
+const bool CompileLoadModel::handleKeyPress(const GdkEventKey* const e) {
   switch (e->keyval) {
     // Ctrl + (lower case l)
     case 108:
@@ -264,7 +266,7 @@ bool CompileLoadModel::handleKeyPress(GdkEventKey* e) {
  * selected or not)
  * @param val The value to set the inner state to.
  */
-void CompileLoadModel::changeInnerState(CompileLoadInnerState val) {
+void CompileLoadModel::setInnerState(const CompileLoadInnerState val) {
   // This regex matches any length of characters up to a `/` character. The
   // regex_replace replaces them with "". So if we have `/user/demo/someFile.s`
   // it will resolve to simply become `someFile.s`
@@ -297,20 +299,20 @@ void CompileLoadModel::changeInnerState(CompileLoadInnerState val) {
  * @brief Sets the `absolutePathToSelectedFile` member variable.
  * @param val The value to set the `absolutePathToSelectedFile` member to.
  */
-void CompileLoadModel::setAbsolutePathToSelectedFile(std::string val) {
+void CompileLoadModel::setAbsolutePathToSelectedFile(const std::string val) {
   absolutePathToSelectedFile = val;
 }
 /**
  * @brief Gets the `absolutePathToSelectedFile` member variable.
  * @return std::string The `absolutePathToSelectedFile` member variable.
  */
-std::string CompileLoadModel::getAbsolutePathToSelectedFile() {
+const std::string CompileLoadModel::getAbsolutePathToSelectedFile() const {
   return absolutePathToSelectedFile;
 }
 /**
  * @brief Get the Inner State object
  * @return CompileLoadInnerState
  */
-CompileLoadInnerState CompileLoadModel::getInnerState() {
+const CompileLoadInnerState CompileLoadModel::getInnerState() const {
   return innerState;
 }

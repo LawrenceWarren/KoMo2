@@ -34,10 +34,10 @@ class ControlsModel : private Model {
   ControlsModel(ControlsView* view, KoMo2Model* parent);
 
   // Key handler
-  virtual bool handleKeyPress(GdkEventKey* e) override;
+  virtual const bool handleKeyPress(const GdkEventKey* const e) override;
 
   // General functions
-  virtual void changeJimulatorState(JimulatorState newState) override;
+  virtual void changeJimulatorState(const JimulatorState newState) override;
 
  private:
   /**
@@ -52,7 +52,8 @@ class ControlsModel : private Model {
   void onSingleStepExecuteClick();
   void onHaltExecutionClick();
 
-  // Deleted SMFS - stops these from being misused, creates a sensible error
+  //   // ! Deleted special member functions
+  // stops these functions from being misused, creates a sensible error
   ControlsModel(const ControlsModel&) = delete;
   ControlsModel(const ControlsModel&&) = delete;
   ControlsModel& operator=(const ControlsModel&) = delete;

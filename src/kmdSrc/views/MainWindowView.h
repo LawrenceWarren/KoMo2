@@ -91,7 +91,8 @@ class MainWindowView : public Gtk::Window {
    */
   KoMo2Model* model;
 
-  // Deleted SMFS - stops these from being misused, creates a sensible error
+  //   // ! Deleted special member functions
+  // stops these functions from being misused, creates a sensible error
   MainWindowView(const MainWindowView&) = delete;
   MainWindowView(const MainWindowView&&) = delete;
   MainWindowView& operator=(const MainWindowView&) = delete;

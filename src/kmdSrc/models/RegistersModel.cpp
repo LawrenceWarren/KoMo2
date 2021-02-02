@@ -15,14 +15,14 @@ RegistersModel::RegistersModel(RegistersView* view, KoMo2Model* parent)
  * @brief Handles changes in the Jimulator state.
  * @param newState The state being changed into.
  */
-void RegistersModel::changeJimulatorState(JimulatorState newState) {}
+void RegistersModel::changeJimulatorState(const JimulatorState newState) {}
 
 /**
  * @brief Handles any key press events.
  * @param e The key press event.
  * @return bool true if the key press was handled.
  */
-bool RegistersModel::handleKeyPress(GdkEventKey* e) {
+const bool RegistersModel::handleKeyPress(const GdkEventKey* const e) {
   return false;
 }
 

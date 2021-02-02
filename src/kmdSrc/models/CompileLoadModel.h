@@ -43,20 +43,15 @@ enum CompileLoadInnerState : int {
  */
 class CompileLoadModel : private Model {
  public:
-  // Constructors
   CompileLoadModel(CompileLoadView* view, KoMo2Model* parent);
-
-  // General functions
-  virtual void changeJimulatorState(JimulatorState newState) override;
-
-  // Key press handler
-  virtual bool handleKeyPress(GdkEventKey* e) override;
+  virtual void changeJimulatorState(const JimulatorState newState) override;
+  virtual const bool handleKeyPress(const GdkEventKey* const e) override;
 
  private:
   /**
    * @brief A pointer to the view that this model represents.
    */
-  CompileLoadView* view;
+  CompileLoadView* const view;
 
   /**
    * @brief Stores the state of the compile and load section of the GUI.
@@ -69,21 +64,24 @@ class CompileLoadModel : private Model {
    */
   std::string absolutePathToSelectedFile;
 
-  // Click handlers
-  void onBrowseClick();
-  void onCompileLoadClick();
+  // ! Getters and setters
+  // Inner state
+  const CompileLoadInnerState getInnerState() const;
+  void setInnerState(const CompileLoadInnerState newState);
 
-  // Getters and setters
-  CompileLoadInnerState getInnerState();
-  std::string getAbsolutePathToSelectedFile();
-  void setAbsolutePathToSelectedFile(std::string val);
-  void changeInnerState(CompileLoadInnerState newState);
+  // absolute path to selected file
+  const std::string getAbsolutePathToSelectedFile() const;
+  void setAbsolutePathToSelectedFile(const std::string val);
 
-  // General functions
-  std::string makeKmdPath(std::string absolutePath);
-  void handleResult(int result, Gtk::FileChooserDialog* dialog);
+  // ! General functions
+  const std::string makeKmdPath(const std::string absolutePath) const;
+  void handleResult(const int result,
+                    const Gtk::FileChooserDialog* const dialog);
+  void onBrowseClick();       // TODO: make const?
+  void onCompileLoadClick();  // TODO: make const?
 
-  // Deleted SMFS - stops these from being misused, creates a sensible error
+  // ! Deleted special member functions
+  // stops these functions from being misused, creates a sensible error
   CompileLoadModel(const CompileLoadModel&) = delete;
   CompileLoadModel(const CompileLoadModel&&) = delete;
   CompileLoadModel& operator=(const CompileLoadModel&) = delete;

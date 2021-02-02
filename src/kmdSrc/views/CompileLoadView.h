@@ -74,7 +74,8 @@ class CompileLoadView : public Gtk::VButtonBox {
   // General functions
   void initSelectAndLoadContainer();
 
-  // Deleted SMFS - stops these from being misused, creates a sensible error
+  //   // ! Deleted special member functions
+  // stops these functions from being misused, creates a sensible error
   CompileLoadView(const CompileLoadView&) = delete;
   CompileLoadView(const CompileLoadView&&) = delete;
   CompileLoadView& operator=(const CompileLoadView&) = delete;

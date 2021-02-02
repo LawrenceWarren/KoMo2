@@ -51,8 +51,6 @@ KoMo2Model::KoMo2Model(MainWindowView* mainWindow, std::string argv0)
   this->changeJimulatorState(UNLOADED);
 }
 
-
-
 /**
  * @brief Refreshes the views. May be called on a looping timer.
  * @return bool True if to be called in a loop.
@@ -76,7 +74,7 @@ bool KoMo2Model::refreshViews() {
  * @param e The key press event.
  * @return bool if a key was pressed.
  */
-bool KoMo2Model::handleKeyPress(GdkEventKey* e) {
+const bool KoMo2Model::handleKeyPress(const GdkEventKey* const e) {
   if (getCompileLoadModel()->handleKeyPress(e)) {
     return true;
   } else if (getControlsModel()->handleKeyPress(e)) {
@@ -91,7 +89,7 @@ bool KoMo2Model::handleKeyPress(GdkEventKey* e) {
  * `changeJimulatorState` function.
  * @param newState The state to change into.
  */
-void KoMo2Model::changeJimulatorState(JimulatorState newState) {
+void KoMo2Model::changeJimulatorState(const JimulatorState newState) {
   // No state change, do nothing
   if (getJimulatorState() == newState) {
     return;

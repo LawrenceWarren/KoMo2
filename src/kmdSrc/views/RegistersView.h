@@ -27,7 +27,8 @@ class RegistersView : public Gtk::VButtonBox {
    */
   RegistersModel* model;
 
-  // Deleted SMFS - stops these from being misused, creates a sensible error
+  //   // ! Deleted special member functions
+  // stops these functions from being misused, creates a sensible error
   RegistersView(const RegistersView&) = delete;
   RegistersView(const RegistersView&&) = delete;
   RegistersView& operator=(const RegistersView&) = delete;

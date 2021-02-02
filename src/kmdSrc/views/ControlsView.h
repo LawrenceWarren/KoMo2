@@ -89,7 +89,8 @@ class ControlsView : public Gtk::HButtonBox {
   // General functions
   void initProgramControlsContainer();
 
-  // Deleted SMFS - stops these from being misused, creates a sensible error
+  //   // ! Deleted special member functions
+  // stops these functions from being misused, creates a sensible error
   ControlsView(const ControlsView&) = delete;
   ControlsView(const ControlsView&&) = delete;
   ControlsView& operator=(const ControlsView&) = delete;

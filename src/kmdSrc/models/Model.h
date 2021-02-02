@@ -47,8 +47,8 @@ class Model {
   friend class KoMo2Model;  // Only KoMo2Model can access setJimulatorState()
 
  public:
-  Model(KoMo2Model* parent);
-  KoMo2Model* getParent();
+  Model(KoMo2Model* const parent);
+  KoMo2Model* const getParent() const;
 
  protected:
   /**
@@ -60,22 +60,22 @@ class Model {
    * @param c A pointer to some member function of the b object.
    */
   template <class T1, class T2>
-  void setButtonListener(Gtk::Button* button, T1 b, T2 c) {
+  void setButtonListener(Gtk::Button* const button, const T1 b, const T2 c) {
     button->signal_clicked().connect(sigc::mem_fun(*b, c));
   }
 
-  void setButtonState(Gtk::Button* button,
-                      bool state,
-                      std::string newTooltip = "",
-                      Gtk::Image* img = nullptr,
-                      std::string newLabelText = "");
+  void setButtonState(Gtk::Button* const button,
+                      const bool state,
+                      const std::string newTooltip = "",
+                      Gtk::Image* const img = nullptr,
+                      const std::string newLabelText = "") const;
 
   /**
    * @brief Handles key presses for each model.
    * @param e The key press event.
    * @return bool If a key pressed.
    */
-  virtual bool handleKeyPress(GdkEventKey* e) = 0;
+  virtual const bool handleKeyPress(const GdkEventKey* const e) = 0;
 
   /**
    * @brief Changes the state of Jimulator into newState.
@@ -84,20 +84,18 @@ class Model {
    * virtual function, we ensure this class cannot be instantiated.
    * @param newState The state to change the program to.
    */
-  virtual void changeJimulatorState(JimulatorState newState) = 0;
+  virtual void changeJimulatorState(const JimulatorState newState) = 0;
 
   // Getters and setters
 
-  JimulatorState getJimulatorState();
+  JimulatorState getJimulatorState() const;
 
  private:
-  void setJimulatorState(JimulatorState val);  // Only friends can access
-
   /**
    * @brief All models have a parent model - KoMo2Model, the most senior model
    * in the hierarchy, sets its parent to `self`.
    */
-  KoMo2Model* parent;
+  KoMo2Model* const parent;
 
   /**
    * @brief JimulatorState reflects the state in which Jimulator is operating,
@@ -107,7 +105,11 @@ class Model {
    */
   static JimulatorState jimulatorState;
 
-  // Deleted SMFS - stops these from being misused, creates a sensible error
+  // Only friends can access
+  void setJimulatorState(const JimulatorState val);
+
+  // ! Deleted special member functions
+  // stops these functions from being misused, creates a sensible error
   Model(const Model&) = delete;
   Model(const Model&&) = delete;
   Model& operator=(const Model&) = delete;

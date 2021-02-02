@@ -58,7 +58,7 @@ ControlsModel::ControlsModel(ControlsView* view, KoMo2Model* parent)
  * @param e The key press event.
  * @return bool Was a key pressed or not?
  */
-bool ControlsModel::handleKeyPress(GdkEventKey* e) {
+const bool ControlsModel::handleKeyPress(const GdkEventKey* const e) {
   switch (e->keyval) {
     // F5
     case 65474:
@@ -169,7 +169,7 @@ void ControlsModel::onHaltExecutionClick() {
  * @brief Handles the Jimulator state change for this model.
  * @param newState The state to change into.
  */
-void ControlsModel::changeJimulatorState(JimulatorState newState) {
+void ControlsModel::changeJimulatorState(const JimulatorState newState) {
   switch (newState) {
     // some unloaded state
     case UNLOADED:

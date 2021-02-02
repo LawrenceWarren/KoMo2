@@ -31,7 +31,7 @@ JimulatorState Model::jimulatorState = INITIAL;
  * @brief Constructs a new Model object - just assigns the parent variable.
  * @param parent The parent pointer.
  */
-Model::Model(KoMo2Model* parent) : parent(parent) {}
+Model::Model(KoMo2Model* const parent) : parent(parent) {}
 
 /**
  * @brief Sets the state of a button to some boolean - the assumption is that if
@@ -46,11 +46,11 @@ Model::Model(KoMo2Model* parent) : parent(parent) {}
  * @param img The new image to display.
  * @param newLabelText The new label text to display.
  */
-void Model::setButtonState(Gtk::Button* button,
-                           bool state,
-                           std::string newTooltip,
-                           Gtk::Image* img,
-                           std::string newLabelText) {
+void Model::setButtonState(Gtk::Button* const button,
+                           const bool state,
+                           const std::string newTooltip,
+                           Gtk::Image* const img,
+                           const std::string newLabelText) const {
   button->set_sensitive(state);
   button->set_has_tooltip(state);
 
@@ -76,7 +76,7 @@ void Model::setButtonState(Gtk::Button* button,
  * @brief Returns the parent pointer.
  * @return KoMo2Model* The parent pointer.
  */
-KoMo2Model* Model::getParent() {
+KoMo2Model* const Model::getParent() const {
   return parent;
 }
 
@@ -84,7 +84,7 @@ KoMo2Model* Model::getParent() {
  * @brief Return the jimulatorState member object.
  * @return JimulatorState the jimulatorState member.
  */
-JimulatorState Model::getJimulatorState() {
+JimulatorState Model::getJimulatorState() const {
   return Model::jimulatorState;
 }
 
@@ -92,6 +92,6 @@ JimulatorState Model::getJimulatorState() {
  * @brief set the JimulatorState member object.
  * @param val The value to set JimulatorState to.
  */
-void Model::setJimulatorState(JimulatorState val) {
+void Model::setJimulatorState(const JimulatorState val) {
   Model::jimulatorState = val;
 }

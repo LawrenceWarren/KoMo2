@@ -6,8 +6,8 @@ class RegistersModel : private Model {
  public:
   RegistersModel(RegistersView* view, KoMo2Model* parent);
 
-  virtual void changeJimulatorState(JimulatorState newState) override;
-  virtual bool handleKeyPress(GdkEventKey* e) override;
+  virtual void changeJimulatorState(const JimulatorState newState) override;
+  virtual const bool handleKeyPress(const GdkEventKey* const e) override;
   RegistersView* getView();
 
  private:
@@ -16,7 +16,8 @@ class RegistersModel : private Model {
    */
   RegistersView* view;
 
-  // Deleted SMFS - stops these from being misused, creates a sensible error
+  // ! Deleted special member functions
+  // stops these functions from being misused, creates a sensible error
   RegistersModel(const RegistersModel&) = delete;
   RegistersModel(const RegistersModel&&) = delete;
   RegistersModel& operator=(const RegistersModel&) = delete;
