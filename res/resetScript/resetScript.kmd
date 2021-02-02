@@ -17,9 +17,8 @@ KMD
 00000034: E3A0C000    ;   MOV R12, #0
 00000038: E3A0D000    ;   MOV R13, #0
 0000003C: E3A0E000    ;   MOV R14, #0
-00000040: E3A0F000    ;   MOV PC, #0
-00000044: EF000002    ;   SWI 2
-00000048:             ; 
+00000040: EF000002    ;   SWI 2
+00000044:             ; 
 
 Symbol Table: Labels
 : main                              00000004  Local -- ARM

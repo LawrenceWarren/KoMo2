@@ -61,6 +61,15 @@ void ControlsModel::onHelpClick() const {
 }
 
 /**
+ * @brief Handles the `haltExecutionButton` click events.
+ * Changes JimulatorState to "UNLOADED".
+ */
+void ControlsModel::onHaltExecutionClick() {
+  std::cout << "Halt Execution Button Click!" << std::endl;
+  getParent()->changeJimulatorState(UNLOADED);
+}
+
+/**
  * @brief Handles the `reloadJimulatorButton` click events.
  * Changes JimulatorState to "LOADED".
  */
@@ -105,6 +114,10 @@ void ControlsModel::onPauseResumeClick() {
  * @brief Handles the `singleStepExecuteButton` click events.
  */
 void ControlsModel::onSingleStepExecuteClick() {
+  // FIXME: if a program has ended (i.e. has encountered SWI 2) and you press
+  // the single step button, it will execute past. This is a Jimulator issue,
+  // but can be remedied here for KoMo2 quality.
+
   std::cout << "single step execute click!" << std::endl;
 
   startJimulator(1);
@@ -113,15 +126,6 @@ void ControlsModel::onSingleStepExecuteClick() {
   if (getJimulatorState() == LOADED) {
     getParent()->changeJimulatorState(PAUSED);
   }
-}
-
-/**
- * @brief Handles the `haltExecutionButton` click events.
- * Changes JimulatorState to "UNLOADED".
- */
-void ControlsModel::onHaltExecutionClick() {
-  std::cout << "Halt Execution Button Click!" << std::endl;
-  getParent()->changeJimulatorState(UNLOADED);
 }
 
 // ! Virtual functions
