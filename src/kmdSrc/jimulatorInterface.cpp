@@ -94,7 +94,7 @@ void startJimulator(const int steps) {
  * @brief Continues running Jimulator.
  */
 void continueJimulator() {
-  if (checkBoardState()) {
+  if (not checkBoardState()) {
     boardSendChar(BR_CONTINUE);
     std::cout << "CONTINUED!😜" << std::endl;
   }
@@ -106,7 +106,7 @@ void continueJimulator() {
 void pauseJimulator() {
   boardSendChar(BR_STOP);
 
-  if (checkBoardState()) {
+  if (not checkBoardState()) {
     std::cout << "Paused!🚀" << std::endl;
   }
 }
@@ -296,7 +296,7 @@ int board_send_n_bytes(int value, int n) {
  * @return int TRUE for success.
  */
 void run_board(const int steps) {
-  if (checkBoardState()) {
+  if (not checkBoardState()) {
     // Sends a start signal
     boardSendChar(BR_START | board_runflags);
 
@@ -312,28 +312,35 @@ void run_board(const int steps) {
 const int checkBoardState() {
   const int board_state = board_enq();
 
+  printf("STATE CODE: %X - ", board_state);
+
   // Check and log error states
   switch (board_state) {
     case CLIENT_STATE_RUNNING_SWI:
       printf("⚠board running SWI\n");
-      return FALSE;
+      break;
     case CLIENT_STATE_RUNNING:
       printf("⚠board running\n");
-      return FALSE;
+      break;
     case CLIENT_STATE_STEPPING:
       printf("⚠board stepping\n");
-      return FALSE;
+      break;
     case CLIENT_STATE_MEMFAULT:
       printf("⚠board memory fault\n");
-      return FALSE;
+      break;
     case CLIENT_STATE_BUSY:
-      printf("⚠board is busy");
-      return FALSE;
+      printf("⚠board is busy\n");
+      break;
+    case CLIENT_STATE_BYPROG:
+      printf("🎉Program execution finished\n");
+      break;
     default:
+      printf("😅nothing to report\n");
+      return FALSE;
       break;
   }
 
-  return TRUE;
+  return board_state;
 }
 
 /**

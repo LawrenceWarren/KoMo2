@@ -28,6 +28,7 @@ const int compileJimulator(const char* const pathToBin,
                            const char* const pathToS,
                            const char* const pathToKMD);
 const int loadJimulator(const char* const pathToKMD);
+const int checkBoardState();
 void startJimulator(const int steps);
 void pauseJimulator();
 void continueJimulator();

@@ -1,6 +1,7 @@
 #include "../jimulatorInterface.h"
 #include "../views/RegistersView.h"
 #include "KoMo2Model.h"
+#include "iostream"
 
 /**
  * @brief Constructs a new registers model object.
@@ -43,5 +44,22 @@ RegistersView* const RegistersModel::getView() {
  */
 const std::array<std::string, 16>
 RegistersModel::getRegisterValueFromJimulator() const {
+  switch (checkBoardState()) {
+    case 0X44:
+      std::cout << "program halted" << std::endl;
+      getParent()->changeJimulatorState(UNLOADED);
+      break;
+    case 0X82:
+      std::cout << "awaiting input" << std::endl;
+      getParent()->changeJimulatorState(AWAITING_INPUT);
+      break;
+    case 0X80:
+      std::cout << "awaiting input" << std::endl;
+      getParent()->changeJimulatorState(AWAITING_INPUT);
+      break;
+    default:
+      std::cout << "Nothing to report" << std::endl;
+  }
+
   return getJimulatorRegisterValues();
 }

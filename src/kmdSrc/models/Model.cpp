@@ -48,8 +48,8 @@ Model::Model(KoMo2Model* const parent) : parent(parent) {}
  */
 void Model::setButtonState(Gtk::Button* const button,
                            const bool state,
-                           const std::string newTooltip,
                            Gtk::Image* const img,
+                           const std::string newTooltip,
                            const std::string newLabelText) const {
   button->set_sensitive(state);
   button->set_has_tooltip(state);

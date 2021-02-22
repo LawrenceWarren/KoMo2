@@ -28,11 +28,12 @@
  * @brief Describe the 5 states of Jimulator
  */
 enum JimulatorState : int {
-  INITIAL = -1,  // Jimulator starting state
-  UNLOADED,      // Jimulator idle; needs a program to be loaded in.
-  LOADED,        // File just loaded for first time (not yet run)
-  RUNNING,       // Jimulator is running
-  PAUSED,        // Jimulator is paused
+  INITIAL = -1,    // Jimulator starting state
+  UNLOADED,        // Jimulator idle; needs a program to be loaded in.
+  LOADED,          // File just loaded for first time (not yet run)
+  RUNNING,         // Jimulator is running
+  PAUSED,          // Jimulator is paused
+  AWAITING_INPUT,  // Needs terminal input
 };
 
 class KoMo2Model;
@@ -66,8 +67,8 @@ class Model {
 
   void setButtonState(Gtk::Button* const button,
                       const bool state,
-                      const std::string newTooltip = "",
                       Gtk::Image* const img = nullptr,
+                      const std::string newTooltip = "",
                       const std::string newLabelText = "") const;
 
   /**
