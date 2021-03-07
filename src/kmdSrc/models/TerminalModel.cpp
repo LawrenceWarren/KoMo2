@@ -1,4 +1,5 @@
 #include "TerminalModel.h"
+#include <iostream>
 #include "../views/TerminalView.h"
 
 TerminalModel::TerminalModel(TerminalView* const view, KoMo2Model* const parent)
