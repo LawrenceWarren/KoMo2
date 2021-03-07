@@ -28,6 +28,7 @@
 #include <string>
 #include "CompileLoadView.h"
 #include "ControlsView.h"
+#include "DisassemblyView.h"
 #include "RegistersView.h"
 #include "TerminalView.h"
 
@@ -52,6 +53,7 @@ class MainWindowView : public Gtk::Window {
   ControlsView* const getControlsView();
   RegistersView* const getRegistersView();
   TerminalView* const getTerminalView();
+  DisassemblyView* const getDisassemblyView();
 
  private:
   void setSizes(const int x, const int y);
@@ -87,6 +89,8 @@ class MainWindowView : public Gtk::Window {
   RegistersView registersView;
 
   TerminalView terminalView;
+
+  DisassemblyView disassemblyView;
 
   // ! Other
 

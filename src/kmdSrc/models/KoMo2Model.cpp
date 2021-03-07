@@ -41,7 +41,8 @@ KoMo2Model::KoMo2Model(MainWindowView* const mainWindow,
       compileLoadModel(mainWindow->getCompileLoadView(), this),
       controlsModel(mainWindow->getControlsView(), this),
       registersModel(mainWindow->getRegistersView(), this),
-      terminalModel(mainWindow->getTerminalView(), this) {
+      terminalModel(mainWindow->getTerminalView(), this),
+      disassemblyModel(mainWindow->getDisassemblyView(), this) {
   // Updates the main window to have a pointer to its model, sets its CSS.
   getMainWindow()->setModel(this);
   getMainWindow()->setStyling();
@@ -154,6 +155,14 @@ ControlsModel* const KoMo2Model::getControlsModel() {
 RegistersModel* const KoMo2Model::getRegistersModel() {
   return &registersModel;
 }
+DisassemblyModel* const KoMo2Model::getDisassemblyModel() {
+  return &disassemblyModel;
+}
+
+TerminalModel* const KoMo2Model::getTerminalModel() {
+  return &terminalModel;
+}
+
 /**
  * @brief Gets the `absolutePathToProjectRoot` member variable.
  * @return const std::string The absolute path to the project root.

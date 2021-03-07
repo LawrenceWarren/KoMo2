@@ -38,7 +38,8 @@ MainWindowView::MainWindowView(const int x, const int y)
       selectAndLoadContainer(this),
       programControlsContainer(this),
       registersView(this),
-      terminalView(this) {
+      terminalView(this),
+      disassemblyView(this) {
   set_border_width(4);
   setSizes(x, y);
 
@@ -124,11 +125,18 @@ ControlsView* const MainWindowView::getControlsView() {
   return &programControlsContainer;
 }
 /**
- * @brief Get the ControlsView.
+ * @brief Get the TerminalView.
  * @return ControlsView* A pointer to the controlsView.
  */
 TerminalView* const MainWindowView::getTerminalView() {
   return &terminalView;
+}
+/**
+ * @brief Get the DisassemblyView.
+ * @return ControlsView* A pointer to the controlsView.
+ */
+DisassemblyView* const MainWindowView::getDisassemblyView() {
+  return &disassemblyView;
 }
 /**
  * @brief Gets the `model` member variable.
