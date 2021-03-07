@@ -1155,7 +1155,7 @@ void print_error(char* line,
                  unsigned int error_code,
                  char* filename,
                  boolean last_pass) {
-  unsigned int  position;
+  unsigned int position;
   int i;
 
   if ((error_code & WARNING_ONLY) != 0) {
