@@ -37,7 +37,8 @@ MainWindowView::MainWindowView(const int x, const int y)
       controlsAndCompileBar(),
       selectAndLoadContainer(this),
       programControlsContainer(this),
-      registersView(this) {
+      registersView(this),
+      terminalView(this) {
   set_border_width(4);
   setSizes(x, y);
 
@@ -121,6 +122,13 @@ CompileLoadView* const MainWindowView::getCompileLoadView() {
  */
 ControlsView* const MainWindowView::getControlsView() {
   return &programControlsContainer;
+}
+/**
+ * @brief Get the ControlsView.
+ * @return ControlsView* A pointer to the controlsView.
+ */
+TerminalView* const MainWindowView::getTerminalView() {
+  return &terminalView;
 }
 /**
  * @brief Gets the `model` member variable.

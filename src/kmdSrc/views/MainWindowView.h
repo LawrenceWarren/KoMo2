@@ -29,6 +29,7 @@
 #include "CompileLoadView.h"
 #include "ControlsView.h"
 #include "RegistersView.h"
+#include "TerminalView.h"
 
 class KoMo2Model;
 
@@ -50,6 +51,7 @@ class MainWindowView : public Gtk::Window {
   CompileLoadView* const getCompileLoadView();
   ControlsView* const getControlsView();
   RegistersView* const getRegistersView();
+  TerminalView* const getTerminalView();
 
  private:
   void setSizes(const int x, const int y);
@@ -83,6 +85,8 @@ class MainWindowView : public Gtk::Window {
    * @brief A box containing all of the registers
    */
   RegistersView registersView;
+
+  TerminalView terminalView;
 
   // ! Other
 

@@ -20,12 +20,13 @@
 
 #include <gtkmm/filechooserdialog.h>
 #include <string>
-#include "RegistersModel.h"
+#include "TerminalModel.h"
 
 class MainWindowView;
 class ControlsView;
 class CompileLoadView;
 class RegistersView;
+class TerminalView;
 
 /**
  * @brief The logical model of the entire application. All other models should
@@ -53,6 +54,7 @@ class KoMo2Model : public Model {
   CompileLoadModel* const getCompileLoadModel();
   ControlsModel* const getControlsModel();
   RegistersModel* const getRegistersModel();
+  TerminalModel* const getTerminalModel();
 
  private:
   virtual const bool handleKeyPress(const GdkEventKey* const e) override;
@@ -86,6 +88,8 @@ class KoMo2Model : public Model {
    * of values on the left hand side of the main view.
    */
   RegistersModel registersModel;
+
+  TerminalModel terminalModel;
 
   // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error
