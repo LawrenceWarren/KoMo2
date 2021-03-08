@@ -214,6 +214,11 @@ void CompileLoadModel::changeJimulatorState(const JimulatorState newState) {
       setButtonState(view->getBrowseButton(), true);
       break;
 
+    case AWAITING_INPUT:
+      setButtonState(view->getBrowseButton(), true);
+      // TODO: handle state
+      break;
+
     // Error state
     default:
       // TODO: Handle some error state gracefully
