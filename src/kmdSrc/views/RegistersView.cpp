@@ -1,6 +1,4 @@
 #include "RegistersView.h"
-#include <iostream>
-#include <sstream>
 #include <string>
 
 /**
@@ -9,6 +7,10 @@
  */
 RegistersView::RegistersView(MainWindowView* const parent)
     : grid(), parent(parent) {
+  initRegisterViewContainer();
+}
+
+void RegistersView::initRegisterViewContainer() {
   grid.set_column_homogeneous(false);
   grid.set_column_spacing(3);
   grid.set_row_spacing(3);

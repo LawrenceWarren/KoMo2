@@ -49,6 +49,8 @@ class MainWindowView : public Gtk::Window {
   void setModel(KoMo2Model* const val);
   KoMo2Model* const getModel() const;
   void setStyling();
+
+  // Get components
   CompileLoadView* const getCompileLoadView();
   ControlsView* const getControlsView();
   RegistersView* const getRegistersView();
@@ -58,6 +60,11 @@ class MainWindowView : public Gtk::Window {
  private:
   void setSizes(const int x, const int y);
 
+  // Get layouts
+  Gtk::HButtonBox* const getControlsAndCompileBar();
+  Gtk::HButtonBox* const getRegistersAndDisassemblyBar();
+  Gtk::VButtonBox* const getMasterLayout();
+
   // ! Layouts
 
   /**
@@ -65,31 +72,39 @@ class MainWindowView : public Gtk::Window {
    * within this layout.
    */
   Gtk::VButtonBox masterLayout;
-
   /**
    * @brief The layout for the top bar running along the screen. Contains the
    * compile and load layout, and the program controls layout.
    */
   Gtk::HButtonBox controlsAndCompileBar;
+  /**
+   * @brief The container that contains the source/disassembly view and the
+   * registers view.
+   */
+  Gtk::HButtonBox registersAndDisassemblyBar;
+
+  // ! Components
 
   /**
    * @brief A box containing the browse button, the compile and load button, and
    * the selected file label.
    */
-  CompileLoadView selectAndLoadContainer;
-
+  CompileLoadView compileLoadView;
   /**
    * @brief A box containing all of the programs running controls.
    */
-  ControlsView programControlsContainer;
-
+  ControlsView controlsView;
   /**
    * @brief A box containing all of the registers
    */
   RegistersView registersView;
-
+  /**
+   * @brief A box contaning the input/output terminal.
+   */
   TerminalView terminalView;
-
+  /**
+   * @brief A box containing the disassembly and source views.
+   */
   DisassemblyView disassemblyView;
 
   // ! Other

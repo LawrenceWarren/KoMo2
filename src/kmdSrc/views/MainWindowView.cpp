@@ -35,27 +35,32 @@
 MainWindowView::MainWindowView(const int x, const int y)
     : masterLayout(),
       controlsAndCompileBar(),
-      selectAndLoadContainer(this),
-      programControlsContainer(this),
+      compileLoadView(this),
+      controlsView(this),
       registersView(this),
       terminalView(this),
       disassemblyView(this) {
   set_border_width(4);
   setSizes(x, y);
 
-  // Packs the programControlContainer and the selectAndLoadContainer next to
-  // each other in a parent view.
-  controlsAndCompileBar.set_layout(Gtk::BUTTONBOX_EDGE);
-  controlsAndCompileBar.pack_end(programControlsContainer, false, false);
-  controlsAndCompileBar.pack_end(selectAndLoadContainer, false, false);
-  controlsAndCompileBar.show();
+  // Packs
+  getControlsAndCompileBar()->set_layout(Gtk::BUTTONBOX_EDGE);
+  getControlsAndCompileBar()->pack_end(controlsView, false, false);
+  getControlsAndCompileBar()->pack_end(compileLoadView, false, false);
+  getControlsAndCompileBar()->show();
 
-  masterLayout.pack_start(controlsAndCompileBar, false, false);
-  masterLayout.pack_start(registersView, false, false);
+  getRegistersAndDisassemblyBar()->set_layout(Gtk::BUTTONBOX_EDGE);
+  getRegistersAndDisassemblyBar()->pack_end(registersView, false, false);
+  getRegistersAndDisassemblyBar()->pack_end(disassemblyView, false, false);
+  getRegistersAndDisassemblyBar()->show();
 
-  masterLayout.set_layout(Gtk::BUTTONBOX_START);
-  masterLayout.show_all_children();
-  masterLayout.show();
+  getMasterLayout()->pack_start(controlsAndCompileBar, false, false);
+  getMasterLayout()->pack_start(registersAndDisassemblyBar, false, false);
+  getMasterLayout()->pack_start(terminalView, false, false);
+
+  getMasterLayout()->set_layout(Gtk::BUTTONBOX_START);
+  getMasterLayout()->show_all_children();
+  getMasterLayout()->show();
   add(masterLayout);
 }
 
@@ -67,12 +72,22 @@ MainWindowView::MainWindowView(const int x, const int y)
 void MainWindowView::setSizes(const int x, const int y) {
   set_default_size(x, y);  // ~16:9 ration
 
+  const float topBarHeight = (y / 7.f) * 1.f;
+  const float middleBarHeight = (y / 7.f) * 4.f;
+  const float bottomBarHeight = (y / 7.f) * 2.f;
+  const float xUnits = x / 12.4f;
+
   // Layout sizes
-  masterLayout.set_size_request(x, y);
-  registersView.set_size_request(300, y - 300);
-  controlsAndCompileBar.set_size_request(x, 100);
-  selectAndLoadContainer.set_size_request(100, 100);
-  programControlsContainer.set_size_request(x - 100, 33);
+  // TODO: these should be deleted once all components are implemented
+  getMasterLayout()->set_size_request(x, y);
+  getControlsAndCompileBar()->set_size_request(x, -1);
+  getRegistersAndDisassemblyBar()->set_size_request(x, middleBarHeight);
+
+  getCompileLoadView()->set_size_request(xUnits, topBarHeight);
+  getControlsView()->set_size_request(x - xUnits, topBarHeight / 3.f);
+  getRegistersView()->set_size_request(xUnits * 3.f, middleBarHeight);
+  getDisassemblyView()->set_size_request(x - (xUnits * 3.f), middleBarHeight);
+  getTerminalView()->set_size_request(x, bottomBarHeight);
 }
 
 /**
@@ -83,7 +98,7 @@ void MainWindowView::setStyling() {
 
   // Sets the icon for the window
   set_icon_from_file(getModel()->getAbsolutePathToProjectRoot() +
-                     "res/komo2Logo.png");
+                     "res/img/komo2Logo.png");
 
   // Create a css provider, get the style context, load the css file
   auto ctx = get_style_context();
@@ -95,18 +110,27 @@ void MainWindowView::setStyling() {
   get_style_context()->add_class("mainWindow");
 
   // Adds a CSS class for the layouts
-  programControlsContainer.get_style_context()->add_class("layouts");
-  controlsAndCompileBar.get_style_context()->add_class("layouts");
-  selectAndLoadContainer.get_style_context()->add_class("layouts");
-  registersView.get_style_context()->add_class("layouts");
+  getControlsView()->get_style_context()->add_class("controls_layouts");
+  getControlsAndCompileBar()->get_style_context()->add_class(
+      "topContainer_layouts");
+  getCompileLoadView()->get_style_context()->add_class("compileLoad_layouts");
+  getRegistersView()->get_style_context()->add_class("registers_layouts");
+  getDisassemblyView()->get_style_context()->add_class("dis_layouts");
+  getTerminalView()->get_style_context()->add_class("terminal_layouts");
 
   // ! Add the CSS to the screen
   ctx->add_provider_for_screen(Gdk::Screen::get_default(), css,
                                GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
 
-// ! Getters and setters.
+// !!!!!!!!!!!!!!!!!!!!!!!
+// ! Getters and setters !
+// !!!!!!!!!!!!!!!!!!!!!!!
 
+/**
+ * @brief Returns a pointer to the registersView object.
+ * @return RegistersView* const The registersView object.
+ */
 RegistersView* const MainWindowView::getRegistersView() {
   return &registersView;
 }
@@ -115,14 +139,14 @@ RegistersView* const MainWindowView::getRegistersView() {
  * @return CompileLoadView* A pointer to the compileLoadView.
  */
 CompileLoadView* const MainWindowView::getCompileLoadView() {
-  return &selectAndLoadContainer;
+  return &compileLoadView;
 }
 /**
  * @brief Get the ControlsView.
  * @return ControlsView* A pointer to the controlsView.
  */
 ControlsView* const MainWindowView::getControlsView() {
-  return &programControlsContainer;
+  return &controlsView;
 }
 /**
  * @brief Get the TerminalView.
@@ -151,4 +175,25 @@ KoMo2Model* const MainWindowView::getModel() const {
  */
 void MainWindowView::setModel(KoMo2Model* const val) {
   model = val;
+}
+/**
+ * @brief Gets the controlsAndCompileBar layout.
+ * @return Gtk::HButtonBox* const The controlsAndCompileBar layout.
+ */
+Gtk::HButtonBox* const MainWindowView::getControlsAndCompileBar() {
+  return &controlsAndCompileBar;
+}
+/**
+ * @brief Gets the registersAndSiassemblyBar layout.
+ * @return Gtk::HButtonBox* const The registersAndSiassemblyBar layout.
+ */
+Gtk::HButtonBox* const MainWindowView::getRegistersAndDisassemblyBar() {
+  return &registersAndDisassemblyBar;
+}
+/**
+ * @brief Gets the masterLayout layout.
+ * @return Gtk::VButtonBox* const The masterLayout layout.
+ */
+Gtk::VButtonBox* const MainWindowView::getMasterLayout() {
+  return &masterLayout;
 }

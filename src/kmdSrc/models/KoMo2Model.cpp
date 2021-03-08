@@ -51,7 +51,10 @@ KoMo2Model::KoMo2Model(MainWindowView* const mainWindow,
   getMainWindow()->signal_key_press_event().connect(
       sigc::mem_fun(*this, &Model::handleKeyPress), false);
 
-  this->changeJimulatorState(UNLOADED);
+  //getMainWindow()->signal_scroll_event().connect
+
+
+          this->changeJimulatorState(UNLOADED);
 }
 
 /**

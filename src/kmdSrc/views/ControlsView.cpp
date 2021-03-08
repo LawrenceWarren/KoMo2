@@ -37,39 +37,30 @@ ControlsView::ControlsView(MainWindowView* const parent)
 }
 
 /**
- * @brief Packs children into the programControlsContainer, and sets the layouts
+ * @brief Packs children into the controlsView, and sets the layouts
  * and size of it. Initialises the look images of buttons.
  */
 void ControlsView::initProgramControlsContainer() {
-  // Set halt button image
-  getHaltExecutionButton()->set_image_position(Gtk::POS_LEFT);
-  getHaltExecutionButton()->set_tooltip_text("Halt Jimulator (F1)");
+  // TODO: help button is focused by default. Stop that
+  // TODO: the focus outline shows up NO MATTER WHAT. stop that
 
-  // Set help button image
-  // TODO: does this accessibility work?
-  getHelpButton()->set_image_position(Gtk::POS_LEFT);
+  // Set button tooltip text
+  getHaltExecutionButton()->set_tooltip_text("Halt Jimulator (F1)");
   getHelpButton()->set_tooltip_text("About KoMo2 (F12)");
+  getSingleStepExecuteButton()->set_tooltip_text("Execute 1 instruction (F6)");
+  getReloadJimulatorButton()->set_tooltip_text("Reload program (Ctrl+R)");
+
+  // TODO: set and test accessibility features
   getHelpButton()->get_accessible()->set_name("Help Button");
   getHelpButton()->get_accessible()->set_description(
       "This button will display a help window.");
 
-  // TODO: help button is focused by default. Stop that
-  // TODO: the focus outline shows up NO MATTER WHAT. stop that
-
-  // Set the single step execution button image
-  getSingleStepExecuteButton()->set_image_position(Gtk::POS_LEFT);
-  getSingleStepExecuteButton()->set_tooltip_text("Execute 1 instruction (F6)");
-
-  // Set the reload button image
-  getReloadJimulatorButton()->set_image_position(Gtk::POS_LEFT);
-  getReloadJimulatorButton()->set_tooltip_text("Reload program (Ctrl+R)");
-
   // Set sizes
-  getHelpButton()->set_size_request(40, 40);
-  getReloadJimulatorButton()->set_size_request(40, 40);
-  getPauseResumeButton()->set_size_request(40, 40);
-  getSingleStepExecuteButton()->set_size_request(40, 40);
-  getHaltExecutionButton()->set_size_request(40, 40);
+  getHelpButton()->set_size_request(102, 102);
+  getReloadJimulatorButton()->set_size_request(102, 102);
+  getPauseResumeButton()->set_size_request(102, 102);
+  getSingleStepExecuteButton()->set_size_request(102, 102);
+  getHaltExecutionButton()->set_size_request(102, 102);
 
   // Adds a CSS class for the program running buttons
   getHelpButton()->get_style_context()->add_class("controlButtons");
@@ -80,14 +71,14 @@ void ControlsView::initProgramControlsContainer() {
   getHaltExecutionButton()->get_style_context()->add_class("controlButtons");
 
   // Pack buttons into a container
-  this->set_layout(Gtk::BUTTONBOX_CENTER);
-  this->pack_end(helpButton, false, false);
-  this->pack_end(reloadJimulatorButton, false, false);
-  this->pack_end(pauseResumeButton, false, false);
-  this->pack_end(singleStepExecuteButton, false, false);
-  this->pack_end(haltExecutionButton, false, false);
-  this->show_all_children();
-  this->show();
+  set_layout(Gtk::BUTTONBOX_END);
+  pack_end(helpButton, false, false);
+  pack_end(reloadJimulatorButton, false, false);
+  pack_end(pauseResumeButton, false, false);
+  pack_end(singleStepExecuteButton, false, false);
+  pack_end(haltExecutionButton, false, false);
+  show_all_children();
+  show();
 }
 
 // ! Getters and setters
@@ -102,16 +93,16 @@ void ControlsView::setModel(ControlsModel* const val,
   model = val;
 
   getHaltExecutionButton()->set_image(
-      *new Gtk::Image(projectRoot + "/res/haltSymbol.png"));
+      *new Gtk::Image(projectRoot + "/res/img/haltSymbol.png"));
 
   getHelpButton()->set_image(
-      *new Gtk::Image(projectRoot + "/res/helpSymbol.png"));
+      *new Gtk::Image(projectRoot + "/res/img/helpSymbol.png"));
 
   getSingleStepExecuteButton()->set_image(
-      *new Gtk::Image(projectRoot + "/res/singleStepSymbol.png"));
+      *new Gtk::Image(projectRoot + "/res/img/singleStepSymbol.png"));
 
   getReloadJimulatorButton()->set_image(
-      *new Gtk::Image(projectRoot + "/res/refreshSymbol.png"));
+      *new Gtk::Image(projectRoot + "/res/img/refreshSymbol.png"));
 }
 
 /**

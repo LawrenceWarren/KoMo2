@@ -1,6 +1,6 @@
 /* ! Main window background colour */
 .mainWindow {
-  background-color: #24292e;
+  background-color: #1e7edd;
   color: #000000;
   box-shadow: inset 4px 4px 0px #1b1f23, inset -4px -4px 0px #1b1f23,
     inset -4px 4px 0px #1b1f23, inset 4px -4px 0px #1b1f23;
@@ -54,7 +54,38 @@
 }
 
 /* ! For the containers */
-.layouts {
+.controls_layouts {
+  background-color: #ffe608;
+  box-shadow: inset 2px 2px 0px #1b1f23, inset -2px -2px 0px #1b1f23,
+    inset -2px 2px 0px #1b1f23, inset 2px -2px 0px #1b1f23;
+}
+
+.terminal_layouts {
+  background-color: #ff6600;
+  box-shadow: inset 2px 2px 0px #1b1f23, inset -2px -2px 0px #1b1f23,
+    inset -2px 2px 0px #1b1f23, inset 2px -2px 0px #1b1f23;
+}
+
+.dis_layouts {
+  background-color: #3dee95;
+  box-shadow: inset 2px 2px 0px #1b1f23, inset -2px -2px 0px #1b1f23,
+    inset -2px 2px 0px #1b1f23, inset 2px -2px 0px #1b1f23;
+}
+
+.topContainer_layouts {
+  background-color: #ec0fa3;
+  box-shadow: inset 2px 2px 0px #1b1f23, inset -2px -2px 0px #1b1f23,
+    inset -2px 2px 0px #1b1f23, inset 2px -2px 0px #1b1f23;
+}
+
+.compileLoad_layouts {
+  background-color: #e74747;
+  box-shadow: inset 2px 2px 0px #1b1f23, inset -2px -2px 0px #1b1f23,
+    inset -2px 2px 0px #1b1f23, inset 2px -2px 0px #1b1f23;
+}
+
+.registers_layouts {
+  background-color: #2bff00;
   box-shadow: inset 2px 2px 0px #1b1f23, inset -2px -2px 0px #1b1f23,
     inset -2px 2px 0px #1b1f23, inset 2px -2px 0px #1b1f23;
 }

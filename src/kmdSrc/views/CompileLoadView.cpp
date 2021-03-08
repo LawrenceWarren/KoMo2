@@ -34,7 +34,7 @@ CompileLoadView::CompileLoadView(MainWindowView* const parent)
 }
 
 /**
- * @brief Packs children into the selectAndLoadContainer, and sets the
+ * @brief Packs children into the compileLoadView, and sets the
  * layouts and size of it.
  */
 void CompileLoadView::initSelectAndLoadContainer() {
@@ -58,12 +58,12 @@ void CompileLoadView::initSelectAndLoadContainer() {
   getSelectedFileLabel()->get_style_context()->add_class("fileLabel");
 
   // Packs into layout
-  this->set_layout(Gtk::BUTTONBOX_END);
-  this->pack_end(*getBrowseButton(), false, false);
-  this->pack_end(*getSelectedFileLabel(), false, false);
-  this->pack_end(*getCompileAndLoadButton(), false, false);
-  this->show_all_children();
-  this->show();
+  set_layout(Gtk::BUTTONBOX_END);
+  pack_end(browseButton, false, false);
+  pack_end(selectedFileLabel, false, false);
+  pack_end(compileAndLoadButton, false, false);
+  show_all_children();
+  show();
 }
 
 /**

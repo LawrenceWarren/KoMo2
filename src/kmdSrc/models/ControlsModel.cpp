@@ -184,7 +184,7 @@ void ControlsModel::changeJimulatorState(const JimulatorState newState) {
       setButtonState(
           view->getPauseResumeButton(), false,
           new Gtk::Image(getParent()->getAbsolutePathToProjectRoot() +
-                         "res/commenceSymbol.png"),
+                         "res/img/commenceSymbol.png"),
           "Commence execution (F5)");
       setButtonState(view->getHaltExecutionButton(), false);
       setButtonState(view->getSingleStepExecuteButton(), false);
@@ -197,7 +197,7 @@ void ControlsModel::changeJimulatorState(const JimulatorState newState) {
       setButtonState(
           view->getPauseResumeButton(), true,
           new Gtk::Image(getParent()->getAbsolutePathToProjectRoot() +
-                         "res/commenceSymbol.png"),
+                         "res/img/commenceSymbol.png"),
           "Commence execution (F5)");
       setButtonState(view->getSingleStepExecuteButton(), true);
       setButtonState(view->getHaltExecutionButton(), false);
@@ -210,7 +210,7 @@ void ControlsModel::changeJimulatorState(const JimulatorState newState) {
       setButtonState(
           view->getPauseResumeButton(), true,
           new Gtk::Image(getParent()->getAbsolutePathToProjectRoot() +
-                         "res/pauseSymbol.png"),
+                         "res/img/pauseSymbol.png"),
           "Pause execution (F5)");
       setButtonState(view->getSingleStepExecuteButton(), false);
       setButtonState(view->getHaltExecutionButton(), true);
@@ -224,7 +224,7 @@ void ControlsModel::changeJimulatorState(const JimulatorState newState) {
       setButtonState(
           view->getPauseResumeButton(), true,
           new Gtk::Image(getParent()->getAbsolutePathToProjectRoot() +
-                         "res/playSymbol.png"),
+                         "res/img/playSymbol.png"),
           "Resume execution (F5)");
       setButtonState(view->getSingleStepExecuteButton(), true);
       setButtonState(view->getHaltExecutionButton(), true);
@@ -238,7 +238,7 @@ void ControlsModel::changeJimulatorState(const JimulatorState newState) {
       setButtonState(
           view->getPauseResumeButton(), false,
           new Gtk::Image(getParent()->getAbsolutePathToProjectRoot() +
-                         "res/pauseSymbol.png"));
+                         "res/img/pauseSymbol.png"));
       setButtonState(view->getHaltExecutionButton(), true);
       break;
 

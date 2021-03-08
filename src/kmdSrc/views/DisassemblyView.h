@@ -1,10 +1,9 @@
-#include <gtkmm/buttonbox.h>
-#include <gtkmm/textview.h>  // The main terminal view
+#include <gtkmm/eventbox.h>
 
 class MainWindowView;
 class DisassemblyModel;
 
-class DisassemblyView : public Gtk::VButtonBox {
+class DisassemblyView : public Gtk::EventBox {
  public:
   DisassemblyView(MainWindowView* const parent);
   void setModel(DisassemblyModel* const val);
@@ -19,6 +18,8 @@ class DisassemblyView : public Gtk::VButtonBox {
    * @brief A pointer to the related model.
    */
   DisassemblyModel* model;
+
+  void initDisassemblyContainer();
 
   // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error

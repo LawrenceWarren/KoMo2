@@ -8,6 +8,7 @@ class DisassemblyModel : private Model {
   virtual void changeJimulatorState(const JimulatorState newState) override;
   virtual const bool handleKeyPress(const GdkEventKey* const e) override;
   DisassemblyView* const getView();
+  const bool handleScroll(GdkEventScroll*  e);
 
  private:
   /**

@@ -16,6 +16,9 @@ class RegistersView : public Gtk::VButtonBox {
   void setModel(RegistersModel* const val);
 
  private:
+  // General functions
+  void initRegisterViewContainer();
+
   Gtk::Grid grid;
   std::array<std::array<Gtk::Label, 16>, 2> labelArray;
 
