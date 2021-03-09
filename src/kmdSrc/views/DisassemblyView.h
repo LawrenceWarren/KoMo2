@@ -3,14 +3,43 @@
 #include <gtkmm/grid.h>
 #include <gtkmm/label.h>
 #include <gtkmm/togglebutton.h>
+#include <iostream>
+#include <string>
+#include <vector>
 
 class MainWindowView;
 class DisassemblyModel;
+
+class DisassemblyRows : public Gtk::HButtonBox {
+ public:
+  DisassemblyRows();
+  void setBreakpoint(const bool text);
+  void setAddress(const std::string text);
+  void setHex(const std::string text);
+  void setDisassembly(const std::string text);
+
+ private:
+  Gtk::ToggleButton breakpoint;
+  Gtk::Label address;
+  Gtk::Label hex;
+  Gtk::Label disassembly;
+
+  // ! Deleted special member functions
+  // stops these functions from being misused, creates a sensible error
+  DisassemblyRows(const DisassemblyRows&) = delete;
+  DisassemblyRows(const DisassemblyRows&&) = delete;
+  DisassemblyRows& operator=(const DisassemblyRows&) = delete;
+  DisassemblyRows& operator=(const DisassemblyRows&&) = delete;
+};
 
 class DisassemblyView : public Gtk::EventBox {
  public:
   DisassemblyView(MainWindowView* const parent);
   void setModel(DisassemblyModel* const val);
+  DisassemblyModel* const getModel() const;
+  Gtk::VButtonBox* const getNavigationButtons();
+  Gtk::VButtonBox* const getDisassemblyContainer();
+  Gtk::HButtonBox* const getContainer();
 
  private:
   /**
@@ -22,8 +51,9 @@ class DisassemblyView : public Gtk::EventBox {
    * @brief A container for the 6 navigation buttons.
    */
   Gtk::VButtonBox navigationButtons;
-  Gtk::Grid disassemblyRows;
+  Gtk::VButtonBox disassemblyContainer;
   Gtk::HButtonBox container;
+  std::vector<DisassemblyRows> rows{std::vector<DisassemblyRows>(15)};
 
   /**
    * @brief A pointer to the related model.
@@ -38,22 +68,4 @@ class DisassemblyView : public Gtk::EventBox {
   DisassemblyView(const DisassemblyView&&) = delete;
   DisassemblyView& operator=(const DisassemblyView&) = delete;
   DisassemblyView& operator=(const DisassemblyView&&) = delete;
-
-  class DisassemblyRows : public Gtk::HButtonBox {
-   public:
-    DisassemblyRows();
-
-   private:
-    Gtk::ToggleButton breakpoint;
-    Gtk::Label address;
-    Gtk::Label hex;
-    Gtk::Label disassembly;
-
-    // ! Deleted special member functions
-    // stops these functions from being misused, creates a sensible error
-    DisassemblyRows(const DisassemblyRows&) = delete;
-    DisassemblyRows(const DisassemblyRows&&) = delete;
-    DisassemblyRows& operator=(const DisassemblyRows&) = delete;
-    DisassemblyRows& operator=(const DisassemblyRows&&) = delete;
-  };
 };
