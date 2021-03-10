@@ -33,6 +33,17 @@ DisassemblyModel::DisassemblyModel(DisassemblyView* const view,
   rowIDTail = 0;
 }
 
+void DisassemblyModel::reorderViews(const int order) {
+  auto container = getView()->getDisassemblyContainer();
+
+  // TODO: FOR SOME REASON THIS FUNCTION FAILS ON THE FIRST SCROLL
+  // FIX it?
+
+  for (int i = 0; i < 15; i++) {
+    container->reorder_child(*rowViews[i], (i + order) % 15);
+  }
+}
+
 /**
  * @brief Passes the key press event off to other child models.
  * @param e The key press event.
@@ -41,14 +52,15 @@ DisassemblyModel::DisassemblyModel(DisassemblyView* const view,
 const bool DisassemblyModel::handleScroll(GdkEventScroll* e) {
   switch (e->direction) {
     case GDK_SCROLL_UP: {
-      // TODO: IMPLEMENT THIS
-
+      std::rotate(rowModels.begin(), rowModels.begin() + 1, rowModels.end());
+      std::rotate(rowViews.begin(), rowViews.begin() + 1, rowViews.end());
+      reorderViews(1);
       break;
     }
     case GDK_SCROLL_DOWN: {
-      // test.erase(test.end());
-      // test.insert(test.begin(), test[test.size() - 1]);
-      // TODO: IMPLEMENT THIS
+      std::rotate(rowModels.rbegin(), rowModels.rbegin() + 1, rowModels.rend());
+      std::rotate(rowViews.rbegin(), rowViews.rbegin() + 1, rowViews.rend());
+      reorderViews(-1);
       break;
     }
     default:

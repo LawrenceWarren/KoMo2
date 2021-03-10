@@ -17,13 +17,12 @@ class DisassemblyRows : public Gtk::HButtonBox {
   void setAddress(const std::string text);
   void setHex(const std::string text);
   void setDisassembly(const std::string text);
-
- private:
   Gtk::ToggleButton breakpoint;
   Gtk::Label address;
   Gtk::Label hex;
   Gtk::Label disassembly;
 
+ private:
   // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error
   DisassemblyRows(const DisassemblyRows&) = delete;
