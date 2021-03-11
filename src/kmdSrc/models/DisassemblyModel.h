@@ -45,9 +45,10 @@ class DisassemblyModel : private Model {
    */
   DisassemblyView* const view;
   std::vector<RowModel> rowModels{std::vector<RowModel>(15)};
-  std::vector<DisassemblyRows*> rowViews{std::vector<DisassemblyRows*>(15)};
 
   void reorderViews(const int order);
+  void addScrollRecognition();
+  void initialiseRowViews();
 
   // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error

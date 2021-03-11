@@ -9,39 +9,30 @@ DisassemblyModel::DisassemblyModel(DisassemblyView* const view,
                                    KoMo2Model* const parent)
     : Model(parent), view(view) {
   view->setModel(this);
+  addScrollRecognition();
+  initialiseRowViews();
+}
 
-  // Sets up scroll recongition
+void DisassemblyModel::addScrollRecognition() {
   getView()->add_events(Gdk::SMOOTH_SCROLL_MASK);
   getView()->signal_scroll_event().connect(
       sigc::mem_fun(*this, &DisassemblyModel::handleScroll), false);
+}
 
-  auto v = getView()->getDisassemblyContainer()->get_children();
-
+void DisassemblyModel::initialiseRowViews() {
   for (long unsigned int i = 0; i < rowModels.size(); i++) {
-    rowViews[i] = static_cast<DisassemblyRows*>(v[i]);
-
     rowModels[i] = RowModel(false, std::to_string(rowIDTail), "00 00 00 00 ",
                             "Extra long text here for good luck.");
-    rowViews[i]->setBreakpoint(rowModels[i].getBreakpoint());
-    rowViews[i]->setAddress(rowModels[i].getAddress());
-    rowViews[i]->setHex(rowModels[i].getHex());
-    rowViews[i]->setDisassembly(rowModels[i].getDisassembly());
+
+    (*getView()->getRows())[i].setBreakpoint(rowModels[i].getBreakpoint());
+    (*getView()->getRows())[i].setAddress(rowModels[i].getAddress());
+    (*getView()->getRows())[i].setHex(rowModels[i].getHex());
+    (*getView()->getRows())[i].setDisassembly(rowModels[i].getDisassembly());
 
     rowIDTail += 4;
   }
 
   rowIDTail = 0;
-}
-
-void DisassemblyModel::reorderViews(const int order) {
-  auto container = getView()->getDisassemblyContainer();
-
-  // TODO: FOR SOME REASON THIS FUNCTION FAILS ON THE FIRST SCROLL
-  // FIX it?
-
-  for (int i = 0; i < 15; i++) {
-    container->reorder_child(*rowViews[i], (i + order) % 15);
-  }
 }
 
 /**
@@ -53,20 +44,25 @@ const bool DisassemblyModel::handleScroll(GdkEventScroll* e) {
   switch (e->direction) {
     case GDK_SCROLL_UP: {
       std::rotate(rowModels.begin(), rowModels.begin() + 1, rowModels.end());
-      std::rotate(rowViews.begin(), rowViews.begin() + 1, rowViews.end());
-      reorderViews(1);
+      std::rotate(getView()->getRows()->begin(),
+                  getView()->getRows()->begin() + 1,
+                  getView()->getRows()->end());
+      // TODO: setup rolling ID's
       break;
     }
     case GDK_SCROLL_DOWN: {
       std::rotate(rowModels.rbegin(), rowModels.rbegin() + 1, rowModels.rend());
-      std::rotate(rowViews.rbegin(), rowViews.rbegin() + 1, rowViews.rend());
-      reorderViews(-1);
+      std::rotate(getView()->getRows()->rbegin(),
+                  getView()->getRows()->rbegin() + 1,
+                  getView()->getRows()->rend());
+      // TODO: setup rolling ID's
       break;
     }
     default:
       break;
   }
 
+  getView()->packView(true);
   return true;
 }
 

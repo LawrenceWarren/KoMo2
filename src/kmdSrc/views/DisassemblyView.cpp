@@ -6,12 +6,7 @@ DisassemblyView::DisassemblyView(MainWindowView* const parent)
 }
 
 void DisassemblyView::initDisassemblyContainer() {
-  // Packs in 15 children
-  for (long unsigned int i = 0; i < 15; i++) {
-    disassemblyContainer.pack_start(rows[i], false, false);
-    rows[i].show();
-    rows[i].show_all_children();
-  }
+  packView(false);
 
   container.pack_end(disassemblyContainer, false, false);
   container.pack_end(navigationButtons, false, false);
@@ -26,6 +21,24 @@ void DisassemblyView::initDisassemblyContainer() {
   add(container);
   show();
   show_all_children();
+}
+
+std::vector<DisassemblyRows>* const DisassemblyView::getRows() {
+  return &rows;
+}
+
+void DisassemblyView::packView(const bool emptyChild) {
+  // Clear existing children
+  for (long unsigned int i = 0; emptyChild && i < rows.size(); i++) {
+    disassemblyContainer.remove(rows[i]);
+  }
+
+  // Packs in 15 children
+  for (long unsigned int i = 0; i < 15; i++) {
+    disassemblyContainer.pack_start(rows[i], false, false);
+    rows[i].show();
+    rows[i].show_all_children();
+  }
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!
