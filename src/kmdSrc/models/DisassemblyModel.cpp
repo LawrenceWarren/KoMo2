@@ -2,7 +2,6 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include "../jimulatorInterface.h"
 #include "../views/DisassemblyView.h"
 
 // Initialise static list pointers.
@@ -19,7 +18,6 @@ DisassemblyModel::DisassemblyModel(DisassemblyView* const view,
     : Model(parent), view(view) {
   view->setModel(this);
   addScrollRecognition();
-  initialiseRowViews();
 }
 
 /**
@@ -30,23 +28,6 @@ void DisassemblyModel::addScrollRecognition() {
   getView()->add_events(Gdk::SMOOTH_SCROLL_MASK);
   getView()->signal_scroll_event().connect(
       sigc::mem_fun(*this, &DisassemblyModel::handleScroll), false);
-}
-
-/**
- * @brief Sets up the initial rows of the container.
- */
-void DisassemblyModel::initialiseRowViews() {
-  for (long unsigned int i = 0; i < rowModels.size(); i++) {
-    // Populates the model
-    rowModels[i] = RowModel(false, i * 4, "00000000", "NOP");
-
-    // Set the view values
-    (*getView()->getRows())[i].setBreakpoint(rowModels[i].getBreakpoint());
-    (*getView()->getRows())[i].setAddress(
-        intToFormattedHexString(rowModels[i].getAddress()));
-    (*getView()->getRows())[i].setHex(rowModels[i].getHex());
-    (*getView()->getRows())[i].setDisassembly(rowModels[i].getDisassembly());
-  }
 }
 
 /**
@@ -74,58 +55,18 @@ const std::string DisassemblyModel::intToFormattedHexString(
  */
 const bool DisassemblyModel::handleScroll(GdkEventScroll* e) {
   switch (e->direction) {
-    // Rotates left. Example output:
-    // 0 1 2 3 4 5 6 7 8 9
-    // 9 0 1 2 3 4 5 6 7 8
-    // The final element of the vector (14) becomes first element (0). All
-    // others are shuffled down.
-    case GDK_SCROLL_UP: {
+    case GDK_SCROLL_UP:
       adjustListPointers(-4);
-
-      // Update model & view values
-      rowModels[14].setAddress(rowIDTail);
-      (*getView()->getRows())[14].setAddress(
-          intToFormattedHexString(rowIDTail));
-
-      // TODO: read from Jimulator the memory value rowIDTail
-
-      // Rotate left
-      std::rotate(rowModels.rbegin(), rowModels.rbegin() + 1, rowModels.rend());
-      std::rotate(getView()->getRows()->rbegin(),
-                  getView()->getRows()->rbegin() + 1,
-                  getView()->getRows()->rend());
-
       break;
-    }
-
-    // Rotates right. Example output:
-    // 0 1 2 3 4 5 6 7 8 9
-    // 1 2 3 4 5 6 7 8 9 0
-    // The first element of the vector (0) becomes final element (14). All
-    // others are shuffled down.
-    case GDK_SCROLL_DOWN: {
+    case GDK_SCROLL_DOWN:
       adjustListPointers(4);
-
-      // Update model & view values
-      rowModels[0].setAddress(rowIDHead);
-
-      // TODO: read from Jimulator the memory value rowIDHead
-
-      (*getView()->getRows())[0].setAddress(intToFormattedHexString(rowIDHead));
-
-      // Rotate right
-      std::rotate(rowModels.begin(), rowModels.begin() + 1, rowModels.end());
-      std::rotate(getView()->getRows()->begin(),
-                  getView()->getRows()->begin() + 1,
-                  getView()->getRows()->end());
-
       break;
-    }
     default:
       // Do nothing in this case
       break;
   }
 
+  auto fetched = getMemoryValues();
   getView()->packView(true);
   return true;
 }
@@ -140,8 +81,22 @@ void DisassemblyModel::adjustListPointers(const uint32_t val) {
   rowIDHead += val;
 }
 
-void DisassemblyModel::getMemoryValues() {
-  getJimulatorMemoryValues();
+/**
+ * @brief Reads memory values from Jimulator.
+ * @return std::array<MemoryValues, 15> An array of the 15 memory values - their
+ * addresses, their hex columns and their disassembly/source columns.
+ */
+std::array<MemoryValues, 15> DisassemblyModel::getMemoryValues() {
+  auto vals = getJimulatorMemoryValues(rowIDTail);
+
+  for (auto v : vals) {
+    std::cout << intToFormattedHexString(v.address) << "/" << v.hex << "/"
+              << v.disassembly << "/" << std::endl;
+  }
+
+  std::cout << std::endl;
+
+  return vals;
 }
 
 /**

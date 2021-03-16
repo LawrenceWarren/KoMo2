@@ -21,7 +21,6 @@
 
 #include <iostream>
 #include <string>
-#include "../jimulatorInterface.h"
 #include "../views/ControlsView.h"
 #include "KoMo2Model.h"
 

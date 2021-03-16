@@ -35,7 +35,7 @@ class DisassemblyModel : private Model {
   virtual const bool handleKeyPress(const GdkEventKey* const e) override;
   DisassemblyView* const getView();
   const bool handleScroll(GdkEventScroll* e);
-  void getMemoryValues();
+  std::array<MemoryValues, 15UL> getMemoryValues();
 
  private:
   /**
@@ -65,7 +65,6 @@ class DisassemblyModel : private Model {
   const std::string intToFormattedHexString(const uint32_t formatMe) const;
   void reorderViews(const int order);
   void addScrollRecognition();
-  void initialiseRowViews();
 
   // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error

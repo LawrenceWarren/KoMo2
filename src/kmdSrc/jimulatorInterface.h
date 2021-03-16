@@ -23,10 +23,18 @@
 #include <array>
 #include <string>
 
+class MemoryValues {
+ public:
+  u_int32_t address;
+  std::string hex;
+  std::string disassembly;
+};
+
 // Reading data
 const int checkBoardState();
 const std::array<std::string, 16> getJimulatorRegisterValues();
-void getJimulatorMemoryValues();
+std::array<MemoryValues, 15> getJimulatorMemoryValues(
+    const uint32_t s_address_int);
 
 // Loading data
 const int compileJimulator(const char* const pathToBin,

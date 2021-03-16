@@ -23,6 +23,7 @@
 #include <gtkmm/button.h>
 #include <gtkmm/image.h>
 #include <string>
+#include "../jimulatorInterface.h"
 
 /**
  * @brief Describe the 5 states of Jimulator

@@ -1,4 +1,3 @@
-#include "../jimulatorInterface.h"
 #include "../views/RegistersView.h"
 #include "KoMo2Model.h"
 #include "iostream"

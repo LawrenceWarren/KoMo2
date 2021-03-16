@@ -414,203 +414,198 @@ int view_chararr2int(int count, unsigned char* array) {
   return ret;
 }
 
-void make_ascii(unsigned int offset, int length, char* buffer) {
-  int i;
-  char c;
+/**
+ * @brief
+ * "acc" may be the same as "byte_string"
+ * @param count
+ * @param byte_string
+ * @param number
+ * @param acc
+ */
+void view_chararrAdd(int count,
+                     unsigned char* byte_string,
+                     int number,
+                     unsigned char* acc) {
+  int index, temp;
 
-  for (i = 0; i < length; i++) /* ASCII copy/convert from memory */
-  {
-    c = memdata[offset + i];
-    if ((c < 0x20) || (c >= 0x7F))
-      buffer[i] = '.';
-    else
-      buffer[i] = c;
+  for (index = 0; index < count; index++) {
+    temp = byte_string[index] + (number & 0xFF); /* Add next 8 bits */
+    acc[index] = temp & 0xFF;
+    number = number >> 8; /* Shift to next byte */
+    if (temp >= 0x100)
+      number++; /* Propagate carry */
   }
-  buffer[i] = '\0'; /* Add terminator */
   return;
 }
 
-void getJimulatorMemoryValues() {
+int source_disassemble(source_line* src, unsigned int addr, int increment) {
+  unsigned int diff;
+
+  diff = src->address - addr;  // How far to next line start?
+
+  // Do have a source line, but shan't use it
+  if (diff == 0) {
+    src = src->pNext;  // Use the one after ...
+    if (src != NULL) {
+      diff = src->address - addr;  // if present/
+    } else {
+      diff = 1000;  // Effectively infinity
+    }
+  }
+
+  if (diff < 4) {
+    increment = diff;  // Next source entry
+  } else {
+    increment = 4 - (addr % 4);  // To next word alignment
+  }
+
+  return increment;  // A hack when routine was extracted from below
+}
+
+/**
+ * @brief Get the memory values from Jimulator, starting to s_address_int.
+ * @param s_address_int The address to start at, as an integer.
+ * @return std::array<MemoryValues, 15> An array of all of the values read from
+ * Jimulator, including each column.
+ */
+std::array<MemoryValues, 15> getJimulatorMemoryValues(
+    const uint32_t s_address_int) {
   const int count = 15;  // The number of values displayed in the memory window
   const int bytecount = 60;  // The number of bytes to fetch from memory
 
-  // These arrays have data written into them
-  unsigned char memdata[60];
-  unsigned char start_address[4] = {0, 0, 0, 0};
-  start_address[0] &= -4;
+  // Bit level hacking happening here - converting the integer address into
+  // an array of characters.
+  unsigned char* p = (unsigned char*)&s_address_int;
+  unsigned char start_address[4] = {p[0], p[1], p[2], p[3]};
+  start_address[0] &= -4;  // Normalise down to the previous multiple of 4
 
+  unsigned char memdata[bytecount];
+
+  // Reading data into arrays!
   boardSendChar(72 | 2);
   boardSendCharArray(4, start_address);
   board_send_n_bytes(count, 2);
   boardGetCharArray(bytecount, memdata);
 
-  std::cout << "SOME VAL " << view_chararr2hexstrbe(4, start_address)
-            << std::endl;
+  // ! Dangerous old logic ahead is used to read memory.
+  // ! This is very much C-style code, be careful
 
-  // ! At this point, memory has been fetched!
+  unsigned char address[4] = {start_address[0], start_address[1],
+                              start_address[2], start_address[3]};
 
-  char* data;
-  char* test;
-  char* trash;
-  int row;
-  int increment;
-  int temp;
   source_line* src = NULL;
-  const int source_dis_tabs = 16;
-  unsigned int addr;
-  unsigned int start_addr;
-  int list_full_source = 0;
-  int used_first;
-  char* address = g_new(char, 4);
-  char* tab_source = g_new(char, source_dis_tabs + 1);
+  bool used_first = false;
+  unsigned int start_addr = view_chararr2int(4, start_address);
 
-  // ! Dangerous old logic ahead
-
-  for (temp = 0; temp < 4; temp++) {
-    address[temp] = start_address[temp];
-  }
-
-  start_addr = view_chararr2int(4, start_address);
-
-  for (temp = 0; temp < source_dis_tabs; temp++) {
-    tab_source[temp] = ' ';
-  }
-
-  tab_source[temp] = '\0';
-
-  // If looking in source file, skip records before window start address
+  // Setup src variable
   if (source.pStart != NULL) {
     src = source.pStart;  // Known to be valid
-    while ((src != NULL) && ((src->address < start_addr) ||
-                             (src->nodata && !list_full_source))) {
+    while ((src != NULL) && ((src->address < start_addr) || src->nodata)) {
       src = src->pNext;
     }
 
     // We fell off the end; wrap to start
     if (src == NULL) {
       src = source.pStart;
-      used_first == TRUE;
-      if (!list_full_source) {  // Find a record with some data
-        while ((src != NULL) && src->nodata) {
-          src = src->pNext;
-        }
+      used_first = true;
+      // Find a record with some data
+      while ((src != NULL) && src->nodata) {
+        src = src->pNext;
       }
     }
   }
 
+  // Data is read into this array
+  std::array<MemoryValues, 15> readValues;
+
   // Iterate over display rows
-  for (row = 0; row < 15; row++) {
-    increment = 4;
+  for (int row = 0; row < 15; row++) {
+    int increment = 4;
 
-    addr = view_chararr2int(4, address);
+    unsigned int addr = view_chararr2int(4, address);
+    readValues[row].address = addr;
 
+    // If the source file can be read
     if (src != NULL) {
+      // If the src address is valid
       if (addr == src->address) {
-        int i, j, k = 0, corrupt = 0;
-        char* pStr;
+        bool corrupt = false;
 
-        // Source field entries
-        for (i = 0; i < SOURCE_FIELD_COUNT; i++) {
-          for (j = 0; j < src->data_size[i]; j++) {
+        int k = 0;
+        for (int i = 0; i < SOURCE_FIELD_COUNT; i++) {
+          for (int j = 0; j < src->data_size[i]; j++) {
             if (((src->data_value[i] >> (8 * j)) & 0xFF) !=
                 memdata[addr - start_addr + k++]) {
-              corrupt = TRUE;
+              corrupt = true;
             }
           }
         }
 
         if (not corrupt) {
-          increment = 0;                           /* How far should we move? */
-          pStr = g_strdup("");                     /* Seed hex string */
-          for (i = 0; i < SOURCE_FIELD_COUNT; i++) /* Source field entries */
+          increment = 0;              // How far should we move?
+          char* pStr = g_strdup("");  // Seed hex string
+          for (int i = 0; i < SOURCE_FIELD_COUNT; i++)  // Source field entries
           {
             if (src->data_size[i] > 0) {
-              char spaces[5]; /* Max. one per byte plus terminator */
+              char spaces[5];  // Max. one per byte plus terminator
 
-              data = view_chararr2hexstrbe(
-                  src->data_size[i], &memdata[addr - start_addr + increment]);
-              for (j = 0; j < src->data_size[i]; j++) {
+              // ! This cast is hacky
+              auto data = (char*)view_chararr2hexstrbe(
+                              src->data_size[i],
+                              &memdata[addr - start_addr + increment])
+                              .c_str();
+
+              int j = 0;
+              for (; j < src->data_size[i]; j++) {
                 spaces[j] = ' ';
               }
+
               spaces[j] = '\0';
-              trash = pStr;
+              auto trash = pStr;
               pStr = g_strconcat(pStr, data, spaces, NULL);
               g_free(trash);
-              g_free(data);
             }
             increment = increment + src->data_size[i];
           }
 
-          make_ascii(addr - start_addr, increment, ascii);
+          readValues[row].hex = std::string(pStr);
+          readValues[row].disassembly = std::string(src->text);
 
-          // TODO: SHOULD SEND DATA TO BE UPDATED HERE
-          // view_update_field(clist, row, MIN_HEX_ENTRY, pStr);
-          // view_update_field(clist, row, ASCII_ENTRY, ascii);
           g_free(pStr);
-          // view_update_field(clist, row, DIS_ENTRY, src->text);
+        } else {
+          std::cout << "CORRUPT" << std::endl;
+          increment = source_disassemble(src, addr, increment);
         }
 
         do {
           if (src->pNext != NULL) {
             src = src->pNext; /* Move on ... */
           } else {            /* ... wrapping, if required */
-            if (!used_first) {
+            if (not used_first) {
               src = source.pStart;
-              used_first = TRUE;
+              used_first = true;
             } else {
               src = NULL; /* Been here before - give in */
             }
           }
-        } while ((src != NULL) && src->nodata && !list_full_source);
+        } while ((src != NULL) && src->nodata);
       } else {
-        increment =
-            source_disassemble(src, addr, start_addr, row, increment, ascii);
+        // If a src line is invalid
+        readValues[row].hex = std::string("00000000");
+        readValues[row].disassembly = std::string("...");
+        increment = source_disassemble(src, addr, increment);
       }
     } else {
-      output_ordinary_data(row, addr - start_addr, 4, memwindowptr->gran,
-                           memwindowptr->isa, memwindowptr->type);
-    }
-    /* Search for breakpoints (inactive) */
-    templist = breaksinactive;  // Only does single address type @@@
-    while (templist != NULL) {
-      if (misc_chararr_sub_to_int(4, address, templist->data) == 0)
-        colour_option = faint;
-      templist = templist->next;
+      // If there is no src line to read
+      readValues[row].hex = std::string("00000000");
+      readValues[row].disassembly = std::string("...");
     }
 
-    /* Search for breakpoints (active) */
-    templist = breaks;  // Only does single address type @@@
-    while (templist != NULL) {
-      if (misc_chararr_sub_to_int(4, address, templist->data) == 0)
-        colour_option = breakpt;
-      templist = templist->next;
-    }
-
-    switch (colour_option) {
-      case normal:
-        gtk_clist_set_foreground(
-            clist, row,
-            &gtk_widget_get_default_style()->text[GTK_STATE_ACTIVE]);
-        break;
-      case faint:
-        gtk_clist_set_foreground(clist, row, &view_greycolour);
-        break;
-      case breakpt:
-        gtk_clist_set_foreground(clist, row, &view_orangecolour);
-        break;
-      case highlight:
-        gtk_clist_set_foreground(clist, row, &view_redcolour);
-        break;
-      case special:
-        gtk_clist_set_foreground(clist, row, colour);
-        break;
-    }
-
+    // Move the address on
     view_chararrAdd(4, address, increment, address);
-  } /* end for */
+  }
 
-  g_free(address); /* Now finished with address */
-  g_free(tab_source);
+  return readValues;
 }
 
 // ! COMPILING STUFF BELOW! !
@@ -619,7 +614,6 @@ void getJimulatorMemoryValues() {
 
 /**
  * @brief removes all of the old references to the previous file.
- * @deprecated Could be deleted?
  */
 void flush_source() {
   source_line *pOld, *pTrash;

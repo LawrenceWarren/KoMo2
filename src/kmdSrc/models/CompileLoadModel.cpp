@@ -25,7 +25,6 @@
 #include <iostream>
 #include <regex>
 #include <string>
-#include "../jimulatorInterface.h"
 #include "../views/MainWindowView.h"
 #include "KoMo2Model.h"
 
