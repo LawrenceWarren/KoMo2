@@ -76,8 +76,8 @@ const int compileJimulator(const char* const pathToBin,
  * @param pathToKMD an absolute path to the `.kmd` file that will be loaded.
  */
 const int loadJimulator(const char* const pathToKMD) {
-  // flush_source();
-  // misc_flush_symbol_table();
+  flush_source();
+  misc_flush_symbol_table();
   return readSource(pathToKMD);
 }
 
@@ -355,22 +355,30 @@ void readRegistersIntoArray(unsigned char* data, unsigned int count) {
 }
 
 /**
- * @brief Reads the values from the array of register values into a C++ string.
+ * @brief Reads the values from a char array into a C++ string.
  * @warning This function does some bit-level trickery. This is very low level,
  * study carefully before altering control flow.
+ * @param count The number of bytes to read out.
  * @param values The particular register value to read.
+ * @param prepend Whether to prepend the output string with an "0x" or not.
  * @return std::string A hexadecimal formatted register value.
  */
-std::string readValuesFromRegisterArray(unsigned char* values) {
-  char ret[8], *ptr = ret;
-  int x = 4;
+std::string view_chararr2hexstrbe(int count,
+                                  unsigned char* values,
+                                  bool prepend = false) {
+  char ret[count * 2 + 1];
+  char* ptr = ret;
 
-  while (x--) {
-    g_snprintf(ptr, 3, "%02X", (int)values[x]);
+  while (count--) {
+    g_snprintf(ptr, 3, "%02X", (int)values[count]);
     ptr += 2;  // Step string pointer
   }
 
-  return std::string(ret).insert(0, "0x");
+  if (prepend) {
+    return std::string(ret).insert(0, "0x");
+  } else {
+    return std::string(ret);
+  }
 }
 
 /**
@@ -385,10 +393,224 @@ const std::array<std::string, 16> getJimulatorRegisterValues() {
 
   // Loop through the array
   for (long unsigned int j = 0; j < a.size(); j++) {
-    a[j] = readValuesFromRegisterArray(&regVals[j * 4]);
+    a[j] = view_chararr2hexstrbe(4, &regVals[j * 4], true);
   }
 
   return a;
+}
+
+/**
+ * @brief Converts a bit array into an integer output.
+ * @param count
+ * @param array
+ * @return int The converted array.
+ */
+int view_chararr2int(int count, unsigned char* array) {
+  int ret = 0; /* bit array => int */
+
+  while (count--) {
+    ret = (ret << 8) + (array[count] & 0xFF);
+  }
+  return ret;
+}
+
+void make_ascii(unsigned int offset, int length, char* buffer) {
+  int i;
+  char c;
+
+  for (i = 0; i < length; i++) /* ASCII copy/convert from memory */
+  {
+    c = memdata[offset + i];
+    if ((c < 0x20) || (c >= 0x7F))
+      buffer[i] = '.';
+    else
+      buffer[i] = c;
+  }
+  buffer[i] = '\0'; /* Add terminator */
+  return;
+}
+
+void getJimulatorMemoryValues() {
+  const int count = 15;  // The number of values displayed in the memory window
+  const int bytecount = 60;  // The number of bytes to fetch from memory
+
+  // These arrays have data written into them
+  unsigned char memdata[60];
+  unsigned char start_address[4] = {0, 0, 0, 0};
+  start_address[0] &= -4;
+
+  boardSendChar(72 | 2);
+  boardSendCharArray(4, start_address);
+  board_send_n_bytes(count, 2);
+  boardGetCharArray(bytecount, memdata);
+
+  std::cout << "SOME VAL " << view_chararr2hexstrbe(4, start_address)
+            << std::endl;
+
+  // ! At this point, memory has been fetched!
+
+  char* data;
+  char* test;
+  char* trash;
+  int row;
+  int increment;
+  int temp;
+  source_line* src = NULL;
+  const int source_dis_tabs = 16;
+  unsigned int addr;
+  unsigned int start_addr;
+  int list_full_source = 0;
+  int used_first;
+  char* address = g_new(char, 4);
+  char* tab_source = g_new(char, source_dis_tabs + 1);
+
+  // ! Dangerous old logic ahead
+
+  for (temp = 0; temp < 4; temp++) {
+    address[temp] = start_address[temp];
+  }
+
+  start_addr = view_chararr2int(4, start_address);
+
+  for (temp = 0; temp < source_dis_tabs; temp++) {
+    tab_source[temp] = ' ';
+  }
+
+  tab_source[temp] = '\0';
+
+  // If looking in source file, skip records before window start address
+  if (source.pStart != NULL) {
+    src = source.pStart;  // Known to be valid
+    while ((src != NULL) && ((src->address < start_addr) ||
+                             (src->nodata && !list_full_source))) {
+      src = src->pNext;
+    }
+
+    // We fell off the end; wrap to start
+    if (src == NULL) {
+      src = source.pStart;
+      used_first == TRUE;
+      if (!list_full_source) {  // Find a record with some data
+        while ((src != NULL) && src->nodata) {
+          src = src->pNext;
+        }
+      }
+    }
+  }
+
+  // Iterate over display rows
+  for (row = 0; row < 15; row++) {
+    increment = 4;
+
+    addr = view_chararr2int(4, address);
+
+    if (src != NULL) {
+      if (addr == src->address) {
+        int i, j, k = 0, corrupt = 0;
+        char* pStr;
+
+        // Source field entries
+        for (i = 0; i < SOURCE_FIELD_COUNT; i++) {
+          for (j = 0; j < src->data_size[i]; j++) {
+            if (((src->data_value[i] >> (8 * j)) & 0xFF) !=
+                memdata[addr - start_addr + k++]) {
+              corrupt = TRUE;
+            }
+          }
+        }
+
+        if (not corrupt) {
+          increment = 0;                           /* How far should we move? */
+          pStr = g_strdup("");                     /* Seed hex string */
+          for (i = 0; i < SOURCE_FIELD_COUNT; i++) /* Source field entries */
+          {
+            if (src->data_size[i] > 0) {
+              char spaces[5]; /* Max. one per byte plus terminator */
+
+              data = view_chararr2hexstrbe(
+                  src->data_size[i], &memdata[addr - start_addr + increment]);
+              for (j = 0; j < src->data_size[i]; j++) {
+                spaces[j] = ' ';
+              }
+              spaces[j] = '\0';
+              trash = pStr;
+              pStr = g_strconcat(pStr, data, spaces, NULL);
+              g_free(trash);
+              g_free(data);
+            }
+            increment = increment + src->data_size[i];
+          }
+
+          make_ascii(addr - start_addr, increment, ascii);
+
+          // TODO: SHOULD SEND DATA TO BE UPDATED HERE
+          // view_update_field(clist, row, MIN_HEX_ENTRY, pStr);
+          // view_update_field(clist, row, ASCII_ENTRY, ascii);
+          g_free(pStr);
+          // view_update_field(clist, row, DIS_ENTRY, src->text);
+        }
+
+        do {
+          if (src->pNext != NULL) {
+            src = src->pNext; /* Move on ... */
+          } else {            /* ... wrapping, if required */
+            if (!used_first) {
+              src = source.pStart;
+              used_first = TRUE;
+            } else {
+              src = NULL; /* Been here before - give in */
+            }
+          }
+        } while ((src != NULL) && src->nodata && !list_full_source);
+      } else {
+        increment =
+            source_disassemble(src, addr, start_addr, row, increment, ascii);
+      }
+    } else {
+      output_ordinary_data(row, addr - start_addr, 4, memwindowptr->gran,
+                           memwindowptr->isa, memwindowptr->type);
+    }
+    /* Search for breakpoints (inactive) */
+    templist = breaksinactive;  // Only does single address type @@@
+    while (templist != NULL) {
+      if (misc_chararr_sub_to_int(4, address, templist->data) == 0)
+        colour_option = faint;
+      templist = templist->next;
+    }
+
+    /* Search for breakpoints (active) */
+    templist = breaks;  // Only does single address type @@@
+    while (templist != NULL) {
+      if (misc_chararr_sub_to_int(4, address, templist->data) == 0)
+        colour_option = breakpt;
+      templist = templist->next;
+    }
+
+    switch (colour_option) {
+      case normal:
+        gtk_clist_set_foreground(
+            clist, row,
+            &gtk_widget_get_default_style()->text[GTK_STATE_ACTIVE]);
+        break;
+      case faint:
+        gtk_clist_set_foreground(clist, row, &view_greycolour);
+        break;
+      case breakpt:
+        gtk_clist_set_foreground(clist, row, &view_orangecolour);
+        break;
+      case highlight:
+        gtk_clist_set_foreground(clist, row, &view_redcolour);
+        break;
+      case special:
+        gtk_clist_set_foreground(clist, row, colour);
+        break;
+    }
+
+    view_chararrAdd(4, address, increment, address);
+  } /* end for */
+
+  g_free(address); /* Now finished with address */
+  g_free(tab_source);
 }
 
 // ! COMPILING STUFF BELOW! !

@@ -43,6 +43,7 @@ class DisassemblyView : public Gtk::EventBox {
   Gtk::HButtonBox* const getContainer();
   std::vector<DisassemblyRows>* const getRows();
   void packView(const bool emptyChild);
+  void refreshViews();
 
  private:
   /**

@@ -2,8 +2,10 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include "../jimulatorInterface.h"
 #include "../views/DisassemblyView.h"
 
+// Initialise static list pointers.
 uint32_t DisassemblyModel::rowIDTail = 0;
 uint32_t DisassemblyModel::rowIDHead = 56;
 
@@ -36,8 +38,7 @@ void DisassemblyModel::addScrollRecognition() {
 void DisassemblyModel::initialiseRowViews() {
   for (long unsigned int i = 0; i < rowModels.size(); i++) {
     // Populates the model
-    rowModels[i] = RowModel(false, i * 4, "00 00 00 00 ",
-                            "Extra long text here for good luck.");
+    rowModels[i] = RowModel(false, i * 4, "00000000", "NOP");
 
     // Set the view values
     (*getView()->getRows())[i].setBreakpoint(rowModels[i].getBreakpoint());
@@ -137,6 +138,10 @@ const bool DisassemblyModel::handleScroll(GdkEventScroll* e) {
 void DisassemblyModel::adjustListPointers(const uint32_t val) {
   rowIDTail += val;
   rowIDHead += val;
+}
+
+void DisassemblyModel::getMemoryValues() {
+  getJimulatorMemoryValues();
 }
 
 /**

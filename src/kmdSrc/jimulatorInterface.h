@@ -23,12 +23,18 @@
 #include <array>
 #include <string>
 
+// Reading data
+const int checkBoardState();
 const std::array<std::string, 16> getJimulatorRegisterValues();
+void getJimulatorMemoryValues();
+
+// Loading data
 const int compileJimulator(const char* const pathToBin,
                            const char* const pathToS,
                            const char* const pathToKMD);
 const int loadJimulator(const char* const pathToKMD);
-const int checkBoardState();
+
+// Sending commands
 void startJimulator(const int steps);
 void pauseJimulator();
 void continueJimulator();

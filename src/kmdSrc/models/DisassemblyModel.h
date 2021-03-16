@@ -35,6 +35,7 @@ class DisassemblyModel : private Model {
   virtual const bool handleKeyPress(const GdkEventKey* const e) override;
   DisassemblyView* const getView();
   const bool handleScroll(GdkEventScroll* e);
+  void getMemoryValues();
 
  private:
   /**

@@ -51,10 +51,9 @@ KoMo2Model::KoMo2Model(MainWindowView* const mainWindow,
   getMainWindow()->signal_key_press_event().connect(
       sigc::mem_fun(*this, &Model::handleKeyPress), false);
 
-  //getMainWindow()->signal_scroll_event().connect
+  // getMainWindow()->signal_scroll_event().connect
 
-
-          this->changeJimulatorState(UNLOADED);
+  this->changeJimulatorState(UNLOADED);
 }
 
 /**
@@ -65,13 +64,20 @@ const bool KoMo2Model::refreshViews() {
   if (getJimulatorState() == RUNNING) {
     // TODO: look at KoMoDo function callback_updateall()
     std::cout << std::endl << "refresh views on this timer!" << std::endl;
+
+    // Updates registers
     registersModel.getView()->refreshViews(
         registersModel.getRegisterValueFromJimulator());
+
+    // Updates memory values
+    disassemblyModel.getMemoryValues();
     return true;
   } else {
     std::cout << "refreshing views once" << std::endl;
     registersModel.getView()->refreshViews(
         registersModel.getRegisterValueFromJimulator());
+
+    disassemblyModel.getMemoryValues();
     return false;
   }
 }

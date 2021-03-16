@@ -61,6 +61,10 @@ DisassemblyModel* const DisassemblyView::getModel() const {
   return model;
 }
 
+void DisassemblyView::refreshViews() {
+  
+}
+
 // !!!!!!!!!!!!!!!!!!!!!!
 // ! Nested class stuff !
 // !!!!!!!!!!!!!!!!!!!!!!
