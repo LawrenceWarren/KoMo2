@@ -1,9 +1,30 @@
+/**
+ * @file DisassemblyView.cpp
+ * @author Lawrence Warren (lawrencewarren2@gmail.com)
+ * @brief This file contains the source code for the DisassemblyView GTK GUI
+ * component, for the KoMo2 program.
+ * @version 0.1
+ * @date 2021-03-18
+ * @section LICENSE
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 3 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * See the GNU General Public License for more details at
+ * https://www.gnu.org/copyleft/gpl.html
+ */
+
 #include "DisassemblyView.h"
 #include "../models/DisassemblyModel.h"
 
 /**
  * @brief Construct a new DisassemblyView::DisassemblyView object.
- * @param parent A pointer to this views parent.
+ * @param parent A pointer to this views parent, set during initialisation.
  */
 DisassemblyView::DisassemblyView(MainWindowView* const parent)
     : parent(parent) {
@@ -11,9 +32,11 @@ DisassemblyView::DisassemblyView(MainWindowView* const parent)
 }
 
 /**
- * @brief Initialises the containers & views.
+ * @brief Initialises the containers & their children - packs children into
+ * containers, sets sizes and layouts, adds CSS classes.
  */
 void DisassemblyView::initDisassemblyContainer() {
+  // TODO: set CSS
   packView();
 
   // Pack in to the master container
@@ -59,7 +82,7 @@ void DisassemblyView::packView() {
 
 /**
  * @brief Set the values in the disassemblyRows.
- * @param vals
+ * @param vals An array of 15 memoryValues.
  */
 void DisassemblyView::refreshViews(std::array<MemoryValues, 15> vals) {
   for (int i = 0; i < 15; i++) {
@@ -73,18 +96,40 @@ void DisassemblyView::refreshViews(std::array<MemoryValues, 15> vals) {
 // ! Getters and setters !
 // !!!!!!!!!!!!!!!!!!!!!!!
 
+/**
+ * @brief Sets the value of the `model` member.
+ * @param val The value to set the `model` member to.
+ */
 void DisassemblyView::setModel(DisassemblyModel* const val) {
   model = val;
 }
+/**
+ * @brief Gets a pointer to the navigation buttons container.
+ * @return Gtk::VButtonBox* const A constant pointer to the navigation buttons
+ * container.
+ */
 Gtk::VButtonBox* const DisassemblyView::getNavigationButtons() {
   return &navigationButtons;
 }
+/**
+ * @brief Gets a pointer to the disassembly container.
+ * @return Gtk::VButtonBox* const A constant pointer to the disassembly
+ * container.
+ */
 Gtk::VButtonBox* const DisassemblyView::getDisassemblyContainer() {
   return &disassemblyContainer;
 }
+/**
+ * @brief Gets a pointer to the master container.
+ * @return Gtk::HButtonBox* const A constant pointer to the master container.
+ */
 Gtk::HButtonBox* const DisassemblyView::getContainer() {
   return &container;
 }
+/**
+ * @brief Gets a constant pointer to the model member.
+ * @return DisassemblyModel* const A constant pointer to the model member.
+ */
 DisassemblyModel* const DisassemblyView::getModel() const {
   return model;
 }
@@ -93,6 +138,9 @@ DisassemblyModel* const DisassemblyView::getModel() const {
 // ! Nested class stuff !
 // !!!!!!!!!!!!!!!!!!!!!!
 
+/**
+ * @brief Construct a new DisassemblyRows::DisassemblyRows object.
+ */
 DisassemblyRows::DisassemblyRows() {
   set_layout(Gtk::BUTTONBOX_START);
   pack_end(breakpoint, false, false);
@@ -100,20 +148,39 @@ DisassemblyRows::DisassemblyRows() {
   pack_end(hex, false, false);
   pack_end(disassembly, false, false);
 
-  breakpoint.set_size_request(10, 10);
+  breakpoint.set_size_request(50, 10);
+  address.set_size_request(50, 10);
+  hex.set_size_request(50, 10);
+  disassembly.set_size_request(250, 10);
 
   show();
   show_all_children();
 }
+/**
+ * @brief Set the state of the breakpoint button.
+ * @param state The state to set the breakpoint to.
+ */
 void DisassemblyRows::setBreakpoint(const bool state) {
   breakpoint.set_active(state);
 }
+/**
+ * @brief Set the text of the address label.
+ * @param text The text to set the label to.
+ */
 void DisassemblyRows::setAddress(const std::string text) {
   address.set_text(text);
 }
+/**
+ * @brief Set the text of the hex label.
+ * @param text The text to set the hex label to.
+ */
 void DisassemblyRows::setHex(const std::string text) {
   hex.set_text(text);
 }
+/**
+ * @brief Set the text of disassembly label.
+ * @param text The text to set the disassembly label to.
+ */
 void DisassemblyRows::setDisassembly(const std::string text) {
   disassembly.set_text(text);
 }
