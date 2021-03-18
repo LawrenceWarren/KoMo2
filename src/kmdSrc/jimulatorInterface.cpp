@@ -529,53 +529,36 @@ std::array<MemoryValues, 15> getJimulatorMemoryValues(
     if (src != NULL) {
       // If the src address is valid
       if (addr == src->address) {
-        bool corrupt = false;
+        increment = 0;              // How far should we move?
+        char* pStr = g_strdup("");  // Seed hex string
 
-        int k = 0;
+        // Source field entries
         for (int i = 0; i < SOURCE_FIELD_COUNT; i++) {
-          for (int j = 0; j < src->data_size[i]; j++) {
-            if (((src->data_value[i] >> (8 * j)) & 0xFF) !=
-                memdata[addr - start_addr + k++]) {
-              corrupt = true;
+          if (src->data_size[i] > 0) {
+            char spaces[5];  // Max. one per byte plus terminator
+
+            auto data =
+                view_chararr2hexstrbe(src->data_size[i],
+                                      &memdata[addr - start_addr + increment])
+                    .c_str();
+
+            int j = 0;
+            for (; j < src->data_size[i]; j++) {
+              spaces[j] = ' ';
             }
+
+            spaces[j] = '\0';
+            auto trash = pStr;
+            pStr = g_strconcat(pStr, data, spaces, NULL);
+            g_free(trash);
           }
+          increment = increment + src->data_size[i];
         }
 
-        if (not corrupt) {
-          increment = 0;              // How far should we move?
-          char* pStr = g_strdup("");  // Seed hex string
-          for (int i = 0; i < SOURCE_FIELD_COUNT; i++)  // Source field entries
-          {
-            if (src->data_size[i] > 0) {
-              char spaces[5];  // Max. one per byte plus terminator
+        readValues[row].hex = std::string(pStr);
+        readValues[row].disassembly = std::string(src->text);
 
-              // ! This cast is hacky
-              auto data = (char*)view_chararr2hexstrbe(
-                              src->data_size[i],
-                              &memdata[addr - start_addr + increment])
-                              .c_str();
-
-              int j = 0;
-              for (; j < src->data_size[i]; j++) {
-                spaces[j] = ' ';
-              }
-
-              spaces[j] = '\0';
-              auto trash = pStr;
-              pStr = g_strconcat(pStr, data, spaces, NULL);
-              g_free(trash);
-            }
-            increment = increment + src->data_size[i];
-          }
-
-          readValues[row].hex = std::string(pStr);
-          readValues[row].disassembly = std::string(src->text);
-
-          g_free(pStr);
-        } else {
-          std::cout << "CORRUPT" << std::endl;
-          increment = source_disassemble(src, addr, increment);
-        }
+        g_free(pStr);
 
         do {
           if (src->pNext != NULL) {

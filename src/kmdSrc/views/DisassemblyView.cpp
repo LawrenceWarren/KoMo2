@@ -2,7 +2,7 @@
  * @file DisassemblyView.cpp
  * @author Lawrence Warren (lawrencewarren2@gmail.com)
  * @brief This file contains the source code for the DisassemblyView GTK GUI
- * component, for the KoMo2 program.
+ * component & the DisassemblyRows GUI sub-component, for the `KoMo2` program.
  * @version 0.1
  * @date 2021-03-18
  * @section LICENSE

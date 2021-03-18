@@ -43,7 +43,7 @@ MainWindowView::MainWindowView(const int x, const int y)
   set_border_width(4);
   setSizes(x, y);
 
-  // Packs
+  // Packs containers into one another.
   getControlsAndCompileBar()->set_layout(Gtk::BUTTONBOX_EDGE);
   getControlsAndCompileBar()->pack_end(controlsView, false, false);
   getControlsAndCompileBar()->pack_end(compileLoadView, false, false);
@@ -77,7 +77,7 @@ void MainWindowView::setSizes(const int x, const int y) {
   const float bottomBarHeight = (y / 7.f) * 2.f;
   const float xUnits = x / 12.4f;
 
-  // Layout sizes
+  // set layout sizes
   // TODO: these should be deleted once all components are implemented
   getMasterLayout()->set_size_request(x, y);
   getControlsAndCompileBar()->set_size_request(x, -1);
@@ -94,7 +94,7 @@ void MainWindowView::setSizes(const int x, const int y) {
  * @brief Sets the style attributes for the views - namely any icons and CSS.
  */
 void MainWindowView::setStyling() {
-  set_title(" KoMo2");
+  set_title("KoMo2");
 
   // Sets the icon for the window
   set_icon_from_file(getModel()->getAbsolutePathToProjectRoot() +

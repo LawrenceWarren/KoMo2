@@ -58,12 +58,9 @@ KoMo2Model::KoMo2Model(MainWindowView* const mainWindow,
 
 /**
  * @brief Refreshes the views. May be called on a looping timer.
- * @return bool True if to be called in a loop.
+ * @return bool True if to be called in a loop, otherwise False.
  */
 const bool KoMo2Model::refreshViews() {
-  // TODO: look at KoMoDo function callback_updateall()
-  std::cout << std::endl << "Refreshing views" << std::endl;
-
   // Updates registers
   registersModel.getView()->refreshViews(
       registersModel.getRegisterValueFromJimulator());
@@ -71,8 +68,7 @@ const bool KoMo2Model::refreshViews() {
   // Updates memory values
   disassemblyModel.getView()->refreshViews(disassemblyModel.getMemoryValues());
 
-  // Immediately redraw the screen
-  getMainWindow()->queue_draw();
+  getMainWindow()->queue_draw();  // IMMEDIATELY redraw the screen
 
   // Returns true if in running state - results in an endless loop (we want)
   return getJimulatorState() == RUNNING;
@@ -84,13 +80,8 @@ const bool KoMo2Model::refreshViews() {
  * @return bool if a key was pressed.
  */
 const bool KoMo2Model::handleKeyPress(const GdkEventKey* const e) {
-  if (getCompileLoadModel()->handleKeyPress(e)) {
-    return true;
-  } else if (getControlsModel()->handleKeyPress(e)) {
-    return true;
-  }
-
-  return false;
+  return getControlsModel()->handleKeyPress(e) ||
+         getCompileLoadModel()->handleKeyPress(e);
 }
 
 /**
@@ -112,10 +103,10 @@ void KoMo2Model::changeJimulatorState(const JimulatorState newState) {
           sigc::mem_fun(this, &KoMo2Model::refreshViews), 333);
       break;
     case LOADED:
-      // this->refreshViews();
+      refreshViews();
       break;
     case UNLOADED:
-      // this->refreshViews();
+      refreshViews();
       break;
     default:
       break;
@@ -127,10 +118,13 @@ void KoMo2Model::changeJimulatorState(const JimulatorState newState) {
   compileLoadModel.changeJimulatorState(newState);
   controlsModel.changeJimulatorState(newState);
   registersModel.changeJimulatorState(newState);
-  // TODO: add other models here as they come
+  disassemblyModel.changeJimulatorState(newState);
+  terminalModel.changeJimulatorState(newState);
 }
 
-// ! Getter functions
+// !!!!!!!!!!!!!!!!!!!!!!!
+// ! Getters and setters !
+// !!!!!!!!!!!!!!!!!!!!!!!
 
 /**
  * @brief Gets the `mainWindow` member variable.
@@ -160,14 +154,20 @@ ControlsModel* const KoMo2Model::getControlsModel() {
 RegistersModel* const KoMo2Model::getRegistersModel() {
   return &registersModel;
 }
+/**
+ * @brief Gets the `disassemblyModel` member variable.
+ * @return DisassemblyModel* A pointer to the `disassemblyModel`.
+ */
 DisassemblyModel* const KoMo2Model::getDisassemblyModel() {
   return &disassemblyModel;
 }
-
+/**
+ * @brief Gets the `terminalModel` member variable.
+ * @return TerminalModel* A pointer to the `terminalModel`.
+ */
 TerminalModel* const KoMo2Model::getTerminalModel() {
   return &terminalModel;
 }
-
 /**
  * @brief Gets the `absolutePathToProjectRoot` member variable.
  * @return const std::string The absolute path to the project root.

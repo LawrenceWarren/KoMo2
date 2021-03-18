@@ -1,64 +1,61 @@
+/**
+ * @file DisassemblyModel.h
+ * @author Lawrence Warren (lawrencewarren2@gmail.com)
+ * @brief This file declares the class DisassemblyModel, which represents the
+ * logical data in memory that relates to the memory window you see in the KoMo2
+ * GUI. The view is represented in the file `DisassemblyView.cpp` and it's
+ * header.
+ * @version 0.1
+ * @date 2021-03-18
+ * @section LICENSE
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 3 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * See the GNU General Public License for more details at
+ * https://www.gnu.org/copyleft/gpl.html
+ */
+
 #include <string>
 #include <vector>
 #include "TerminalModel.h"
 
 class DisassemblyView;
-class DisassemblyRows;
 
-class RowModel {
- private:
-  bool breakpoint;
-  uint32_t address;
-  std::string hex;
-  std::string disassembly;
-
- public:
-  RowModel();
-  RowModel(const bool breakpoint,
-           const uint32_t address,
-           const std::string hex,
-           const std::string disassembly);
-  constexpr const bool getBreakpoint() const;
-  const uint32_t getAddress() const;
-  const std::string getHex() const;
-  const std::string getDisassembly() const;
-  void setBreakpoint(const bool toggle);
-  void setAddress(const uint32_t text);
-  void setHex(const std::string text);
-  void setDisassembly(const std::string text);
-};
-
+/**
+ * @brief The declaration of the DisassemblyModel class.
+ */
 class DisassemblyModel : private Model {
  public:
   DisassemblyModel(DisassemblyView* const view, KoMo2Model* const parent);
-  virtual void changeJimulatorState(const JimulatorState newState) override;
-  virtual const bool handleKeyPress(const GdkEventKey* const e) override;
-  DisassemblyView* const getView();
-  const bool handleScroll(GdkEventScroll* e);
-  std::array<MemoryValues, 15UL> getMemoryValues();
   const std::string intToFormattedHexString(const uint32_t formatMe) const;
 
+  // ! Getters and setters
+  std::array<MemoryValues, 15> getMemoryValues();
+  DisassemblyView* const getView();
+
+  // ! Virtual overrides
+  virtual void changeJimulatorState(const JimulatorState newState) override;
+  virtual const bool handleKeyPress(const GdkEventKey* const e) override;
 
  private:
   /**
    * @brief The view this model represents.
    */
   DisassemblyView* const view;
-
   /**
    * @brief Fixed width integer representing the memory address at the tail
    * (top) of the container.
    */
   static uint32_t memoryIndex;
 
-  /**
-   * @brief A vector of 15 rowModels, representing the 15 views within the
-   * container.
-   */
-  std::vector<RowModel> rowModels{std::vector<RowModel>(15)};
-
+  const bool handleScroll(GdkEventScroll* e);
   void incrementMemoryIndex(const uint32_t val);
-  void reorderViews(const int order);
   void addScrollRecognition();
 
   // ! Deleted special member functions
