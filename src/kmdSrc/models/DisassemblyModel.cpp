@@ -1,3 +1,24 @@
+/**
+ * @file DisassemblyModel.cpp
+ * @author Lawrence Warren (lawrencewarren2@gmail.com)
+ * @brief This file defines the functions declared in the file
+ * `DisassemblyModel.h`.
+ * @version 0.1
+ * @date 2021-03-18
+ * @section LICENSE
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 3 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * See the GNU General Public License for more details at
+ * https://www.gnu.org/copyleft/gpl.html
+ */
+
 #include "DisassemblyModel.h"
 #include <iomanip>
 #include <iostream>
@@ -8,9 +29,9 @@
 uint32_t DisassemblyModel::memoryIndex = 0;
 
 /**
- * @brief Construct a new Disassembly Model:: Disassembly Model object.
- * @param view A pointer to the view object.
- * @param parent A pointer to the parent object.
+ * @brief Construct a new DisassemblyModel::DisassemblyModel object.
+ * @param view A pointer to the view object, set at initialisation.
+ * @param parent A pointer to the parent object, set at initialisation.
  */
 DisassemblyModel::DisassemblyModel(DisassemblyView* const view,
                                    KoMo2Model* const parent)
@@ -21,8 +42,8 @@ DisassemblyModel::DisassemblyModel(DisassemblyView* const view,
 }
 
 /**
- * @brief Adds scroll recognition to the container object, and links it to the
- * `handleScroll` function.
+ * @brief Adds scroll recognition to the container object, and sends scroll
+ * events to the  member function `handleScroll`.
  */
 void DisassemblyModel::addScrollRecognition() {
   getView()->add_events(Gdk::SMOOTH_SCROLL_MASK);
@@ -54,6 +75,7 @@ const std::string DisassemblyModel::intToFormattedHexString(
  * @return bool if a key was pressed.
  */
 const bool DisassemblyModel::handleScroll(GdkEventScroll* e) {
+  // Increase or decrease the memory index.
   switch (e->direction) {
     case GDK_SCROLL_UP:
       incrementMemoryIndex(-4);
@@ -66,36 +88,18 @@ const bool DisassemblyModel::handleScroll(GdkEventScroll* e) {
       break;
   }
 
-  auto fetched = getMemoryValues();
+  // Refresh the views.
   getView()->refreshViews(getMemoryValues());
   return true;
 }
 
 /**
- * @brief Updates the list pointers to a new value. SHOULD ALWAYS BE A MULTIPLE
- * OF 4.
+ * @brief Updates the list pointers to a new value.
+ * @warning `val` should always be a multiple of 4.
  * @param val The value to increment by.
  */
 void DisassemblyModel::incrementMemoryIndex(const uint32_t val) {
   memoryIndex += val;
-}
-
-/**
- * @brief Reads memory values from Jimulator.
- * @return std::array<MemoryValues, 15> An array of the 15 memory values - their
- * addresses, their hex columns and their disassembly/source columns.
- */
-std::array<MemoryValues, 15> DisassemblyModel::getMemoryValues() {
-  auto vals = getJimulatorMemoryValues(memoryIndex);
-
-  for (auto v : vals) {
-    std::cout << intToFormattedHexString(v.address) << "/" << v.hex << "/"
-              << v.disassembly << "/" << std::endl;
-  }
-
-  std::cout << std::endl;
-
-  return vals;
 }
 
 /**
@@ -113,6 +117,10 @@ const bool DisassemblyModel::handleKeyPress(const GdkEventKey* const e) {
   return false;
 }
 
+// !!!!!!!!!!!!!!!!!!!!!!!
+// ! Getters and setters !
+// !!!!!!!!!!!!!!!!!!!!!!!
+
 /**
  * @brief Returns a pointer to the view object.
  * @return DisassemblyView* const The view pointer.
@@ -120,43 +128,11 @@ const bool DisassemblyModel::handleKeyPress(const GdkEventKey* const e) {
 DisassemblyView* const DisassemblyModel::getView() {
   return view;
 }
-
-// !!!!!!!!!!!!!!!!!!!!!
-// ! Child class stuff !
-// !!!!!!!!!!!!!!!!!!!!!
-
-RowModel::RowModel(const bool breakpoint,
-                   const uint32_t address,
-                   const std::string hex,
-                   const std::string disassembly)
-    : breakpoint(breakpoint),
-      address(address),
-      hex(hex),
-      disassembly(disassembly) {}
-
-RowModel::RowModel() {}
-
-constexpr const bool RowModel::getBreakpoint() const {
-  return breakpoint;
-}
-const uint32_t RowModel::getAddress() const {
-  return address;
-}
-const std::string RowModel::getHex() const {
-  return hex;
-}
-const std::string RowModel::getDisassembly() const {
-  return disassembly;
-}
-void RowModel::setBreakpoint(const bool toggle) {
-  breakpoint = toggle;
-}
-void RowModel::setAddress(const uint32_t text) {
-  address = text;
-}
-void RowModel::setHex(const std::string text) {
-  hex = text;
-}
-void RowModel::setDisassembly(const std::string text) {
-  disassembly = text;
+/**
+ * @brief Reads memory values from Jimulator.
+ * @return std::array<MemoryValues, 15> An array of the 15 memory values - their
+ * addresses, their hex columns and their disassembly/source columns.
+ */
+std::array<MemoryValues, 15> DisassemblyModel::getMemoryValues() {
+  return getJimulatorMemoryValues(memoryIndex);
 }
