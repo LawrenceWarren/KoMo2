@@ -9,6 +9,7 @@
 
 class MainWindowView;
 class DisassemblyModel;
+class MemoryValues;
 
 class DisassemblyRows : public Gtk::HButtonBox {
  public:
@@ -27,10 +28,10 @@ class DisassemblyRows : public Gtk::HButtonBox {
  private:
   // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error
-  // DisassemblyRows(const DisassemblyRows&) = delete;
-  // DisassemblyRows(const DisassemblyRows&&) = delete;
-  // DisassemblyRows& operator=(const DisassemblyRows&) = delete;
-  // DisassemblyRows& operator=(const DisassemblyRows&&) = delete;
+  DisassemblyRows(const DisassemblyRows&) = delete;
+  DisassemblyRows(const DisassemblyRows&&) = delete;
+  DisassemblyRows& operator=(const DisassemblyRows&) = delete;
+  DisassemblyRows& operator=(const DisassemblyRows&&) = delete;
 };
 
 class DisassemblyView : public Gtk::EventBox {
@@ -42,8 +43,8 @@ class DisassemblyView : public Gtk::EventBox {
   Gtk::VButtonBox* const getDisassemblyContainer();
   Gtk::HButtonBox* const getContainer();
   std::vector<DisassemblyRows>* const getRows();
-  void packView(const bool emptyChild);
-  void refreshViews();
+  void packView();
+  void refreshViews(std::array<MemoryValues, 15> vals);
 
  private:
   /**

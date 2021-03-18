@@ -36,6 +36,8 @@ class DisassemblyModel : private Model {
   DisassemblyView* const getView();
   const bool handleScroll(GdkEventScroll* e);
   std::array<MemoryValues, 15UL> getMemoryValues();
+  const std::string intToFormattedHexString(const uint32_t formatMe) const;
+
 
  private:
   /**
@@ -47,13 +49,7 @@ class DisassemblyModel : private Model {
    * @brief Fixed width integer representing the memory address at the tail
    * (top) of the container.
    */
-  static uint32_t rowIDTail;
-
-  /**
-   * @brief Fixed width integer representing the memory address at the head
-   * (bottom) of the container.
-   */
-  static uint32_t rowIDHead;
+  static uint32_t memoryIndex;
 
   /**
    * @brief A vector of 15 rowModels, representing the 15 views within the
@@ -61,8 +57,7 @@ class DisassemblyModel : private Model {
    */
   std::vector<RowModel> rowModels{std::vector<RowModel>(15)};
 
-  void adjustListPointers(const uint32_t val);
-  const std::string intToFormattedHexString(const uint32_t formatMe) const;
+  void incrementMemoryIndex(const uint32_t val);
   void reorderViews(const int order);
   void addScrollRecognition();
 

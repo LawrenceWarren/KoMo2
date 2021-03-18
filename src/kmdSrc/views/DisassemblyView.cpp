@@ -1,16 +1,30 @@
 #include "DisassemblyView.h"
+#include "../models/DisassemblyModel.h"
 
+/**
+ * @brief Construct a new DisassemblyView::DisassemblyView object.
+ * @param parent A pointer to this views parent.
+ */
 DisassemblyView::DisassemblyView(MainWindowView* const parent)
     : parent(parent) {
   initDisassemblyContainer();
 }
 
+/**
+ * @brief Initialises the containers & views.
+ */
 void DisassemblyView::initDisassemblyContainer() {
-  packView(false);
+  packView();
 
+  // Pack in to the master container
   container.pack_end(disassemblyContainer, false, false);
   container.pack_end(navigationButtons, false, false);
 
+  // Set layouts
+  disassemblyContainer.set_layout(Gtk::BUTTONBOX_START);
+  container.set_layout(Gtk::BUTTONBOX_START);
+
+  // Show everything
   disassemblyContainer.show();
   disassemblyContainer.show_all_children();
   navigationButtons.show();
@@ -18,26 +32,40 @@ void DisassemblyView::initDisassemblyContainer() {
   container.show();
   container.show_all_children();
 
+  // Show everything
   add(container);
   show();
   show_all_children();
 }
 
+/**
+ * @brief Gets a pointer to the rows of views.
+ * @return std::vector<DisassemblyRows>* const A pointer to the vector of rows.
+ */
 std::vector<DisassemblyRows>* const DisassemblyView::getRows() {
   return &rows;
 }
 
-void DisassemblyView::packView(const bool emptyChild) {
-  // Clear existing children
-  for (long unsigned int i = 0; emptyChild && i < rows.size(); i++) {
-    disassemblyContainer.remove(rows[i]);
-  }
-
-  // Packs in 15 children
+/**
+ * @brief Packing in 15 DisassemblyRows into the disassemblyContainer view.
+ */
+void DisassemblyView::packView() {
   for (long unsigned int i = 0; i < 15; i++) {
     disassemblyContainer.pack_start(rows[i], false, false);
     rows[i].show();
     rows[i].show_all_children();
+  }
+}
+
+/**
+ * @brief Set the values in the disassemblyRows.
+ * @param vals
+ */
+void DisassemblyView::refreshViews(std::array<MemoryValues, 15> vals) {
+  for (int i = 0; i < 15; i++) {
+    rows[i].setAddress(getModel()->intToFormattedHexString(vals[i].address));
+    rows[i].setHex(vals[i].hex);
+    rows[i].setDisassembly(vals[i].disassembly);
   }
 }
 
@@ -61,16 +89,12 @@ DisassemblyModel* const DisassemblyView::getModel() const {
   return model;
 }
 
-void DisassemblyView::refreshViews() {
-  
-}
-
 // !!!!!!!!!!!!!!!!!!!!!!
 // ! Nested class stuff !
 // !!!!!!!!!!!!!!!!!!!!!!
 
 DisassemblyRows::DisassemblyRows() {
-  set_layout(Gtk::BUTTONBOX_CENTER);
+  set_layout(Gtk::BUTTONBOX_START);
   pack_end(breakpoint, false, false);
   pack_end(address, false, false);
   pack_end(hex, false, false);

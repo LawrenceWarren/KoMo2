@@ -61,25 +61,21 @@ KoMo2Model::KoMo2Model(MainWindowView* const mainWindow,
  * @return bool True if to be called in a loop.
  */
 const bool KoMo2Model::refreshViews() {
-  if (getJimulatorState() == RUNNING) {
-    // TODO: look at KoMoDo function callback_updateall()
-    std::cout << std::endl << "refresh views on this timer!" << std::endl;
+  // TODO: look at KoMoDo function callback_updateall()
+  std::cout << std::endl << "Refreshing views" << std::endl;
 
-    // Updates registers
-    registersModel.getView()->refreshViews(
-        registersModel.getRegisterValueFromJimulator());
+  // Updates registers
+  registersModel.getView()->refreshViews(
+      registersModel.getRegisterValueFromJimulator());
 
-    // Updates memory values
-    disassemblyModel.getMemoryValues();
-    return true;
-  } else {
-    std::cout << "refreshing views once" << std::endl;
-    registersModel.getView()->refreshViews(
-        registersModel.getRegisterValueFromJimulator());
+  // Updates memory values
+  disassemblyModel.getView()->refreshViews(disassemblyModel.getMemoryValues());
 
-    disassemblyModel.getMemoryValues();
-    return false;
-  }
+  // Immediately redraw the screen
+  getMainWindow()->queue_draw();
+
+  // Returns true if in running state - results in an endless loop (we want)
+  return getJimulatorState() == RUNNING;
 }
 
 /**
@@ -111,9 +107,9 @@ void KoMo2Model::changeJimulatorState(const JimulatorState newState) {
   // Handles refreshing the views
   switch (newState) {
     case RUNNING:
-      // Calls refreshViews every 300ms
+      // Calls refreshViews every 333ms
       Glib::signal_timeout().connect(
-          sigc::mem_fun(this, &KoMo2Model::refreshViews), 300);
+          sigc::mem_fun(this, &KoMo2Model::refreshViews), 333);
       break;
     case LOADED:
       // this->refreshViews();

@@ -4,9 +4,8 @@
 #include <sstream>
 #include "../views/DisassemblyView.h"
 
-// Initialise static list pointers.
-uint32_t DisassemblyModel::rowIDTail = 0;
-uint32_t DisassemblyModel::rowIDHead = 56;
+// Initialise static list pointers
+uint32_t DisassemblyModel::memoryIndex = 0;
 
 /**
  * @brief Construct a new Disassembly Model:: Disassembly Model object.
@@ -18,6 +17,7 @@ DisassemblyModel::DisassemblyModel(DisassemblyView* const view,
     : Model(parent), view(view) {
   view->setModel(this);
   addScrollRecognition();
+  getView()->refreshViews(getMemoryValues());
 }
 
 /**
@@ -56,10 +56,10 @@ const std::string DisassemblyModel::intToFormattedHexString(
 const bool DisassemblyModel::handleScroll(GdkEventScroll* e) {
   switch (e->direction) {
     case GDK_SCROLL_UP:
-      adjustListPointers(-4);
+      incrementMemoryIndex(-4);
       break;
     case GDK_SCROLL_DOWN:
-      adjustListPointers(4);
+      incrementMemoryIndex(4);
       break;
     default:
       // Do nothing in this case
@@ -67,7 +67,7 @@ const bool DisassemblyModel::handleScroll(GdkEventScroll* e) {
   }
 
   auto fetched = getMemoryValues();
-  getView()->packView(true);
+  getView()->refreshViews(getMemoryValues());
   return true;
 }
 
@@ -76,9 +76,8 @@ const bool DisassemblyModel::handleScroll(GdkEventScroll* e) {
  * OF 4.
  * @param val The value to increment by.
  */
-void DisassemblyModel::adjustListPointers(const uint32_t val) {
-  rowIDTail += val;
-  rowIDHead += val;
+void DisassemblyModel::incrementMemoryIndex(const uint32_t val) {
+  memoryIndex += val;
 }
 
 /**
@@ -87,7 +86,7 @@ void DisassemblyModel::adjustListPointers(const uint32_t val) {
  * addresses, their hex columns and their disassembly/source columns.
  */
 std::array<MemoryValues, 15> DisassemblyModel::getMemoryValues() {
-  auto vals = getJimulatorMemoryValues(rowIDTail);
+  auto vals = getJimulatorMemoryValues(memoryIndex);
 
   for (auto v : vals) {
     std::cout << intToFormattedHexString(v.address) << "/" << v.hex << "/"
