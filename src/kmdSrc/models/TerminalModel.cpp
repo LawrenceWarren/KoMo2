@@ -2,6 +2,9 @@
 #include <iostream>
 #include "../views/TerminalView.h"
 
+// TODO: look at the function start_gtk && callback_console_update
+// TODO: use a GTK::TextView
+
 TerminalModel::TerminalModel(TerminalView* const view, KoMo2Model* const parent)
     : Model(parent), view(view) {
   view->setModel(this);
