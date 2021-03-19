@@ -67,7 +67,7 @@
 }
 
 .dis_layouts {
-  background-color: #3dee95;
+  background-color: #ee3d3d;
   box-shadow: inset 2px 2px 0px #1b1f23, inset -2px -2px 0px #1b1f23,
     inset -2px 2px 0px #1b1f23, inset 2px -2px 0px #1b1f23;
 }
@@ -85,7 +85,7 @@
 }
 
 .registers_layouts {
-  background-color: #2bff00;
+  background-color: #00ff22;
   box-shadow: inset 2px 2px 0px #1b1f23, inset -2px -2px 0px #1b1f23,
     inset -2px 2px 0px #1b1f23, inset 2px -2px 0px #1b1f23;
 }
@@ -147,6 +147,7 @@
 */
 
 /* ! GRID */
+
 .grid {
   border-radius: 0px;
   border: 3px solid;
@@ -159,4 +160,35 @@
   color: #ffffff;
   font-size: 14px;
   background-color: #444d56;
+}
+
+.disassembly_rows {
+  background-color: #c0dd1e;
+}
+
+.breakpoint_buttons {
+  border-radius: 100%;
+  background-image: image(#72211c);
+  border-color: #72211c;
+  box-shadow: none;
+}
+.breakpoint_buttons:checked {
+  background-image: image(#e51400);
+  border-color: #e51400;
+  box-shadow: none;
+}
+
+.address_label {
+  font-family: "Fira Code Retina", "Fira Code", monospace;
+  background-color: #1edd8d;
+}
+
+.hex_label {
+  font-family: "Fira Code Retina", "Fira Code", monospace;
+  background-color: #dd1e9d;
+}
+
+.disassembly_label {
+  font-family: "Fira Code Retina", "Fira Code", monospace;
+  background-color: #dd741e;
 }

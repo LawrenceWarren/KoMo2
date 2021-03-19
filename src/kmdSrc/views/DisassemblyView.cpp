@@ -36,16 +36,14 @@ DisassemblyView::DisassemblyView(MainWindowView* const parent)
  * containers, sets sizes and layouts, adds CSS classes.
  */
 void DisassemblyView::initDisassemblyContainer() {
-  // TODO: set CSS
+  container.set_layout(Gtk::BUTTONBOX_START);
+  disassemblyContainer.set_layout(Gtk::BUTTONBOX_START);
+
   packView();
 
   // Pack in to the master container
-  container.pack_end(disassemblyContainer, false, false);
-  container.pack_end(navigationButtons, false, false);
-
-  // Set layouts
-  disassemblyContainer.set_layout(Gtk::BUTTONBOX_START);
-  container.set_layout(Gtk::BUTTONBOX_START);
+  container.pack_start(disassemblyContainer, false, false);
+  container.pack_start(navigationButtons, false, false);
 
   // Show everything
   disassemblyContainer.show();
@@ -143,15 +141,32 @@ DisassemblyModel* const DisassemblyView::getModel() const {
  */
 DisassemblyRows::DisassemblyRows() {
   set_layout(Gtk::BUTTONBOX_START);
-  pack_end(breakpoint, false, false);
-  pack_end(address, false, false);
-  pack_end(hex, false, false);
-  pack_end(disassembly, false, false);
 
-  breakpoint.set_size_request(50, 10);
-  address.set_size_request(50, 10);
-  hex.set_size_request(50, 10);
-  disassembly.set_size_request(250, 10);
+  // Set minimum sizes
+  breakpoint.set_size_request(5, 5);
+  buttonSizer.set_size_request(5, 5);
+  address.set_size_request(100, 10);
+  hex.set_size_request(100, 10);
+  disassembly.set_size_request(400, 10);
+
+  // Packing objects
+  buttonSizer.pack_start(breakpoint, false, false);
+  pack_start(buttonSizer, false, false);
+  pack_start(address, false, false);
+  pack_start(hex, false, false);
+  pack_start(disassembly, false, false);
+
+  // Add CSS styles
+  get_style_context()->add_class("disassembly_rows");
+  breakpoint.get_style_context()->add_class("breakpoint_buttons");
+  address.get_style_context()->add_class("address_label");
+  hex.get_style_context()->add_class("hex_label");
+  disassembly.get_style_context()->add_class("disassembly_label");
+
+  // Set text align to the left
+  address.set_xalign(0.2);
+  hex.set_xalign(0.2);
+  disassembly.set_xalign(0.2);
 
   show();
   show_all_children();

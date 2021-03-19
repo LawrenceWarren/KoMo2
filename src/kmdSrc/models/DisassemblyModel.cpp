@@ -78,10 +78,10 @@ const bool DisassemblyModel::handleScroll(GdkEventScroll* e) {
   // Increase or decrease the memory index.
   switch (e->direction) {
     case GDK_SCROLL_UP:
-      incrementMemoryIndex(-4);
+      incrementMemoryIndex(-1);
       break;
     case GDK_SCROLL_DOWN:
-      incrementMemoryIndex(4);
+      incrementMemoryIndex(1);
       break;
     default:
       // Do nothing in this case
@@ -94,12 +94,13 @@ const bool DisassemblyModel::handleScroll(GdkEventScroll* e) {
 }
 
 /**
- * @brief Updates the list pointers to a new value.
- * @warning `val` should always be a multiple of 4.
+ * @brief Updates the list pointers to a new value. `Val` is multipled by 4 -
+ * for example, if `val` is 1, `memoryIndex` is incremented by 4, as this is the
+ * gap between memory registers.
  * @param val The value to increment by.
  */
 void DisassemblyModel::incrementMemoryIndex(const uint32_t val) {
-  memoryIndex += val;
+  memoryIndex += val * 4;
 }
 
 /**

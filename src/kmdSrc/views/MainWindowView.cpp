@@ -70,24 +70,24 @@ MainWindowView::MainWindowView(const int x, const int y)
  * @param y The height of the window.
  */
 void MainWindowView::setSizes(const int x, const int y) {
-  set_default_size(x, y);  // ~16:9 ration
+  // set_default_size(x, y);  // ~16:9 ration
 
-  const float topBarHeight = (y / 7.f) * 1.f;
-  const float middleBarHeight = (y / 7.f) * 4.f;
-  const float bottomBarHeight = (y / 7.f) * 2.f;
-  const float xUnits = x / 12.4f;
+  // const float topBarHeight = (y / 7.f) * 1.f;
+  // const float midBarHeight = (y / 7.f) * 4.f;
+  // const float bottomBarHeight = (y / 7.f) * 2.f;
+  // const float xUnits = x / 12.4f;
 
   // set layout sizes
   // TODO: these should be deleted once all components are implemented
-  getMasterLayout()->set_size_request(x, y);
-  getControlsAndCompileBar()->set_size_request(x, -1);
-  getRegistersAndDisassemblyBar()->set_size_request(x, middleBarHeight);
+  // getMasterLayout()->set_size_request(x, y);
+  // getControlsAndCompileBar()->set_size_request(x, -1);
+  // getRegistersAndDisassemblyBar()->set_size_request(x, midBarHeight);
 
-  getCompileLoadView()->set_size_request(xUnits, topBarHeight);
-  getControlsView()->set_size_request(x - xUnits, topBarHeight / 3.f);
-  getRegistersView()->set_size_request(xUnits * 3.f, middleBarHeight);
-  getDisassemblyView()->set_size_request(x - (xUnits * 3.f), middleBarHeight);
-  getTerminalView()->set_size_request(x, bottomBarHeight);
+  // getCompileLoadView()->set_size_request(xUnits, topBarHeight);
+  // getControlsView()->set_size_request(x - xUnits, topBarHeight / 3.f);
+  // getRegistersView()->set_size_request(xUnits * 3.f, midBarHeight);
+  // getDisassemblyView()->set_size_request(x - (xUnits * 3.f), midBarHeight);
+  // getTerminalView()->set_size_request(x, bottomBarHeight);
 }
 
 /**

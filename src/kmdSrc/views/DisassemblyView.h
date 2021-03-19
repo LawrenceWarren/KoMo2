@@ -19,6 +19,7 @@
  * https://www.gnu.org/copyleft/gpl.html
  */
 
+#include <gtkmm/box.h>
 #include <gtkmm/buttonbox.h>
 #include <gtkmm/eventbox.h>
 #include <gtkmm/grid.h>
@@ -46,6 +47,11 @@ class DisassemblyRows : public Gtk::HButtonBox {
   void setDisassembly(const std::string text);
 
  private:
+  /**
+   * @brief Setting exact size of widgets is hard; this container is needed to
+   * set the size of the button.
+   */
+  Gtk::HBox buttonSizer;
   /**
    * @brief The debugging breakpoint button.
    */

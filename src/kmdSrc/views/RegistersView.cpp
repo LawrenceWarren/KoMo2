@@ -33,7 +33,7 @@ void RegistersView::initRegisterViewContainer() {
         }
       }
 
-      // Set the left hand labels
+      // Set the right hand labels
       else {
         labelArray[i][j].set_text("0x00000000");
         labelArray[i][j].set_size_request(120, 22);
