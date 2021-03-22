@@ -48,16 +48,9 @@ RegistersModel::getRegisterValueFromJimulator() const {
       std::cout << "program halted" << std::endl;
       getParent()->changeJimulatorState(UNLOADED);
       break;
-    case 0X82:
-      // std::cout << "awaiting input 0X82" << std::endl;
-      // getParent()->changeJimulatorState(AWAITING_INPUT);
-      break;
-    case 0X80:
-      // std::cout << "awaiting input 0X80" << std::endl;
-      // getParent()->changeJimulatorState(AWAITING_INPUT);
-      break;
     default:
       std::cout << "Nothing to report" << std::endl;
+      break;
   }
 
   return getJimulatorRegisterValues();

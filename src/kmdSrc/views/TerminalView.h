@@ -1,5 +1,6 @@
 #include <gtkmm/buttonbox.h>
 #include <gtkmm/textview.h>  // The main terminal view
+#include <gtkmm/scrolledwindow.h>
 
 class MainWindowView;
 class TerminalModel;
@@ -10,6 +11,9 @@ class TerminalView : public Gtk::VButtonBox {
   void setModel(TerminalModel* const val);
 
  private:
+  Gtk::ScrolledWindow scroll;
+  Gtk::TextView inputBox;
+
   /**
    * @brief A pointer to the parent view.
    */

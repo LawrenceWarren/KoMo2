@@ -106,7 +106,7 @@ void KoMo2Model::changeJimulatorState(const JimulatorState newState) {
       refreshViews();
       break;
     case UNLOADED:
-      refreshViews();
+      // refreshViews();
       break;
     default:
       break;
