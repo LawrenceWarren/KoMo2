@@ -48,6 +48,7 @@ class KoMo2Model : public Model {
   KoMo2Model(MainWindowView* const mainWindow, const std::string argv0);
   virtual void changeJimulatorState(const JimulatorState newState) override;
   const bool refreshViews();
+  void grabFocus();
 
   // Getters
   const std::string getAbsolutePathToProjectRoot() const;
