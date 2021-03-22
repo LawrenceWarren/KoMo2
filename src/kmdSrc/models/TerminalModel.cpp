@@ -1,4 +1,5 @@
 #include <iostream>
+#include <regex>
 #include "../views/TerminalView.h"
 #include "KoMo2Model.h"
 
@@ -24,11 +25,12 @@ const bool TerminalModel::handleKeyPress(const GdkEventKey* const e) {
     auto lastLine = buff->get_text(
         buff->get_iter_at_line(buff->get_line_count() - 1), buff->end());
 
-    std::cout << "Last line " << buff->get_line_count() - 1 << " is "
-              << lastLine << std::endl;
-  }
+    // TODO: regex out the previously text of the line
+    // TODO: try to convert to sendable format
+    // TODO: send it!
 
-  return false;
+    return false;
+  }
 }
 
 TerminalView* const TerminalModel::getView() {
