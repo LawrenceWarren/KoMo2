@@ -31,8 +31,16 @@ const bool TerminalModel::handleKeyPress(const GdkEventKey* const e) {
 
     return false;
   }
+
+  return false;
 }
 
 TerminalView* const TerminalModel::getView() {
   return view;
+}
+
+void TerminalModel::appendTextToTextView(std::string text) {
+  auto buff = getView()->getTextView()->get_buffer();
+  buff->insert(buff->end(), text);
+  getView()->getTextView()->set_buffer(buff);
 }

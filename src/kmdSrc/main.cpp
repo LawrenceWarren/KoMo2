@@ -18,6 +18,7 @@
 
  */
 
+#include <glib.h>
 #include <glibmm/optioncontext.h>
 #include <gtkmm/application.h>
 #include <libgen.h>
@@ -25,6 +26,7 @@
 #include <unistd.h>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include "globals.h"
 #include "models/KoMo2Model.h"
 #include "views/MainWindowView.h"
@@ -38,15 +40,20 @@ int emulator_PID = -1;
 
 // Communication pipes
 // ! Originally board_emulation_communication_from
-int communicationFromPipe[2];
+int communicationFromJimulator[2];
 // ! Originally board_emulation_communication_to
-int communicationToPipe[2];
+int communicationToJimulator[2];
+// ! Originally compile_communication
+int compilerCommunication[2];
 
 void initJimulator(std::string argv0);
 const std::string getAbsolutePathToRootDirectory(const char* const arg);
 const int initialiseCommandLine(
     const Glib::RefPtr<Gio::ApplicationCommandLine>&,
     const Glib::RefPtr<Gtk::Application>& app);
+const bool receivedCompilerOutput(GIOChannel* source,
+                                  GIOCondition condition,
+                                  gpointer data);
 
 /**
  * @brief The program entry point.
@@ -66,6 +73,17 @@ int main(int argc, char* argv[]) {
 
   MainWindowView koMo2Window(1240, 700);
   KoMo2Model mainModel(&koMo2Window, argv0);
+
+  // Allows for printing compile output in the KoMo2 terminal
+  if (pipe(compilerCommunication)) {
+    std::cout << "A pipe error ocurred." << std::endl;
+    exit(1);
+  }
+
+  // Piping
+  auto fd = g_io_channel_unix_new(compilerCommunication[0]);
+  auto f = (GIOFunc)receivedCompilerOutput;
+  g_io_add_watch(fd, G_IO_IN, f, &mainModel);
 
   auto exit = app->run(koMo2Window);
   kill(emulator_PID, SIGKILL);  // Kill Jimulator
@@ -88,13 +106,13 @@ void initJimulator(std::string argv0) {
 
   // sets up the pipes to allow communication between Jimulator and
   // KoMo2 processes.
-  if (pipe(communicationFromPipe) || pipe(communicationToPipe)) {
+  if (pipe(communicationFromJimulator) || pipe(communicationToJimulator)) {
     std::cout << "A pipe error ocurred." << std::endl;
     exit(1);
   }
 
-  readFromJimulator = communicationFromPipe[0];
-  writeToJimulator = communicationToPipe[1];
+  readFromJimulator = communicationFromJimulator[0];
+  writeToJimulator = communicationToJimulator[1];
 
   // Stores the emulator_PID for later.
   emulator_PID = fork();
@@ -103,11 +121,11 @@ void initJimulator(std::string argv0) {
   if (emulator_PID == 0) {
     // Closes Jimulator stdout - Jimulator can write to this pipe using printf
     close(1);
-    dup2(communicationFromPipe[1], 1);
+    dup2(communicationFromJimulator[1], 1);
 
     // Closes Jimulator stdin - Jimulator can write to this pipe using scanf
     close(0);
-    dup2(communicationToPipe[0], 0);
+    dup2(communicationToJimulator[0], 0);
 
     auto jimulatorPath = argv0.append("/bin/jimulator").c_str();
     execlp(jimulatorPath, "", (char*)0);
@@ -226,4 +244,46 @@ const int initialiseCommandLine(
   }
 
   return returnVal;
+}
+
+/**
+ * @brief This callback function is called when the compiler communication pipe
+ * receives a change in state (meaning the compiler process has sent some data).
+ * This function will then send that data to the integrated terminal within
+ * KoMo2.
+ * @param source A pointer to the file descriptor which had a change of state
+ * and caused this callback function to fire.
+ * @param condition The type of state that changed to cause this callback to
+ * fire - for example, new data is to be read from the file descriptor, or data
+ * can be written to the file descriptor.
+ * @param data Any additional data - in this case, a pointer to the KoMo2 model
+ * is sent.
+ * @return true There is more to be handled - this function can be called again
+ * to handle a related state change.
+ * @return false The function is done handling the state change.
+ */
+const bool receivedCompilerOutput(GIOChannel* source,
+                                  GIOCondition condition,
+                                  gpointer data) {
+  // data is always a pointer to the main window
+  auto p = static_cast<KoMo2Model*>(data);
+  char buff[128];  // An arbitrary size
+
+  // The amount of bytes that were read
+  int x = read(compilerCommunication[0], buff, 128);
+
+  // There was a pipe reading failure.
+  if (x < 0) {
+    // TODO: handle error gracefully
+    std::cout << "Error reading from compiler communcation pipe." << std::endl;
+    return false;
+  }
+  // There is no more data to be read.
+  else if (x == 0) {
+    return false;
+  }
+
+  buff[x] = '\0';
+  p->getTerminalModel()->appendTextToTextView(buff);
+  return true;
 }

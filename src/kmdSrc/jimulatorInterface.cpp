@@ -64,6 +64,11 @@ unsigned char board_runflags = RUN_FLAG_INIT;
 const int compileJimulator(const char* const pathToBin,
                            const char* const pathToS,
                            const char* const pathToKMD) {
+  close(1);
+  dup2(compilerCommunication[1], 1);
+  close(2);
+  dup2(compilerCommunication[1], 2);
+
   execlp(pathToBin, "aasm", "-lk", pathToKMD, pathToS, (char*)0);
   std::cout << "Running ARM assembler failed." << std::endl;
   return 1;

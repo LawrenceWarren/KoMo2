@@ -74,9 +74,7 @@ void ControlsModel::onHaltExecutionClick() {
  */
 void ControlsModel::onReloadJimulatorClick() {
   std::cout << "Reload clicked!" << std::endl;
-  // getParent()->getCompileLoadModel()->onCompileLoadClick();
   resetJimulator();
-  // TODO: Update some views
   getParent()->changeJimulatorState(LOADED);
 }
 
@@ -91,12 +89,10 @@ void ControlsModel::onPauseResumeClick() {
   switch (getJimulatorState()) {
     case RUNNING:
       pauseJimulator();
-      // TODO: update some views
       getParent()->changeJimulatorState(PAUSED);
       break;
     case PAUSED:
       continueJimulator();
-      // TODO: update some views
       getParent()->changeJimulatorState(RUNNING);
       break;
     case LOADED:
@@ -113,10 +109,6 @@ void ControlsModel::onPauseResumeClick() {
  * @brief Handles the `singleStepExecuteButton` click events.
  */
 void ControlsModel::onSingleStepExecuteClick() {
-  // FIXME: if a program has ended (i.e. has encountered SWI 2) and you press
-  // the single step button, it will execute past. This is a Jimulator issue,
-  // but can be remedied here for KoMo2 quality.
-
   std::cout << "single step execute click!" << std::endl;
 
   startJimulator(1);
@@ -213,7 +205,6 @@ void ControlsModel::changeJimulatorState(const JimulatorState newState) {
           "Pause execution (F5)");
       setButtonState(view->getSingleStepExecuteButton(), false);
       setButtonState(view->getHaltExecutionButton(), true);
-      // Send some signal to Jimulator
       break;
 
     // Has been running; is paused
@@ -227,20 +218,7 @@ void ControlsModel::changeJimulatorState(const JimulatorState newState) {
           "Resume execution (F5)");
       setButtonState(view->getSingleStepExecuteButton(), true);
       setButtonState(view->getHaltExecutionButton(), true);
-      // Send some signal to Jimulator
       break;
-    case AWAITING_INPUT:
-      std::cout << "AWAITING_INPUT_STATE" << std::endl;
-      setButtonState(view->getSingleStepExecuteButton(), false);
-      setButtonState(view->getHelpButton(), true);
-      setButtonState(view->getReloadJimulatorButton(), false);
-      setButtonState(
-          view->getPauseResumeButton(), false,
-          new Gtk::Image(getParent()->getAbsolutePathToProjectRoot() +
-                         "res/img/pauseSymbol.png"));
-      setButtonState(view->getHaltExecutionButton(), true);
-      break;
-
     // Error state
     default:
       // TODO: Handle the error state gracefully

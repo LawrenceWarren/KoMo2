@@ -34,7 +34,6 @@ enum JimulatorState : int {
   LOADED,          // File just loaded for first time (not yet run)
   RUNNING,         // Jimulator is running
   PAUSED,          // Jimulator is paused
-  AWAITING_INPUT,  // Needs terminal input
 };
 
 class KoMo2Model;

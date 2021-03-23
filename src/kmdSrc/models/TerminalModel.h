@@ -8,6 +8,7 @@ class TerminalModel : private Model {
   virtual void changeJimulatorState(const JimulatorState newState) override;
   virtual const bool handleKeyPress(const GdkEventKey* const e) override;
   TerminalView* const getView();
+  void appendTextToTextView(std::string text);
 
  private:
   /**

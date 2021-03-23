@@ -131,7 +131,7 @@
 
 /* ! For the containers */
 .layouts {
-  /* TODO: this is dumb */
+  /* TODO: use borders instead of box shadows? */
   box-shadow: inset 2px 2px 0px #1b1f23, inset -2px -2px 0px #1b1f23,
     inset -2px 2px 0px #1b1f23, inset 2px -2px 0px #1b1f23;
 }
@@ -191,4 +191,10 @@
 .disassembly_label {
   font-family: "Fira Code Retina", "Fira Code", monospace;
   background-color: #dd741e;
+}
+
+/* The terminal display box */
+.terminalDisplay {
+  font-size: 13px;
+  font-family: "Fira Code Retina", "Fira Code", monospace;
 }

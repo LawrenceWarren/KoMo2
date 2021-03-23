@@ -11,10 +11,11 @@ class TerminalView : public Gtk::VButtonBox {
   void setModel(TerminalModel* const val);
   const bool isFocused();
   Glib::RefPtr<Gtk::TextBuffer> getCurrentText();
+  Gtk::TextView* const getTextView();
 
  private:
   Gtk::ScrolledWindow scroll;
-  Gtk::TextView inputBox;
+  Gtk::TextView textView;
 
   /**
    * @brief A pointer to the parent view.
