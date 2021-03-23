@@ -72,6 +72,9 @@ const bool KoMo2Model::refreshViews() {
   // Updates memory values
   disassemblyModel.getView()->refreshViews(disassemblyModel.getMemoryValues());
 
+  // Update terminal
+  terminalModel.appendTextToTextView(terminalModel.readJimulator());
+
   getMainWindow()->queue_draw();  // IMMEDIATELY redraw the screen
 
   // Returns true if in running state - results in an endless loop (we want)

@@ -177,6 +177,10 @@
   border-color: #e51400;
   box-shadow: none;
 }
+.breakpoint_buttons:focus {
+  border-color: #258eb8;
+  box-shadow: none;
+}
 
 .address_label {
   font-family: "Fira Code Retina", "Fira Code", monospace;
@@ -195,6 +199,13 @@
 
 /* The terminal display box */
 .terminalDisplay {
-  font-size: 13px;
+  font-size: 14px;
   font-family: "Fira Code Retina", "Fira Code", monospace;
+}
+/* The terminal input box */
+.terminalInput {
+  font-size: 18px;
+  font-family: "Fira Code Retina", "Fira Code", monospace;
+  background-color: #444d56;
+  color: #ffffff;
 }

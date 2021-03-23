@@ -47,6 +47,7 @@ int communicationToJimulator[2];
 int compilerCommunication[2];
 
 void initJimulator(std::string argv0);
+void initCompilerPipes(KoMo2Model* mainModel);
 const std::string getAbsolutePathToRootDirectory(const char* const arg);
 const int initialiseCommandLine(
     const Glib::RefPtr<Gio::ApplicationCommandLine>&,
@@ -69,11 +70,23 @@ int main(int argc, char* argv[]) {
   app->signal_command_line().connect(
       sigc::bind(sigc::ptr_fun(initialiseCommandLine), app), false);
 
-  initJimulator(argv0);  // Creates Jimulator
-
   MainWindowView koMo2Window(1240, 700);
   KoMo2Model mainModel(&koMo2Window, argv0);
 
+  initJimulator(argv0);
+  initCompilerPipes(&mainModel);
+
+  auto exit = app->run(koMo2Window);
+  kill(emulator_PID, SIGKILL);  // Kill Jimulator
+  return exit;
+}
+
+/**
+ * @brief Initialises the communication pipes between the compiler process & the
+ * main KoMo2 GUI.
+ * @param mainModel A pointer to the main KoMo2 model.
+ */
+void initCompilerPipes(KoMo2Model* mainModel) {
   // Allows for printing compile output in the KoMo2 terminal
   if (pipe(compilerCommunication)) {
     std::cout << "A pipe error ocurred." << std::endl;
@@ -83,11 +96,7 @@ int main(int argc, char* argv[]) {
   // Piping
   auto fd = g_io_channel_unix_new(compilerCommunication[0]);
   auto f = (GIOFunc)receivedCompilerOutput;
-  g_io_add_watch(fd, G_IO_IN, f, &mainModel);
-
-  auto exit = app->run(koMo2Window);
-  kill(emulator_PID, SIGKILL);  // Kill Jimulator
-  return exit;
+  g_io_add_watch(fd, G_IO_IN, f, mainModel);
 }
 
 /**
@@ -287,3 +296,4 @@ const bool receivedCompilerOutput(GIOChannel* source,
   p->getTerminalModel()->appendTextToTextView(buff);
   return true;
 }
+

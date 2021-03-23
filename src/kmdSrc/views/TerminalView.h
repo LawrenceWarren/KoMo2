@@ -1,4 +1,5 @@
 #include <gtkmm/buttonbox.h>
+#include <gtkmm/entry.h>
 #include <gtkmm/scrolledwindow.h>
 #include <gtkmm/textview.h>  // The main terminal view
 
@@ -10,12 +11,14 @@ class TerminalView : public Gtk::VButtonBox {
   TerminalView(MainWindowView* const parent);
   void setModel(TerminalModel* const val);
   const bool isFocused();
-  Glib::RefPtr<Gtk::TextBuffer> getCurrentText();
+  const std::string getCurrentText();
   Gtk::TextView* const getTextView();
+  void clearInputBox();
 
  private:
   Gtk::ScrolledWindow scroll;
   Gtk::TextView textView;
+  Gtk::Entry inputBox;
 
   /**
    * @brief A pointer to the parent view.

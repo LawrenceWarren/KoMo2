@@ -3,8 +3,6 @@
 #include "../views/TerminalView.h"
 #include "KoMo2Model.h"
 
-// TODO: look at the function start_gtk && callback_console_update
-
 TerminalModel::TerminalModel(TerminalView* const view, KoMo2Model* const parent)
     : Model(parent), view(view) {
   view->setModel(this);
@@ -20,27 +18,44 @@ void TerminalModel::changeJimulatorState(const JimulatorState newState) {}
 const bool TerminalModel::handleKeyPress(const GdkEventKey* const e) {
   // If enter is pressed
   if (e->keyval == GDK_KEY_Return) {
-    auto buff = getView()->getCurrentText();
+    auto text = getView()->getCurrentText();
+    appendTextToTextView(text);
+    getView()->clearInputBox();
 
-    auto lastLine = buff->get_text(
-        buff->get_iter_at_line(buff->get_line_count() - 1), buff->end());
-
-    // TODO: regex out the previously text of the line
-    // TODO: try to convert to sendable format
-    // TODO: send it!
-
-    return false;
+    // TODO: send "text" to Jimulator
   }
 
   return false;
 }
 
+/**
+ * @brief Gets a pointer to the view object.
+ * @return TerminalView* const
+ */
 TerminalView* const TerminalModel::getView() {
   return view;
 }
 
+/**
+ * @brief Appends a string to the current text view of the
+ * terminal, and scroll to the bottom.
+ * @param text The text to append to text view.
+ */
 void TerminalModel::appendTextToTextView(std::string text) {
+  // Append text to the buffer, reset the buffer
   auto buff = getView()->getTextView()->get_buffer();
   buff->insert(buff->end(), text);
   getView()->getTextView()->set_buffer(buff);
+
+  // Scroll to the bottom of the scroll bar
+  buff = getView()->getTextView()->get_buffer();
+  getView()->getTextView()->scroll_to(buff->create_mark(buff->end(), false));
+}
+
+/**
+ * @brief Reads for any data from Jimulator.
+ * @return const std::string 
+ */
+const std::string TerminalModel::readJimulator() {
+  return getJimulatorTerminalMessages();
 }

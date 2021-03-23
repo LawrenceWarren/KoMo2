@@ -467,6 +467,30 @@ int source_disassemble(source_line* src, unsigned int addr, int increment) {
   return increment;  // A hack when routine was extracted from below
 }
 
+const std::string getJimulatorTerminalMessages() {
+  unsigned char
+      string[256];  // (large enough) string to get the message from the board
+  unsigned char length;
+
+  std::string output("");
+
+  do {
+    boardSendChar(BR_FR_READ);  // send appropriate command
+    boardSendChar(0);           // send the terminal number
+    boardSendChar(32);          // send the maximum length possible
+    boardGetChar(&length);      // get length of message
+
+    // non-zero received from board - not an empty packet
+    if (length != 0) {
+      boardGetCharArray(length, string);  // get the message recorded in string
+      string[length] = '\0';
+      output.append((char*)string);
+    }
+  } while (length == 255);
+
+  return output;
+}
+
 /**
  * @brief Get the memory values from Jimulator, starting to s_address_int.
  * @param s_address_int The address to start at, as an integer.
