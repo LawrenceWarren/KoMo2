@@ -1,3 +1,4 @@
+#include <gtkmm/button.h>
 #include <gtkmm/buttonbox.h>
 #include <gtkmm/entry.h>
 #include <gtkmm/scrolledwindow.h>
@@ -14,11 +15,14 @@ class TerminalView : public Gtk::VButtonBox {
   const std::string getCurrentText();
   Gtk::TextView* const getTextView();
   void clearInputBox();
+  Gtk::Button* const getClearButton();
+  void clearTextView();
 
- private:
+      private : Gtk::Button clearButton;
   Gtk::ScrolledWindow scroll;
   Gtk::TextView textView;
   Gtk::Entry inputBox;
+  Gtk::HButtonBox layout;
 
   /**
    * @brief A pointer to the parent view.

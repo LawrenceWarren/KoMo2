@@ -6,9 +6,15 @@
 TerminalModel::TerminalModel(TerminalView* const view, KoMo2Model* const parent)
     : Model(parent), view(view) {
   view->setModel(this);
+
+  setButtonListener(view->getClearButton(), this, &TerminalModel::onClearClick);
 }
 
 void TerminalModel::changeJimulatorState(const JimulatorState newState) {}
+
+void TerminalModel::onClearClick() {
+  getView()->clearTextView();
+}
 
 /**
  * @brief Handles any key press events.

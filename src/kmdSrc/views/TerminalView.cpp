@@ -4,7 +4,9 @@
 TerminalView::TerminalView(MainWindowView* const parent) : parent(parent) {
   scroll.set_size_request(700, 200);
   textView.set_size_request(700, 200);
-  inputBox.set_size_request(700, 20);
+  inputBox.set_size_request(600, 20);
+  clearButton.set_size_request(100, 20);
+  clearButton.set_label("Clear");
 
   // Sets the colours of the terminal input box
   // TODO: try to get this to work in CSS?
@@ -19,9 +21,11 @@ TerminalView::TerminalView(MainWindowView* const parent) : parent(parent) {
   textView.set_can_focus(false);
   textView.set_editable(false);
 
+  layout.pack_start(inputBox, false, false);
+  layout.pack_start(clearButton, false, false);
   scroll.add(textView);
   pack_start(scroll, false, true);
-  pack_start(inputBox, false, true);
+  pack_start(layout, false, true);
 
   scroll.show();
   textView.show();
@@ -29,22 +33,31 @@ TerminalView::TerminalView(MainWindowView* const parent) : parent(parent) {
   show();
 }
 
-void TerminalView::setModel(TerminalModel* const val) {
-  model = val;
-}
-
 const bool TerminalView::isFocused() {
   return inputBox.is_focus();
 }
 
-const std::string TerminalView::getCurrentText() {
-  return inputBox.get_buffer()->get_text();
+void TerminalView::clearInputBox() {
+  inputBox.delete_text(0, -1);
 }
 
+void TerminalView::clearTextView() {
+  textView.get_buffer()->set_text("");
+}
+
+// !!!!!!!!!!!!!!!!!!!!!
+// ! Getters & Setters !
+// !!!!!!!!!!!!!!!!!!!!!
+
+Gtk::Button* const TerminalView::getClearButton() {
+  return &clearButton;
+}
 Gtk::TextView* const TerminalView::getTextView() {
   return &textView;
 }
-
-void TerminalView::clearInputBox() {
-  inputBox.delete_text(0, -1);
+const std::string TerminalView::getCurrentText() {
+  return inputBox.get_buffer()->get_text();
+}
+void TerminalView::setModel(TerminalModel* const val) {
+  model = val;
 }

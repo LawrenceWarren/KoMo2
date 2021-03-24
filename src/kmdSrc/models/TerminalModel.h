@@ -17,6 +17,8 @@ class TerminalModel : private Model {
    */
   TerminalView* const view;
 
+  void onClearClick();
+
   // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error
   TerminalModel(const TerminalModel&) = delete;
