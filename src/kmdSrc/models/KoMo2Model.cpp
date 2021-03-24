@@ -75,8 +75,6 @@ const bool KoMo2Model::refreshViews() {
   // Update terminal
   terminalModel.appendTextToTextView(terminalModel.readJimulator());
 
-  getMainWindow()->queue_draw();  // IMMEDIATELY redraw the screen
-
   // Returns true if in running state - results in an endless loop (we want)
   return getJimulatorState() == RUNNING;
 }
@@ -93,7 +91,6 @@ const bool KoMo2Model::handleKeyPress(const GdkEventKey* const e) {
     return true;
   }
 
-  // TODO: fix CTRL+R, CTRL+L key presses
   // If the terminal is focused, do not intercept keypresses
   if (getTerminalModel()->getView()->isFocused()) {
     return getTerminalModel()->handleKeyPress(e);
@@ -121,9 +118,9 @@ void KoMo2Model::changeJimulatorState(const JimulatorState newState) {
   // Handles refreshing the views
   switch (newState) {
     case RUNNING:
-      // Calls refreshViews every 333ms
+      // TODO: put the ms in some kind of external file (json?)
       Glib::signal_timeout().connect(
-          sigc::mem_fun(this, &KoMo2Model::refreshViews), 333);
+          sigc::mem_fun(this, &KoMo2Model::refreshViews), 50);
       break;
     case LOADED:
       refreshViews();

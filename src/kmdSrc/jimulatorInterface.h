@@ -37,11 +37,10 @@ std::array<MemoryValues, 15> getJimulatorMemoryValues(
     const uint32_t s_address_int);
 const std::string getJimulatorTerminalMessages();
 
-    // Loading data
-    const int
-    compileJimulator(const char* const pathToBin,
-                     const char* const pathToS,
-                     const char* const pathToKMD);
+// Loading data
+const int compileJimulator(const char* const pathToBin,
+                           const char* const pathToS,
+                           const char* const pathToKMD);
 const int loadJimulator(const char* const pathToKMD);
 
 // Sending commands
@@ -49,3 +48,4 @@ void startJimulator(const int steps);
 void pauseJimulator();
 void continueJimulator();
 void resetJimulator();
+void sendTerminalInputToJimulator(const unsigned int val);

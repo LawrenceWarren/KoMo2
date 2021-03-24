@@ -16,16 +16,9 @@ void TerminalModel::changeJimulatorState(const JimulatorState newState) {}
  * @return bool true if the key press was handled.
  */
 const bool TerminalModel::handleKeyPress(const GdkEventKey* const e) {
-  // If enter is pressed
-  if (e->keyval == GDK_KEY_Return) {
-    auto text = getView()->getCurrentText();
-    appendTextToTextView(text);
-    getView()->clearInputBox();
+  sendTerminalInputToJimulator(e->keyval);
 
-    // TODO: send "text" to Jimulator
-  }
-
-  return false;
+  return true;
 }
 
 /**
@@ -54,7 +47,7 @@ void TerminalModel::appendTextToTextView(std::string text) {
 
 /**
  * @brief Reads for any data from Jimulator.
- * @return const std::string 
+ * @return const std::string
  */
 const std::string TerminalModel::readJimulator() {
   return getJimulatorTerminalMessages();

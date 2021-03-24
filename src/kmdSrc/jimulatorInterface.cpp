@@ -491,6 +491,68 @@ const std::string getJimulatorTerminalMessages() {
   return output;
 }
 
+void sendTerminalInputToJimulator(const unsigned int val) {
+  unsigned int key_pressed = val;
+  unsigned char res = 0;
+
+  // Translate key codes if necessary and understood
+  switch (key_pressed) {
+    case GDK_KEY_Return:
+    case GDK_KEY_KP_Enter:
+      key_pressed = '\n';
+      break;
+    case GDK_KEY_BackSpace:
+      key_pressed = '\b';
+      break;
+    case GDK_KEY_Tab:
+      key_pressed = '\t';
+      break;
+    case GDK_KEY_Escape:
+      key_pressed = 0x1B;
+      break;
+    case GDK_KEY_KP_0:
+    case GDK_KEY_KP_1:
+    case GDK_KEY_KP_2:
+    case GDK_KEY_KP_3:
+    case GDK_KEY_KP_4:
+    case GDK_KEY_KP_5:
+    case GDK_KEY_KP_6:
+    case GDK_KEY_KP_7:
+    case GDK_KEY_KP_8:
+    case GDK_KEY_KP_9:
+      key_pressed = key_pressed - GDK_KEY_KP_0 + '0';
+      break;
+    case GDK_KEY_KP_Add:
+      key_pressed = '+';
+      break;
+    case GDK_KEY_KP_Subtract:
+      key_pressed = '-';
+      break;
+    case GDK_KEY_KP_Multiply:
+      key_pressed = '*';
+      break;
+    case GDK_KEY_KP_Divide:
+      key_pressed = '/';
+      break;
+    case GDK_KEY_KP_Decimal:
+      key_pressed = '.';
+      break;
+    default:
+      break;
+  }
+
+  // Sending keys to Jimulator
+  if (((key_pressed >= ' ') && (key_pressed <= 0x7F)) ||
+      (key_pressed == '\n') || (key_pressed == '\b') || (key_pressed == '\t') ||
+      (key_pressed == '\a')) {
+    boardSendChar(BR_FR_WRITE);  // begins a write
+    boardSendChar(0);            // tells where to send it
+    boardSendChar(1);            // send length 1
+    boardSendChar(key_pressed);  // send the message - 1 char currently
+    boardGetChar(&res);          // Read the result
+  }
+}
+
 /**
  * @brief Get the memory values from Jimulator, starting to s_address_int.
  * @param s_address_int The address to start at, as an integer.

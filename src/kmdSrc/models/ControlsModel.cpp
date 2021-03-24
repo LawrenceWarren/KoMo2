@@ -128,33 +128,24 @@ void ControlsModel::onSingleStepExecuteClick() {
  */
 const bool ControlsModel::handleKeyPress(const GdkEventKey* const e) {
   switch (e->keyval) {
-    // F5
-    case 65474:
+    case GDK_KEY_F5:
       if (getJimulatorState() != UNLOADED) {
         onPauseResumeClick();
       }
       return true;
-
-    // F6
-    case 65475:
+    case GDK_KEY_F6:
       if (getJimulatorState() == LOADED || getJimulatorState() == PAUSED) {
         onSingleStepExecuteClick();
       }
       return true;
-
-    // F1
-    case 65470:
-      onHelpClick();
-      return true;
-
-    // F12
-    case 65481:
+    case GDK_KEY_F1:
       if (getJimulatorState() == RUNNING || getJimulatorState() == PAUSED) {
         onHaltExecutionClick();
       }
       return true;
-
-    // Otherwise
+    case GDK_KEY_F12:
+      onHelpClick();
+      return true;
     default:
       return false;
   }

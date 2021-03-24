@@ -226,29 +226,22 @@ void CompileLoadModel::changeJimulatorState(const JimulatorState newState) {
  */
 const bool CompileLoadModel::handleKeyPress(const GdkEventKey* const e) {
   switch (e->keyval) {
-    // Ctrl + (lower case l)
-    case 108:
-      if (e->state == 4 && getJimulatorState() != RUNNING) {
-        onBrowseClick();
-      }
-      return true;
-    // ctrl + (upper case L)
-    case 76:
-      if (e->state == 6 && getJimulatorState() != RUNNING) {
+    case GDK_KEY_L:
+    case GDK_KEY_l:
+      if ((e->state & (GDK_SHIFT_MASK | GDK_CONTROL_MASK | GDK_MOD1_MASK)) ==
+              GDK_CONTROL_MASK &&
+          getJimulatorState() != RUNNING) {
+        std::cout << "CTRL + L" << std::endl;
         onBrowseClick();
       }
       return true;
     // Ctrl + (lower case r)
-    case 114:
-      if (e->state == 4 &&
-          (getJimulatorState() != RUNNING && getInnerState() != NO_FILE)) {
-        onCompileLoadClick();
-      }
-      return true;
-    // Ctrl + (upper case R)
-    case 82:
-      if (e->state == 6 &&
-          (getJimulatorState() != RUNNING && getInnerState() != NO_FILE)) {
+    case GDK_KEY_R:
+    case GDK_KEY_r:
+      if ((e->state & (GDK_SHIFT_MASK | GDK_CONTROL_MASK | GDK_MOD1_MASK)) ==
+              GDK_CONTROL_MASK &&
+          getJimulatorState() != RUNNING && getInnerState() != NO_FILE) {
+        std::cout << "CTRL + R" << std::endl;
         onCompileLoadClick();
       }
       return true;
