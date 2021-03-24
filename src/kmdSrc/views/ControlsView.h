@@ -24,8 +24,6 @@
 class MainWindowView;
 class ControlsModel;
 
-// TODO: define a abstract View.h class
-
 /**
  * @brief `ControlsView` is the visual aspect of the controls that run along the
  * top of the KoMo2 GUI. This class contains information and functionality

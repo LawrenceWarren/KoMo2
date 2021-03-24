@@ -41,9 +41,6 @@ ControlsView::ControlsView(MainWindowView* const parent)
  * and size of it. Initialises the look images of buttons.
  */
 void ControlsView::initProgramControlsContainer() {
-  // TODO: help button is focused by default. Stop that
-  // TODO: the focus outline shows up NO MATTER WHAT. stop that
-
   // Set button tooltip text
   getHaltExecutionButton()->set_tooltip_text("Halt Jimulator (F1)");
   getHelpButton()->set_tooltip_text("About KoMo2 (F12)");
