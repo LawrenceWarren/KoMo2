@@ -33,6 +33,16 @@
 #define RUN_FLAG_WATCH 0x20
 #define RUN_FLAG_INIT (RUN_FLAG_WATCH | RUN_FLAG_BREAK)
 
+extern unsigned char board_runflags;
+
+typedef struct {
+  unsigned int misc;
+  unsigned char addressA[8]; /* ASSUMED fields large enough !! @@@ */
+  unsigned char addressB[8];
+  unsigned char dataA[8];
+  unsigned char dataB[8];
+} trap_def;
+
 typedef enum {                /* Board instructions unsigned char */
                BR_NOP = 0x00, /* need work on */
                BR_PING = 0x01,

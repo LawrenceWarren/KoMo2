@@ -49,3 +49,4 @@ void pauseJimulator();
 void continueJimulator();
 void resetJimulator();
 void sendTerminalInputToJimulator(const unsigned int val);
+void setBreakpoint(uint32_t address);

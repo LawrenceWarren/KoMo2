@@ -51,8 +51,11 @@ const int callback_memory_refresh();
 void run_board(const int steps);
 const int board_enq();
 const int checkBoardState();
+int board_send_n_bytes(int value, int n);
+int board_get_n_bytes(int* val_ptr, int n);
+int boardGetCharArray(int char_number, unsigned char* data_ptr);
+int boardSendCharArray(int char_number, unsigned char* data_ptr);
 source_file source;
-unsigned char board_runflags = RUN_FLAG_INIT;
 
 /**
  * @brief Stolen from the original KMD source - runs the file specified by
@@ -130,6 +133,238 @@ void resetJimulator() {
   }
 
   printf("Emulator reset!🤯\n");
+}
+
+/**
+ * @brief Gets the status of a trap.
+ * @param trap_type
+ * @param wordA
+ * @param wordB
+ * @return true
+ * @return false
+ */
+bool trap_get_status(unsigned int trap_type,
+                     unsigned int* wordA,
+                     unsigned int* wordB) {
+  boardSendChar(BR_BP_GET | ((trap_type << 2) & 0xC));  // get breakpoint packet
+  return ((board_get_n_bytes((int*)wordA, 4) != 4) ||
+          (board_get_n_bytes((int*)wordB, 4) != 4));
+}
+
+/**
+ * @brief Reads a trap definition for use by the breakpoints callbacks.
+ * @param trap_type
+ * @param trap_number
+ * @param trap_defn
+ * @return boolean
+ */
+bool read_trap_defn(unsigned int trap_type,
+                    unsigned int trap_number,
+                    trap_def* trap_defn) {
+  boardSendChar(BR_BP_READ | ((trap_type << 2) & 0xC));  // send trap-read
+                                                         // packet
+  boardSendChar(trap_number);  // send the number of the definition
+
+  if ((2 != board_get_n_bytes((int*)&((*trap_defn).misc),
+                              2))  // get the trap misc properties
+      || (4 != boardGetCharArray(4, (*trap_defn).addressA)) ||
+      (4 != boardGetCharArray(4, (*trap_defn).addressB)) ||
+      (8 != boardGetCharArray(8, (*trap_defn).dataA)) ||
+      (8 != boardGetCharArray(8, (*trap_defn).dataB))) {
+    // get address a&b and data a&b
+    return FALSE;
+  } else
+    return TRUE;
+}
+
+int misc_chararr_sub_to_int(int count,
+                            unsigned char* value1,
+                            unsigned char* value2) {
+  int ret = 0; /* bit array - bit array => int */
+
+  while (count--) {
+    ret = (ret << 8) + (int)value1[count] - (int)value2[count];
+  }
+  return ret;  // Carry propagated because intermediate -int- can be negative
+}
+
+void trap_set_status(unsigned int trap_type,
+                     unsigned int wordA,
+                     unsigned int wordB) {
+  boardSendChar(BR_BP_SET |
+                ((trap_type << 2) & 0xC)); /* set breakpoint packet */
+  board_send_n_bytes(wordA, 4);            /* send word a */
+  board_send_n_bytes(wordB, 4);            /* send word b */
+  return;
+}
+
+/**
+ * @brief Copy count characters from source to destination
+ *
+ * @param count
+ * @param source
+ * @param destination
+ */
+void view_chararrCpychararr(int count,
+                            unsigned char* source,
+                            unsigned char* destination) {
+  while (count--) {
+    destination[count] = source[count]; /* Copy char array */
+  }
+}
+
+bool write_trap_defn(unsigned int trap_type,
+                     unsigned int trap_number,
+                     trap_def* trap_defn) {
+  boardSendChar(BR_BP_WRITE | ((trap_type << 2) & 0xC));
+  // send trap-write packet
+  boardSendChar(trap_number);  // send the number of the definition
+  board_send_n_bytes(((*trap_defn).misc), 2);  // send the trap misc properties
+  boardSendCharArray(4, (*trap_defn).addressA);
+  boardSendCharArray(4, (*trap_defn).addressB);
+  boardSendCharArray(8, (*trap_defn).dataA);
+  boardSendCharArray(8, (*trap_defn).dataB);  // send address a&b and data a&b
+  return TRUE;
+}
+
+std::string view_chararr2hexstrbe(int count,
+                                  unsigned char* values,
+                                  bool prepend = false);
+
+/**
+ * @brief Sets a breakpoint.
+ * @param addr The address to set the breakpoint at.
+ */
+void setBreakpoint(uint32_t addr) {
+  unsigned int worda, wordb;
+  bool error = false;
+  unsigned char address[4];
+
+  // Unpack address to byte array
+  for (int i = 0; i < 4; i++) {
+    address[i] = (addr >> (8 * i)) & 0xFF;
+  }
+
+  error = error | trap_get_status(0, &worda, &wordb);
+
+  printf("worda %u wordb %u\n", worda, wordb);
+
+  if (error) {
+    // TODO: handle this event gracefully?
+    return;
+  }
+
+  int temp;
+  int breakpoint_found = FALSE;
+
+  // Maximum of 32 breakpoints - loop through to see if more can be set
+  for (int i = 0; i < 32; i++) {
+    if (((worda >> i) & 1) != 0) {
+      trap_def trap;  // Space to store fetched definition
+
+      error = not read_trap_defn(0, i, &trap);
+
+      // If this breakpoint was found
+      if (not error &&
+          (not misc_chararr_sub_to_int(4, address, trap.addressA))) {
+        breakpoint_found = TRUE;
+        trap_set_status(0, 0, 1 << i);
+      }
+    }
+  }
+
+  // breakpoint(s) matched and deleted ???
+  if (breakpoint_found) {
+    std::cout << "BREAKPOINT FOUND" << std::endl;
+    // TODO: Refresh view
+  }
+  // See if we can set breakpoint
+  else {
+    std::cout << "BREAKPOINT NOT FOUND" << std::endl;
+    temp = (~worda) & wordb;  // Undefined => possible choice
+
+    // If any free entries ...
+    if (temp != 0) {  // Define (set) breakpoint
+      trap_def trap;
+      int count, i;
+
+      for (i = 0; (((temp >> i) & 1) == 0); i++)
+        ;
+
+      // Choose free(?) number
+      trap.misc = -1;  // Really two byte parameters
+
+      printf("i is %u\n", i);
+
+      // Should send 2*words address then two*double words data @@@
+      view_chararrCpychararr(8, address, trap.addressA);
+      for (count = 0; count < 4; count++) {
+        trap.addressB[count] = 0xFF;
+      }
+      for (count = 0; count < 8; count++) {
+        trap.dataA[count] = 0x00;
+        trap.dataB[count] = 0x00;
+      }
+
+      write_trap_defn(0, i, &trap);
+    }
+  }
+
+  // TEST SECTION
+  {
+    unsigned int worda, wordb;
+    int temp, temp2;
+    unsigned char value[4];
+    bool flag;  // `flag' indicates that this may go in the list
+    bool error = FALSE;
+
+    // Have trap status info okay: get breaks and breaksinactive list
+    if (!trap_get_status(0, &worda, &wordb)) {
+      for (temp = 0; (temp < 32) && !error; temp++) {
+        if (((worda >> temp) & 1) != 0) {
+          trap_def trap;
+
+          // if okay
+          if (read_trap_defn(0, temp, &trap)) {
+            flag =
+                (((trap.misc & 0x00EF) == 0x00EF)       // All conditions except
+                 && ((trap.misc & 0x0F00) == 0x0F00));  // write and all sizes
+
+            if (flag) {
+              for (temp2 = 4 - 1; temp2 >= 0; temp2--) {
+                if (trap.addressB[temp2] != 0xFF) {
+                  flag = FALSE;
+                }
+
+                if (trap.dataB[temp2] != 0x00) {
+                  flag = FALSE;
+                }
+              }
+            }
+
+            // if needs painting
+            if (flag) {
+              for (temp2 = 3; temp2 >= 0; temp2--) {
+                value[temp2] = trap.addressA[temp2];
+              }
+
+              if ((wordb >> temp) & 1) {
+                std::cout << "ACTIVE BREAK: " << view_chararr2hexstrbe(4, value)
+                          << std::endl;
+              } else {
+                std::cout << "INACTIVE BREAK: "
+                          << view_chararr2hexstrbe(4, value) << std::endl;
+              }
+            }
+          } else {
+            error = TRUE;  // Read failure causes loop termination
+          }
+        }
+      }
+    } else {
+      error = TRUE;  // Didn't read trap status successfully above
+    }
+  }
 }
 
 /**
@@ -254,7 +489,6 @@ const int board_enq() {
   unsigned char clientStatus = 0;
   int stepsSinceReset;
   int leftOfWalk;
-  char* string;
 
   // If the board sends back the wrong the amount of data
   boardSendChar(BR_WOT_U_DO);
@@ -266,9 +500,10 @@ const int board_enq() {
     return CLIENT_STATE_BROKEN;
   }
 
-  string = g_strdup_printf("Total steps: %u", stepsSinceReset);
-  printf("%s\n", string);
-  g_free(string);
+  // TODO: clientStatus represents what the board is doing and why - can be
+  // reflected in the view?
+
+  std::cout << "Total steps: " << stepsSinceReset << std::endl;
 
   return clientStatus;
 }
@@ -296,16 +531,14 @@ int board_send_n_bytes(int value, int n) {
 }
 
 /**
- * @brief Signals the board to start/run from steps
- * @param the number of steps to run for (0 if indefinite)
- * @return int TRUE for success.
+ * @brief Signals the board to run for `steps` number of steps.
+ * @param steps The number of steps to run for (0 if indefinite)
  */
 void run_board(const int steps) {
   if (not checkBoardState()) {
-    // Sends a start signal
-    boardSendChar(BR_START | board_runflags);
+    // Sends a start signal &  whether breakpoints are on
+    boardSendChar(BR_START | RUN_FLAG_INIT);
 
-    // Send definition at start e.g. breakpoints on?
     board_send_n_bytes(steps, 4);  // Send step count
   }
 }
@@ -361,8 +594,8 @@ void readRegistersIntoArray(unsigned char* data, unsigned int count) {
 
 /**
  * @brief Reads the values from a char array into a C++ string.
- * @warning This function does some bit-level trickery. This is very low level,
- * study carefully before altering control flow.
+ * @warning This function does some bit-level trickery. This is very low
+ * level, study carefully before altering control flow.
  * @param count The number of bytes to read out.
  * @param values The particular register value to read.
  * @param prepend Whether to prepend the output string with an "0x" or not.
@@ -370,7 +603,7 @@ void readRegistersIntoArray(unsigned char* data, unsigned int count) {
  */
 std::string view_chararr2hexstrbe(int count,
                                   unsigned char* values,
-                                  bool prepend = false) {
+                                  bool prepend) {
   char ret[count * 2 + 1];
   char* ptr = ret;
 
@@ -420,8 +653,7 @@ int view_chararr2int(int count, unsigned char* array) {
 }
 
 /**
- * @brief
- * "acc" may be the same as "byte_string"
+ * @brief "acc" may be the same as "byte_string"
  * @param count
  * @param byte_string
  * @param number
@@ -482,7 +714,8 @@ const std::string getJimulatorTerminalMessages() {
 
     // non-zero received from board - not an empty packet
     if (length != 0) {
-      boardGetCharArray(length, string);  // get the message recorded in string
+      boardGetCharArray(length,
+                        string);  // get the message recorded in string
       string[length] = '\0';
       output.append((char*)string);
     }
@@ -556,8 +789,8 @@ void sendTerminalInputToJimulator(const unsigned int val) {
 /**
  * @brief Get the memory values from Jimulator, starting to s_address_int.
  * @param s_address_int The address to start at, as an integer.
- * @return std::array<MemoryValues, 15> An array of all of the values read from
- * Jimulator, including each column.
+ * @return std::array<MemoryValues, 15> An array of all of the values read
+ * from Jimulator, including each column.
  */
 std::array<MemoryValues, 15> getJimulatorMemoryValues(
     const uint32_t s_address_int) {

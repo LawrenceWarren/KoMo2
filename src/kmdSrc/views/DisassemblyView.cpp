@@ -29,7 +29,7 @@
 DisassemblyView::DisassemblyView(MainWindowView* const parent)
     : parent(parent) {
   initDisassemblyContainer();
-}
+} 
 
 /**
  * @brief Initialises the containers & their children - packs children into

@@ -37,6 +37,7 @@ int symbol_count;
 int writeToJimulator;
 int readFromJimulator;
 int emulator_PID = -1;
+unsigned char board_runflags = RUN_FLAG_INIT;
 
 // Communication pipes
 // ! Originally board_emulation_communication_from
@@ -296,4 +297,3 @@ const bool receivedCompilerOutput(GIOChannel* source,
   p->getTerminalModel()->appendTextToTextView(buff);
   return true;
 }
-
