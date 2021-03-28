@@ -131,9 +131,10 @@ DisassemblyView* const DisassemblyModel::getView() {
 }
 /**
  * @brief Reads memory values from Jimulator.
- * @return std::array<MemoryValues, 15> An array of the 15 memory values - their
- * addresses, their hex columns and their disassembly/source columns.
+ * @return std::array<Jimulator::MemoryValues, 15> An array of the 15 memory
+ * values - their addresses, their hex columns and their disassembly/source
+ * columns.
  */
-std::array<MemoryValues, 15> DisassemblyModel::getMemoryValues() {
-  return getJimulatorMemoryValues(memoryIndex);
+std::array<Jimulator::MemoryValues, 15> DisassemblyModel::getMemoryValues() {
+  return Jimulator::getJimulatorMemoryValues(memoryIndex);
 }

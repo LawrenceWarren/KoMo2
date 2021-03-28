@@ -51,13 +51,7 @@ KoMo2Model::KoMo2Model(MainWindowView* const mainWindow,
   getMainWindow()->signal_key_press_event().connect(
       sigc::mem_fun(*this, &Model::handleKeyPress), false);
 
-  // getMainWindow()->signal_scroll_event().connect
-
   this->changeJimulatorState(UNLOADED);
-
-  // TODO: should the main window be focusable?
-  // getMainWindow()->set_can_focus();
-  getMainWindow()->grab_focus();
 }
 
 /**
@@ -85,12 +79,6 @@ const bool KoMo2Model::refreshViews() {
  * @return bool if a key was pressed.
  */
 const bool KoMo2Model::handleKeyPress(const GdkEventKey* const e) {
-  // If escape pressed, removes focus from any other view
-  if (e->keyval == GDK_KEY_Escape) {
-    grabFocus();
-    return true;
-  }
-
   // If the terminal is focused, do not intercept keypresses
   if (getTerminalModel()->getView()->isFocused()) {
     return getTerminalModel()->handleKeyPress(e);

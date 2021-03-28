@@ -51,7 +51,6 @@ const int readSource(const char* pathToKMD);
 const int callback_memory_refresh();
 void run_board(const int steps);
 const int board_enq();
-const int checkBoardState();
 int board_send_n_bytes(int value, int n);
 int board_get_n_bytes(int* val_ptr, int n);
 int boardGetCharArray(int char_number, unsigned char* data_ptr);
@@ -65,9 +64,9 @@ source_file source;
  * @param pathToS An absolute path to the `.s` file to be compiled.
  * @param pathToKMD an absolute path to the `.kmd` file that will be output.
  */
-const int compileJimulator(const char* const pathToBin,
-                           const char* const pathToS,
-                           const char* const pathToKMD) {
+const int Jimulator::compileJimulator(const char* const pathToBin,
+                                      const char* const pathToS,
+                                      const char* const pathToKMD) {
   close(1);
   dup2(compilerCommunication[1], 1);
   close(2);
@@ -84,7 +83,7 @@ const int compileJimulator(const char* const pathToBin,
  * networking, etc - it is pure emulation.
  * @param pathToKMD an absolute path to the `.kmd` file that will be loaded.
  */
-const int loadJimulator(const char* const pathToKMD) {
+const int Jimulator::loadJimulator(const char* const pathToKMD) {
   flush_source();
   misc_flush_symbol_table();
   return readSource(pathToKMD);
@@ -94,7 +93,7 @@ const int loadJimulator(const char* const pathToKMD) {
  * @brief Commences running the emulator.
  * @param steps The number of steps to run for (0 if indefinite)
  */
-void startJimulator(const int steps) {
+void Jimulator::startJimulator(const int steps) {
   run_board(steps);
   std::cout << "RUNNING!🔥" << std::endl;
 }
@@ -102,8 +101,8 @@ void startJimulator(const int steps) {
 /**
  * @brief Continues running Jimulator.
  */
-void continueJimulator() {
-  if (not checkBoardState()) {
+void Jimulator::continueJimulator() {
+  if (not Jimulator::checkBoardState()) {
     boardSendChar(BR_CONTINUE);
     std::cout << "CONTINUED!😜" << std::endl;
   }
@@ -112,10 +111,10 @@ void continueJimulator() {
 /**
  * @brief Pauses the emulator running.
  */
-void pauseJimulator() {
+void Jimulator::pauseJimulator() {
   boardSendChar(BR_STOP);
 
-  if (not checkBoardState()) {
+  if (not Jimulator::checkBoardState()) {
     std::cout << "Paused!🚀" << std::endl;
   }
 }
@@ -123,13 +122,13 @@ void pauseJimulator() {
 /**
  * @brief Reset the emulators running.
  */
-void resetJimulator() {
+void Jimulator::resetJimulator() {
   boardSendChar(BR_RESET);
   // board_micro_ping();
   // set_refresh(FALSE, 0); /* Unset refresh button */
   // board_micro_ping();    /* Why TWICE?? @@@ */
 
-  if (not checkBoardState()) {
+  if (not Jimulator::checkBoardState()) {
     return;
   }
 
@@ -236,7 +235,7 @@ std::string view_chararr2hexstrbe(int count,
  * @brief Sets a breakpoint.
  * @param addr The address to set the breakpoint at.
  */
-void setBreakpoint(uint32_t addr) {
+void Jimulator::setBreakpoint(uint32_t addr) {
   unsigned int worda, wordb;
   bool error = false;
   unsigned char address[4];
@@ -480,7 +479,7 @@ int board_send_n_bytes(int value, int n) {
  * @param steps The number of steps to run for (0 if indefinite)
  */
 void run_board(const int steps) {
-  if (not checkBoardState()) {
+  if (not Jimulator::checkBoardState()) {
     // Sends a start signal &  whether breakpoints are on
     boardSendChar(BR_START | 48);
 
@@ -492,7 +491,7 @@ void run_board(const int steps) {
  * @brief Check the state of the board - logs what it is doing.
  * @return int 0 if the board is in a failed state. else 1.
  */
-const int checkBoardState() {
+const int Jimulator::checkBoardState() {
   const int board_state = board_enq();
 
   printf("STATE CODE: %X - ", board_state);
@@ -568,7 +567,7 @@ std::string view_chararr2hexstrbe(int count,
  * @brief Queries a register in Jimulator to get it's current value.
  * @return The values read from the registers.
  */
-const std::array<std::string, 16> getJimulatorRegisterValues() {
+const std::array<std::string, 16> Jimulator::getJimulatorRegisterValues() {
   unsigned char regVals[64];            // 64-byte array
   readRegistersIntoArray(regVals, 16);  // regVals now has reg values
 
@@ -644,7 +643,7 @@ int source_disassemble(source_line* src, unsigned int addr, int increment) {
   return increment;  // A hack when routine was extracted from below
 }
 
-const std::string getJimulatorTerminalMessages() {
+const std::string Jimulator::getJimulatorTerminalMessages() {
   unsigned char
       string[256];  // (large enough) string to get the message from the board
   unsigned char length;
@@ -669,7 +668,7 @@ const std::string getJimulatorTerminalMessages() {
   return output;
 }
 
-void sendTerminalInputToJimulator(const unsigned int val) {
+void Jimulator::sendTerminalInputToJimulator(const unsigned int val) {
   unsigned int key_pressed = val;
   unsigned char res = 0;
 
@@ -734,10 +733,10 @@ void sendTerminalInputToJimulator(const unsigned int val) {
 /**
  * @brief Get the memory values from Jimulator, starting to s_address_int.
  * @param s_address_int The address to start at, as an integer.
- * @return std::array<MemoryValues, 15> An array of all of the values read
- * from Jimulator, including each column.
+ * @return std::array<Jimulator::MemoryValues, 15> An array of all of the values
+ * read from Jimulator, including each column.
  */
-std::array<MemoryValues, 15> getJimulatorMemoryValues(
+std::array<Jimulator::MemoryValues, 15> Jimulator::getJimulatorMemoryValues(
     const uint32_t s_address_int) {
   const int count = 15;  // The number of values displayed in the memory window
   const int bytecount = 60;  // The number of bytes to fetch from memory
@@ -786,7 +785,7 @@ std::array<MemoryValues, 15> getJimulatorMemoryValues(
   }
 
   // Data is read into this array
-  std::array<MemoryValues, 15> readValues;
+  std::array<Jimulator::MemoryValues, 15> readValues;
 
   // Iterate over display rows
   for (int row = 0; row < 15; row++) {

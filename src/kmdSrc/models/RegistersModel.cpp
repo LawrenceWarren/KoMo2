@@ -43,7 +43,7 @@ RegistersView* const RegistersModel::getView() {
  */
 const std::array<std::string, 16>
 RegistersModel::getRegisterValueFromJimulator() const {
-  switch (checkBoardState()) {
+  switch (Jimulator::checkBoardState()) {
     case 0X44:
       std::cout << "program halted" << std::endl;
       getParent()->changeJimulatorState(UNLOADED);
@@ -53,5 +53,5 @@ RegistersModel::getRegisterValueFromJimulator() const {
       break;
   }
 
-  return getJimulatorRegisterValues();
+  return Jimulator::getJimulatorRegisterValues();
 }

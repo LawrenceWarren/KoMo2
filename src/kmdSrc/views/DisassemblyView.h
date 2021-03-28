@@ -31,7 +31,10 @@
 
 class MainWindowView;
 class DisassemblyModel;
+
+namespace Jimulator {
 class MemoryValues;
+}
 
 /**
  * @brief A single instance of this class represents a single read memory
@@ -90,7 +93,7 @@ class DisassemblyRows : public Gtk::HButtonBox {
 class DisassemblyView : public Gtk::EventBox {
  public:
   DisassemblyView(MainWindowView* const parent);
-  void refreshViews(std::array<MemoryValues, 15> vals);
+  void refreshViews(std::array<Jimulator::MemoryValues, 15> vals);
 
   // ! Getters and setters
 

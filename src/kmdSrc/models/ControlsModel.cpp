@@ -74,7 +74,7 @@ void ControlsModel::onHaltExecutionClick() {
  */
 void ControlsModel::onReloadJimulatorClick() {
   std::cout << "Reload clicked!" << std::endl;
-  resetJimulator();
+  Jimulator::resetJimulator();
   getParent()->changeJimulatorState(LOADED);
 }
 
@@ -88,15 +88,15 @@ void ControlsModel::onPauseResumeClick() {
 
   switch (getJimulatorState()) {
     case RUNNING:
-      pauseJimulator();
+      Jimulator::pauseJimulator();
       getParent()->changeJimulatorState(PAUSED);
       break;
     case PAUSED:
-      continueJimulator();
+      Jimulator::continueJimulator();
       getParent()->changeJimulatorState(RUNNING);
       break;
     case LOADED:
-      startJimulator(0);
+      Jimulator::startJimulator(0);
       getParent()->changeJimulatorState(RUNNING);
       break;
     default:
@@ -111,7 +111,7 @@ void ControlsModel::onPauseResumeClick() {
 void ControlsModel::onSingleStepExecuteClick() {
   std::cout << "single step execute click!" << std::endl;
 
-  startJimulator(1);
+  Jimulator::startJimulator(1);
   getParent()->refreshViews();
 
   if (getJimulatorState() == LOADED) {

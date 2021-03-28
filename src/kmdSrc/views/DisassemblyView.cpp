@@ -82,7 +82,8 @@ void DisassemblyView::packView() {
  * @brief Set the values in the disassemblyRows.
  * @param vals An array of 15 memoryValues.
  */
-void DisassemblyView::refreshViews(std::array<MemoryValues, 15> vals) {
+void DisassemblyView::refreshViews(
+    std::array<Jimulator::MemoryValues, 15> vals) {
   for (int i = 0; i < 15; i++) {
     rows[i].setAddress(getModel()->intToFormattedHexString(vals[i].address));
     rows[i].setHex(vals[i].hex);

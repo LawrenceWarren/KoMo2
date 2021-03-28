@@ -13,7 +13,7 @@ TerminalModel::TerminalModel(TerminalView* const view, KoMo2Model* const parent)
 void TerminalModel::changeJimulatorState(const JimulatorState newState) {}
 
 void TerminalModel::onClearClick() {
-  setBreakpoint(temp);  // TODO: temporary
+  Jimulator::setBreakpoint(temp);  // TODO: temporary
   temp += 0x4;
   getView()->clearTextView();
 }
@@ -24,7 +24,13 @@ void TerminalModel::onClearClick() {
  * @return bool true if the key press was handled.
  */
 const bool TerminalModel::handleKeyPress(const GdkEventKey* const e) {
-  sendTerminalInputToJimulator(e->keyval);
+  if (e->keyval == GDK_KEY_Tab) {
+    getView()->getClearButton()->grab_focus();
+  } else if (e->keyval == GDK_KEY_Escape) {
+    getView()->getTextView()->get_parent()->grab_focus();
+  } else {
+    Jimulator::sendTerminalInputToJimulator(e->keyval);
+  }
 
   return true;
 }
@@ -58,5 +64,5 @@ void TerminalModel::appendTextToTextView(std::string text) {
  * @return const std::string
  */
 const std::string TerminalModel::readJimulator() {
-  return getJimulatorTerminalMessages();
+  return Jimulator::getJimulatorTerminalMessages();
 }

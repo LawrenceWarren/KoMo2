@@ -65,7 +65,7 @@ void CompileLoadModel::onCompileLoadClick() const {
   // child process
   if (not fork()) {
     // Compile the .s program to .kmd
-    compileJimulator(
+    Jimulator::compileJimulator(
         (getParent()->getAbsolutePathToProjectRoot() + "/bin/aasm").c_str(),
         getAbsolutePathToSelectedFile().c_str(),
         makeKmdPath(getAbsolutePathToSelectedFile()).c_str());
@@ -84,9 +84,9 @@ void CompileLoadModel::onCompileLoadClick() const {
     }
 
     // Perform the load
-    resetJimulator();
-    status =
-        loadJimulator(makeKmdPath(getAbsolutePathToSelectedFile()).c_str());
+    Jimulator::resetJimulator();
+    status = Jimulator::loadJimulator(
+        makeKmdPath(getAbsolutePathToSelectedFile()).c_str());
 
     // If load function failed
     if (status) {

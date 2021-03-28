@@ -23,6 +23,7 @@
 #include <array>
 #include <string>
 
+namespace Jimulator {
 class MemoryValues {
  public:
   u_int32_t address;
@@ -33,7 +34,7 @@ class MemoryValues {
 // Reading data
 const int checkBoardState();
 const std::array<std::string, 16> getJimulatorRegisterValues();
-std::array<MemoryValues, 15> getJimulatorMemoryValues(
+std::array<Jimulator::MemoryValues, 15> getJimulatorMemoryValues(
     const uint32_t s_address_int);
 const std::string getJimulatorTerminalMessages();
 
@@ -45,8 +46,9 @@ const int loadJimulator(const char* const pathToKMD);
 
 // Sending commands
 void startJimulator(const int steps);
-void pauseJimulator();
 void continueJimulator();
+void pauseJimulator();
 void resetJimulator();
 void sendTerminalInputToJimulator(const unsigned int val);
 void setBreakpoint(uint32_t address);
+}

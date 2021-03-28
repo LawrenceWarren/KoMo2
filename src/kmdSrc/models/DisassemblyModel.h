@@ -36,7 +36,7 @@ class DisassemblyModel : private Model {
   const std::string intToFormattedHexString(const uint32_t formatMe) const;
 
   // ! Getters and setters
-  std::array<MemoryValues, 15> getMemoryValues();
+  std::array<Jimulator::MemoryValues, 15> getMemoryValues();
   DisassemblyView* const getView();
 
   // ! Virtual overrides
