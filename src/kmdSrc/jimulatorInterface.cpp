@@ -37,6 +37,7 @@
 #include <sys/types.h>
 #include <termios.h>
 #include <unistd.h>
+#include <iomanip>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -247,8 +248,6 @@ void setBreakpoint(uint32_t addr) {
 
   error = error | trap_get_status(0, &worda, &wordb);
 
-  printf("worda %u wordb %u\n", worda, wordb);
-
   if (error) {
     // TODO: handle this event gracefully?
     return;
@@ -294,8 +293,6 @@ void setBreakpoint(uint32_t addr) {
       // Choose free(?) number
       trap.misc = -1;  // Really two byte parameters
 
-      printf("i is %u\n", i);
-
       // Should send 2*words address then two*double words data @@@
       view_chararrCpychararr(8, address, trap.addressA);
       for (count = 0; count < 4; count++) {
@@ -310,61 +307,9 @@ void setBreakpoint(uint32_t addr) {
     }
   }
 
-  // TEST SECTION
-  {
-    unsigned int worda, wordb;
-    int temp, temp2;
-    unsigned char value[4];
-    bool flag;  // `flag' indicates that this may go in the list
-    bool error = FALSE;
-
-    // Have trap status info okay: get breaks and breaksinactive list
-    if (!trap_get_status(0, &worda, &wordb)) {
-      for (temp = 0; (temp < 32) && !error; temp++) {
-        if (((worda >> temp) & 1) != 0) {
-          trap_def trap;
-
-          // if okay
-          if (read_trap_defn(0, temp, &trap)) {
-            flag =
-                (((trap.misc & 0x00EF) == 0x00EF)       // All conditions except
-                 && ((trap.misc & 0x0F00) == 0x0F00));  // write and all sizes
-
-            if (flag) {
-              for (temp2 = 4 - 1; temp2 >= 0; temp2--) {
-                if (trap.addressB[temp2] != 0xFF) {
-                  flag = FALSE;
-                }
-
-                if (trap.dataB[temp2] != 0x00) {
-                  flag = FALSE;
-                }
-              }
-            }
-
-            // if needs painting
-            if (flag) {
-              for (temp2 = 3; temp2 >= 0; temp2--) {
-                value[temp2] = trap.addressA[temp2];
-              }
-
-              if ((wordb >> temp) & 1) {
-                std::cout << "ACTIVE BREAK: " << view_chararr2hexstrbe(4, value)
-                          << std::endl;
-              } else {
-                std::cout << "INACTIVE BREAK: "
-                          << view_chararr2hexstrbe(4, value) << std::endl;
-              }
-            }
-          } else {
-            error = TRUE;  // Read failure causes loop termination
-          }
-        }
-      }
-    } else {
-      error = TRUE;  // Didn't read trap status successfully above
-    }
-  }
+  // ! TEST SECTION !
+  // ! Everything within these curly braces can go, this simply proves that
+  // ! Breakpoints are being set correctly.
 }
 
 /**
@@ -537,7 +482,7 @@ int board_send_n_bytes(int value, int n) {
 void run_board(const int steps) {
   if (not checkBoardState()) {
     // Sends a start signal &  whether breakpoints are on
-    boardSendChar(BR_START | RUN_FLAG_INIT);
+    boardSendChar(BR_START | 48);
 
     board_send_n_bytes(steps, 4);  // Send step count
   }
@@ -814,6 +759,7 @@ std::array<MemoryValues, 15> getJimulatorMemoryValues(
   // ! Dangerous old logic ahead is used to read memory.
   // ! This is very much C-style code, be careful
 
+  // Switches the endianness of the address
   unsigned char address[4] = {start_address[0], start_address[1],
                               start_address[2], start_address[3]};
 

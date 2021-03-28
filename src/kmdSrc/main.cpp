@@ -65,20 +65,26 @@ const bool receivedCompilerOutput(GIOChannel* source,
  */
 int main(int argc, char* argv[]) {
   auto argv0 = getAbsolutePathToRootDirectory(argv[0]);
-
   auto app = Gtk::Application::create(argc, argv, "uon.cs.KoMo2",
                                       Gio::APPLICATION_HANDLES_COMMAND_LINE);
+
+  // Setup communication to Jimulator child process
+  initJimulator(argv0);
+
+  // Setup command line argument recognition
   app->signal_command_line().connect(
       sigc::bind(sigc::ptr_fun(initialiseCommandLine), app), false);
 
+  // Setup model & view
   MainWindowView koMo2Window(1240, 700);
   KoMo2Model mainModel(&koMo2Window, argv0);
 
-  initJimulator(argv0);
+  // Setup communication methods to compile child process
   initCompilerPipes(&mainModel);
 
+  // Run
   auto exit = app->run(koMo2Window);
-  kill(emulator_PID, SIGKILL);  // Kill Jimulator
+  kill(emulator_PID, SIGKILL);  // Kill Jimulator if main window is killed
   return exit;
 }
 
@@ -94,7 +100,9 @@ void initCompilerPipes(KoMo2Model* mainModel) {
     exit(1);
   }
 
-  // Piping
+  // Sets up the function `receivedCompilerOutput` to fire whenever a change to
+  // the `compilerCommunication` pipe occurs. This in turn calls a function
+  // in the mainModel object.
   auto fd = g_io_channel_unix_new(compilerCommunication[0]);
   auto f = (GIOFunc)receivedCompilerOutput;
   g_io_add_watch(fd, G_IO_IN, f, mainModel);
