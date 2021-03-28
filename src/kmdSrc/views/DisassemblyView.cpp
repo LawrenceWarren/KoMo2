@@ -29,7 +29,7 @@
 DisassemblyView::DisassemblyView(MainWindowView* const parent)
     : parent(parent) {
   initDisassemblyContainer();
-} 
+}
 
 /**
  * @brief Initialises the containers & their children - packs children into
@@ -184,6 +184,7 @@ void DisassemblyRows::setBreakpoint(const bool state) {
  */
 void DisassemblyRows::setAddress(const std::string text) {
   address.set_text(text);
+  breakpoint.get_accessible()->set_description(text);
 }
 /**
  * @brief Set the text of the hex label.

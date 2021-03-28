@@ -42,15 +42,27 @@ ControlsView::ControlsView(MainWindowView* const parent)
  */
 void ControlsView::initProgramControlsContainer() {
   // Set button tooltip text
-  getHaltExecutionButton()->set_tooltip_text("Halt Jimulator (F1)");
   getHelpButton()->set_tooltip_text("About KoMo2 (F12)");
+  getHaltExecutionButton()->set_tooltip_text("Halt Jimulator (F1)");
   getSingleStepExecuteButton()->set_tooltip_text("Execute 1 instruction (F6)");
   getReloadJimulatorButton()->set_tooltip_text("Reload program (Ctrl+R)");
 
-  // TODO: set and test accessibility features
-  getHelpButton()->get_accessible()->set_name("Help Button");
-  getHelpButton()->get_accessible()->set_description(
-      "This button will display a help window.");
+  // Set accessibility
+  getHelpButton()->get_accessible()->set_name("Help");
+  getHelpButton()->get_accessible()->set_description("Displays a help window.");
+
+  getHaltExecutionButton()->get_accessible()->set_name("Halt execution");
+  getHaltExecutionButton()->get_accessible()->set_description(
+      "Halt execution of the loaded program.");
+
+  getSingleStepExecuteButton()->get_accessible()->set_name(
+      "Single step execute");
+  getSingleStepExecuteButton()->get_accessible()->set_description(
+      "Execute a single line of the loaded program.");
+
+  getReloadJimulatorButton()->get_accessible()->set_name("Reload program");
+  getReloadJimulatorButton()->get_accessible()->set_description(
+      "Reloads the currently loaded program.");
 
   // Set sizes
   getHelpButton()->set_size_request(102, 102);
