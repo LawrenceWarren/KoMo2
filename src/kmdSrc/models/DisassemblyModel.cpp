@@ -75,10 +75,6 @@ const std::string DisassemblyModel::intToFormattedHexString(
  * @return bool if a key was pressed.
  */
 const bool DisassemblyModel::handleScroll(GdkEventScroll* const e) {
-  std::cout << "Scroll event" << std::endl;  // TODO: debugging for emulator
-
-  std::cout << e->delta_y << " " << e->delta_x << std::endl;
-
   // Increase or decrease the memory index.
   switch (e->direction) {
     case GDK_SCROLL_UP:
@@ -88,9 +84,10 @@ const bool DisassemblyModel::handleScroll(GdkEventScroll* const e) {
       incrementMemoryIndex(1);
       break;
     case GDK_SCROLL_SMOOTH:
+      incrementMemoryIndex(e->delta_y);
       break;
     default:
-      // Do nothing in this case
+      return false;
       break;
   }
 
