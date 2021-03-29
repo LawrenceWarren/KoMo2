@@ -34,6 +34,7 @@ class DisassemblyModel : private Model {
  public:
   DisassemblyModel(DisassemblyView* const view, KoMo2Model* const parent);
   const std::string intToFormattedHexString(const uint32_t formatMe) const;
+  const bool toggleBreakpoint(const unsigned int id);
 
   // ! Getters and setters
   std::array<Jimulator::MemoryValues, 15> getMemoryValues();

@@ -51,6 +51,10 @@ void DisassemblyModel::addScrollRecognition() {
       sigc::mem_fun(*this, &DisassemblyModel::handleScroll), false);
 }
 
+const bool DisassemblyModel::toggleBreakpoint(const unsigned int id) {
+  return Jimulator::setBreakpoint(memoryIndex + (id * 4));
+}
+
 /**
  * @brief Converts an fixed width 32-bit integer to a hex string formatted as
  * required (i.e. padded to 8 characters, pre-fixed with a "0x" string, raised

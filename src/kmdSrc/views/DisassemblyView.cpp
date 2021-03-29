@@ -23,6 +23,8 @@
 #include <sstream>
 #include "../models/DisassemblyModel.h"
 
+unsigned int DisassemblyRows::idSeed = 0;
+
 /**
  * @brief Construct a new DisassemblyView::DisassemblyView object.
  * @param parent A pointer to this views parent, set during initialisation.
@@ -78,6 +80,7 @@ void DisassemblyView::packView() {
     disassemblyContainer.pack_start(rows[i], false, false);
     rows[i].show();
     rows[i].show_all_children();
+    rows[i].setModel(model);
   }
 }
 
@@ -161,7 +164,10 @@ MainWindowView* const DisassemblyView::getParent() const {
 /**
  * @brief Construct a new DisassemblyRows::DisassemblyRows object.
  */
-DisassemblyRows::DisassemblyRows() {
+DisassemblyRows::DisassemblyRows() : id(idSeed++) {
+  getButton()->signal_clicked().connect(
+      sigc::mem_fun(*this, &DisassemblyRows::toggleBreakpoint));
+
   set_layout(Gtk::BUTTONBOX_START);
 
   // Set minimum sizes
@@ -202,7 +208,11 @@ DisassemblyRows::DisassemblyRows() {
  * @param state The state to set the breakpoint to.
  */
 void DisassemblyRows::setBreakpoint(const bool state) {
-  breakpoint.set_active(state);
+  if (state) {
+    breakpoint.set_state_flags(Gtk::STATE_FLAG_CHECKED);
+  } else {
+    breakpoint.set_state_flags(Gtk::STATE_FLAG_NORMAL);
+  }
 }
 /**
  * @brief Set the text of the address label.
@@ -228,4 +238,19 @@ void DisassemblyRows::setDisassembly(const std::string text) {
 
 const bool DisassemblyRows::getBreakpoint() const {
   return breakpoint.get_active();
+}
+
+Gtk::ToggleButton* const DisassemblyRows::getButton() {
+  return &breakpoint;
+}
+
+const int DisassemblyRows::getId() const {
+  return id;
+}
+
+void DisassemblyRows::toggleBreakpoint() {
+  setBreakpoint(model->toggleBreakpoint(id));
+}
+void DisassemblyRows::setModel(DisassemblyModel* const val) {
+  model = val;
 }

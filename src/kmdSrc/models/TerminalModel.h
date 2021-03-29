@@ -19,8 +19,6 @@ class TerminalModel : private Model {
 
   void onClearClick();
 
-  uint32_t temp = 0x0;
-
   // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error
   TerminalModel(const TerminalModel&) = delete;

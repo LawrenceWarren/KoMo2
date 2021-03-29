@@ -13,8 +13,6 @@ TerminalModel::TerminalModel(TerminalView* const view, KoMo2Model* const parent)
 void TerminalModel::changeJimulatorState(const JimulatorState newState) {}
 
 void TerminalModel::onClearClick() {
-  Jimulator::setBreakpoint(temp);  // TODO: temporary
-  temp += 0x4;
   getView()->clearTextView();
 }
 

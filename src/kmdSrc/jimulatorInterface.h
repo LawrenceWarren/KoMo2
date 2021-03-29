@@ -51,5 +51,5 @@ void continueJimulator();
 void pauseJimulator();
 void resetJimulator();
 const bool sendTerminalInputToJimulator(const unsigned int val);
-void setBreakpoint(uint32_t address);
+const bool setBreakpoint(uint32_t address);
 }  // namespace Jimulator

@@ -236,7 +236,7 @@ std::string view_chararr2hexstrbe(int count,
  * @brief Sets a breakpoint.
  * @param addr The address to set the breakpoint at.
  */
-void Jimulator::setBreakpoint(uint32_t addr) {
+const bool Jimulator::setBreakpoint(uint32_t addr) {
   unsigned int worda, wordb;
   bool error = false;
   unsigned char address[4];
@@ -250,7 +250,7 @@ void Jimulator::setBreakpoint(uint32_t addr) {
 
   if (error) {
     // TODO: handle this event gracefully?
-    return;
+    return false;
   }
 
   int temp;
@@ -274,12 +274,12 @@ void Jimulator::setBreakpoint(uint32_t addr) {
 
   // breakpoint(s) matched and deleted ???
   if (breakpoint_found) {
-    std::cout << "BREAKPOINT FOUND" << std::endl;
-    // TODO: Refresh view
+    std::cout << "turning " << addr << " OFF!" << std::endl;
+    return false;
   }
   // See if we can set breakpoint
   else {
-    std::cout << "BREAKPOINT NOT FOUND" << std::endl;
+    std::cout << "turning " << addr << " ON!" << std::endl;
     temp = (~worda) & wordb;  // Undefined => possible choice
 
     // If any free entries ...
@@ -304,6 +304,9 @@ void Jimulator::setBreakpoint(uint32_t addr) {
       }
 
       write_trap_defn(0, i, &trap);
+      return true;
+    } else {
+      return false;
     }
   }
 }
@@ -730,6 +733,15 @@ const bool Jimulator::sendTerminalInputToJimulator(const unsigned int val) {
   return false;
 }
 
+/**
+ * @brief Reads all of the breakpoints from Jimulator into a map that can be
+ * indexed by address.
+ * The address is the key, with a boolean as the value to form a pair. However
+ * the boolean is redundant - since the address is the key, if you lookup an
+ * address in the map and it is present, you know that a breakpoint was found
+ * there.
+ * @return const std::unordered_map<u_int32_t, bool> A map of addresses.
+ */
 const std::unordered_map<u_int32_t, bool> getAllBreakpoints() {
   std::unordered_map<u_int32_t, bool> breakpointAddresses;
   unsigned int worda, wordb;
@@ -737,12 +749,15 @@ const std::unordered_map<u_int32_t, bool> getAllBreakpoints() {
 
   // Have trap status info okay: get breaks and breaksinactive list
   if (not trap_get_status(0, &worda, &wordb)) {
+    // Loop through every breakpoint
     for (int i = 0; (i < 32) && not error; i++) {
+      // If breakpoint found, read the breakpoint value
       if (((worda >> i) & 1) != 0) {
         trap_def trap;
 
         // if okay
         if (read_trap_defn(0, i, &trap)) {
+          // Get address and save into map
           u_int32_t addr = view_chararr2int(4, trap.addressA);
           breakpointAddresses.insert({addr, true});
         } else {

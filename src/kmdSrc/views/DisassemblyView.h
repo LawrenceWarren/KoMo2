@@ -49,8 +49,14 @@ class DisassemblyRows : public Gtk::HButtonBox {
   void setHex(const std::string text);
   void setDisassembly(const std::string text);
   const bool getBreakpoint() const;
+  const int getId() const;
+  Gtk::ToggleButton* const getButton();
+  void setModel(DisassemblyModel* const val);
+  void toggleBreakpoint();
 
  private:
+  static unsigned int idSeed;
+
   /**
    * @brief Setting exact size of widgets is hard; this container is needed to
    * set the size of the button.
@@ -73,7 +79,10 @@ class DisassemblyRows : public Gtk::HButtonBox {
    */
   Gtk::Label disassembly;
 
- private:
+  const unsigned int id;
+
+  DisassemblyModel* model;
+
   // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error
   DisassemblyRows(const DisassemblyRows&) = delete;
