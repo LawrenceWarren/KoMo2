@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
       sigc::bind(sigc::ptr_fun(initialiseCommandLine), app), false);
 
   // Setup model & view
-  MainWindowView koMo2Window(1240, 700);
+  MainWindowView koMo2Window(400, 400);
   KoMo2Model mainModel(&koMo2Window, argv0);
 
   // Setup communication methods to compile child process

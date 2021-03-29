@@ -43,13 +43,17 @@ MainWindowView::MainWindowView(const int x, const int y)
   set_border_width(4);
   setSizes(x, y);
 
+  this->set_gravity(Gdk::GRAVITY_WEST);
+
+  getMasterLayout()->set_layout(Gtk::BUTTONBOX_START);
+
   // Packs containers into one another.
-  getControlsAndCompileBar()->set_layout(Gtk::BUTTONBOX_EDGE);
+  getControlsAndCompileBar()->set_layout(Gtk::BUTTONBOX_START);
   getControlsAndCompileBar()->pack_end(controlsView, false, false);
   getControlsAndCompileBar()->pack_end(compileLoadView, false, false);
   getControlsAndCompileBar()->show();
 
-  getRegistersAndDisassemblyBar()->set_layout(Gtk::BUTTONBOX_EDGE);
+  getRegistersAndDisassemblyBar()->set_layout(Gtk::BUTTONBOX_START);
   getRegistersAndDisassemblyBar()->pack_end(registersView, false, false);
   getRegistersAndDisassemblyBar()->pack_end(disassemblyView, false, false);
   getRegistersAndDisassemblyBar()->show();
@@ -58,7 +62,6 @@ MainWindowView::MainWindowView(const int x, const int y)
   getMasterLayout()->pack_start(registersAndDisassemblyBar, false, false);
   getMasterLayout()->pack_start(terminalView, false, false);
 
-  getMasterLayout()->set_layout(Gtk::BUTTONBOX_START);
   getMasterLayout()->show_all_children();
   getMasterLayout()->show();
   add(masterLayout);
@@ -70,24 +73,7 @@ MainWindowView::MainWindowView(const int x, const int y)
  * @param y The height of the window.
  */
 void MainWindowView::setSizes(const int x, const int y) {
-  // set_default_size(x, y);  // ~16:9 ration
-
-  // const float topBarHeight = (y / 7.f) * 1.f;
-  // const float midBarHeight = (y / 7.f) * 4.f;
-  // const float bottomBarHeight = (y / 7.f) * 2.f;
-  // const float xUnits = x / 12.4f;
-
-  // set layout sizes
-  // TODO: these should be deleted once all components are implemented
-  // getMasterLayout()->set_size_request(x, y);
-  // getControlsAndCompileBar()->set_size_request(x, -1);
-  // getRegistersAndDisassemblyBar()->set_size_request(x, midBarHeight);
-
-  // getCompileLoadView()->set_size_request(xUnits, topBarHeight);
-  // getControlsView()->set_size_request(x - xUnits, topBarHeight / 3.f);
-  // getRegistersView()->set_size_request(xUnits * 3.f, midBarHeight);
-  // getDisassemblyView()->set_size_request(x - (xUnits * 3.f), midBarHeight);
-  // getTerminalView()->set_size_request(x, bottomBarHeight);
+  set_default_size(x, y);  // ~16:9 ration
 }
 
 /**

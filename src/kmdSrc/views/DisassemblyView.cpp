@@ -20,6 +20,7 @@
  */
 
 #include "DisassemblyView.h"
+#include <sstream>
 #include "../models/DisassemblyModel.h"
 
 /**
@@ -88,8 +89,12 @@ void DisassemblyView::refreshViews(
     rows[i].setAddress(getModel()->intToFormattedHexString(vals[i].address));
     rows[i].setHex(vals[i].hex);
     rows[i].setDisassembly(vals[i].disassembly);
-    rows[i].get_accessible()->set_description(std::to_string(vals[i].address) +
-                                              " " + vals[i].disassembly);
+
+    // Set the accessibility for the view
+    std::stringstream ss;
+    ss << std::hex << vals[i].address;
+    rows[i].get_accessible()->set_description("0x" + ss.str() + " : " +
+                                              vals[i].disassembly);
   }
 }
 
