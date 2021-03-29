@@ -88,6 +88,8 @@ void DisassemblyView::refreshViews(
     rows[i].setAddress(getModel()->intToFormattedHexString(vals[i].address));
     rows[i].setHex(vals[i].hex);
     rows[i].setDisassembly(vals[i].disassembly);
+    rows[i].get_accessible()->set_description(vals[i].address + " " +
+                                              vals[i].disassembly);
   }
 }
 
@@ -193,7 +195,6 @@ void DisassemblyRows::setBreakpoint(const bool state) {
  */
 void DisassemblyRows::setAddress(const std::string text) {
   address.set_text(text);
-  breakpoint.get_accessible()->set_description(text);
 }
 /**
  * @brief Set the text of the hex label.
