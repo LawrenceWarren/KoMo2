@@ -38,7 +38,7 @@ const bool TerminalModel::handleKeyPress(const GdkEventKey* const e) {
   }
   // Else send key press to Jimulator...
   else {
-    Jimulator::sendTerminalInputToJimulator(e->keyval);
+    return Jimulator::sendTerminalInputToJimulator(e->keyval);
   }
 
   return true;

@@ -49,6 +49,6 @@ void startJimulator(const int steps);
 void continueJimulator();
 void pauseJimulator();
 void resetJimulator();
-void sendTerminalInputToJimulator(const unsigned int val);
+const bool sendTerminalInputToJimulator(const unsigned int val);
 void setBreakpoint(uint32_t address);
-}
+}  // namespace Jimulator

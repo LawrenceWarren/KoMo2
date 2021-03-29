@@ -668,7 +668,7 @@ const std::string Jimulator::getJimulatorTerminalMessages() {
   return output;
 }
 
-void Jimulator::sendTerminalInputToJimulator(const unsigned int val) {
+const bool Jimulator::sendTerminalInputToJimulator(const unsigned int val) {
   unsigned int key_pressed = val;
   unsigned char res = 0;
 
@@ -727,7 +727,10 @@ void Jimulator::sendTerminalInputToJimulator(const unsigned int val) {
     boardSendChar(1);            // send length 1
     boardSendChar(key_pressed);  // send the message - 1 char currently
     boardGetChar(&res);          // Read the result
+    return true;
   }
+
+  return false;
 }
 
 /**
