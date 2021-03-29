@@ -40,6 +40,8 @@ void DisassemblyView::initDisassemblyContainer() {
   container.set_layout(Gtk::BUTTONBOX_START);
   disassemblyContainer.set_layout(Gtk::BUTTONBOX_START);
 
+  get_style_context()->add_class("disassembly_container");
+
   packView();
 
   // Pack in to the master container
@@ -215,6 +217,7 @@ void DisassemblyRows::setHex(const std::string text) {
 void DisassemblyRows::setDisassembly(const std::string text) {
   disassembly.set_text(text);
 }
+
 const bool DisassemblyRows::getBreakpoint() const {
   return breakpoint.get_active();
 }

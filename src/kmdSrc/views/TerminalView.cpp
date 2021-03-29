@@ -7,6 +7,11 @@ TerminalView::TerminalView(MainWindowView* const parent) : parent(parent) {
   inputBox.set_size_request(600, 20);
   clearButton.set_size_request(100, 20);
   clearButton.set_label("Clear");
+  clearButton.get_style_context()->add_class("compButtons");
+
+  clearButton.get_accessible()->set_name("Clear");
+  clearButton.get_accessible()->set_description(
+      "Clears the terminal of any logged information.");
 
   // Sets the colours of the terminal input box
   // TODO: try to get this to work in CSS?
@@ -22,7 +27,7 @@ TerminalView::TerminalView(MainWindowView* const parent) : parent(parent) {
   textView.set_editable(false);
 
   layout.pack_start(inputBox, false, false);
-  layout.pack_start(clearButton, false, false);
+  layout.pack_start(clearButton, false, true);
   scroll.add(textView);
   pack_start(scroll, false, true);
   pack_start(layout, false, true);

@@ -44,6 +44,15 @@ void CompileLoadView::initSelectAndLoadContainer() {
   getCompileAndLoadButton()->set_tooltip_text(
       "Compile and load your file into Jimulator (CTRL+R)");
 
+  // Set accessibility
+  getBrowseButton()->get_accessible()->set_name("Browse files");
+  getBrowseButton()->get_accessible()->set_description(
+      "Open a file browser window.");
+
+  getCompileAndLoadButton()->get_accessible()->set_name("Compile & load file");
+  getCompileAndLoadButton()->get_accessible()->set_description(
+      "Compiles and loads the selected file into Jimulator.");
+
   // button sizes
   getBrowseButton()->set_size_request(100, 33);
   getCompileAndLoadButton()->set_size_request(100, 33);
