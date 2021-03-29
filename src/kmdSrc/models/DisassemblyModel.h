@@ -54,7 +54,7 @@ class DisassemblyModel : private Model {
    */
   static uint32_t memoryIndex;
 
-  const bool handleScroll(GdkEventScroll* e);
+  const bool handleScroll(GdkEventScroll* const e);
   void incrementMemoryIndex(const uint32_t val);
   void addScrollRecognition();
 

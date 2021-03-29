@@ -133,6 +133,10 @@ DisassemblyModel* const DisassemblyView::getModel() const {
   return model;
 }
 
+MainWindowView* const DisassemblyView::getParent() const {
+  return parent;
+}
+
 // !!!!!!!!!!!!!!!!!!!!!!
 // ! Nested class stuff !
 // !!!!!!!!!!!!!!!!!!!!!!
@@ -169,6 +173,10 @@ DisassemblyRows::DisassemblyRows() {
   hex.set_xalign(0.2);
   disassembly.set_xalign(0.2);
 
+  breakpoint.set_can_focus(false);
+  set_can_focus(true);
+  set_focus_on_click(true);
+
   show();
   show_all_children();
 }
@@ -200,4 +208,7 @@ void DisassemblyRows::setHex(const std::string text) {
  */
 void DisassemblyRows::setDisassembly(const std::string text) {
   disassembly.set_text(text);
+}
+const bool DisassemblyRows::getBreakpoint() const {
+  return breakpoint.get_active();
 }

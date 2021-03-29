@@ -48,6 +48,7 @@ class DisassemblyRows : public Gtk::HButtonBox {
   void setAddress(const std::string text);
   void setHex(const std::string text);
   void setDisassembly(const std::string text);
+  const bool getBreakpoint() const;
 
  private:
   /**
@@ -103,6 +104,7 @@ class DisassemblyView : public Gtk::EventBox {
   Gtk::VButtonBox* const getDisassemblyContainer();
   Gtk::HButtonBox* const getContainer();
   std::vector<DisassemblyRows>* const getRows();
+  MainWindowView* const getParent() const;
 
  private:
   // ! Member children

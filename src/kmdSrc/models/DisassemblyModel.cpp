@@ -23,7 +23,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include "../views/DisassemblyView.h"
+#include "../views/MainWindowView.h"
 
 // Initialise static list pointers
 uint32_t DisassemblyModel::memoryIndex = 0;
@@ -74,7 +74,9 @@ const std::string DisassemblyModel::intToFormattedHexString(
  * @param e The key press event.
  * @return bool if a key was pressed.
  */
-const bool DisassemblyModel::handleScroll(GdkEventScroll* e) {
+const bool DisassemblyModel::handleScroll(GdkEventScroll* const e) {
+  std::cout << "Scroll event" << std::endl;  // TODO: debugging for emulator
+
   // Increase or decrease the memory index.
   switch (e->direction) {
     case GDK_SCROLL_UP:
@@ -115,6 +117,35 @@ void DisassemblyModel::changeJimulatorState(const JimulatorState newState) {}
  * @return bool true if the key press was handled.
  */
 const bool DisassemblyModel::handleKeyPress(const GdkEventKey* const e) {
+  // Get the rows
+  auto rows = getView()->getRows();
+
+  // If the top row has focus and it's a key press up, handle it
+  if ((*rows)[0].has_focus() && e->keyval == GDK_KEY_Up) {
+    auto scroll = GdkEventScroll();
+    scroll.direction = GDK_SCROLL_UP;
+    handleScroll(&scroll);
+    return true;
+  }
+
+  // If the bottom row has focus and it's a key press down, handle it
+  else if ((*rows)[14].has_focus() && e->keyval == GDK_KEY_Down) {
+    auto scroll = GdkEventScroll();
+    scroll.direction = GDK_SCROLL_DOWN;
+    handleScroll(&scroll);
+    return true;
+  }
+
+  // If enter key pressed, find out if a child has focus and toggle it's break
+  else if (e->keyval == GDK_KEY_Return) {
+    for (auto& row : *rows) {
+      if (row.has_focus()) {
+        row.setBreakpoint(not row.getBreakpoint());
+        return true;
+      }
+    }
+  }
+
   return false;
 }
 

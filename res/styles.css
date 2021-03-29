@@ -165,6 +165,11 @@
 .disassembly_rows {
   background-color: #c0dd1e;
 }
+.disassembly_rows:focus {
+  background-color: #00ff22;
+  border-color: #258eb8;
+  border-width: 3px;
+}
 
 .breakpoint_buttons {
   border-radius: 100%;
@@ -175,10 +180,6 @@
 .breakpoint_buttons:checked {
   background-image: image(#e51400);
   border-color: #e51400;
-  box-shadow: none;
-}
-.breakpoint_buttons:focus {
-  border-color: #258eb8;
   box-shadow: none;
 }
 

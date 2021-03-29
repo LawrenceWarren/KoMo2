@@ -85,7 +85,9 @@ const bool KoMo2Model::handleKeyPress(const GdkEventKey* const e) {
   }
 
   return getControlsModel()->handleKeyPress(e) ||
-         getCompileLoadModel()->handleKeyPress(e);
+         getCompileLoadModel()->handleKeyPress(e) ||
+         getDisassemblyModel()->handleKeyPress(e) ||
+         getRegistersModel()->handleKeyPress(e);
 }
 
 void KoMo2Model::grabFocus() {
