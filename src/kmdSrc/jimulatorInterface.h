@@ -29,6 +29,7 @@ class MemoryValues {
   u_int32_t address;
   std::string hex;
   std::string disassembly;
+  bool breakpoint = false;
 };
 
 // Reading data

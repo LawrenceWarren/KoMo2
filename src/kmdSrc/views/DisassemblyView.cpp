@@ -91,12 +91,20 @@ void DisassemblyView::refreshViews(
     rows[i].setAddress(getModel()->intToFormattedHexString(vals[i].address));
     rows[i].setHex(vals[i].hex);
     rows[i].setDisassembly(vals[i].disassembly);
+    rows[i].setBreakpoint(vals[i].breakpoint);
+
+    // Gets a string describing the state of the breakpoint
+    std::string bpState = "no breakpoint";
+
+    if (vals[i].breakpoint) {
+      bpState = "breakpoint set";
+    }
 
     // Set the accessibility for the view
     std::stringstream ss;
     ss << std::hex << vals[i].address;
-    rows[i].get_accessible()->set_description("0x" + ss.str() + " : " +
-                                              vals[i].disassembly);
+    rows[i].get_accessible()->set_description(
+        "0x" + ss.str() + " : " + vals[i].disassembly + " : " + bpState);
   }
 }
 

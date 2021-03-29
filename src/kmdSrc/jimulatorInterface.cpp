@@ -305,10 +305,6 @@ void Jimulator::setBreakpoint(uint32_t addr) {
       write_trap_defn(0, i, &trap);
     }
   }
-
-  // ! TEST SECTION !
-  // ! Everything within these curly braces can go, this simply proves that
-  // ! Breakpoints are being set correctly.
 }
 
 /**
@@ -854,6 +850,32 @@ std::array<Jimulator::MemoryValues, 15> Jimulator::getJimulatorMemoryValues(
       // If there is no src line to read
       readValues[row].hex = std::string("00000000");
       readValues[row].disassembly = std::string("...");
+    }
+
+    {
+      unsigned int worda, wordb;
+      bool error = FALSE;
+
+      // Have trap status info okay: get breaks and breaksinactive list
+      if (not trap_get_status(0, &worda, &wordb)) {
+        for (int temp = 0; (temp < 32) && not error; temp++) {
+          if (((worda >> temp) & 1) != 0) {
+            trap_def trap;
+
+            // if okay
+            if (read_trap_defn(0, temp, &trap)) {
+              u_int32_t addr = view_chararr2int(4, trap.addressA);
+
+              if (addr == readValues[row].address) {
+                readValues[row].breakpoint = true;
+              }
+
+            } else {
+              error = TRUE;  // Read failure causes loop termination
+            }
+          }
+        }
+      }
     }
 
     // Move the address on
