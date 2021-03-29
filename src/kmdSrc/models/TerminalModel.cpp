@@ -24,11 +24,20 @@ void TerminalModel::onClearClick() {
  * @return bool true if the key press was handled.
  */
 const bool TerminalModel::handleKeyPress(const GdkEventKey* const e) {
-  if (e->keyval == GDK_KEY_Tab) {
+  if (not getView()->isFocused()) {
+    return false;
+  }
+
+  // If tab or right arrow pressed, give clear button focus
+  if (e->keyval == GDK_KEY_Tab || e->keyval == GDK_KEY_Right) {
     getView()->getClearButton()->grab_focus();
-  } else if (e->keyval == GDK_KEY_Escape) {
+  }
+  // If escape or up arrow pressed, give scroll view focus
+  else if (e->keyval == GDK_KEY_Escape || e->keyval == GDK_KEY_Up) {
     getView()->getTextView()->get_parent()->grab_focus();
-  } else {
+  }
+  // Else send key press to Jimulator...
+  else {
     Jimulator::sendTerminalInputToJimulator(e->keyval);
   }
 

@@ -14,17 +14,14 @@ TerminalView::TerminalView(MainWindowView* const parent) : parent(parent) {
       "Clears the terminal of any logged information.");
 
   // Sets the colours of the terminal input box
-  // TODO: try to get this to work in CSS?
   inputBox.get_style_context()->add_class("terminalInput");
   textView.get_style_context()->add_class("terminalDisplay");
-  Gdk::RGBA bgColour("#24292e");
-  Gdk::RGBA textColour("#ffffff");
-  textView.override_color(textColour);
-  textView.override_background_color(bgColour);
   textView.set_wrap_mode(Gtk::WRAP_WORD_CHAR);
 
-  textView.set_can_focus(false);
+  textView.set_can_focus(true);
   textView.set_editable(false);
+
+  // textView.set_border_width(2);
 
   layout.pack_start(inputBox, false, false);
   layout.pack_start(clearButton, false, true);

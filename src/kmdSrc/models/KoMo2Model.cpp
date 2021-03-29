@@ -79,12 +79,8 @@ const bool KoMo2Model::refreshViews() {
  * @return bool if a key was pressed.
  */
 const bool KoMo2Model::handleKeyPress(const GdkEventKey* const e) {
-  // If the terminal is focused, do not intercept keypresses
-  if (getTerminalModel()->getView()->isFocused()) {
-    return getTerminalModel()->handleKeyPress(e);
-  }
-
-  return getControlsModel()->handleKeyPress(e) ||
+  return getTerminalModel()->handleKeyPress(e) ||
+         getControlsModel()->handleKeyPress(e) ||
          getCompileLoadModel()->handleKeyPress(e) ||
          getDisassemblyModel()->handleKeyPress(e) ||
          getRegistersModel()->handleKeyPress(e);

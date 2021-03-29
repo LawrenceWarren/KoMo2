@@ -170,7 +170,7 @@
 }
 
 .disassembly_rows:focus {
-  background-color: #1f2428;
+  background-color: #005cc5;
   /*box-shadow: inset 2px 2px 0px #005CC5, inset -2px -2px 0px #005CC5,
     inset -2px 2px 0px #005CC5, inset 2px -2px 0px #005CC5;*/
 }
@@ -209,18 +209,33 @@
 }
 
 /* The terminal display box */
+.terminalDisplay text {
+  color: #ffffff;
+  background-color: #24292e;
+  border-style: solid;
+  border-width: 2px;
+  border-color: #1b1f23;
+  border-radius: 0%;
+}
+
+.terminalDisplay:focus text {
+  border-color: #005cc5;
+}
+
 .terminalDisplay {
   font-size: 14px;
   font-family: "Fira Code Retina", "Fira Code", monospace;
 }
+
 /* The terminal input box */
 .terminalInput {
   font-size: 18px;
   font-family: "Fira Code Retina", "Fira Code", monospace;
   background-color: #444d56;
   color: #ffffff;
+  border-color: #1b1f23;
   border-radius: 0%;
 }
-.terminalInput:active {
+.terminalInput:focus {
   border-color: #005cc5;
 }
