@@ -88,8 +88,8 @@ void DisassemblyView::refreshViews(
     rows[i].setAddress(getModel()->intToFormattedHexString(vals[i].address));
     rows[i].setHex(vals[i].hex);
     rows[i].setDisassembly(vals[i].disassembly);
-    rows[i].get_accessible()->set_description(vals[i].address + " " +
-                                              vals[i].disassembly);
+    rows[i].get_accessible()->set_description(
+        std::string(vals[i].address).append(" ").append(vals[i].disassembly));
   }
 }
 
