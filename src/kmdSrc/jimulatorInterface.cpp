@@ -40,6 +40,7 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 #include "globals.h"
 
@@ -729,11 +730,36 @@ const bool Jimulator::sendTerminalInputToJimulator(const unsigned int val) {
   return false;
 }
 
+const std::unordered_map<u_int32_t, bool> getAllBreakpoints() {
+  std::unordered_map<u_int32_t, bool> breakpointAddresses;
+  unsigned int worda, wordb;
+  bool error = FALSE;
+
+  // Have trap status info okay: get breaks and breaksinactive list
+  if (not trap_get_status(0, &worda, &wordb)) {
+    for (int i = 0; (i < 32) && not error; i++) {
+      if (((worda >> i) & 1) != 0) {
+        trap_def trap;
+
+        // if okay
+        if (read_trap_defn(0, i, &trap)) {
+          u_int32_t addr = view_chararr2int(4, trap.addressA);
+          breakpointAddresses.insert({addr, true});
+        } else {
+          error = TRUE;  // Read failure causes loop termination
+        }
+      }
+    }
+  }
+
+  return breakpointAddresses;
+}
+
 /**
  * @brief Get the memory values from Jimulator, starting to s_address_int.
  * @param s_address_int The address to start at, as an integer.
- * @return std::array<Jimulator::MemoryValues, 15> An array of all of the values
- * read from Jimulator, including each column.
+ * @return std::array<Jimulator::MemoryValues, 15> An array of all of the
+ * values read from Jimulator, including each column.
  */
 std::array<Jimulator::MemoryValues, 15> Jimulator::getJimulatorMemoryValues(
     const uint32_t s_address_int) {
@@ -785,6 +811,7 @@ std::array<Jimulator::MemoryValues, 15> Jimulator::getJimulatorMemoryValues(
 
   // Data is read into this array
   std::array<Jimulator::MemoryValues, 15> readValues;
+  auto bps = getAllBreakpoints();
 
   // Iterate over display rows
   for (int row = 0; row < 15; row++) {
@@ -852,30 +879,13 @@ std::array<Jimulator::MemoryValues, 15> Jimulator::getJimulatorMemoryValues(
       readValues[row].disassembly = std::string("...");
     }
 
-    {
-      unsigned int worda, wordb;
-      bool error = FALSE;
+    // Find if a breakpoint is set on this line
+    auto iter = bps.find(readValues[row].address);
 
-      // Have trap status info okay: get breaks and breaksinactive list
-      if (not trap_get_status(0, &worda, &wordb)) {
-        for (int temp = 0; (temp < 32) && not error; temp++) {
-          if (((worda >> temp) & 1) != 0) {
-            trap_def trap;
-
-            // if okay
-            if (read_trap_defn(0, temp, &trap)) {
-              u_int32_t addr = view_chararr2int(4, trap.addressA);
-
-              if (addr == readValues[row].address) {
-                readValues[row].breakpoint = true;
-              }
-
-            } else {
-              error = TRUE;  // Read failure causes loop termination
-            }
-          }
-        }
-      }
+    // if the iterator is not at the end of the map, the breakpoint was found
+    // and can be set
+    if (iter != bps.end()) {
+      readValues[row].breakpoint = true;
     }
 
     // Move the address on
