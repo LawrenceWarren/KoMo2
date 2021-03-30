@@ -77,8 +77,8 @@ class CompileLoadModel : private Model {
   void onBrowseClick();
   void onCompileLoadClick() const;
   const std::string makeKmdPath(const std::string absolutePath) const;
-  void handleResult(const int result,
-                    const Gtk::FileChooserDialog* const dialog);
+  void handleResultFromFileBrowser(const int result,
+                                   const Gtk::FileChooserDialog* const dialog);
 
   // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error

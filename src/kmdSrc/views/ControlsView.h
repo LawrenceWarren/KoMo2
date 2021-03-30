@@ -41,7 +41,8 @@ class ControlsView : public Gtk::HButtonBox {
   Gtk::Button* const getPauseResumeButton();
   Gtk::Button* const getSingleStepExecuteButton();
   Gtk::Button* const getHaltExecutionButton();
-  void setModel(ControlsModel* const val, const std::string projectRoot);
+  void setModel(ControlsModel* const val);
+  void setButtonImages(const std::string projectRoot);
 
  private:
   /**
@@ -86,6 +87,11 @@ class ControlsView : public Gtk::HButtonBox {
 
   // General functions
   void initProgramControlsContainer();
+  void initHelpButton();
+  void initHaltExecutionButton();
+  void initSingleStepExecuteButton();
+  void initReloadJimulatorButton();
+  void initPauseResumeButton();
 
   // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error

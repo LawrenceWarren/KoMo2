@@ -41,7 +41,7 @@ class ControlsModel : private Model {
   ControlsView* const view;
 
   // Click handlers
-  void onHelpClick() const;
+  void onHelpClick();
   void onReloadJimulatorClick();
   void onPauseResumeClick();
   void onSingleStepExecuteClick();

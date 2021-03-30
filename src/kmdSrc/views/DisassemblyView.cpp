@@ -23,6 +23,7 @@
 #include <sstream>
 #include "../models/DisassemblyModel.h"
 
+// Seed value used for giving breakpoint buttons their ID's
 unsigned int DisassemblyRows::idSeed = 0;
 
 /**
@@ -31,83 +32,33 @@ unsigned int DisassemblyRows::idSeed = 0;
  */
 DisassemblyView::DisassemblyView(MainWindowView* const parent)
     : parent(parent) {
+  initDisassemblyRows();
   initDisassemblyContainer();
 }
 
 /**
  * @brief Initialises the containers & their children - packs children into
- * containers, sets sizes and layouts, adds CSS classes.
+ * containers, sets sizes and layouts, adds a CSS class.
  */
 void DisassemblyView::initDisassemblyContainer() {
   container.set_layout(Gtk::BUTTONBOX_START);
   disassemblyContainer.set_layout(Gtk::BUTTONBOX_START);
-
   get_style_context()->add_class("disassembly_container");
-
-  packView();
-
-  // Pack in to the master container
   container.pack_start(disassemblyContainer, false, false);
   container.pack_start(navigationButtons, false, false);
-
-  // Show everything
-  disassemblyContainer.show();
-  disassemblyContainer.show_all_children();
-  navigationButtons.show();
-  navigationButtons.show_all_children();
-  container.show();
-  container.show_all_children();
-
-  // Show everything
   add(container);
   show();
   show_all_children();
 }
 
 /**
- * @brief Gets a pointer to the rows of views.
- * @return std::vector<DisassemblyRows>* const A pointer to the vector of rows.
+ * @brief Packs the 15 disassemblyRows into their container and gives them a
+ * pointer to the DisassemblyModel object.
  */
-std::vector<DisassemblyRows>* const DisassemblyView::getRows() {
-  return &rows;
-}
-
-/**
- * @brief Packing in 15 DisassemblyRows into the disassemblyContainer view.
- */
-void DisassemblyView::packView() {
+void DisassemblyView::initDisassemblyRows() {
   for (long unsigned int i = 0; i < 15; i++) {
     disassemblyContainer.pack_start(rows[i], false, false);
-    rows[i].show();
-    rows[i].show_all_children();
     rows[i].setModel(model);
-  }
-}
-
-/**
- * @brief Set the values in the disassemblyRows.
- * @param vals An array of 15 memoryValues.
- */
-void DisassemblyView::refreshViews(
-    std::array<Jimulator::MemoryValues, 15> vals) {
-  for (int i = 0; i < 15; i++) {
-    rows[i].setAddress(getModel()->intToFormattedHexString(vals[i].address));
-    rows[i].setHex(vals[i].hex);
-    rows[i].setDisassembly(vals[i].disassembly);
-    rows[i].setBreakpoint(vals[i].breakpoint);
-
-    // Gets a string describing the state of the breakpoint
-    std::string bpState = "no breakpoint";
-
-    if (vals[i].breakpoint) {
-      bpState = "breakpoint set";
-    }
-
-    // Set the accessibility for the view
-    std::stringstream ss;
-    ss << std::hex << vals[i].address;
-    rows[i].get_accessible()->set_description(
-        "0x" + ss.str() + " : " + vals[i].disassembly + " : " + bpState);
   }
 }
 
@@ -116,34 +67,18 @@ void DisassemblyView::refreshViews(
 // !!!!!!!!!!!!!!!!!!!!!!!
 
 /**
+ * @brief Gets a pointer to the rows of views.
+ * @return std::vector<DisassemblyRows>* const A pointer to the vector of rows.
+ */
+std::vector<DisassemblyRows>* const DisassemblyView::getRows() {
+  return &rows;
+}
+/**
  * @brief Sets the value of the `model` member.
  * @param val The value to set the `model` member to.
  */
 void DisassemblyView::setModel(DisassemblyModel* const val) {
   model = val;
-}
-/**
- * @brief Gets a pointer to the navigation buttons container.
- * @return Gtk::VButtonBox* const A constant pointer to the navigation buttons
- * container.
- */
-Gtk::VButtonBox* const DisassemblyView::getNavigationButtons() {
-  return &navigationButtons;
-}
-/**
- * @brief Gets a pointer to the disassembly container.
- * @return Gtk::VButtonBox* const A constant pointer to the disassembly
- * container.
- */
-Gtk::VButtonBox* const DisassemblyView::getDisassemblyContainer() {
-  return &disassemblyContainer;
-}
-/**
- * @brief Gets a pointer to the master container.
- * @return Gtk::HButtonBox* const A constant pointer to the master container.
- */
-Gtk::HButtonBox* const DisassemblyView::getContainer() {
-  return &container;
 }
 /**
  * @brief Gets a constant pointer to the model member.
@@ -152,7 +87,10 @@ Gtk::HButtonBox* const DisassemblyView::getContainer() {
 DisassemblyModel* const DisassemblyView::getModel() const {
   return model;
 }
-
+/**
+ * @brief Return a constant pointer to the parent member.
+ * @return MainWindowView* const  A constat pointer to the parent member.
+ */
 MainWindowView* const DisassemblyView::getParent() const {
   return parent;
 }
@@ -165,46 +103,65 @@ MainWindowView* const DisassemblyView::getParent() const {
  * @brief Construct a new DisassemblyRows::DisassemblyRows object.
  */
 DisassemblyRows::DisassemblyRows() : id(idSeed++) {
-  getButton()->signal_clicked().connect(
-      sigc::mem_fun(*this, &DisassemblyRows::toggleBreakpoint));
-
   set_layout(Gtk::BUTTONBOX_START);
+  initBreakpoint();
+  initAddress();
+  initHex();
+  initDisassembly();
 
-  // Set minimum sizes
-  breakpoint.set_size_request(5, 5);
   buttonSizer.set_size_request(5, 5);
-  address.set_size_request(100, 10);
-  hex.set_size_request(100, 10);
-  disassembly.set_size_request(400, 10);
-
-  // Packing objects
   buttonSizer.pack_start(breakpoint, false, false);
   pack_start(buttonSizer, false, false);
   pack_start(address, false, false);
   pack_start(hex, false, false);
   pack_start(disassembly, false, false);
-
-  // Add CSS styles
   get_style_context()->add_class("disassembly_rows");
-  breakpoint.get_style_context()->add_class("breakpoint_buttons");
-  address.get_style_context()->add_class("address_label");
-  hex.get_style_context()->add_class("hex_label");
-  disassembly.get_style_context()->add_class("disassembly_label");
-
-  // Set text align to the left
-  address.set_xalign(0.2);
-  hex.set_xalign(0.2);
-  disassembly.set_xalign(0.2);
-
-  breakpoint.set_can_focus(false);
   set_can_focus(true);
   set_focus_on_click(true);
-
   show();
   show_all_children();
 }
+
 /**
- * @brief Set the state of the breakpoint button.
+ * @brief Initialises the breakpoint button.
+ */
+void DisassemblyRows::initBreakpoint() {
+  breakpoint.set_size_request(5, 5);
+  breakpoint.get_style_context()->add_class("breakpoint_buttons");
+  breakpoint.set_tooltip_text("Toggle breakpoint");
+  breakpoint.set_can_focus(false);
+}
+/**
+ * @brief Initialises the address label.
+ */
+void DisassemblyRows::initAddress() {
+  address.get_style_context()->add_class("address_label");
+  address.set_size_request(100, 10);
+  address.set_xalign(0.2);
+}
+/**
+ * @brief Initialises the hex label.
+ */
+void DisassemblyRows::initHex() {
+  hex.set_size_request(100, 10);
+  hex.get_style_context()->add_class("hex_label");
+  hex.set_xalign(0.2);
+}
+/**
+ * @brief Initialises the disassembly label.
+ */
+void DisassemblyRows::initDisassembly() {
+  disassembly.set_xalign(0.2);
+  disassembly.get_style_context()->add_class("disassembly_label");
+  disassembly.set_size_request(400, 10);
+}
+
+// ! Getters and setters
+
+/**
+ * @brief Set the state of the breakpoint button. This is a little unusual - it
+ * sets the state in terms of CSS state, making the button appear either toggled
+ * or un-toggled.
  * @param state The state to set the breakpoint to.
  */
 void DisassemblyRows::setBreakpoint(const bool state) {
@@ -235,22 +192,25 @@ void DisassemblyRows::setHex(const std::string text) {
 void DisassemblyRows::setDisassembly(const std::string text) {
   disassembly.set_text(text);
 }
-
-const bool DisassemblyRows::getBreakpoint() const {
-  return breakpoint.get_active();
-}
-
+/**
+ * @brief Gets a constant pointer to the breakpoint button member.
+ * @return Gtk::ToggleButton* const A constant pointer to the breakpoint button
+ * member.
+ */
 Gtk::ToggleButton* const DisassemblyRows::getButton() {
   return &breakpoint;
 }
-
-const int DisassemblyRows::getId() const {
+/**
+ * @brief Gets the value of the id member.
+ * @return const unsigned int The id member.
+ */
+const unsigned int DisassemblyRows::getId() const {
   return id;
 }
-
-void DisassemblyRows::toggleBreakpoint() {
-  setBreakpoint(model->toggleBreakpoint(id));
-}
+/**
+ * @brief Sets the value of the model pointer.
+ * @param val The value to set the model pointer to.
+ */
 void DisassemblyRows::setModel(DisassemblyModel* const val) {
   model = val;
 }

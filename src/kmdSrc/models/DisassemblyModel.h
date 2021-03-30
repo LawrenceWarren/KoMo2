@@ -26,6 +26,7 @@
 #include "TerminalModel.h"
 
 class DisassemblyView;
+class DisassemblyRows;
 
 /**
  * @brief The declaration of the DisassemblyModel class.
@@ -33,11 +34,7 @@ class DisassemblyView;
 class DisassemblyModel : private Model {
  public:
   DisassemblyModel(DisassemblyView* const view, KoMo2Model* const parent);
-  const std::string intToFormattedHexString(const uint32_t formatMe) const;
-  const bool toggleBreakpoint(const unsigned int id);
-
-  // ! Getters and setters
-  std::array<Jimulator::MemoryValues, 15> getMemoryValues();
+  void refreshViews();
   DisassemblyView* const getView();
 
   // ! Virtual overrides
@@ -50,14 +47,18 @@ class DisassemblyModel : private Model {
    */
   DisassemblyView* const view;
   /**
-   * @brief Fixed width integer representing the memory address at the tail
-   * (top) of the container.
+   * @brief Fixed width integer representing the memory address of the view at
+   * the top of the container.
    */
   static uint32_t memoryIndex;
 
+  const std::string intToFormattedHexString(const uint32_t formatMe) const;
   const bool handleScroll(GdkEventScroll* const e);
   void incrementMemoryIndex(const uint32_t val);
   void addScrollRecognition();
+  const std::array<Jimulator::MemoryValues, 15> getMemoryValues() const;
+  void onBreakpointToggle(DisassemblyRows* const row) const;
+  void setupButtonHandlers();
 
   // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error

@@ -30,49 +30,58 @@ CompileLoadView::CompileLoadView(MainWindowView* const parent)
       selectedFileLabel("File: "),
       compileAndLoadButton("Compile & Load"),
       browseButton("Select File") {
+  initBrowseButton();
+  initCompileAndLoadButton();
+  initSelectedFileLabel();
   initSelectAndLoadContainer();
 }
 
 /**
- * @brief Packs children into the compileLoadView, and sets the
- * layouts and size of it.
+ * @brief Packs children into the `compileLoadView,` and sets its layout and
+ * size.
  */
 void CompileLoadView::initSelectAndLoadContainer() {
-  // Set button tooltips
-  getBrowseButton()->set_tooltip_text(
-      "Browse for an ARM assembly file (CTRL+L)");
-  getCompileAndLoadButton()->set_tooltip_text(
-      "Compile and load your file into Jimulator (CTRL+R)");
-
-  // Set accessibility
-  getBrowseButton()->get_accessible()->set_name("Browse files");
-  getBrowseButton()->get_accessible()->set_description(
-      "Open a file browser window.");
-
-  getCompileAndLoadButton()->get_accessible()->set_name("Compile & load file");
-  getCompileAndLoadButton()->get_accessible()->set_description(
-      "Compiles and loads the selected file into Jimulator.");
-
-  // button sizes
-  getBrowseButton()->set_size_request(100, 33);
-  getCompileAndLoadButton()->set_size_request(100, 33);
-  getSelectedFileLabel()->set_size_request(100, 33);
-
-  // Sets CSS
-  // Adds a CSS class for the compiler buttons
-  getCompileAndLoadButton()->get_style_context()->add_class("compButtons");
-  getBrowseButton()->get_style_context()->add_class("compButtons");
-
-  // Adds a CSS class for the label
-  getSelectedFileLabel()->get_style_context()->add_class("fileLabel");
-
-  // Packs into layout
   set_layout(Gtk::BUTTONBOX_END);
   pack_end(browseButton, false, false);
   pack_end(selectedFileLabel, false, false);
   pack_end(compileAndLoadButton, false, false);
   show_all_children();
   show();
+}
+
+/**
+ * @brief Sets up the initial information about the browse file button.
+ */
+void CompileLoadView::initBrowseButton() {
+  getBrowseButton()->set_tooltip_text(
+      "Browse for an ARM assembly file (CTRL+L)");
+  getBrowseButton()->get_accessible()->set_name("Browse files");
+  getBrowseButton()->get_accessible()->set_description(
+      "Open a file browser window.");
+  getBrowseButton()->set_size_request(100, 33);
+  getBrowseButton()->get_style_context()->add_class("compButtons");
+}
+
+/**
+ * @brief Sets up the initial information about the compile & load button.
+ */
+void CompileLoadView::initCompileAndLoadButton() {
+  getCompileAndLoadButton()->set_tooltip_text(
+      "Compile and load your file into Jimulator (CTRL+R)");
+  getCompileAndLoadButton()->get_accessible()->set_name("Compile & load file");
+  getCompileAndLoadButton()->get_accessible()->set_description(
+      "Compiles and loads the selected file into Jimulator.");
+  getCompileAndLoadButton()->set_size_request(100, 33);
+  getCompileAndLoadButton()->get_style_context()->add_class("compButtons");
+}
+
+/**
+ * @brief Sets up the initial information about the selected file label.
+ */
+void CompileLoadView::initSelectedFileLabel() {
+  getSelectedFileLabel()->set_size_request(100, 33);
+  getSelectedFileLabel()->get_style_context()->add_class("fileLabel");
+  getSelectedFileLabel()->get_accessible()->set_name("Selected file");
 }
 
 /**
@@ -103,6 +112,7 @@ Gtk::Label* const CompileLoadView::getSelectedFileLabel() {
  */
 void CompileLoadView::setSelectedFileLabelText(const std::string val) {
   getSelectedFileLabel()->set_text(val);
+  getSelectedFileLabel()->get_accessible()->set_description(val);
 }
 /**
  * @brief Set the model pointer.

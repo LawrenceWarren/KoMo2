@@ -25,16 +25,13 @@
 #include "KoMo2Model.h"
 
 /**
- * @brief Construct a new ControlsModel object.
- * @param helpButton A pointer to the helpButton.
- * @param reloadJimulatorButton A pointer to the reloadJimulatorButton.
- * @param pauseResumeButton A pointer to the pauseResumeButton.
- * @param singleStepExecuteButton A pointer to the singleStepExecutionButton.
- * @param haltExecutionButton A pointer to the haltExecutionButton.
- * @param parent A pointer to the parent model, KoMo2Model.
+ * @brief Construct a new ControlsModel::ControlsModel object.
+ * @param view A pointer to the accompanying view object.
+ * @param parent A pointer to the parent model.
  */
 ControlsModel::ControlsModel(ControlsView* const view, KoMo2Model* const parent)
     : Model(parent), view(view) {
+  // Set button listeners for each of the control buttons
   setButtonListener(view->getHelpButton(), this, &ControlsModel::onHelpClick);
 
   setButtonListener(view->getPauseResumeButton(), this,
@@ -49,43 +46,43 @@ ControlsModel::ControlsModel(ControlsView* const view, KoMo2Model* const parent)
   setButtonListener(view->getSingleStepExecuteButton(), this,
                     &ControlsModel::onSingleStepExecuteClick);
 
-  view->setModel(this, getParent()->getAbsolutePathToProjectRoot());
+  // Set the model & images of the view.
+  view->setModel(this);
+  view->setButtonImages(getParent()->getAbsolutePathToProjectRoot());
 }
+
+// ! Button event handlers
 
 /**
  * @brief Handles the `helpButton` click events.
  */
-void ControlsModel::onHelpClick() const {
-  std::cout << "Help Button click!" << std::endl;
+void ControlsModel::onHelpClick() {
+  // TODO: Launch a seperate help window.
 }
 
 /**
- * @brief Handles the `haltExecutionButton` click events.
- * Changes JimulatorState to "UNLOADED".
+ * @brief Handles the `haltExecutionButton` click events -  changes
+ * `JimulatorState` to "UNLOADED".
  */
 void ControlsModel::onHaltExecutionClick() {
-  std::cout << "Halt Execution Button Click!" << std::endl;
   getParent()->changeJimulatorState(UNLOADED);
 }
 
 /**
- * @brief Handles the `reloadJimulatorButton` click events.
- * Changes JimulatorState to "LOADED".
+ * @brief Handles the `reloadJimulatorButton` click events - sends a command to
+ * Jimulator and changes `JimulatorState` to "LOADED".
  */
 void ControlsModel::onReloadJimulatorClick() {
-  std::cout << "Reload clicked!" << std::endl;
   Jimulator::resetJimulator();
   getParent()->changeJimulatorState(LOADED);
 }
 
 /**
- * @brief Handles the `pauseResumeButton` click events.
- * Changes JimulatorState to "RUNNING" if currently PAUSED, and "PAUSED" if
- * currently RUNNING.
+ * @brief Handles the `pauseResumeButton` click events - changes
+ * `JimulatorState` to "RUNNING" if currently PAUSED, and "PAUSED" if currently
+ * RUNNING. Sends a command to Jimulator in every case.
  */
 void ControlsModel::onPauseResumeClick() {
-  std::cout << "pause/Resume Button Click!" << std::endl;
-
   switch (getJimulatorState()) {
     case RUNNING:
       Jimulator::pauseJimulator();
@@ -106,11 +103,11 @@ void ControlsModel::onPauseResumeClick() {
 }
 
 /**
- * @brief Handles the `singleStepExecuteButton` click events.
+ * @brief Handles the `singleStepExecuteButton` click events - changes
+ * `JimulatorState` to "PAUSED" if state is already LOADED, and sends a command
+ * to Jimulator.
  */
 void ControlsModel::onSingleStepExecuteClick() {
-  std::cout << "single step execute click!" << std::endl;
-
   Jimulator::startJimulator(1);
   getParent()->refreshViews();
 
@@ -154,13 +151,15 @@ const bool ControlsModel::handleKeyPress(const GdkEventKey* const e) {
 }
 
 /**
- * @brief Handles the Jimulator state change for this model.
- * @param newState The state to change into.
+ * @brief Handles the Jimulator state change for this model. For each value of
+ * `newState`, it will update the state of the control buttons & potentially
+ * update their images.
+ * @param newState The state that was changed into.
  */
 void ControlsModel::changeJimulatorState(const JimulatorState newState) {
   switch (newState) {
     // some unloaded state
-    case UNLOADED:
+    case UNLOADED: {
       setButtonState(view->getHelpButton(), true);
       setButtonState(view->getReloadJimulatorButton(), false);
       setButtonState(
@@ -170,10 +169,15 @@ void ControlsModel::changeJimulatorState(const JimulatorState newState) {
           "Commence execution (F5)");
       setButtonState(view->getHaltExecutionButton(), false);
       setButtonState(view->getSingleStepExecuteButton(), false);
-      break;
 
+      // Set accessibility options for the pause/resume button
+      auto pauseResume = view->getPauseResumeButton()->get_accessible();
+      pauseResume->set_name("Play/pause execution");
+      pauseResume->set_description("Plays and pauses execution of program");
+      return;
+    }
     // loaded, not yet run state
-    case LOADED:
+    case LOADED: {
       setButtonState(view->getHelpButton(), true);
       setButtonState(view->getReloadJimulatorButton(), false);
       setButtonState(
@@ -183,10 +187,17 @@ void ControlsModel::changeJimulatorState(const JimulatorState newState) {
           "Commence execution (F5)");
       setButtonState(view->getSingleStepExecuteButton(), true);
       setButtonState(view->getHaltExecutionButton(), false);
-      break;
 
+      // Set accessibility options for the pause/resume button
+      auto pauseResume = view->getPauseResumeButton();
+      pauseResume->set_tooltip_text("Commence execution (F5)");
+      pauseResume->get_accessible()->set_name("Commence execution");
+      pauseResume->get_accessible()->set_description(
+          "Commence execution of the loaded program");
+      return;
+    }
     // Currently running
-    case RUNNING:
+    case RUNNING: {
       setButtonState(view->getHelpButton(), true);
       setButtonState(view->getReloadJimulatorButton(), false);
       setButtonState(
@@ -196,10 +207,17 @@ void ControlsModel::changeJimulatorState(const JimulatorState newState) {
           "Pause execution (F5)");
       setButtonState(view->getSingleStepExecuteButton(), false);
       setButtonState(view->getHaltExecutionButton(), true);
-      break;
 
+      // Set accessibility options for the pause/resume button
+      auto pauseResume = view->getPauseResumeButton();
+      pauseResume->set_tooltip_text("Pause execution (F5)");
+      pauseResume->get_accessible()->set_name("Pause execution");
+      pauseResume->get_accessible()->set_description(
+          "Pause execution of the running program");
+      return;
+    }
     // Has been running; is paused
-    case PAUSED:
+    case PAUSED: {
       setButtonState(view->getHelpButton(), true);
       setButtonState(view->getReloadJimulatorButton(), true);
       setButtonState(
@@ -209,10 +227,18 @@ void ControlsModel::changeJimulatorState(const JimulatorState newState) {
           "Resume execution (F5)");
       setButtonState(view->getSingleStepExecuteButton(), true);
       setButtonState(view->getHaltExecutionButton(), true);
-      break;
+
+      // Set accessibility options for the pause/resume button
+      auto pauseResume = view->getPauseResumeButton();
+      pauseResume->set_tooltip_text("Resume execution (F5)");
+      pauseResume->get_accessible()->set_name("Resume execution");
+      pauseResume->get_accessible()->set_description(
+          "Resume execution of the paused program");
+      return;
+    }
     // Error state
     default:
       // TODO: Handle the error state gracefully
-      break;
+      return;
   }
 }

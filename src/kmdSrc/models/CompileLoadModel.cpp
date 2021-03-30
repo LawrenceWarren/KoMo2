@@ -29,11 +29,9 @@
 #include "KoMo2Model.h"
 
 /**
- * @brief Construct a new CompileLoadModel, initialising the parent pointer and
- * both button pointers.
- * @param compileLoadButton a pointer to the compileLoadButton.
- * @param browseButton a pointer to the browseButton.
- * @param parent a pointer to the parent KoMo2Model.
+ * @brief Construct a new CompileLoadModel::CompileLoadModel object.
+ * @param view A pointer to the accompanying view object.
+ * @param parent A pointer to the parent model object.
  */
 CompileLoadModel::CompileLoadModel(CompileLoadView* const view,
                                    KoMo2Model* const parent)
@@ -46,6 +44,7 @@ CompileLoadModel::CompileLoadModel(CompileLoadView* const view,
   setButtonListener(view->getCompileAndLoadButton(), this,
                     &CompileLoadModel::onCompileLoadClick);
 
+  // Set's the views model & updates the compile load models inner state.
   view->setModel(this);
   setInnerState(NO_FILE);
 }
@@ -62,7 +61,7 @@ void CompileLoadModel::onCompileLoadClick() const {
     return;
   }
 
-  // child process
+  // The code within this if block is executed by the child process.
   if (not fork()) {
     // Compile the .s program to .kmd
     Jimulator::compileJimulator(
@@ -75,11 +74,11 @@ void CompileLoadModel::onCompileLoadClick() const {
   // parent process
   else {
     int status = 0;
-    wait(&status);  // Wait for child to return
+    wait(&status);  // Wait for the child to return
 
     // If child process failed
     if (status) {
-      std::cout << "aasm failed - invalid file path!" << std::endl;
+      std::cout << "Compiler failed - invalid file path!" << std::endl;
       return;
     }
 
@@ -90,13 +89,10 @@ void CompileLoadModel::onCompileLoadClick() const {
 
     // If load function failed
     if (status) {
-      std::cout << "Error loading file into KoMo2" << std::endl;
+      std::cout << "Error loading file into KoMo2." << std::endl;
       return;
     }
 
-    std::cout << "File loaded!" << std::endl;
-
-    // ! Update the overall program state
     getParent()->changeJimulatorState(LOADED);
   }
 }
@@ -106,29 +102,24 @@ void CompileLoadModel::onCompileLoadClick() const {
  * clicked.
  */
 void CompileLoadModel::onBrowseClick() {
-  // Creates a new file browser dialogue box.
-  Gtk::FileChooserDialog dialog(" File explorer",
-                                Gtk::FILE_CHOOSER_ACTION_OPEN);
+  // Creates a new file browser dialogue box
+  Gtk::FileChooserDialog dialog("File explorer", Gtk::FILE_CHOOSER_ACTION_OPEN);
 
-  // Add class for styling
-  // dialog.get_style_context()->add_class("dialog");
-  // TODO: Add styling to the dialog box
-
-  // Gets the parent of the dialogue box.
+  // Gets the parent of the dialogue box
   dialog.set_transient_for(*getParent()->getMainWindow());
 
   // Add response buttons the the dialog:
   dialog.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
   dialog.add_button("_Open", Gtk::RESPONSE_OK);
 
-  // Creates a filter for what type of files can be selected.
+  // Creates a filter for what type of files can be selected
   auto assemblyFilter = Gtk::FileFilter::create();
   assemblyFilter->set_name("ARM assembly files");
   assemblyFilter->add_pattern("*.s");
   dialog.add_filter(assemblyFilter);
 
-  // Show the dialog and wait for a user response, then handle the result.
-  handleResult(dialog.run(), &dialog);
+  // Show the dialog and wait for a user response, then handle the result
+  handleResultFromFileBrowser(dialog.run(), &dialog);
 }
 
 /**
@@ -139,7 +130,7 @@ void CompileLoadModel::onBrowseClick() {
  * @param dialog A pointer to the dialog box itself - frees itself in its
  * destructor.
  */
-void CompileLoadModel::handleResult(
+void CompileLoadModel::handleResultFromFileBrowser(
     const int result,
     const Gtk::FileChooserDialog* const dialog) {
   switch (result) {
@@ -148,19 +139,19 @@ void CompileLoadModel::handleResult(
       setAbsolutePathToSelectedFile(dialog->get_filename());
       setInnerState(FILE_SELECTED);
       getParent()->changeJimulatorState(UNLOADED);
-      break;
+      return;
     }
     // Dialog was cancelled - update inner state but not overall state
     case (Gtk::RESPONSE_CANCEL): {
       setAbsolutePathToSelectedFile("");
       setInnerState(NO_FILE);
-      break;
+      return;
     }
     default: {
       // Some unexpected behaviour - update inner state but not overall state
       setAbsolutePathToSelectedFile("");
       setInnerState(NO_FILE);
-      break;
+      return;
     }
   }
 }
@@ -178,7 +169,7 @@ const std::string CompileLoadModel::makeKmdPath(
 }
 
 /**
- * @brief Handles a changing JimulatorState for this model.
+ * @brief Handles a change in JimulatorState for this model.
  * @param newState The state that has been changed into.
  */
 void CompileLoadModel::changeJimulatorState(const JimulatorState newState) {
@@ -225,33 +216,35 @@ void CompileLoadModel::changeJimulatorState(const JimulatorState newState) {
  * @return bool was the key pressed or not?
  */
 const bool CompileLoadModel::handleKeyPress(const GdkEventKey* const e) {
+  // If ctrl is not pressed, return false
+  if ((e->state & (GDK_SHIFT_MASK | GDK_CONTROL_MASK | GDK_MOD1_MASK)) !=
+      GDK_CONTROL_MASK) {
+    return false;
+  }
+
   switch (e->keyval) {
+    // Ctrl + (lower- & upper-case l)
     case GDK_KEY_L:
     case GDK_KEY_l:
-      if ((e->state & (GDK_SHIFT_MASK | GDK_CONTROL_MASK | GDK_MOD1_MASK)) ==
-              GDK_CONTROL_MASK &&
-          getJimulatorState() != RUNNING) {
-        std::cout << "CTRL + L" << std::endl;
+      if (getJimulatorState() != RUNNING) {
         onBrowseClick();
       }
       return true;
-    // Ctrl + (lower case r)
+    // Ctrl + (lower- & upper-case r)
     case GDK_KEY_R:
     case GDK_KEY_r:
-      if ((e->state & (GDK_SHIFT_MASK | GDK_CONTROL_MASK | GDK_MOD1_MASK)) ==
-              GDK_CONTROL_MASK &&
-          getJimulatorState() != RUNNING && getInnerState() != NO_FILE) {
-        std::cout << "CTRL + R" << std::endl;
+      if (getJimulatorState() != RUNNING && getInnerState() != NO_FILE) {
         onCompileLoadClick();
       }
       return true;
-      // NOTHING
     default:
       return false;
   }
 
   return false;
 }
+
+// ! Getters and setters!
 
 /**
  * @brief Handles changing the inner state of this model (whether a file is
@@ -284,9 +277,6 @@ void CompileLoadModel::setInnerState(const CompileLoadInnerState val) {
       break;
   }
 }
-
-// ! Getters and setters!
-
 /**
  * @brief Sets the `absolutePathToSelectedFile` member variable.
  * @param val The value to set the `absolutePathToSelectedFile` member to.

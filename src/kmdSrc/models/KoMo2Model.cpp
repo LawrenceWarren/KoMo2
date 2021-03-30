@@ -64,7 +64,7 @@ const bool KoMo2Model::refreshViews() {
       registersModel.getRegisterValueFromJimulator());
 
   // Updates memory values
-  disassemblyModel.getView()->refreshViews(disassemblyModel.getMemoryValues());
+  disassemblyModel.refreshViews();
 
   // Update terminal
   terminalModel.appendTextToTextView(terminalModel.readJimulator());

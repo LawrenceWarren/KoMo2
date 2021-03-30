@@ -38,39 +38,43 @@ DisassemblyModel::DisassemblyModel(DisassemblyView* const view,
     : Model(parent), view(view) {
   view->setModel(this);
   addScrollRecognition();
-  getView()->refreshViews(getMemoryValues());
+  refreshViews();
+  setupButtonHandlers();
 }
 
 /**
- * @brief Adds scroll recognition to the container object, and sends scroll
- * events to the  member function `handleScroll`.
+ * @brief Handle the toggling of a breakpoint within the `DisassemblyView.`
+ * @param row The row which has had it's breakpoint toggled. Row id's are a
+ * direct index - the first row is 0, the last row is 14 - so we can combine the
+ * row ID with the `memoryIndex` variable to identify what address the
+ * breakpoint should be set at.
+ */
+void DisassemblyModel::onBreakpointToggle(DisassemblyRows* const row) const {
+  row->setBreakpoint(
+      Jimulator::setBreakpoint(memoryIndex + (row->getId() * 4)));
+}
+
+/**
+ * @brief Adds button handlers to every breakpoint button.
+ */
+void DisassemblyModel::setupButtonHandlers() {
+  auto* const rows = getView()->getRows();
+
+  for (long unsigned int i = 0; i < rows->size(); i++) {
+    (*rows)[i].getButton()->signal_clicked().connect(
+        sigc::bind(sigc::mem_fun(*this, &DisassemblyModel::onBreakpointToggle),
+                   &(*rows)[i]));
+  }
+}
+
+/**
+ * @brief Adds scroll recognition to the container object, which causes scroll
+ * events to be sent to the member function `handleScroll.`
  */
 void DisassemblyModel::addScrollRecognition() {
   getView()->add_events(Gdk::SMOOTH_SCROLL_MASK);
   getView()->signal_scroll_event().connect(
       sigc::mem_fun(*this, &DisassemblyModel::handleScroll), false);
-}
-
-const bool DisassemblyModel::toggleBreakpoint(const unsigned int id) {
-  return Jimulator::setBreakpoint(memoryIndex + (id * 4));
-}
-
-/**
- * @brief Converts an fixed width 32-bit integer to a hex string formatted as
- * required (i.e. padded to 8 characters, pre-fixed with a "0x" string, raised
- * to all capitals)
- * @param formatMe The integer to be formatted
- * @return const std::string The formatted string.
- */
-const std::string DisassemblyModel::intToFormattedHexString(
-    const uint32_t formatMe) const {
-  std::stringstream stream;
-
-  // Pads string, converts to hex
-  stream << "0x" << std::setfill('0') << std::setw(8) << std::uppercase
-         << std::hex << formatMe;
-
-  return stream.str();
 }
 
 /**
@@ -92,12 +96,55 @@ const bool DisassemblyModel::handleScroll(GdkEventScroll* const e) {
       break;
     default:
       return false;
-      break;
   }
 
-  // Refresh the views.
-  getView()->refreshViews(getMemoryValues());
+  // Refresh this view only
+  refreshViews();
   return true;
+}
+
+/**
+ * @brief Converts a fixed width 32-bit integer to a hex string, padded with 0's
+ * to 8 characters, pre-fixed with "0x", and raised to all capitals.
+ * @param formatMe The integer to be formatted.
+ * @return const std::string The formatted string.
+ */
+const std::string DisassemblyModel::intToFormattedHexString(
+    const uint32_t formatMe) const {
+  std::stringstream stream;
+
+  // Pads string, converts to hex
+  stream << "0x" << std::setfill('0') << std::setw(8) << std::uppercase
+         << std::hex << formatMe;
+
+  return stream.str();
+}
+
+/**
+ * @brief Refreshes the values in the views to display the new values fetched
+ * from Jimulator.
+ */
+void DisassemblyModel::refreshViews() {
+  const auto vals = getMemoryValues();
+  auto* const rows = getView()->getRows();
+
+  // Loop through each of the fetched rows
+  for (int i = 0; i < 15; i++) {
+    (*rows)[i].setAddress(intToFormattedHexString(vals[i].address));
+    (*rows)[i].setHex(vals[i].hex);
+    (*rows)[i].setDisassembly(vals[i].disassembly);
+    (*rows)[i].setBreakpoint(vals[i].breakpoint);
+
+    // Gets a string describing the state of the breakpoint
+    // Used for the accessibility object
+    std::string bp = vals[i].breakpoint ? "breakpoint set" : "no breakpoint";
+
+    // Set the accessibility for the view
+    std::stringstream ss;
+    ss << "address " << std::hex << vals[i].address << " : "
+       << vals[i].disassembly << " : " << bp;
+    (*rows)[i].get_accessible()->set_description(ss.str());
+  }
 }
 
 /**
@@ -109,6 +156,8 @@ const bool DisassemblyModel::handleScroll(GdkEventScroll* const e) {
 void DisassemblyModel::incrementMemoryIndex(const uint32_t val) {
   memoryIndex += val * 4;
 }
+
+// ! Virtual override functions
 
 /**
  * @brief Handles changes of Jimulator state.
@@ -122,7 +171,6 @@ void DisassemblyModel::changeJimulatorState(const JimulatorState newState) {}
  * @return bool true if the key press was handled.
  */
 const bool DisassemblyModel::handleKeyPress(const GdkEventKey* const e) {
-  // Get the rows
   auto rows = getView()->getRows();
 
   // If the top row has focus and it's a key press up, handle it
@@ -141,11 +189,11 @@ const bool DisassemblyModel::handleKeyPress(const GdkEventKey* const e) {
     return true;
   }
 
-  // If enter key pressed, find out if a child has focus and toggle it's break
+  // If enter key pressed and a child has focus, toggle its breakpoint
   else if (e->keyval == GDK_KEY_Return) {
-    for (auto& row : *rows) {
-      if (row.has_focus()) {
-        row.setBreakpoint(not row.getBreakpoint());
+    for (long unsigned int i = 0; i < rows->size(); i++) {
+      if ((*rows)[i].has_focus()) {
+        onBreakpointToggle(&(*rows)[i]);
         return true;
       }
     }
@@ -171,6 +219,7 @@ DisassemblyView* const DisassemblyModel::getView() {
  * values - their addresses, their hex columns and their disassembly/source
  * columns.
  */
-std::array<Jimulator::MemoryValues, 15> DisassemblyModel::getMemoryValues() {
+const std::array<Jimulator::MemoryValues, 15>
+DisassemblyModel::getMemoryValues() const {
   return Jimulator::getJimulatorMemoryValues(memoryIndex);
 }

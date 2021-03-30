@@ -73,6 +73,9 @@ class CompileLoadView : public Gtk::VButtonBox {
 
   // General functions
   void initSelectAndLoadContainer();
+  void initBrowseButton();
+  void initCompileAndLoadButton();
+  void initSelectedFileLabel();
 
   // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error

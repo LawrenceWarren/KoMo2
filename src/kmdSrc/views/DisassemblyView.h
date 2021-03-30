@@ -32,10 +32,6 @@
 class MainWindowView;
 class DisassemblyModel;
 
-namespace Jimulator {
-class MemoryValues;
-}
-
 /**
  * @brief A single instance of this class represents a single read memory
  * address and the associated data - this is shown as a single row in the
@@ -48,15 +44,16 @@ class DisassemblyRows : public Gtk::HButtonBox {
   void setAddress(const std::string text);
   void setHex(const std::string text);
   void setDisassembly(const std::string text);
-  const bool getBreakpoint() const;
-  const int getId() const;
-  Gtk::ToggleButton* const getButton();
+  const unsigned int getId() const;
   void setModel(DisassemblyModel* const val);
-  void toggleBreakpoint();
+  Gtk::ToggleButton* const getButton();
 
  private:
+  /**
+   * @brief A static integer used for seeding the id's of each individual
+   * `disassemblyRows` object.
+   */
   static unsigned int idSeed;
-
   /**
    * @brief Setting exact size of widgets is hard; this container is needed to
    * set the size of the button.
@@ -78,10 +75,19 @@ class DisassemblyRows : public Gtk::HButtonBox {
    * @brief Displays the current disassembly value of the memory.
    */
   Gtk::Label disassembly;
-
+  /**
+   * @brief The unique id of each `disassemblyRows` object.
+   */
   const unsigned int id;
-
+  /**
+   * @brief A pointer to the model.
+   */
   DisassemblyModel* model;
+
+  void initBreakpoint();
+  void initAddress();
+  void initHex();
+  void initDisassembly();
 
   // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error
@@ -103,15 +109,11 @@ class DisassemblyRows : public Gtk::HButtonBox {
 class DisassemblyView : public Gtk::EventBox {
  public:
   DisassemblyView(MainWindowView* const parent);
-  void refreshViews(std::array<Jimulator::MemoryValues, 15> vals);
 
   // ! Getters and setters
 
   void setModel(DisassemblyModel* const val);
   DisassemblyModel* const getModel() const;
-  Gtk::VButtonBox* const getNavigationButtons();
-  Gtk::VButtonBox* const getDisassemblyContainer();
-  Gtk::HButtonBox* const getContainer();
   std::vector<DisassemblyRows>* const getRows();
   MainWindowView* const getParent() const;
 
@@ -120,7 +122,7 @@ class DisassemblyView : public Gtk::EventBox {
   /**
    * @brief A pointer to the parent view.
    */
-  MainWindowView* parent;
+  MainWindowView* const parent;
   /**
    * @brief A pointer to the related model.
    */
@@ -131,7 +133,7 @@ class DisassemblyView : public Gtk::EventBox {
   /**
    * @brief A container for the 6 navigation buttons.
    */
-  Gtk::VButtonBox navigationButtons;
+  Gtk::VButtonBox navigationButtons;  // TODO: implement these
   /**
    * @brief A container for the disassembly rows.
    */
@@ -150,7 +152,7 @@ class DisassemblyView : public Gtk::EventBox {
   // ! Functions
 
   void initDisassemblyContainer();
-  void packView();
+  void initDisassemblyRows();
 
   // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error

@@ -33,53 +33,19 @@ ControlsView::ControlsView(MainWindowView* const parent)
       pauseResumeButton(),
       singleStepExecuteButton(),
       haltExecutionButton() {
+  initHelpButton();
+  initHaltExecutionButton();
+  initSingleStepExecuteButton();
+  initReloadJimulatorButton();
+  initPauseResumeButton();
   initProgramControlsContainer();
 }
 
 /**
- * @brief Packs children into the controlsView, and sets the layouts
- * and size of it. Initialises the look images of buttons.
+ * @brief Packs children into the `controlsView`, and sets the layout and size
+ * of it.
  */
 void ControlsView::initProgramControlsContainer() {
-  // Set button tooltip text
-  getHelpButton()->set_tooltip_text("About KoMo2 (F12)");
-  getHaltExecutionButton()->set_tooltip_text("Halt Jimulator (F1)");
-  getSingleStepExecuteButton()->set_tooltip_text("Execute 1 instruction (F6)");
-  getReloadJimulatorButton()->set_tooltip_text("Reload program (Ctrl+R)");
-
-  // Set accessibility
-  getHelpButton()->get_accessible()->set_name("Help");
-  getHelpButton()->get_accessible()->set_description("Displays a help window.");
-
-  getHaltExecutionButton()->get_accessible()->set_name("Halt execution");
-  getHaltExecutionButton()->get_accessible()->set_description(
-      "Halt execution of the loaded program.");
-
-  getSingleStepExecuteButton()->get_accessible()->set_name(
-      "Single step execute");
-  getSingleStepExecuteButton()->get_accessible()->set_description(
-      "Execute a single line of the loaded program.");
-
-  getReloadJimulatorButton()->get_accessible()->set_name("Reload program");
-  getReloadJimulatorButton()->get_accessible()->set_description(
-      "Reloads the currently loaded program.");
-
-  // Set sizes
-  getHelpButton()->set_size_request(102, 102);
-  getReloadJimulatorButton()->set_size_request(102, 102);
-  getPauseResumeButton()->set_size_request(102, 102);
-  getSingleStepExecuteButton()->set_size_request(102, 102);
-  getHaltExecutionButton()->set_size_request(102, 102);
-
-  // Adds a CSS class for the program running buttons
-  getHelpButton()->get_style_context()->add_class("controlButtons");
-  getReloadJimulatorButton()->get_style_context()->add_class("controlButtons");
-  getPauseResumeButton()->get_style_context()->add_class("controlButtons");
-  getSingleStepExecuteButton()->get_style_context()->add_class(
-      "controlButtons");
-  getHaltExecutionButton()->get_style_context()->add_class("controlButtons");
-
-  // Pack buttons into a container
   set_layout(Gtk::BUTTONBOX_END);
   pack_end(helpButton, false, false);
   pack_end(reloadJimulatorButton, false, false);
@@ -90,17 +56,79 @@ void ControlsView::initProgramControlsContainer() {
   show();
 }
 
+/**
+ * @brief Setup all of the information about the help button.
+ */
+void ControlsView::initHelpButton() {
+  getHelpButton()->set_tooltip_text("About KoMo2 (F12)");
+  getHelpButton()->get_accessible()->set_name("Help");
+  getHelpButton()->get_accessible()->set_description("Displays a help window.");
+  getHelpButton()->set_size_request(102, 102);
+  getHelpButton()->get_style_context()->add_class("controlButtons");
+}
+
+/**
+ * @brief Sets up all of the information about the halt execution button.
+ */
+void ControlsView::initHaltExecutionButton() {
+  getHaltExecutionButton()->set_tooltip_text("Halt Jimulator (F1)");
+  getHaltExecutionButton()->get_accessible()->set_name("Halt execution");
+  getHaltExecutionButton()->get_accessible()->set_description(
+      "Halt execution of the loaded program.");
+  getHaltExecutionButton()->set_size_request(102, 102);
+  getHaltExecutionButton()->get_style_context()->add_class("controlButtons");
+}
+
+/**
+ * @brief Sets up all of the information about the single step execution button.
+ */
+void ControlsView::initSingleStepExecuteButton() {
+  getSingleStepExecuteButton()->set_tooltip_text("Execute 1 instruction (F6)");
+  getSingleStepExecuteButton()->get_accessible()->set_name(
+      "Single step execute");
+  getSingleStepExecuteButton()->get_accessible()->set_description(
+      "Execute a single line of the loaded program.");
+  getSingleStepExecuteButton()->set_size_request(102, 102);
+  getSingleStepExecuteButton()->get_style_context()->add_class(
+      "controlButtons");
+}
+
+/**
+ * @brief Sets up all of the information about the reload Jimulator button.
+ */
+void ControlsView::initReloadJimulatorButton() {
+  getReloadJimulatorButton()->set_tooltip_text("Reload program (Ctrl+R)");
+  getReloadJimulatorButton()->get_accessible()->set_name("Reload program");
+  getReloadJimulatorButton()->get_accessible()->set_description(
+      "Reloads the currently loaded program.");
+  getReloadJimulatorButton()->set_size_request(102, 102);
+  getReloadJimulatorButton()->get_style_context()->add_class("controlButtons");
+}
+
+/**
+ * @brief Sets up all of the information about the pause & resume button. This
+ * is emptier than its sibling functions, as a significant amount of the
+ * information about this button changes at run time.
+ */
+void ControlsView::initPauseResumeButton() {
+  getPauseResumeButton()->set_size_request(102, 102);
+  getPauseResumeButton()->get_style_context()->add_class("controlButtons");
+}
+
 // ! Getters and setters
 
 /**
- * @brief Set the model member variable. Also sets the initial button states.
+ * @brief Set the model member variable.
  * @param val The value to set model to.
+ */
+void ControlsView::setModel(ControlsModel* const val) {
+  model = val;
+}
+/**
+ * @brief Sets the images for 4 of the buttons.
  * @param projectRoot An absolute path to the root of the project.
  */
-void ControlsView::setModel(ControlsModel* const val,
-                            const std::string projectRoot) {
-  model = val;
-
+void ControlsView::setButtonImages(const std::string projectRoot) {
   getHaltExecutionButton()->set_image(
       *new Gtk::Image(projectRoot + "/res/img/haltSymbol.png"));
 
@@ -113,7 +141,6 @@ void ControlsView::setModel(ControlsModel* const val,
   getReloadJimulatorButton()->set_image(
       *new Gtk::Image(projectRoot + "/res/img/refreshSymbol.png"));
 }
-
 /**
  * @brief Gets the `helpButton` member variable.
  * @return Gtk::Button* A pointer to the `helpButton` member variable.
