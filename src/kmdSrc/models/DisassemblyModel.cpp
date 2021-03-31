@@ -38,7 +38,6 @@ DisassemblyModel::DisassemblyModel(DisassemblyView* const view,
     : Model(parent), view(view) {
   view->setModel(this);
   addScrollRecognition();
-  refreshViews();
   setupButtonHandlers();
 }
 

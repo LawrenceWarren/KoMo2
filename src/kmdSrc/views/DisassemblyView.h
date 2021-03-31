@@ -103,8 +103,7 @@ class DisassemblyRows : public Gtk::HButtonBox {
  * for debugging.
  * This class inherits from EventBox, which allows for interception of scroll
  * events, and therefore programmer defined handling of these events. This
- * handling of scroll events is done in the function
- * `DisassemblyModel::handleScroll(GdkEventScroll* e)`.
+ * handling of scroll events is done in the function `handleScroll`.
  */
 class DisassemblyView : public Gtk::EventBox {
  public:

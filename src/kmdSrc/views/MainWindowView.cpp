@@ -40,24 +40,19 @@ MainWindowView::MainWindowView(const int x, const int y)
       registersView(this),
       terminalView(this),
       disassemblyView(this) {
-  set_border_width(4);
-  setSizes(x, y);
-
-  this->set_gravity(Gdk::GRAVITY_WEST);
-
+  setStyling();
+  set_border_width(1);
+  set_default_size(x, y);
+  set_gravity(Gdk::GRAVITY_WEST);
   getMasterLayout()->set_layout(Gtk::BUTTONBOX_START);
 
   // Packs containers into one another.
   getControlsAndCompileBar()->set_layout(Gtk::BUTTONBOX_START);
   getControlsAndCompileBar()->pack_end(controlsView, false, false);
   getControlsAndCompileBar()->pack_end(compileLoadView, false, false);
-  getControlsAndCompileBar()->show();
-
   getRegistersAndDisassemblyBar()->set_layout(Gtk::BUTTONBOX_START);
   getRegistersAndDisassemblyBar()->pack_end(registersView, false, false);
   getRegistersAndDisassemblyBar()->pack_end(disassemblyView, false, false);
-  getRegistersAndDisassemblyBar()->show();
-
   getMasterLayout()->pack_start(controlsAndCompileBar, false, false);
   getMasterLayout()->pack_start(registersAndDisassemblyBar, false, false);
   getMasterLayout()->pack_start(terminalView, false, false);
@@ -65,15 +60,6 @@ MainWindowView::MainWindowView(const int x, const int y)
   getMasterLayout()->show_all_children();
   getMasterLayout()->show();
   add(masterLayout);
-}
-
-/**
- * @brief Set the sizes of all views.
- * @param x The width of the window.
- * @param y The height of the window.
- */
-void MainWindowView::setSizes(const int x, const int y) {
-  set_default_size(x, y);  // ~16:9 ration
 }
 
 /**
@@ -104,7 +90,7 @@ void MainWindowView::setStyling() {
   getDisassemblyView()->get_style_context()->add_class("dis_layouts");
   getTerminalView()->get_style_context()->add_class("terminal_layouts");
 
-  // ! Add the CSS to the screen
+  // Add the CSS to the screen
   ctx->add_provider_for_screen(Gdk::Screen::get_default(), css,
                                GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 }

@@ -48,7 +48,6 @@ class KoMo2Model : public Model {
   KoMo2Model(MainWindowView* const mainWindow, const std::string argv0);
   virtual void changeJimulatorState(const JimulatorState newState) override;
   const bool refreshViews();
-  void grabFocus();
 
   // Getters
   const std::string getAbsolutePathToProjectRoot() const;
@@ -92,9 +91,23 @@ class KoMo2Model : public Model {
    */
   RegistersModel registersModel;
 
+  /**
+   * @brief The data model associated with the terminal view. Represented by the
+   * input box and text view at the bottom of the view.
+   */
   TerminalModel terminalModel;
 
+  /**
+   * @brief The data model associated with the disassembly view. Represents the
+   * rows of memory values that take up the majority of the view.
+   */
   DisassemblyModel disassemblyModel;
+
+  /**
+   * @brief Defines how often the the refreshViews function should be called
+   * when KoMo2 is in the RUNNING state.
+   */
+  const unsigned int refreshRate = 50;  // TODO: read this from an external file
 
   // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error

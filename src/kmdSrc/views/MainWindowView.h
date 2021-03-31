@@ -48,7 +48,6 @@ class MainWindowView : public Gtk::Window {
   // Getters and setters
   void setModel(KoMo2Model* const val);
   KoMo2Model* const getModel() const;
-  void setStyling();
 
   // Get components
   CompileLoadView* const getCompileLoadView();
@@ -58,12 +57,12 @@ class MainWindowView : public Gtk::Window {
   DisassemblyView* const getDisassemblyView();
 
  private:
-  void setSizes(const int x, const int y);
-
   // Get layouts
   Gtk::HButtonBox* const getControlsAndCompileBar();
   Gtk::HButtonBox* const getRegistersAndDisassemblyBar();
   Gtk::VButtonBox* const getMasterLayout();
+
+  void setStyling();
 
   // ! Layouts
 

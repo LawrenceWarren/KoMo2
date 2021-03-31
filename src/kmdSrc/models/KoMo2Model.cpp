@@ -45,13 +45,12 @@ KoMo2Model::KoMo2Model(MainWindowView* const mainWindow,
       disassemblyModel(mainWindow->getDisassemblyView(), this) {
   // Updates the main window to have a pointer to its model, sets its CSS.
   getMainWindow()->setModel(this);
-  getMainWindow()->setStyling();
 
   // Sets key down events to fire on this handleKeyPress method
   getMainWindow()->signal_key_press_event().connect(
       sigc::mem_fun(*this, &Model::handleKeyPress), false);
 
-  this->changeJimulatorState(UNLOADED);
+  changeJimulatorState(UNLOADED);
 }
 
 /**
@@ -59,24 +58,29 @@ KoMo2Model::KoMo2Model(MainWindowView* const mainWindow,
  * @return bool True if to be called in a loop, otherwise False.
  */
 const bool KoMo2Model::refreshViews() {
+  // Check the state of the board first
+  switch (Jimulator::checkBoardState()) {
+    case 0X44:  // Finished running!
+      getParent()->changeJimulatorState(UNLOADED);
+      break;
+    default:
+      break;
+  }
+
   // Updates registers
-  registersModel.getView()->refreshViews(
-      registersModel.getRegisterValueFromJimulator());
-
-  // Updates memory values
+  registersModel.refreshViews();
   disassemblyModel.refreshViews();
-
-  // Update terminal
   terminalModel.appendTextToTextView(terminalModel.readJimulator());
 
-  // Returns true if in running state - results in an endless loop (we want)
+  // Returns true if this function should continue looping (i.e. is running)
   return getJimulatorState() == RUNNING;
 }
 
 /**
  * @brief Passes the key press event off to other child models.
  * @param e The key press event.
- * @return bool if a key was pressed.
+ * @return true if a key press was handled by the model.
+ * @return false if a key press was not handled by the model by the model.
  */
 const bool KoMo2Model::handleKeyPress(const GdkEventKey* const e) {
   return getTerminalModel()->handleKeyPress(e) ||
@@ -84,10 +88,6 @@ const bool KoMo2Model::handleKeyPress(const GdkEventKey* const e) {
          getCompileLoadModel()->handleKeyPress(e) ||
          getDisassemblyModel()->handleKeyPress(e) ||
          getRegistersModel()->handleKeyPress(e);
-}
-
-void KoMo2Model::grabFocus() {
-  getMainWindow()->grab_focus();
 }
 
 /**
@@ -101,24 +101,22 @@ void KoMo2Model::changeJimulatorState(const JimulatorState newState) {
     return;
   }
 
+  // Update the overall state of Jimulator State
+  setJimulatorState(newState);
+
   // Handles refreshing the views
   switch (newState) {
     case RUNNING:
-      // TODO: put the ms in some kind of external file (json?)
       Glib::signal_timeout().connect(
-          sigc::mem_fun(this, &KoMo2Model::refreshViews), 50);
+          sigc::mem_fun(this, &KoMo2Model::refreshViews), refreshRate);
       break;
     case LOADED:
-      refreshViews();
-      break;
     case UNLOADED:
-      // refreshViews();
+      refreshViews();
       break;
     default:
       break;
   }
-
-  setJimulatorState(newState);
 
   // Change the state of each child model
   compileLoadModel.changeJimulatorState(newState);
