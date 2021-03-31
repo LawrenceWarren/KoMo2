@@ -68,8 +68,8 @@ const bool KoMo2Model::refreshViews() {
   }
 
   // Updates registers
-  disassemblyModel.refreshViews();
   registersModel.refreshViews();
+  disassemblyModel.refreshViews();
   terminalModel.appendTextToTextView(terminalModel.readJimulator());
 
   // Returns true if this function should continue looping (i.e. is running)

@@ -65,19 +65,8 @@ void RegistersModel::refreshViews() {
     (*labelArray)[1][i].set_text(newValues[i]);
   }
 
-  highlightDisassemblyRow(newValues[newValues.size() - 1]);
-}
-
-void RegistersModel::highlightDisassemblyRow(const std::string pcAddr) {
-  auto rows = getParent()->getMainWindow()->getDisassemblyView()->getRows();
-
-  for (auto& row : *rows) {
-    if (row.getAddress() == pcAddr) {
-      std::cout << pcAddr << " is on screen!" << std::endl;
-      row.set_state_flags(Gtk::STATE_FLAG_ACTIVE);
-      break;
-    }
-  }
+  getParent()->getDisassemblyModel()->setPCValue(
+      newValues[newValues.size() - 1]);
 }
 
 // ! Getters and setters

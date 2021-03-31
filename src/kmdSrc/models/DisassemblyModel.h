@@ -36,6 +36,7 @@ class DisassemblyModel : private Model {
   DisassemblyModel(DisassemblyView* const view, KoMo2Model* const parent);
   void refreshViews();
   DisassemblyView* const getView();
+  void setPCValue(const std::string val);
 
   // ! Virtual overrides
   virtual void changeJimulatorState(const JimulatorState newState) override;
@@ -52,6 +53,8 @@ class DisassemblyModel : private Model {
    */
   static uint32_t memoryIndex;
 
+  std::string PCValue = "0x00000000";
+
   const std::string intToFormattedHexString(const uint32_t formatMe) const;
   const bool handleScroll(GdkEventScroll* const e);
   void incrementMemoryIndex(const uint32_t val);
@@ -59,6 +62,9 @@ class DisassemblyModel : private Model {
   const std::array<Jimulator::MemoryValues, 15> getMemoryValues() const;
   void onBreakpointToggle(DisassemblyRows* const row) const;
   void setupButtonHandlers();
+  void updateCSSFlags(const Gtk::StateFlags state,
+                      DisassemblyRows& row,
+                      const uint32_t address);
 
   // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error

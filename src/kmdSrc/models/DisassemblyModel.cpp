@@ -129,21 +129,14 @@ void DisassemblyModel::refreshViews() {
 
   // Loop through each of the fetched rows
   for (int i = 0; i < 15; i++) {
-    auto flag = (*rows)[i].get_state_flags();
+    auto& row = (*rows)[i];
+    auto flag = row.get_state_flags();
 
-    // if yellow, make grey
-    if (flag == static_cast<Gtk::StateFlags>(129)) {
-      (*rows)[i].set_state_flags(static_cast<Gtk::StateFlags>(128));
-    }
-    // if yellow blue, make blue
-    else if (flag == static_cast<Gtk::StateFlags>(161)) {
-      (*rows)[i].set_state_flags(static_cast<Gtk::StateFlags>(160));
-    }
-
-    (*rows)[i].setAddress(intToFormattedHexString(vals[i].address));
-    (*rows)[i].setHex(vals[i].hex);
-    (*rows)[i].setDisassembly(vals[i].disassembly);
-    (*rows)[i].setBreakpoint(vals[i].breakpoint);
+    updateCSSFlags(flag, row, vals[i].address);
+    row.setAddress(intToFormattedHexString(vals[i].address));
+    row.setHex(vals[i].hex);
+    row.setDisassembly(vals[i].disassembly);
+    row.setBreakpoint(vals[i].breakpoint);
 
     // Gets a string describing the state of the breakpoint
     // Used for the accessibility object
@@ -153,7 +146,41 @@ void DisassemblyModel::refreshViews() {
     std::stringstream ss;
     ss << "address " << std::hex << vals[i].address << " : "
        << vals[i].disassembly << " : " << bp;
-    (*rows)[i].get_accessible()->set_description(ss.str());
+    row.get_accessible()->set_description(ss.str());
+  }
+}
+
+/**
+ * @brief Handles setting the CSS flags for each disassembly row, which
+ * determines which CSS class it uses and therefore how it looks.
+ * @param flag The current CSS state of the memory row.
+ * @param row The current memory row.
+ * @param address The address of the current memory row.
+ */
+void DisassemblyModel::updateCSSFlags(const Gtk::StateFlags flag,
+                                      DisassemblyRows& row,
+                                      const uint32_t address) {
+  // If this is the program counter address...
+  if (intToFormattedHexString(address) == PCValue) {
+    // if grey, make yellow
+    if (flag == static_cast<Gtk::StateFlags>(128)) {
+      row.set_state_flags(static_cast<Gtk::StateFlags>(129));
+    }
+    // if blue, make yellow-blue
+    else if (flag == static_cast<Gtk::StateFlags>(160)) {
+      row.set_state_flags(static_cast<Gtk::StateFlags>(161));
+    }
+  }
+  // If this is just a generic address
+  else {
+    // if yellow, make grey
+    if (flag == static_cast<Gtk::StateFlags>(129)) {
+      row.set_state_flags(static_cast<Gtk::StateFlags>(128));
+    }
+    // if yellow blue, make blue
+    else if (flag == static_cast<Gtk::StateFlags>(161)) {
+      row.set_state_flags(static_cast<Gtk::StateFlags>(160));
+    }
   }
 }
 
@@ -265,4 +292,11 @@ DisassemblyView* const DisassemblyModel::getView() {
 const std::array<Jimulator::MemoryValues, 15>
 DisassemblyModel::getMemoryValues() const {
   return Jimulator::getJimulatorMemoryValues(memoryIndex);
+}
+/**
+ * @brief Updates the value of PCValue.
+ * @param val The value to set PCValue to.
+ */
+void DisassemblyModel::setPCValue(const std::string val) {
+  PCValue = val;
 }

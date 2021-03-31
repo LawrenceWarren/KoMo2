@@ -44,7 +44,6 @@ class RegistersModel : private Model {
   RegistersView* const view;
 
   const std::array<std::string, 16> getRegisterValueFromJimulator() const;
-  void highlightDisassemblyRow(const std::string pcAddr);
 
   // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error
