@@ -63,6 +63,9 @@ class MainWindowView : public Gtk::Window {
   Gtk::VButtonBox* const getMasterLayout();
 
   void setStyling();
+  void initControlsAndCompileBar();
+  void initRegistersAndDisassemblyBar();
+  void initMasterLayout();
 
   // ! Layouts
 

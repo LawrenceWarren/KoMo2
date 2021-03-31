@@ -44,19 +44,37 @@ MainWindowView::MainWindowView(const int x, const int y)
   set_border_width(1);
   set_default_size(x, y);
   set_gravity(Gdk::GRAVITY_WEST);
-  getMasterLayout()->set_layout(Gtk::BUTTONBOX_START);
+  initControlsAndCompileBar();
+  initRegistersAndDisassemblyBar();
+  initMasterLayout();
+}
 
-  // Packs containers into one another.
+/**
+ * @brief Initialise the controls and compile bar.
+ */
+void MainWindowView::initControlsAndCompileBar() {
   getControlsAndCompileBar()->set_layout(Gtk::BUTTONBOX_START);
   getControlsAndCompileBar()->pack_end(controlsView, false, false);
   getControlsAndCompileBar()->pack_end(compileLoadView, false, false);
+}
+
+/**
+ * @brief Initialise the registers and disassembly bar.
+ */
+void MainWindowView::initRegistersAndDisassemblyBar() {
   getRegistersAndDisassemblyBar()->set_layout(Gtk::BUTTONBOX_START);
   getRegistersAndDisassemblyBar()->pack_end(registersView, false, false);
   getRegistersAndDisassemblyBar()->pack_end(disassemblyView, false, false);
+}
+
+/**
+ * @brief Initialise the master layout.
+ */
+void MainWindowView::initMasterLayout() {
+  getMasterLayout()->set_layout(Gtk::BUTTONBOX_START);
   getMasterLayout()->pack_start(controlsAndCompileBar, false, false);
   getMasterLayout()->pack_start(registersAndDisassemblyBar, false, false);
   getMasterLayout()->pack_start(terminalView, false, false);
-
   getMasterLayout()->show_all_children();
   getMasterLayout()->show();
   add(masterLayout);
