@@ -2,6 +2,7 @@
 #include <iostream>
 
 TerminalView::TerminalView(MainWindowView* const parent) : parent(parent) {
+  // TODO: break this up
   scroll.set_size_request(700, 200);
   textView.set_size_request(700, 200);
   inputBox.set_size_request(600, 20);
@@ -35,31 +36,19 @@ TerminalView::TerminalView(MainWindowView* const parent) : parent(parent) {
   show();
 }
 
-const bool TerminalView::isFocused() {
-  return inputBox.is_focus();
-}
-
-void TerminalView::clearInputBox() {
-  inputBox.delete_text(0, -1);
-}
-
-void TerminalView::clearTextView() {
-  textView.get_buffer()->set_text("");
-}
-
 // !!!!!!!!!!!!!!!!!!!!!
 // ! Getters & Setters !
 // !!!!!!!!!!!!!!!!!!!!!
 
+void TerminalView::setModel(TerminalModel* const val) {
+  model = val;
+}
 Gtk::Button* const TerminalView::getClearButton() {
   return &clearButton;
 }
 Gtk::TextView* const TerminalView::getTextView() {
   return &textView;
 }
-const std::string TerminalView::getCurrentText() {
-  return inputBox.get_buffer()->get_text();
-}
-void TerminalView::setModel(TerminalModel* const val) {
-  model = val;
+Gtk::Entry* const TerminalView::getInputBox() {
+  return &inputBox;
 }

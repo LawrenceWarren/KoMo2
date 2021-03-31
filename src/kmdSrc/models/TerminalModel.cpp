@@ -1,19 +1,58 @@
-#include <iostream>
-#include <regex>
+/**
+ * @file TerminalModel.cpp
+ * @author Lawrence Warren (lawrencewarren2@gmail.com)
+ * @brief The file containing the definition of the class TerminalModel, which
+ * represents all of the data and manipulation of the data associated with the
+ * terminal view of the KoMo2 GUI.
+ * @version 0.1
+ * @date 2021-03-31
+ * @section LICENSE
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 3 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * See the GNU General Public License for more details at
+ * https://www.gnu.org/copyleft/gpl.html
+ */
+
 #include "../views/TerminalView.h"
 #include "KoMo2Model.h"
 
+/**
+ * @brief Construct a new TerminalModel::TerminalModel object.
+ * @param view A constant pointer to the related view.
+ * @param parent A constant pointer to the parent model.
+ */
 TerminalModel::TerminalModel(TerminalView* const view, KoMo2Model* const parent)
     : Model(parent), view(view) {
   view->setModel(this);
-
   setButtonListener(view->getClearButton(), this, &TerminalModel::onClearClick);
 }
 
-void TerminalModel::changeJimulatorState(const JimulatorState newState) {}
+/**
+ * @brief Handles the internal state of Jimulator being changed.
+ * @param newState
+ */
+void TerminalModel::changeJimulatorState(const JimulatorState newState) {
+  switch (newState) {
+    case FINISHED:
+      appendTextToTextView("Program execution finished!\n\n");
+      break;
+    default:
+      break;
+  }
+}
 
+/**
+ * @brief Handles the clear button being clicked.
+ */
 void TerminalModel::onClearClick() {
-  getView()->clearTextView();
+  getView()->getTextView()->get_buffer()->set_text("");
 }
 
 /**
@@ -22,7 +61,8 @@ void TerminalModel::onClearClick() {
  * @return bool true if the key press was handled.
  */
 const bool TerminalModel::handleKeyPress(const GdkEventKey* const e) {
-  if (not getView()->isFocused()) {
+  // Do not override key presses if not in focus
+  if (not isFocused()) {
     return false;
   }
 
@@ -43,17 +83,9 @@ const bool TerminalModel::handleKeyPress(const GdkEventKey* const e) {
 }
 
 /**
- * @brief Gets a pointer to the view object.
- * @return TerminalView* const
- */
-TerminalView* const TerminalModel::getView() {
-  return view;
-}
-
-/**
- * @brief Appends a string to the current text view of the
- * terminal, and scroll to the bottom.
- * @param text The text to append to text view.
+ * @brief Appends a string to the current text view of the terminal, and scroll
+ * to the bottom of the terminal.
+ * @param text The text to append to the text view.
  */
 void TerminalModel::appendTextToTextView(std::string text) {
   // Append text to the buffer, reset the buffer
@@ -68,8 +100,27 @@ void TerminalModel::appendTextToTextView(std::string text) {
 
 /**
  * @brief Reads for any data from Jimulator.
- * @return const std::string
+ * @return const std::string the data read from Jimulator.
  */
-const std::string TerminalModel::readJimulator() {
+const std::string TerminalModel::readJimulator() const {
   return Jimulator::getJimulatorTerminalMessages();
+}
+
+/**
+ * @brief Returns whether or not the input box has focus or not.
+ * @return true If the input box has focus.
+ * @return false If the input box does not have focus.
+ */
+const bool TerminalModel::isFocused() {
+  return getView()->getInputBox()->is_focus();
+}
+
+// ! Getters and setters
+
+/**
+ * @brief Gets a pointer to the view object.
+ * @return TerminalView* const
+ */
+TerminalView* const TerminalModel::getView() const {
+  return view;
 }

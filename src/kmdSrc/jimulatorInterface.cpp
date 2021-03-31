@@ -1169,6 +1169,7 @@ const int boardSetMemory(const int count,
  * @return int status code (1 is failure, 0 is success)
  */
 const int readSource(const char* pathToKMD) {
+  // TODO: this function is a jumbled mess. refactor and remove sections
   unsigned int address, old_address;
   unsigned int d_size[SOURCE_FIELD_COUNT], d_value[SOURCE_FIELD_COUNT];
   int i, j, m, flag;
@@ -1177,10 +1178,11 @@ const int readSource(const char* pathToKMD) {
   source_line *pNew, *pTemp1, *pTemp2;
   struct stat status;
 
-  // `system` runs the string given as a shell command. `pidof` checks to
-  // see if a process by the name `jimulator` is running. If it fails
-  // (non-zero) It will print an error and return failure.
+  // `system` runs the paramter string as a shell command (i.e. it launches a
+  // new process). `pidof` checks to see if a process by the name `jimulator` is
+  // running. If it fails (non-zero) It will print an error and return failure.
   if (system("pidof -x jimulator > /dev/null")) {
+    // TODO: Jimulator is not running... so relaunch Jimulator?
     printf("Jimulator is not running!\n");
     return 1;
   }

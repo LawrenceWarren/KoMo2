@@ -29,11 +29,12 @@
  * @brief Describe the 5 states of Jimulator
  */
 enum JimulatorState : int {
-  INITIAL = -1,    // Jimulator starting state
-  UNLOADED,        // Jimulator idle; needs a program to be loaded in.
-  LOADED,          // File just loaded for first time (not yet run)
-  RUNNING,         // Jimulator is running
-  PAUSED,          // Jimulator is paused
+  INITIAL = -1,  // Jimulator starting state
+  UNLOADED,      // Jimulator idle; needs a program to be loaded in.
+  LOADED,        // File just loaded for first time (not yet run)
+  RUNNING,       // Jimulator is running
+  PAUSED,        // Jimulator is paused
+  FINISHED,      // Jimulator execution is finished // TODO: implement me
 };
 
 class KoMo2Model;

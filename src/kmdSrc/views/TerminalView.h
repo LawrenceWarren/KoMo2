@@ -2,7 +2,7 @@
 #include <gtkmm/buttonbox.h>
 #include <gtkmm/entry.h>
 #include <gtkmm/scrolledwindow.h>
-#include <gtkmm/textview.h>  // The main terminal view
+#include <gtkmm/textview.h>
 
 class MainWindowView;
 class TerminalModel;
@@ -11,14 +11,13 @@ class TerminalView : public Gtk::VButtonBox {
  public:
   TerminalView(MainWindowView* const parent);
   void setModel(TerminalModel* const val);
-  const bool isFocused();
-  const std::string getCurrentText();
-  Gtk::TextView* const getTextView();
-  void clearInputBox();
-  Gtk::Button* const getClearButton();
-  void clearTextView();
 
-      private : Gtk::Button clearButton;
+  Gtk::TextView* const getTextView();
+  Gtk::Button* const getClearButton();
+  Gtk::Entry* const getInputBox();
+
+ private:
+  Gtk::Button clearButton;
   Gtk::ScrolledWindow scroll;
   Gtk::TextView textView;
   Gtk::Entry inputBox;
@@ -33,8 +32,6 @@ class TerminalView : public Gtk::VButtonBox {
    * @brief A pointer to the related model.
    */
   TerminalModel* model;
-
-  bool handleTextChange();
 
   // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error
