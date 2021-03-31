@@ -57,7 +57,7 @@ CompileLoadModel::CompileLoadModel(CompileLoadView* const view,
 void CompileLoadModel::onCompileLoadClick() const {
   // If the length is zero, invalid path
   if (not getAbsolutePathToSelectedFile().length()) {
-    std::cout << "No file selected!" << std::endl;
+    // should not be reachable
     return;
   }
 

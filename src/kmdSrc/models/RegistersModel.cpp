@@ -65,6 +65,7 @@ void RegistersModel::refreshViews() {
     (*labelArray)[1][i].set_text(newValues[i]);
   }
 
+  // Send the new program counter value to disassembly model
   getParent()->getDisassemblyModel()->setPCValue(
       newValues[newValues.size() - 1]);
 }

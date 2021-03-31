@@ -104,7 +104,7 @@ const int Jimulator::compileJimulator(const char* const pathToBin,
   dup2(compilerCommunication[1], 2);
 
   execlp(pathToBin, "aasm", "-lk", pathToKMD, pathToS, (char*)0);
-  std::cout << "Running ARM assembler failed." << std::endl;
+  // should never get here
   return 1;
 }
 
@@ -125,7 +125,6 @@ const int Jimulator::loadJimulator(const char* const pathToKMD) {
  */
 void Jimulator::startJimulator(const int steps) {
   run_board(steps);
-  std::cout << "RUNNING!🔥" << std::endl;
 }
 
 /**
@@ -134,7 +133,6 @@ void Jimulator::startJimulator(const int steps) {
 void Jimulator::continueJimulator() {
   if (not Jimulator::checkBoardState()) {
     boardSendChar(BR_CONTINUE);
-    std::cout << "CONTINUED!😜" << std::endl;
   }
 }
 
@@ -143,10 +141,6 @@ void Jimulator::continueJimulator() {
  */
 void Jimulator::pauseJimulator() {
   boardSendChar(BR_STOP);
-
-  if (not Jimulator::checkBoardState()) {
-    std::cout << "Paused!🚀" << std::endl;
-  }
 }
 
 /**
@@ -154,15 +148,6 @@ void Jimulator::pauseJimulator() {
  */
 void Jimulator::resetJimulator() {
   boardSendChar(BR_RESET);
-  // board_micro_ping();
-  // set_refresh(FALSE, 0); /* Unset refresh button */
-  // board_micro_ping();    /* Why TWICE?? @@@ */
-
-  if (not Jimulator::checkBoardState()) {
-    return;
-  }
-
-  printf("Emulator reset!🤯\n");
 }
 
 /**
@@ -207,12 +192,12 @@ const bool Jimulator::setBreakpoint(uint32_t addr) {
 
   // breakpoint(s) matched and deleted ???
   if (breakpoint_found) {
-    std::cout << "turning " << addr << " OFF!" << std::endl;
+    std::cout << "turning " << std::hex << addr << " OFF!" << std::endl;
     return false;
   }
   // See if we can set breakpoint
   else {
-    std::cout << "turning " << addr << " ON!" << std::endl;
+    std::cout << "turning " << std::hex  << addr << " ON!" << std::endl;
     temp = (~worda) & wordb;  // Undefined => possible choice
 
     // If any free entries ...
@@ -251,30 +236,21 @@ const bool Jimulator::setBreakpoint(uint32_t addr) {
 const int Jimulator::checkBoardState() {
   const int board_state = board_enq();
 
-  printf("STATE CODE: %X - ", board_state);
-
   // Check and log error states
   switch (board_state) {
     case CLIENT_STATE_RUNNING_SWI:
-      printf("⚠board running SWI\n");
       break;
     case CLIENT_STATE_RUNNING:
-      printf("⚠board running\n");
       break;
     case CLIENT_STATE_STEPPING:
-      printf("⚠board stepping\n");
       break;
     case CLIENT_STATE_MEMFAULT:
-      printf("⚠board memory fault\n");
       break;
     case CLIENT_STATE_BUSY:
-      printf("⚠board is busy\n");
       break;
     case CLIENT_STATE_BYPROG:
-      printf("🎉Program execution finished\n");
       break;
     default:
-      printf("😅nothing to report\n");
       return FALSE;
       break;
   }
@@ -761,8 +737,7 @@ const int board_enq() {
 
   // TODO: clientStatus represents what the board is doing and why - can be
   // reflected in the view?
-
-  std::cout << "Total steps: " << stepsSinceReset << std::endl;
+  // and the same with stepsSinceReset
 
   return clientStatus;
 }

@@ -139,7 +139,7 @@ void initJimulator(std::string argv0) {
 
     auto jimulatorPath = argv0.append("/bin/jimulator").c_str();
     execlp(jimulatorPath, "", (char*)0);
-    std::cout << "Jimulator launching has failed" << std::endl;
+    // should never get here
     _exit(1);
   }
 }
@@ -182,7 +182,7 @@ const std::string getVersionNumber() {
  */
 void printHelpMessage() {
   std::cout << "TODO: Help message!" << std::endl;
-  // TODO: stub - read a help message and print it from somewhere
+  // TODO: stub - read a help message from a file and print it
 }
 
 /**
@@ -192,7 +192,6 @@ void printHelpMessage() {
  * @return int status code.
  */
 const int handleCommandLine(const bool isVersion, const bool isHelp) {
-  // TODO: potentially move version & help message to JSON?
   if (isVersion) {
     std::cout << "v" << getVersionNumber() << std::endl;
     return 1;
