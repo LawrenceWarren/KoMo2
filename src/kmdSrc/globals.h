@@ -84,22 +84,6 @@ typedef enum {  // Board instructions unsigned char
   BR_START = 0x80
 } BR_Instruction;
 
-typedef enum  // Internal symbol type; may want extending one day
-{ SYM_NONE,
-  SYM_UNDEFINED,
-  SYM_EQUATE,
-  SYM_LOCAL,
-  SYM_GLOBAL,
-  SYM_SECTION,
-  SYM_WEAK } symbol_type;
-
-typedef struct symbol_name {
-  char* name;            // Pointer to symbol name string
-  long value;            // Symbol's value
-  symbol_type sym_type;  // Some indication of the symbol's means of definition
-  struct symbol_name* pDef;  // Next defined symbol
-} symbol;
-
 /**
  * @brief An imported source code (listing) line
  */
@@ -118,9 +102,6 @@ typedef struct {
   source_line* pStart;  // First line in source (sorted into address order)
   source_line* pEnd;    // Last line in source
 } source_file;
-
-extern symbol* symbol_table;  // A symbol table that is made up of symbols
-extern int symbol_count;      // TODO: increment this (miscAddSymbol)
 
 /**
  * @brief Stores the file descriptor used for writing to Jimulator.

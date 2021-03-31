@@ -47,7 +47,6 @@
 // ! Forward declaring auxiliary load functions
 void flush_source();
 const int boardSendChar(unsigned char to_send);
-void misc_flush_symbol_table();
 const int readSource(const char* pathToKMD);
 const int callback_memory_refresh();
 void run_board(const int steps);
@@ -56,6 +55,37 @@ int board_send_n_bytes(int value, int n);
 int board_get_n_bytes(int* val_ptr, int n);
 int boardGetCharArray(int char_number, unsigned char* data_ptr);
 int boardSendCharArray(int char_number, unsigned char* data_ptr);
+std::string view_chararr2hexstrbe(int count,
+                                  unsigned char* values,
+                                  bool prepend = false);
+bool trap_get_status(unsigned int trap_type,
+                     unsigned int* wordA,
+                     unsigned int* wordB);
+bool read_trap_defn(unsigned int trap_type,
+                    unsigned int trap_number,
+                    trap_def* trap_defn);
+int misc_chararr_sub_to_int(int count,
+                            unsigned char* value1,
+                            unsigned char* value2);
+void trap_set_status(unsigned int trap_type,
+                     unsigned int wordA,
+                     unsigned int wordB);
+void view_chararrCpychararr(int count,
+                            unsigned char* source,
+                            unsigned char* destination);
+bool write_trap_defn(unsigned int trap_type,
+                     unsigned int trap_number,
+                     trap_def* trap_defn);
+void readRegistersIntoArray(unsigned char* data, unsigned int count);
+int boardGetChar(unsigned char* to_get);
+const std::unordered_map<u_int32_t, bool> getAllBreakpoints();
+int view_chararr2int(int count, unsigned char* array);
+int source_disassemble(source_line* src, unsigned int addr, int increment);
+void view_chararrAdd(int count,
+                     unsigned char* byte_string,
+                     int number,
+                     unsigned char* acc);
+
 source_file source;
 
 /**
@@ -86,7 +116,6 @@ const int Jimulator::compileJimulator(const char* const pathToBin,
  */
 const int Jimulator::loadJimulator(const char* const pathToKMD) {
   flush_source();
-  misc_flush_symbol_table();
   return readSource(pathToKMD);
 }
 
@@ -135,6 +164,375 @@ void Jimulator::resetJimulator() {
 
   printf("Emulator reset!🤯\n");
 }
+
+/**
+ * @brief Sets a breakpoint.
+ * @param addr The address to set the breakpoint at.
+ */
+const bool Jimulator::setBreakpoint(uint32_t addr) {
+  unsigned int worda, wordb;
+  bool error = false;
+  unsigned char address[4];
+
+  // Unpack address to byte array
+  for (int i = 0; i < 4; i++) {
+    address[i] = (addr >> (8 * i)) & 0xFF;
+  }
+
+  error = error | trap_get_status(0, &worda, &wordb);
+
+  if (error) {
+    // TODO: handle this event gracefully?
+    return false;
+  }
+
+  int temp;
+  int breakpoint_found = FALSE;
+
+  // Maximum of 32 breakpoints - loop through to see if more can be set
+  for (int i = 0; i < 32; i++) {
+    if (((worda >> i) & 1) != 0) {
+      trap_def trap;  // Space to store fetched definition
+
+      error = not read_trap_defn(0, i, &trap);
+
+      // If this breakpoint was found
+      if (not error &&
+          (not misc_chararr_sub_to_int(4, address, trap.addressA))) {
+        breakpoint_found = TRUE;
+        trap_set_status(0, 0, 1 << i);
+      }
+    }
+  }
+
+  // breakpoint(s) matched and deleted ???
+  if (breakpoint_found) {
+    std::cout << "turning " << addr << " OFF!" << std::endl;
+    return false;
+  }
+  // See if we can set breakpoint
+  else {
+    std::cout << "turning " << addr << " ON!" << std::endl;
+    temp = (~worda) & wordb;  // Undefined => possible choice
+
+    // If any free entries ...
+    if (temp != 0) {  // Define (set) breakpoint
+      trap_def trap;
+      int count, i;
+
+      for (i = 0; (((temp >> i) & 1) == 0); i++)
+        ;
+
+      // Choose free(?) number
+      trap.misc = -1;  // Really two byte parameters
+
+      // Should send 2*words address then two*double words data @@@
+      view_chararrCpychararr(8, address, trap.addressA);
+      for (count = 0; count < 4; count++) {
+        trap.addressB[count] = 0xFF;
+      }
+      for (count = 0; count < 8; count++) {
+        trap.dataA[count] = 0x00;
+        trap.dataB[count] = 0x00;
+      }
+
+      write_trap_defn(0, i, &trap);
+      return true;
+    } else {
+      return false;
+    }
+  }
+}
+
+/**
+ * @brief Check the state of the board - logs what it is doing.
+ * @return int 0 if the board is in a failed state. else 1.
+ */
+const int Jimulator::checkBoardState() {
+  const int board_state = board_enq();
+
+  printf("STATE CODE: %X - ", board_state);
+
+  // Check and log error states
+  switch (board_state) {
+    case CLIENT_STATE_RUNNING_SWI:
+      printf("⚠board running SWI\n");
+      break;
+    case CLIENT_STATE_RUNNING:
+      printf("⚠board running\n");
+      break;
+    case CLIENT_STATE_STEPPING:
+      printf("⚠board stepping\n");
+      break;
+    case CLIENT_STATE_MEMFAULT:
+      printf("⚠board memory fault\n");
+      break;
+    case CLIENT_STATE_BUSY:
+      printf("⚠board is busy\n");
+      break;
+    case CLIENT_STATE_BYPROG:
+      printf("🎉Program execution finished\n");
+      break;
+    default:
+      printf("😅nothing to report\n");
+      return FALSE;
+      break;
+  }
+
+  return board_state;
+}
+
+/**
+ * @brief Queries a register in Jimulator to get it's current value.
+ * @return The values read from the registers.
+ */
+const std::array<std::string, 16> Jimulator::getJimulatorRegisterValues() {
+  unsigned char regVals[64];            // 64-byte array
+  readRegistersIntoArray(regVals, 16);  // regVals now has reg values
+
+  std::array<std::string, 16> a;  // vector of strings
+
+  // Loop through the array
+  for (long unsigned int j = 0; j < a.size(); j++) {
+    a[j] = view_chararr2hexstrbe(4, &regVals[j * 4], true);
+  }
+
+  return a;
+}
+
+const std::string Jimulator::getJimulatorTerminalMessages() {
+  unsigned char
+      string[256];  // (large enough) string to get the message from the board
+  unsigned char length;
+
+  std::string output("");
+
+  do {
+    boardSendChar(BR_FR_READ);  // send appropriate command
+    boardSendChar(0);           // send the terminal number
+    boardSendChar(32);          // send the maximum length possible
+    boardGetChar(&length);      // get length of message
+
+    // non-zero received from board - not an empty packet
+    if (length != 0) {
+      boardGetCharArray(length,
+                        string);  // get the message recorded in string
+      string[length] = '\0';
+      output.append((char*)string);
+    }
+  } while (length == 255);
+
+  return output;
+}
+
+const bool Jimulator::sendTerminalInputToJimulator(const unsigned int val) {
+  unsigned int key_pressed = val;
+  unsigned char res = 0;
+
+  // Translate key codes if necessary and understood
+  switch (key_pressed) {
+    case GDK_KEY_Return:
+    case GDK_KEY_KP_Enter:
+      key_pressed = '\n';
+      break;
+    case GDK_KEY_BackSpace:
+      key_pressed = '\b';
+      break;
+    case GDK_KEY_Tab:
+      key_pressed = '\t';
+      break;
+    case GDK_KEY_Escape:
+      key_pressed = 0x1B;
+      break;
+    case GDK_KEY_KP_0:
+    case GDK_KEY_KP_1:
+    case GDK_KEY_KP_2:
+    case GDK_KEY_KP_3:
+    case GDK_KEY_KP_4:
+    case GDK_KEY_KP_5:
+    case GDK_KEY_KP_6:
+    case GDK_KEY_KP_7:
+    case GDK_KEY_KP_8:
+    case GDK_KEY_KP_9:
+      key_pressed = key_pressed - GDK_KEY_KP_0 + '0';
+      break;
+    case GDK_KEY_KP_Add:
+      key_pressed = '+';
+      break;
+    case GDK_KEY_KP_Subtract:
+      key_pressed = '-';
+      break;
+    case GDK_KEY_KP_Multiply:
+      key_pressed = '*';
+      break;
+    case GDK_KEY_KP_Divide:
+      key_pressed = '/';
+      break;
+    case GDK_KEY_KP_Decimal:
+      key_pressed = '.';
+      break;
+    default:
+      break;
+  }
+
+  // Sending keys to Jimulator
+  if (((key_pressed >= ' ') && (key_pressed <= 0x7F)) ||
+      (key_pressed == '\n') || (key_pressed == '\b') || (key_pressed == '\t') ||
+      (key_pressed == '\a')) {
+    boardSendChar(BR_FR_WRITE);  // begins a write
+    boardSendChar(0);            // tells where to send it
+    boardSendChar(1);            // send length 1
+    boardSendChar(key_pressed);  // send the message - 1 char currently
+    boardGetChar(&res);          // Read the result
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * @brief Get the memory values from Jimulator, starting to s_address_int.
+ * @param s_address_int The address to start at, as an integer.
+ * @return std::array<Jimulator::MemoryValues, 15> An array of all of the
+ * values read from Jimulator, including each column.
+ */
+std::array<Jimulator::MemoryValues, 15> Jimulator::getJimulatorMemoryValues(
+    const uint32_t s_address_int) {
+  const int count = 15;  // The number of values displayed in the memory window
+  const int bytecount = 60;  // The number of bytes to fetch from memory
+
+  // Bit level hacking happening here - converting the integer address into
+  // an array of characters.
+  unsigned char* p = (unsigned char*)&s_address_int;
+  unsigned char start_address[4] = {p[0], p[1], p[2], p[3]};
+  start_address[0] &= -4;  // Normalise down to the previous multiple of 4
+
+  unsigned char memdata[bytecount];
+
+  // Reading data into arrays!
+  boardSendChar(72 | 2);
+  boardSendCharArray(4, start_address);
+  board_send_n_bytes(count, 2);
+  boardGetCharArray(bytecount, memdata);
+
+  // ! Dangerous old logic ahead is used to read memory.
+  // ! This is very much C-style code, be careful
+
+  // Switches the endianness of the address
+  unsigned char address[4] = {start_address[0], start_address[1],
+                              start_address[2], start_address[3]};
+
+  source_line* src = NULL;
+  bool used_first = false;
+  unsigned int start_addr = view_chararr2int(4, start_address);
+
+  // Setup src variable
+  if (source.pStart != NULL) {
+    src = source.pStart;  // Known to be valid
+    while ((src != NULL) && ((src->address < start_addr) || src->nodata)) {
+      src = src->pNext;
+    }
+
+    // We fell off the end; wrap to start
+    if (src == NULL) {
+      src = source.pStart;
+      used_first = true;
+      // Find a record with some data
+      while ((src != NULL) && src->nodata) {
+        src = src->pNext;
+      }
+    }
+  }
+
+  // Data is read into this array
+  std::array<Jimulator::MemoryValues, 15> readValues;
+  auto bps = getAllBreakpoints();
+
+  // Iterate over display rows
+  for (int row = 0; row < 15; row++) {
+    int increment = 4;
+
+    unsigned int addr = view_chararr2int(4, address);
+    readValues[row].address = addr;
+
+    // If the source file can be read
+    if (src != NULL) {
+      // If the src address is valid
+      if (addr == src->address) {
+        increment = 0;              // How far should we move?
+        char* pStr = g_strdup("");  // Seed hex string
+
+        // Source field entries
+        for (int i = 0; i < SOURCE_FIELD_COUNT; i++) {
+          if (src->data_size[i] > 0) {
+            char spaces[5];  // Max. one per byte plus terminator
+
+            auto data =
+                view_chararr2hexstrbe(src->data_size[i],
+                                      &memdata[addr - start_addr + increment])
+                    .c_str();
+
+            int j = 0;
+            for (; j < src->data_size[i]; j++) {
+              spaces[j] = ' ';
+            }
+
+            spaces[j] = '\0';
+            auto trash = pStr;
+            pStr = g_strconcat(pStr, data, spaces, NULL);
+            g_free(trash);
+          }
+          increment = increment + src->data_size[i];
+        }
+
+        readValues[row].hex = std::string(pStr);
+        readValues[row].disassembly = std::string(src->text);
+
+        g_free(pStr);
+
+        do {
+          if (src->pNext != NULL) {
+            src = src->pNext; /* Move on ... */
+          } else {            /* ... wrapping, if required */
+            if (not used_first) {
+              src = source.pStart;
+              used_first = true;
+            } else {
+              src = NULL; /* Been here before - give in */
+            }
+          }
+        } while ((src != NULL) && src->nodata);
+      } else {
+        // If a src line is invalid
+        readValues[row].hex = std::string("00000000");
+        readValues[row].disassembly = std::string("...");
+        increment = source_disassemble(src, addr, increment);
+      }
+    } else {
+      // If there is no src line to read
+      readValues[row].hex = std::string("00000000");
+      readValues[row].disassembly = std::string("...");
+    }
+
+    // Find if a breakpoint is set on this line
+    auto iter = bps.find(readValues[row].address);
+
+    // if the iterator is not at the end of the map, the breakpoint was found
+    // and can be set
+    if (iter != bps.end()) {
+      readValues[row].breakpoint = true;
+    }
+
+    // Move the address on
+    view_chararrAdd(4, address, increment, address);
+  }
+
+  return readValues;
+}
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
+// !!!!!!!!!! Functions below are not included in the header file !!!!!!!!!! //
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
 
 /**
  * @brief Gets the status of a trap.
@@ -226,89 +624,6 @@ bool write_trap_defn(unsigned int trap_type,
   boardSendCharArray(8, (*trap_defn).dataA);
   boardSendCharArray(8, (*trap_defn).dataB);  // send address a&b and data a&b
   return TRUE;
-}
-
-std::string view_chararr2hexstrbe(int count,
-                                  unsigned char* values,
-                                  bool prepend = false);
-
-/**
- * @brief Sets a breakpoint.
- * @param addr The address to set the breakpoint at.
- */
-const bool Jimulator::setBreakpoint(uint32_t addr) {
-  unsigned int worda, wordb;
-  bool error = false;
-  unsigned char address[4];
-
-  // Unpack address to byte array
-  for (int i = 0; i < 4; i++) {
-    address[i] = (addr >> (8 * i)) & 0xFF;
-  }
-
-  error = error | trap_get_status(0, &worda, &wordb);
-
-  if (error) {
-    // TODO: handle this event gracefully?
-    return false;
-  }
-
-  int temp;
-  int breakpoint_found = FALSE;
-
-  // Maximum of 32 breakpoints - loop through to see if more can be set
-  for (int i = 0; i < 32; i++) {
-    if (((worda >> i) & 1) != 0) {
-      trap_def trap;  // Space to store fetched definition
-
-      error = not read_trap_defn(0, i, &trap);
-
-      // If this breakpoint was found
-      if (not error &&
-          (not misc_chararr_sub_to_int(4, address, trap.addressA))) {
-        breakpoint_found = TRUE;
-        trap_set_status(0, 0, 1 << i);
-      }
-    }
-  }
-
-  // breakpoint(s) matched and deleted ???
-  if (breakpoint_found) {
-    std::cout << "turning " << addr << " OFF!" << std::endl;
-    return false;
-  }
-  // See if we can set breakpoint
-  else {
-    std::cout << "turning " << addr << " ON!" << std::endl;
-    temp = (~worda) & wordb;  // Undefined => possible choice
-
-    // If any free entries ...
-    if (temp != 0) {  // Define (set) breakpoint
-      trap_def trap;
-      int count, i;
-
-      for (i = 0; (((temp >> i) & 1) == 0); i++)
-        ;
-
-      // Choose free(?) number
-      trap.misc = -1;  // Really two byte parameters
-
-      // Should send 2*words address then two*double words data @@@
-      view_chararrCpychararr(8, address, trap.addressA);
-      for (count = 0; count < 4; count++) {
-        trap.addressB[count] = 0xFF;
-      }
-      for (count = 0; count < 8; count++) {
-        trap.dataA[count] = 0x00;
-        trap.dataB[count] = 0x00;
-      }
-
-      write_trap_defn(0, i, &trap);
-      return true;
-    } else {
-      return false;
-    }
-  }
 }
 
 /**
@@ -488,44 +803,6 @@ void run_board(const int steps) {
 }
 
 /**
- * @brief Check the state of the board - logs what it is doing.
- * @return int 0 if the board is in a failed state. else 1.
- */
-const int Jimulator::checkBoardState() {
-  const int board_state = board_enq();
-
-  printf("STATE CODE: %X - ", board_state);
-
-  // Check and log error states
-  switch (board_state) {
-    case CLIENT_STATE_RUNNING_SWI:
-      printf("⚠board running SWI\n");
-      break;
-    case CLIENT_STATE_RUNNING:
-      printf("⚠board running\n");
-      break;
-    case CLIENT_STATE_STEPPING:
-      printf("⚠board stepping\n");
-      break;
-    case CLIENT_STATE_MEMFAULT:
-      printf("⚠board memory fault\n");
-      break;
-    case CLIENT_STATE_BUSY:
-      printf("⚠board is busy\n");
-      break;
-    case CLIENT_STATE_BYPROG:
-      printf("🎉Program execution finished\n");
-      break;
-    default:
-      printf("😅nothing to report\n");
-      return FALSE;
-      break;
-  }
-
-  return board_state;
-}
-
-/**
  * @brief Reads register information from the board.
  * @param data The pointer to read the register values into.
  */
@@ -561,24 +838,6 @@ std::string view_chararr2hexstrbe(int count,
   } else {
     return std::string(ret);
   }
-}
-
-/**
- * @brief Queries a register in Jimulator to get it's current value.
- * @return The values read from the registers.
- */
-const std::array<std::string, 16> Jimulator::getJimulatorRegisterValues() {
-  unsigned char regVals[64];            // 64-byte array
-  readRegistersIntoArray(regVals, 16);  // regVals now has reg values
-
-  std::array<std::string, 16> a;  // vector of strings
-
-  // Loop through the array
-  for (long unsigned int j = 0; j < a.size(); j++) {
-    a[j] = view_chararr2hexstrbe(4, &regVals[j * 4], true);
-  }
-
-  return a;
 }
 
 /**
@@ -643,96 +902,6 @@ int source_disassemble(source_line* src, unsigned int addr, int increment) {
   return increment;  // A hack when routine was extracted from below
 }
 
-const std::string Jimulator::getJimulatorTerminalMessages() {
-  unsigned char
-      string[256];  // (large enough) string to get the message from the board
-  unsigned char length;
-
-  std::string output("");
-
-  do {
-    boardSendChar(BR_FR_READ);  // send appropriate command
-    boardSendChar(0);           // send the terminal number
-    boardSendChar(32);          // send the maximum length possible
-    boardGetChar(&length);      // get length of message
-
-    // non-zero received from board - not an empty packet
-    if (length != 0) {
-      boardGetCharArray(length,
-                        string);  // get the message recorded in string
-      string[length] = '\0';
-      output.append((char*)string);
-    }
-  } while (length == 255);
-
-  return output;
-}
-
-const bool Jimulator::sendTerminalInputToJimulator(const unsigned int val) {
-  unsigned int key_pressed = val;
-  unsigned char res = 0;
-
-  // Translate key codes if necessary and understood
-  switch (key_pressed) {
-    case GDK_KEY_Return:
-    case GDK_KEY_KP_Enter:
-      key_pressed = '\n';
-      break;
-    case GDK_KEY_BackSpace:
-      key_pressed = '\b';
-      break;
-    case GDK_KEY_Tab:
-      key_pressed = '\t';
-      break;
-    case GDK_KEY_Escape:
-      key_pressed = 0x1B;
-      break;
-    case GDK_KEY_KP_0:
-    case GDK_KEY_KP_1:
-    case GDK_KEY_KP_2:
-    case GDK_KEY_KP_3:
-    case GDK_KEY_KP_4:
-    case GDK_KEY_KP_5:
-    case GDK_KEY_KP_6:
-    case GDK_KEY_KP_7:
-    case GDK_KEY_KP_8:
-    case GDK_KEY_KP_9:
-      key_pressed = key_pressed - GDK_KEY_KP_0 + '0';
-      break;
-    case GDK_KEY_KP_Add:
-      key_pressed = '+';
-      break;
-    case GDK_KEY_KP_Subtract:
-      key_pressed = '-';
-      break;
-    case GDK_KEY_KP_Multiply:
-      key_pressed = '*';
-      break;
-    case GDK_KEY_KP_Divide:
-      key_pressed = '/';
-      break;
-    case GDK_KEY_KP_Decimal:
-      key_pressed = '.';
-      break;
-    default:
-      break;
-  }
-
-  // Sending keys to Jimulator
-  if (((key_pressed >= ' ') && (key_pressed <= 0x7F)) ||
-      (key_pressed == '\n') || (key_pressed == '\b') || (key_pressed == '\t') ||
-      (key_pressed == '\a')) {
-    boardSendChar(BR_FR_WRITE);  // begins a write
-    boardSendChar(0);            // tells where to send it
-    boardSendChar(1);            // send length 1
-    boardSendChar(key_pressed);  // send the message - 1 char currently
-    boardGetChar(&res);          // Read the result
-    return true;
-  }
-
-  return false;
-}
-
 /**
  * @brief Reads all of the breakpoints from Jimulator into a map that can be
  * indexed by address.
@@ -770,146 +939,6 @@ const std::unordered_map<u_int32_t, bool> getAllBreakpoints() {
   return breakpointAddresses;
 }
 
-/**
- * @brief Get the memory values from Jimulator, starting to s_address_int.
- * @param s_address_int The address to start at, as an integer.
- * @return std::array<Jimulator::MemoryValues, 15> An array of all of the
- * values read from Jimulator, including each column.
- */
-std::array<Jimulator::MemoryValues, 15> Jimulator::getJimulatorMemoryValues(
-    const uint32_t s_address_int) {
-  const int count = 15;  // The number of values displayed in the memory window
-  const int bytecount = 60;  // The number of bytes to fetch from memory
-
-  // Bit level hacking happening here - converting the integer address into
-  // an array of characters.
-  unsigned char* p = (unsigned char*)&s_address_int;
-  unsigned char start_address[4] = {p[0], p[1], p[2], p[3]};
-  start_address[0] &= -4;  // Normalise down to the previous multiple of 4
-
-  unsigned char memdata[bytecount];
-
-  // Reading data into arrays!
-  boardSendChar(72 | 2);
-  boardSendCharArray(4, start_address);
-  board_send_n_bytes(count, 2);
-  boardGetCharArray(bytecount, memdata);
-
-  // ! Dangerous old logic ahead is used to read memory.
-  // ! This is very much C-style code, be careful
-
-  // Switches the endianness of the address
-  unsigned char address[4] = {start_address[0], start_address[1],
-                              start_address[2], start_address[3]};
-
-  source_line* src = NULL;
-  bool used_first = false;
-  unsigned int start_addr = view_chararr2int(4, start_address);
-
-  // Setup src variable
-  if (source.pStart != NULL) {
-    src = source.pStart;  // Known to be valid
-    while ((src != NULL) && ((src->address < start_addr) || src->nodata)) {
-      src = src->pNext;
-    }
-
-    // We fell off the end; wrap to start
-    if (src == NULL) {
-      src = source.pStart;
-      used_first = true;
-      // Find a record with some data
-      while ((src != NULL) && src->nodata) {
-        src = src->pNext;
-      }
-    }
-  }
-
-  // Data is read into this array
-  std::array<Jimulator::MemoryValues, 15> readValues;
-  auto bps = getAllBreakpoints();
-
-  // Iterate over display rows
-  for (int row = 0; row < 15; row++) {
-    int increment = 4;
-
-    unsigned int addr = view_chararr2int(4, address);
-    readValues[row].address = addr;
-
-    // If the source file can be read
-    if (src != NULL) {
-      // If the src address is valid
-      if (addr == src->address) {
-        increment = 0;              // How far should we move?
-        char* pStr = g_strdup("");  // Seed hex string
-
-        // Source field entries
-        for (int i = 0; i < SOURCE_FIELD_COUNT; i++) {
-          if (src->data_size[i] > 0) {
-            char spaces[5];  // Max. one per byte plus terminator
-
-            auto data =
-                view_chararr2hexstrbe(src->data_size[i],
-                                      &memdata[addr - start_addr + increment])
-                    .c_str();
-
-            int j = 0;
-            for (; j < src->data_size[i]; j++) {
-              spaces[j] = ' ';
-            }
-
-            spaces[j] = '\0';
-            auto trash = pStr;
-            pStr = g_strconcat(pStr, data, spaces, NULL);
-            g_free(trash);
-          }
-          increment = increment + src->data_size[i];
-        }
-
-        readValues[row].hex = std::string(pStr);
-        readValues[row].disassembly = std::string(src->text);
-
-        g_free(pStr);
-
-        do {
-          if (src->pNext != NULL) {
-            src = src->pNext; /* Move on ... */
-          } else {            /* ... wrapping, if required */
-            if (not used_first) {
-              src = source.pStart;
-              used_first = true;
-            } else {
-              src = NULL; /* Been here before - give in */
-            }
-          }
-        } while ((src != NULL) && src->nodata);
-      } else {
-        // If a src line is invalid
-        readValues[row].hex = std::string("00000000");
-        readValues[row].disassembly = std::string("...");
-        increment = source_disassemble(src, addr, increment);
-      }
-    } else {
-      // If there is no src line to read
-      readValues[row].hex = std::string("00000000");
-      readValues[row].disassembly = std::string("...");
-    }
-
-    // Find if a breakpoint is set on this line
-    auto iter = bps.find(readValues[row].address);
-
-    // if the iterator is not at the end of the map, the breakpoint was found
-    // and can be set
-    if (iter != bps.end()) {
-      readValues[row].breakpoint = true;
-    }
-
-    // Move the address on
-    view_chararrAdd(4, address, increment, address);
-  }
-
-  return readValues;
-}
-
 // ! COMPILING STUFF BELOW! !
 // ! COMPILING STUFF BELOW! !
 // ! COMPILING STUFF BELOW! !
@@ -933,27 +962,6 @@ void flush_source() {
     pOld = pOld->pNext;
     g_free(pTrash);
   }
-}
-
-/**
- * @brief Deletes old symbol table data and resets the pointers.
- * @deprecated Could be deleted?
- */
-void misc_flush_symbol_table() {
-  symbol* pTrash;
-  symbol* pSym = symbol_table;
-
-  // For all symbols
-  while (pSym != NULL) {
-    g_free(pSym->name);  // Free name string
-    pTrash = pSym;       // Keep pointer
-    pSym = pSym->pDef;   // Move along the table
-    g_free(pTrash);      // Free symbol entry
-  }
-
-  // Reset the symbol table
-  symbol_table = NULL;
-  symbol_count = 0;
 }
 
 /**
@@ -1021,97 +1029,6 @@ const int get_number(FILE* const fHandle,
 const int allowed(const char c) {
   return (c == '_') || ((c >= '0') && (c <= '9')) ||
          (((c & 0xDF) >= 'A') && ((c & 0xDF) <= 'Z'));
-}
-
-/**
- * @brief Adds a symbol to the symbol table.
- * @param name
- * @param value
- * @param sym_type
- */
-void miscAddSymbol(const char* name,
-                   const long value,
-                   const symbol_type sym_type) {
-  symbol *pSym, *pNew;
-
-  pNew = g_new(symbol, 1);
-  pNew->name = g_strdup(name);
-  pNew->value = value;
-  pNew->sym_type = sym_type;
-  pNew->pDef = NULL;
-
-  if (symbol_table == NULL) {
-    symbol_table = pNew;
-  } else {  // Append on list
-    for (pSym = symbol_table; pSym->pDef != NULL; pSym = pSym->pDef) {
-      ;
-    }
-
-    pSym->pDef = pNew;
-  }
-
-  symbol_count++;
-}
-
-/**
- * @brief Returns last character read (not really important!)
- * @param fHandle
- * @return char
- */
-const char getSymbol(FILE* const fHandle) {
-  // Strip spaces
-  char c;
-  do {
-    c = getc(fHandle);
-  } while ((c == ' ') || (c == '\t'));
-
-  // Copy string
-  char buffer[SYM_BUF_SIZE];
-  int i = 0;
-  for (; allowed(c) && i < (SYM_BUF_SIZE - 1); i++) {
-    buffer[i] = c;
-    c = getc(fHandle);
-  }
-
-  buffer[i] = '\0';  // Terminate string
-
-  while (allowed(c)) {
-    c = getc(fHandle);  // Discard characters after limit
-  }
-
-  unsigned int value = 0;
-  int defined = get_number(fHandle, &c, &value) > 0;
-
-  while ((c == ' ') || (c == '\t')) {
-    c = getc(fHandle);
-  }
-
-  symbol_type sym_type;
-  if (not defined) {
-    sym_type = SYM_UNDEFINED;  // Value missing
-  } else {
-    // Bodge - just first character
-    switch (c) {
-      case 'G':
-        sym_type = SYM_GLOBAL;
-        break;
-      case 'L':
-        sym_type = SYM_LOCAL;
-        break;
-      case 'U':
-        sym_type = SYM_UNDEFINED;
-        break;
-      case 'V':
-        sym_type = SYM_EQUATE;
-        break;
-      default:
-        sym_type = SYM_NONE;
-        break;
-    }
-  }
-
-  miscAddSymbol(buffer, value, sym_type);  // Set symbol
-  return c;                                // ... and discard rest of line
 }
 
 /**
@@ -1204,7 +1121,6 @@ const int readSource(const char* pathToKMD) {
 
     // If the first character is a colon, read a symbol record
     if (c == ':') {
-      getSymbol(komodoSource);
       has_old_addr = FALSE;  // Don't retain position
     }
 

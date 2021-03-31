@@ -4,7 +4,7 @@
  * @brief The entry point of the program. Should have as little logic as
  * possible.
  * @version 0.1
- * @date 2020-12-23
+ * @date 2021-03-31
  * @section LICENSE
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -15,7 +15,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details at
  * https://www.gnu.org/copyleft/gpl.html
-
  */
 
 #include <glib.h>
@@ -31,9 +30,6 @@
 #include "models/KoMo2Model.h"
 #include "views/MainWindowView.h"
 
-// Init global variables
-symbol* symbol_table;
-int symbol_count;
 int writeToJimulator;
 int readFromJimulator;
 int emulator_PID = -1;
@@ -118,10 +114,6 @@ void initCompilerPipes(KoMo2Model* mainModel) {
  * Jimulator executable lives at `/home/user/demo/jimulator`.
  */
 void initJimulator(std::string argv0) {
-  // Clears the symbol tables
-  symbol_table = nullptr;
-  symbol_count = 0;
-
   // sets up the pipes to allow communication between Jimulator and
   // KoMo2 processes.
   if (pipe(communicationFromJimulator) || pipe(communicationToJimulator)) {
