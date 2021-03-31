@@ -214,3 +214,10 @@ const unsigned int DisassemblyRows::getId() const {
 void DisassemblyRows::setModel(DisassemblyModel* const val) {
   model = val;
 }
+/**
+ * @brief Get the text in the address box.
+ * @return const std::string The text in the address box.
+ */
+const std::string DisassemblyRows::getAddress() const {
+  return address.get_text();
+}

@@ -169,10 +169,16 @@
   background-color: #444d56;
 }
 
+.disassembly_rows:active {
+  background-color: #634e18;
+}
+
+.disassembly_rows:active:focus {
+  background-color: #4d84ac;
+}
+
 .disassembly_rows:focus {
   background-color: #005cc5;
-  /*box-shadow: inset 2px 2px 0px #005CC5, inset -2px -2px 0px #005CC5,
-    inset -2px 2px 0px #005CC5, inset 2px -2px 0px #005CC5;*/
 }
 
 .breakpoint_buttons {

@@ -19,11 +19,11 @@
  * https://www.gnu.org/copyleft/gpl.html
  */
 
-#include "DisassemblyModel.h"
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include "../views/MainWindowView.h"
+#include "KoMo2Model.h"
 
 // Initialise static list pointers
 uint32_t DisassemblyModel::memoryIndex = 0;
@@ -129,6 +129,17 @@ void DisassemblyModel::refreshViews() {
 
   // Loop through each of the fetched rows
   for (int i = 0; i < 15; i++) {
+    auto flag = (*rows)[i].get_state_flags();
+
+    // if yellow, make grey
+    if (flag == static_cast<Gtk::StateFlags>(129)) {
+      (*rows)[i].set_state_flags(static_cast<Gtk::StateFlags>(128));
+    }
+    // if yellow blue, make blue
+    else if (flag == static_cast<Gtk::StateFlags>(161)) {
+      (*rows)[i].set_state_flags(static_cast<Gtk::StateFlags>(160));
+    }
+
     (*rows)[i].setAddress(intToFormattedHexString(vals[i].address));
     (*rows)[i].setHex(vals[i].hex);
     (*rows)[i].setDisassembly(vals[i].disassembly);
@@ -188,13 +199,46 @@ const bool DisassemblyModel::handleKeyPress(const GdkEventKey* const e) {
     return true;
   }
 
+  // Identifies if a child has focus - if not, return false
+
+  long int hasFocus = -1;
+
+  for (long unsigned int i = 0; i < rows->size(); i++) {
+    if ((*rows)[i].has_focus()) {
+      hasFocus = i;
+    }
+  }
+
+  if (hasFocus == -1) {
+    return false;
+  }
+
   // If enter key pressed and a child has focus, toggle its breakpoint
   else if (e->keyval == GDK_KEY_Return) {
-    for (long unsigned int i = 0; i < rows->size(); i++) {
-      if ((*rows)[i].has_focus()) {
-        onBreakpointToggle(&(*rows)[i]);
+    onBreakpointToggle(&(*rows)[hasFocus]);
+    return true;
+
+  }
+
+  // If escape pressed and in focus, lose focus
+  else if (e->keyval == GDK_KEY_Escape) {
+    switch (hasFocus < rows->size() / 2) {
+      // Help button grabs focus
+      case true:
+        getParent()
+            ->getMainWindow()
+            ->getControlsView()
+            ->getHelpButton()
+            ->grab_focus();
         return true;
-      }
+      // output box grabs focus
+      case false:
+        getParent()
+            ->getMainWindow()
+            ->getTerminalView()
+            ->getTextView()
+            ->grab_focus();
+        return true;
     }
   }
 

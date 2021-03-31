@@ -21,7 +21,7 @@
  * https://www.gnu.org/copyleft/gpl.html
  */
 
-#include "../views/RegistersView.h"
+#include "../views/MainWindowView.h"
 #include "KoMo2Model.h"
 #include "iostream"
 
@@ -65,8 +65,19 @@ void RegistersModel::refreshViews() {
     (*labelArray)[1][i].set_text(newValues[i]);
   }
 
-  // TODO: remove the first two characters of newValues[newValues.size() - 1]
-  // TODO: and turn that into an int. Highlight that memory address if displayed
+  highlightDisassemblyRow(newValues[newValues.size() - 1]);
+}
+
+void RegistersModel::highlightDisassemblyRow(const std::string pcAddr) {
+  auto rows = getParent()->getMainWindow()->getDisassemblyView()->getRows();
+
+  for (auto& row : *rows) {
+    if (row.getAddress() == pcAddr) {
+      std::cout << pcAddr << " is on screen!" << std::endl;
+      row.set_state_flags(Gtk::STATE_FLAG_ACTIVE);
+      break;
+    }
+  }
 }
 
 // ! Getters and setters

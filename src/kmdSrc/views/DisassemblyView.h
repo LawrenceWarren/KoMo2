@@ -42,6 +42,7 @@ class DisassemblyRows : public Gtk::HButtonBox {
   DisassemblyRows();
   void setBreakpoint(const bool text);
   void setAddress(const std::string text);
+  const std::string getAddress() const;
   void setHex(const std::string text);
   void setDisassembly(const std::string text);
   const unsigned int getId() const;
