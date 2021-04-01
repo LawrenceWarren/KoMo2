@@ -163,23 +163,25 @@ void DisassemblyModel::updateCSSFlags(const Gtk::StateFlags flag,
   // If this is the program counter address...
   if (intToFormattedHexString(address) == PCValue) {
     // if grey, make yellow
-    if (flag == static_cast<Gtk::StateFlags>(128)) {
-      row.set_state_flags(static_cast<Gtk::StateFlags>(129));
+    if (flag == Gtk::STATE_FLAG_DIR_LTR) {
+      row.set_state_flags(Gtk::STATE_FLAG_DIR_LTR | Gtk::STATE_FLAG_ACTIVE);
     }
     // if blue, make yellow-blue
-    else if (flag == static_cast<Gtk::StateFlags>(160)) {
-      row.set_state_flags(static_cast<Gtk::StateFlags>(161));
+    else if (flag == (Gtk::STATE_FLAG_DIR_LTR | Gtk::STATE_FLAG_FOCUSED)) {
+      row.set_state_flags(Gtk::STATE_FLAG_DIR_LTR | Gtk::STATE_FLAG_FOCUSED |
+                          Gtk::STATE_FLAG_ACTIVE);
     }
   }
   // If this is just a generic address
   else {
     // if yellow, make grey
-    if (flag == static_cast<Gtk::StateFlags>(129)) {
-      row.set_state_flags(static_cast<Gtk::StateFlags>(128));
+    if (flag == (Gtk::STATE_FLAG_DIR_LTR | Gtk::STATE_FLAG_ACTIVE)) {
+      row.set_state_flags(Gtk::STATE_FLAG_DIR_LTR);
     }
-    // if yellow blue, make blue
-    else if (flag == static_cast<Gtk::StateFlags>(161)) {
-      row.set_state_flags(static_cast<Gtk::StateFlags>(160));
+    // if yellow-blue, make blue
+    else if (flag == (Gtk::STATE_FLAG_DIR_LTR | Gtk::STATE_FLAG_FOCUSED |
+                      Gtk::STATE_FLAG_ACTIVE)) {
+      row.set_state_flags(Gtk::STATE_FLAG_DIR_LTR | Gtk::STATE_FLAG_FOCUSED);
     }
   }
 }
