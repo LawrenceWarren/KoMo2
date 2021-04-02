@@ -32,7 +32,10 @@
  */
 RegistersView::RegistersView(MainWindowView* const parent)
     : grid(), parent(parent) {
+  std::cout << "Through register view..." << std::endl;
   initRegisterViewContainer();
+std:
+  cout << "Out register view..." << std::endl;
 }
 
 /**

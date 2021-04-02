@@ -40,6 +40,7 @@ MainWindowView::MainWindowView(const int x, const int y)
       registersView(this),
       terminalView(this),
       disassemblyView(this) {
+  std::cout << "Main window view..." << std::endl;
   setStyling();
   set_border_width(1);
   set_default_size(x, y);
@@ -60,6 +61,7 @@ MainWindowView::MainWindowView(const int x, const int y)
   getMasterLayout()->show_all_children();
   getMasterLayout()->show();
   add(masterLayout);
+  std::cout << "Through it ! Main window view..." << std::endl;
 }
 
 /**
