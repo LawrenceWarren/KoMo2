@@ -20,7 +20,7 @@
 
 #include <gtkmm/button.h>
 #include <gtkmm/buttonbox.h>
-#include <gtkmm/linkbutton.h>
+// #include <gtkmm/linkbutton.h>
 
 class MainWindowView;
 class ControlsModel;
