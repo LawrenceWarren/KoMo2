@@ -145,7 +145,7 @@ void ControlsView::setButtonImages(const std::string projectRoot) {
  * @brief Gets the `helpButton` member variable.
  * @return Gtk::Button* A pointer to the `helpButton` member variable.
  */
-Gtk::Button* const ControlsView::getHelpButton() {
+Gtk::LinkButton* const ControlsView::getHelpButton() {
   return &helpButton;
 }
 /**
