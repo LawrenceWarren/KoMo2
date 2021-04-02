@@ -64,6 +64,7 @@ const bool receivedCompilerOutput(GIOChannel* source,
  * @return int exit code.
  */
 int main(int argc, char* argv[]) {
+  std::cout << "No seg fault" << std::endl;
   auto argv0 = getAbsolutePathToRootDirectory(argv[0]);
   auto app = Gtk::Application::create(argc, argv, "uon.cs.KoMo2",
                                       Gio::APPLICATION_HANDLES_COMMAND_LINE);
@@ -76,8 +77,12 @@ int main(int argc, char* argv[]) {
       sigc::bind(sigc::ptr_fun(initialiseCommandLine), app), false);
 
   // Setup model & view
+  std::cout << "before window setup" << std::endl;
   MainWindowView koMo2Window(400, 400);
+  std::cout << "before model setup" << std::endl;
   KoMo2Model mainModel(&koMo2Window, argv0);
+
+  std::cout << "after both" << std::endl;
 
   // Setup communication methods to compile child process
   initCompilerPipes(&mainModel);
