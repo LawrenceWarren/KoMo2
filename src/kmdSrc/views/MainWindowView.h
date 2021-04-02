@@ -55,14 +55,13 @@ class MainWindowView : public Gtk::Window {
   RegistersView* const getRegistersView();
   TerminalView* const getTerminalView();
   DisassemblyView* const getDisassemblyView();
+  void setStyling();
 
  private:
   // Get layouts
   Gtk::HButtonBox* const getControlsAndCompileBar();
   Gtk::HButtonBox* const getRegistersAndDisassemblyBar();
   Gtk::VButtonBox* const getMasterLayout();
-
-  void setStyling();
 
   // ! Layouts
 
