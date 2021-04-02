@@ -31,10 +31,6 @@
  */
 ControlsModel::ControlsModel(ControlsView* const view, KoMo2Model* const parent)
     : Model(parent), view(view) {
-  // Set button listeners for each of the control buttons
-  // setButtonListener(view->getHelpButton(), this,
-  // &ControlsModel::onHelpClick);
-
   view->getHelpButton()->set_uri(
       "https://github.com/LawrenceWarren/KoMo2#user-manual");
 
@@ -56,13 +52,6 @@ ControlsModel::ControlsModel(ControlsView* const view, KoMo2Model* const parent)
 }
 
 // ! Button event handlers
-
-/**
- * @brief Handles the `helpButton` click events.
- */
-void ControlsModel::onHelpClick() {
-  // TODO: Launch a seperate help window.
-}
 
 /**
  * @brief Handles the `haltExecutionButton` click events -  changes
@@ -145,7 +134,7 @@ const bool ControlsModel::handleKeyPress(const GdkEventKey* const e) {
       }
       return true;
     case GDK_KEY_F12:
-      onHelpClick();
+      view->getHelpButton()->signal_clicked();
       return true;
     default:
       return false;
