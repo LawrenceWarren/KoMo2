@@ -45,6 +45,7 @@ KoMo2Model::KoMo2Model(MainWindowView* const mainWindow,
       disassemblyModel(mainWindow->getDisassemblyView(), this) {
   // Updates the main window to have a pointer to its model, sets its CSS.
   getMainWindow()->setModel(this);
+  getMainWindow()->setStyling();
 
   // Sets key down events to fire on this handleKeyPress method
   getMainWindow()->signal_key_press_event().connect(

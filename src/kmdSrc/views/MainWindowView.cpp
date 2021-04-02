@@ -79,7 +79,7 @@ MainWindowView::MainWindowView(const int x, const int y)
   add(masterLayout);
   std::cout << "Through it ! Main window view..." << std::endl;
 
-  setStyling();
+  // setStyling();
   std::cout << "Just fakin bestie" << std::endl;
 }
 
