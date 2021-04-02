@@ -41,7 +41,7 @@ MainWindowView::MainWindowView(const int x, const int y)
       terminalView(this),
       disassemblyView(this) {
   std::cout << "Main window view..." << std::endl;
-  setStyling();
+
   std::cout << "1 Main window view..." << std::endl;
   set_border_width(1);
   std::cout << "2 Main window view..." << std::endl;
@@ -78,6 +78,9 @@ MainWindowView::MainWindowView(const int x, const int y)
   std::cout << "16 Main window view..." << std::endl;
   add(masterLayout);
   std::cout << "Through it ! Main window view..." << std::endl;
+
+  setStyling();
+  std::cout << "Just fakin bestie" << std::endl;
 }
 
 /**
