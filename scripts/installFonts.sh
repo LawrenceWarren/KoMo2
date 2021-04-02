@@ -24,7 +24,7 @@ echo "Unpacking the font files..."
 if [ -f "$FIRA_CODE_ARCHIVE_PATH" ]; then
     tar -xzvf "$FIRA_CODE_ARCHIVE_PATH"
 else
-    echo "Unable to find the pulled archive file.  Install failed."
+    echo "Unable to find the pulled archive file. Install failed."
     exit 1
 fi
 

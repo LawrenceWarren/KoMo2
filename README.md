@@ -2,28 +2,49 @@
 
 ## Modernising an Advanced Reduced Instruction Set Computing Machine architecture emulator
 
-###### _A 3<sup>rd</sup> year dissertation project by Lawrence Warren for Dr. Steven Bagley of the University of Nottingham._
+###### A 3<sup>rd</sup> year dissertation project by Lawrence Warren for Dr. Steven Bagley of _The University of Nottingham_.
+
+##### Table of Contents
+
+- [What is _KoMo2_? A brief history](#what-is-komo2-a-brief-history)
+- [Installation](#installation)
+- [Dependencies](#dependencies)
+- [Binaries](#binaries)
+- [Shell Scripts](#shell-scripts)
+- [Contributing to _KoMo2_](#contributing-to-komo2)
+- [User Manual](#user-manual)
 
 ---
 
-### A brief history
+### What is KoMo2? A brief history
 
-1<sup>st</sup> year students at _The University of Nottingham_ are taught a compulsory module, _Systems and Architecture (SYS)_, which amongst other things teaches the basics of programming concepts, such as branches and variables, through ARM assembly language.
+1<sup>st</sup> year students at _The University of Nottingham_ are taught a compulsory module, _Systems and Architecture (SYS)_, which teaches them the fundamentals of a CPU architecture such as registers, memory, and assembly instructions. To do this, students are tasked with writing their own basic ARM assembly programs and running them in a program called _KoMoDo_.
 
-_KoMoDo_ is an ARM emulator application used for the _SYS_ module, which uses a GUI to display memory addresses, registers, and the values within them at any given point in the FDE cycle of the emulated processor. It also provides buttons to control the operation of the emulated processor: single-step execution; multi-step execution; and breakpoints; amongst other things.
+_KoMoDo_ is an ARM emulator application used for the _SYS_ module, which uses a GUI to display the values within the memory and registers of an emulated ARM computer system.
 
-However, _KoMoDo_ is becoming outdated for a number of reasons, and the purpose of the _KoMo2_ project is to provide necessary updates to the applications UI, logic, dependencies, and accessibility.
+_KoMoDo_ provides buttons to control the operation of the emulated processor:
+
+- Perform a single FDE cycle.
+- Begin an indefinite FDE loop.
+- Pause an indefinite FDE loop.
+- Refresh the system (reload the program, set _Program Counter_ to 0)
+
+It also allows for the setting of breakpoints, which will interrupt an indefinite FDE loop if the PC steps into a specified memory address.
+
+However, _KoMoDo_ is becoming outdated. The purpose of the _KoMo2_ project is to provide necessary updates to the applications UI, logic, dependencies, and accessibility, while maintaining _KoMoDo_'s functionality and ease of use.
+
+**In Short:** _KoMo2_ is a Linux GUI application that allows for both the inspection and control of the state of an emulated ARM computer system, which can load and run user written ARM assembly programs.
 
 ---
 
 ### Installation
 
-1. Install the tools described in the subsection [_Toolchain_](#toolchain).
-2. Install the libraries described in the subsection [_Libraries_](#libraries).
-3. **Optional** - Install any dependencies you may find in the subsection [_Development environment_](#development-environment).
-4. Clone this repository.
-5. **Optional** - Execute any scripts found in the `scripts` directory. Information can be found in the subsection [_Shell scripts_](#shell-scripts).
-6. Enter the root directory of this project and execute `make`.
+1. Install the required tools described in the subsection [_Toolchain_](#toolchain).
+2. Install the required libraries described in the subsection [_Libraries_](#libraries).
+3. Clone this repository.
+4. Enter the root directory of this project.
+5. Run the `make` command to execute the provided makefile.
+6. **Optional** - Execute any scripts found in the `scripts` directory. Information can be found in the subsection [_Shell scripts_](#shell-scripts).
 7. Run the newly generated `kmd` binary in the `bin` directory.
 
 ---
@@ -32,9 +53,9 @@ However, _KoMoDo_ is becoming outdated for a number of reasons, and the purpose 
 
 #### Toolchain
 
-To build this program from source, you **must** have a C and a C++ compiler. The makefile assumes that GCC is installed, and uses the commands `g++` and `gcc`.
+To build this program from source, you must have a C and a C++ compiler. The makefile assumes that GCC is installed, and uses the commands `g++` and `gcc`.
 
-Furthermore, to execute the makefile, you must have GNU Make installed.
+Furthermore, to execute the makefile, you must have GNU Make installed, giving you access to the command `make`.
 
 #### Libraries
 
@@ -43,12 +64,72 @@ _KoMo2_ is implemented using _GTKMM_, a C++ implementation of the popular GUI li
 These libraries are popular and compiled versions can likely be found on your Linux distributions package manager. For instance, in the following distributions you can execute the following commands:
 
 _Debian, Gentoo, SuSE & Ubuntu:_
-`sudo apt-get install libgtkmm-3.0-dev`
+`apt-get install libgtkmm-3.0-dev`
 
 _Fedora, RedHat & CentOS:_
 `yum install gtkmm30-docs`
 
 Alternatively, it is possible to compile them from source - instructions are readily available online - but this can be finicky and requires assembling your own toolchain.
+
+---
+
+### Binaries
+
+_KoMo2_ includes a `makefile` in it's root which generates 3 binaries in the `bin` directory. It is always assumed that the 3 binaries exist in the same directory, and an additional plaintext file:
+
+#### `bin/kmd`
+
+`kmd` is the executable for the _KoMo2_ program proper.
+
+Running this binary will launch the GUI, and the following 2 binaries will be forked from it when necessary.
+
+The source files for this binary can be found in the directory `src/kmdSrc/`.
+
+#### `bin/jimulator`
+
+`jimulator` is the executable for the ARM emulation program _Jimulator_, for which _KoMo2_ is a front end.
+
+This binary is forked at the very beginning of `kmd`'s main function, and the two processes should always run in parallel.
+
+The source files for this binary can be found in `src/jimulatorSrc/`.
+
+#### `bin/aasm`
+
+`aasm` is the executable for an arm assembler program, which takes an input `.s` ARM source file and compiles it into a proprietary _Jimulator_ readable `.kmd` file, which can be loaded into the `jimulator` binary.
+
+This binary is forked upon pressing the _"compile & load button"_ present in the GUI, and runs briefly until the output `.kmd` file is generated.
+
+The source files for this executable can be found in `src/aasmSrc/`, and compilation is performed in the make file.
+
+#### `bin/mnemonics`
+
+`mnemonics` is a plain text file on which `aasm` is dependant. It is **always** assumed that `mnemonics` is in the same directory as the `aasm` binary.
+
+---
+
+### Shell Scripts
+
+A shell script is provided with _KoMo2_ that allow for an enhanced user experience.
+
+#### Custom fonts
+
+The shell script `installFonts.sh` has been included in the project `scripts` directory.
+
+_KoMo2_ uses a mono space font family known as [Fira Code](https://github.com/tonsky/FiraCode), and this shell script installs these from an archive file tracked in the `res/` directory.
+
+If you enter the `scripts/` directory and execute the shell script as root (`sudo ./installFonts.sh`) then these fonts will be installed for you automatically.
+
+**WARNING**, it is worth bearing in mind that the shell script provided is based on one found in [this Medium article](https://medium.com/source-words/how-to-manually-install-update-and-uninstall-fonts-on-linux-a8d09a3853b0), and it require root privileges as it does access the protected directory `usr/local/share/fonts`, so inspect the shell script and linked article first and make up your mind about if you want to run it.
+
+I have ensured that all fonts used can always fall back to the default "monospace" font option should you not want to install the Fira Code font.
+
+---
+
+### Contributing to _KoMo2_
+
+Contributing to _KoMo2_ is easy! If you identify a flaw with the program, or have an idea for a feature request, you are invited to attempt to implement it yourself on a fork of the existing repository, or [open an issue on the GitHub](https://github.com/LawrenceWarren/KoMo2/issues) to discuss it further.
+
+Some guidance below is provided on how to get started.
 
 #### Development environment
 
@@ -56,11 +137,11 @@ Exactly what text editor or IDE is used for development is up to developer prefe
 
 - **ClangFormat** is a C and C++ formatter that can be run on a source program to create a consistent, human-readable file, and leaves you not having to worry about styling. More information can be found [here](https://clang.llvm.org/docs/ClangFormat.html).
 
-  This program has been developed using the default settings for ClangFormat, however you can configure a custom formatter file.
+  This program has been developed using the default settings for ClangFormat, however you can configure a custom formatter file if you desire.
 
 * **Doxygen** is a tool that allows for generation of documentation on classes, variables and functions from specially styled comments embedded in the code. Many doxygen comments can be found in the code base, but an example of a basic Doxygen comment is as follows:
 
-  ```c
+  ```c++
   /**
    * @brief A function which takes a base value and a power, and returns the
    * base to that power. For example, `baseToThePower(2, 2)` returns `4`,
@@ -80,60 +161,29 @@ Exactly what text editor or IDE is used for development is up to developer prefe
 
   More information about Doxygen can be found [here](https://www.doxygen.nl/index.html).
 
----
+  It is recommended that any new files, classes, functions or member variables that are added to the codebase have a full Doxygen comment provided with them. No specific rules about how to write these comments are in place, but ensure they are clear on what the file, class, function or member variable is for.
 
-### Binaries
+#### Areas for improvement
 
-_KoMo2_ includes a `makefile` in it's root which generates 3 binaries in the `bin` directory when executed using GNU Make. It is always assumed that the 3 binaries exist in the same directory:
+The motivation for the dissertation project which spawned the _KoMo2_ was as follows:
 
-##### `bin/kmd`
+###### "._..there is a need for an updated and improved Jimulator GUI which is more up to date, better designed, more maintainable, and more accessible to a diverse set of users._"
 
-`kmd` is the main executable _KoMo2_.
+While this project does represent an improvement on _KoMoDo_, there are still some features that could improve within _KoMo2_ that were outside the scope of this project.
 
-Running this binary will launch the GUI, and the following 2 binaries will be forked from it when necessary.
+Some possible areas for improvement are as follows:
 
-The source for this binary can be found in `src/kmdSrc`.
+1. The source code for the `bin/aasm` binary, (found in `src/aasmSrc/`) is a mess. It could do with some serious revisions or at least some documentation.
+2. The source code for the `bin/jimulator` binary (found in `src/jimulatorSrc/`) is a mess. It could do with some serious revisions or at least some documentation.
+3. Currently, the `aasm` and `jimulator` binaries are forked from the program as separate processes, and communicated with through pipes. This presents some issues, such as a particularly old school piping API that primarily works through messages sent as binary representations of data.
+   Moving the source for these programs into the Jimulator executable and launching them as separate threads would allow for far clearer and easier communication between _KoMo2_ and it's child modules.
+   This would also have the additional benefit of (potentially) allowing for cross platform compilation of the program onto Windows and MacOS.
+4. The graphics library _GTKMM_ is going to be receiving it's 4.0 revision in the coming months (as of April 2021). For future proofing, it may be worth experimenting with and implementing any new features that _GTKMM-4_ provides, and ensuring that _KoMo2_ does not rely on any features being deprecated by this revision.
+5. Web technologies, such as Javascript, CSS, and HTML, are becoming the norm for GUI programming. There are ways to interface C++ with these web technologies which could allow for a more dynamic and agile GUI development experience.
 
-##### `bin/jimulator`
+#### Submitting your contributions
 
-`jimulator` is the executable for the ARM emulation unit.
-
-This binary is forked at the very beginning of `kmd`'s main function, and the two processes should always run in parallel.
-
-The source code for this binary can be found in `src/jimulatorSrc`.
-
-##### `bin/aasm`
-
-`aasm` is an arm assembler, which takes an input `.s` file and compiles it into an output `.kmd` file, which can be read into `jimulator`.
-
-This binary is forked upon pressing the _"compile & load button"_ present in the GUI, and runs briefly until the output `.kmd` file is generated.
-
-The source code for this executable can be found in `src/aasmSrc`, and compilation is performed in the make file.
-
-##### `bin/mnemonics`
-
-`aasm` also has a plain text file on which it is dependant, `mnemonics`. It is always assumed that `mnemonics` is in the same directory as `aasm`.
-
----
-
-### Shell scripts
-
-##### install fonts
-
-The shell script `installFonts.sh` has been included in the project `scripts` directory.
-
-_KoMo2_ uses a mono space font family known as [Fira Code](https://github.com/tonsky/FiraCode), and this shell script installs these from an archive file tracked in the `res` directory.
-
-If you enter the `scripts` directory and execute the shell script as root (`sudo ./installFonts.sh`) then these fonts will be installed for you automatically.
-
-**HOWEVER**, it is worth bearing in mind that I found the guide to make this shell script online, and it does move files into a protected directory (specifically `usr/local/share/fonts`) so inspect the shell script for yourself first and make up your mind about if you want to run it.
-
-I have ensured that all fonts used can always fall back to the default "monospace" font option should you not want to install the Fira Code font family.
-
-##### add to path
-
-The shell script in the `scripts` directory, `addToPath.sh`, is WIP!
-TODO: MAKE THIS SCRIPT & DESCRIBE IT HERE
+If you do make any improvements or additions to _KoMo2_, please open a pull request on the GitHub repository. I will happily discuss and review your changes, and merge them into the trunk if they are suitable. 🎉
 
 ---
 
@@ -141,40 +191,68 @@ TODO: MAKE THIS SCRIPT & DESCRIBE IT HERE
 
 #### Operating _KoMo2_
 
-_KoMo2_ is simply an interface for _Jimulator_ - if there is some action you would like to perform on _Jimulator_, there is a button in _KoMo2_ for it:
+Below is a clear description on how to utilise _KoMo2_.
 
 ##### Selecting, compiling, and loading an ARM assembly file
 
-You must write your own ARM assembly programs (_.s_ file extension) in an external text editor, and save them to somewhere on your filesystem.
+You must write your own ARM assembly programs (`.s` file extension) in an external text editor, and save them on your filesystem.
 
-In the top right corner of _KoMo2_ there is a button labelled "Select File", which will open a fill browser that allows you to select any _.s_ file.
+In the top right corner of _KoMo2_ there is a button labelled "Select File", which will open a file browser that allows you to select any `.s` file on your system.
 
-Once a file is selected, a label below this button will display the file name and a button below this, labelled "Compile & Load", will create a compiled _.kmd_ file in the same directory, which will subsequently be loaded into _Jimulator_ automatically.
+Once a file is selected, press the button labelled "Compile & Load", which will create a compiled `.kmd` file in the same directory as your `.s` file, and will automatically load this into the ARM emulator.
 
-The "Select File" and "Compile & Load" buttons are only accessible while _Jimulator_ is in certain states, and can be executed using the shortcuts **Ctrl+L** and **CTRL+R** respectively.
+The "Select File" and "Compile & Load" buttons are only accessible while _KoMo2_ is in certain states, and can be executed using the shortcuts **Ctrl+L** and **CTRL+R** respectively.
 
-#### Commencing, pausing, and resuming _Jimulator_ execution
+#### Commencing, pausing, and resuming execution
 
-Once a program has been compiled and loaded into _Jimulator_, execution of the program can commence.
+Once a program has been compiled and loaded into the ARM emulator, execution of the program can commence.
 
-A button at the top of the screen with a green play symbol will commence execution of _Jimulator_. Upon clicking this button, the button will display a blue pause symbol. Upon clicking this button execution will pause and the program will pause executing.
+There is a button on the bar at the top of the screen which displays a green play symbol. Upon clicking this button, the program loaded will begin executing and the button will toggle to display a blue pause symbol. Upon pressing again, the program loaded will pauses execution and the button will toggle back to a green play symbol.
 
-The state of the button will change upon every click, alternating between pausing and playing, and the operation it performs will change similarly.
+The state of the button will change upon every click, alternating between pausing and playing, and the operation it performs will change similarly between commencing, pausing, and resuming execution.
 
-The commence, pause, and play buttons are only accessible when _Jimulator_ is in certain states, and can be executed using the shortcut **F5**.
+The commence, pause, and play buttons are only accessible when _KoMo2_ is in certain states, and can be executed using the shortcut **F5**.
 
-#### Perform a single _Jimulator_ execution
+#### Perform a single-step execution
 
-The single step execution button is only accessible when _Jimulator_ is in certain states, and can be executed using the shortcut **F6**.
+There is a button on the bar at the top of the screen which displays an arcing blow arrow. Upon pressing this button, the ARM emulator will perform perform a single step of execution - whatever instruction is at the memory address indicated by the value in the Program Counter register will be executed - and then stop.
+
+The single step execution button is only accessible when _KoMo2_ is in certain states, and can be executed using the shortcut **F6**.
 
 #### Halt program execution
 
-The halt execution button is only accessible when _Jimulator_ is in certain states, and can be executed using the shortcut **F1**.
+There is a button on the bar at the top of the screen which displays a hollow red square. Upon pressing this button, the ARM emulator will be set to a halted state - execution will stop, and will not be allowed to be resumed again, unless the program is recompiled and loaded.
+
+The halt execution button is only accessible when _KoMo2_ is in certain states, and can be executed using the shortcut **F1**.
 
 #### Reload the program
 
-The reload program button is only accessible when _Jimulator_ is in certain states, and can be executed using the shortcut **Ctrl+R**.
+There is a button on the bar at the top of the screen which displays a blue arrow pointing to it's own tail in a circular shape. Upon pressing this button, the ARM emulator will reset itself - execution will stop and the Program Counter will return to 0, meaning that execution will begin again as if the program was running for the first time.
 
-#### Get help & about _KoMo2_
+The reload program button is only accessible when the _KoMo2_ is in certain states, and can be executed using the shortcut **Ctrl+R**.
 
-The about button is accessible in all _Jimulator_ states, and can be executed using the shortcut **F12**.
+#### The register values
+
+There is a table of 16 rows and 2 columns on the left hand side of the _KoMo2_ GUI. This table displays all of the ARM emulator's CPU registers, and the values within them.
+
+The first 15 registers - labelled `R0` through `R14` - are the values within the general purpose registers of the CPU.
+
+The final register - labelled `PC` - is the Program Counter, which contains the memory address of the next instruction to execute. For each cycle of the ARM CPU, this will change (it will usually increase linearly, but may jump up or down values if meeting a branch instruction)
+
+If the address within the PC is currently visible in the memory window, it will be highlighted in the memory window.
+
+As the CPU runs, the values within all of these registers may change depending on how your program utilises them.
+
+#### The memory window
+
+The large scrolling window that takes up the majority of the _KoMo2_ GUI is the memory window - this displays what is loaded into the ARM emulator's memory at the time, and at what address.
+
+You can scroll up and down this window to view a wide range of memory addresses - the ARM emulators address bus is 32-bit.
+
+As you look at the memory window, you can see red buttons on each row. These buttons can be toggled on or off to set breakpoints within the ARM emulator, which will pause execution of the program if the Program Counter reaches that memory address.
+
+#### The terminal
+
+As _KoMo2_ performs actions, it may log some outputs. These outputs are viewable in the terminal, which takes up the majority of the bottom of the _KoMo2_ GUI. The contents of the terminal can be cleared through a nearby button labelled "Clear".
+
+If you write a program which requests input, you may utilise the singular input box below the terminal window to provide this input. Text will not show in the input box - rather it is immediately captured and sent to ARM emulator, which will process the input and display some output into the terminal window in response.

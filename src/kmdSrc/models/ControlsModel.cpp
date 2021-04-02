@@ -32,7 +32,11 @@
 ControlsModel::ControlsModel(ControlsView* const view, KoMo2Model* const parent)
     : Model(parent), view(view) {
   // Set button listeners for each of the control buttons
-  setButtonListener(view->getHelpButton(), this, &ControlsModel::onHelpClick);
+  // setButtonListener(view->getHelpButton(), this,
+  // &ControlsModel::onHelpClick);
+
+  view->getHelpButton()->set_uri(
+      "https://github.com/LawrenceWarren/KoMo2#user-manual");
 
   setButtonListener(view->getPauseResumeButton(), this,
                     &ControlsModel::onPauseResumeClick);
