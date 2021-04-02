@@ -55,6 +55,7 @@ class MainWindowView : public Gtk::Window {
   RegistersView* const getRegistersView();
   TerminalView* const getTerminalView();
   DisassemblyView* const getDisassemblyView();
+  void setStyling();
 
  private:
   // Get layouts
@@ -62,7 +63,6 @@ class MainWindowView : public Gtk::Window {
   Gtk::HButtonBox* const getRegistersAndDisassemblyBar();
   Gtk::VButtonBox* const getMasterLayout();
 
-  void setStyling();
   void initControlsAndCompileBar();
   void initRegistersAndDisassemblyBar();
   void initMasterLayout();
