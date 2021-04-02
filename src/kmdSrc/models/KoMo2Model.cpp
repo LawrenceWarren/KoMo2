@@ -111,8 +111,10 @@ void KoMo2Model::changeJimulatorState(const JimulatorState newState) {
           sigc::mem_fun(this, &KoMo2Model::refreshViews), refreshRate);
       break;
     case LOADED:
-    case UNLOADED:
       refreshViews();
+      break;
+    case UNLOADED:
+      // refreshViews();
       break;
     default:
       break;
