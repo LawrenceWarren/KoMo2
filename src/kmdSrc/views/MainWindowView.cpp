@@ -93,8 +93,8 @@ void MainWindowView::setStyling() {
   std::cout << i++ << " set styling" << std::endl;
 
   // Sets the icon for the window
-  set_icon_from_file(getModel()->getAbsolutePathToProjectRoot() +
-                     "res/img/komo2Logo.png");
+  // set_icon_from_file(getModel()->getAbsolutePathToProjectRoot() +
+  //                    "res/img/komo2Logo.png");
   std::cout << i++ << " set styling" << std::endl;
 
   // Create a css provider, get the style context, load the css file
