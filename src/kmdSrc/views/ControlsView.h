@@ -37,7 +37,7 @@ class ControlsView : public Gtk::HButtonBox {
   ControlsView(MainWindowView* const parent);
 
   // Getters and setters
-  Gtk::LinkButton* const getHelpButton();
+  Gtk::Button* const getHelpButton();
   Gtk::Button* const getReloadJimulatorButton();
   Gtk::Button* const getPauseResumeButton();
   Gtk::Button* const getSingleStepExecuteButton();
@@ -59,7 +59,7 @@ class ControlsView : public Gtk::HButtonBox {
   /**
    * @brief A button which, when clicked, opens up an about/help window.
    */
-  Gtk::LinkButton helpButton;
+  Gtk::Button helpButton;
 
   /**
    * @brief A button which, when clicked, reloads the program into Jimulator

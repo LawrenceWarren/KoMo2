@@ -37,8 +37,8 @@ ControlsModel::ControlsModel(ControlsView* const view, KoMo2Model* const parent)
 
   std::cout << "seg fault here?" << std::endl;
 
-  view->getHelpButton()->set_uri(
-      "https://github.com/LawrenceWarren/KoMo2#user-manual");
+  // view->getHelpButton()->set_uri(
+  //    "https://github.com/LawrenceWarren/KoMo2#user-manual");
 
   std::cout << "or much after" << std::endl;
 
