@@ -42,24 +42,40 @@ MainWindowView::MainWindowView(const int x, const int y)
       disassemblyView(this) {
   std::cout << "Main window view..." << std::endl;
   setStyling();
+  std::cout << "1 Main window view..." << std::endl;
   set_border_width(1);
+  std::cout << "2 Main window view..." << std::endl;
   set_default_size(x, y);
+  std::cout << " 3Main window view..." << std::endl;
   set_gravity(Gdk::GRAVITY_WEST);
+  std::cout << "4 Main window view..." << std::endl;
   getMasterLayout()->set_layout(Gtk::BUTTONBOX_START);
+  std::cout << " 5 Main window view..." << std::endl;
 
   // Packs containers into one another.
   getControlsAndCompileBar()->set_layout(Gtk::BUTTONBOX_START);
+  std::cout << "6 Main window view..." << std::endl;
   getControlsAndCompileBar()->pack_end(controlsView, false, false);
+  std::cout << "7 Main window view..." << std::endl;
   getControlsAndCompileBar()->pack_end(compileLoadView, false, false);
+  std::cout << "8 Main window view..." << std::endl;
   getRegistersAndDisassemblyBar()->set_layout(Gtk::BUTTONBOX_START);
+  std::cout << "9 Main window view..." << std::endl;
   getRegistersAndDisassemblyBar()->pack_end(registersView, false, false);
+  std::cout << "10 Main window view..." << std::endl;
   getRegistersAndDisassemblyBar()->pack_end(disassemblyView, false, false);
+  std::cout << "11 Main window view..." << std::endl;
   getMasterLayout()->pack_start(controlsAndCompileBar, false, false);
+  std::cout << "12 Main window view..." << std::endl;
   getMasterLayout()->pack_start(registersAndDisassemblyBar, false, false);
+  std::cout << "13 Main window view..." << std::endl;
   getMasterLayout()->pack_start(terminalView, false, false);
+  std::cout << "14 Main window view..." << std::endl;
 
   getMasterLayout()->show_all_children();
+  std::cout << "15 Main window view..." << std::endl;
   getMasterLayout()->show();
+  std::cout << "16 Main window view..." << std::endl;
   add(masterLayout);
   std::cout << "Through it ! Main window view..." << std::endl;
 }
