@@ -84,33 +84,48 @@ MainWindowView::MainWindowView(const int x, const int y)
  * @brief Sets the style attributes for the views - namely any icons and CSS.
  */
 void MainWindowView::setStyling() {
+  int i = 0;
+  std::cout << i++ << " set styling" << std::endl;
   set_title("KoMo2");
+  std::cout << i++ << " set styling" << std::endl;
 
   // Sets the icon for the window
   set_icon_from_file(getModel()->getAbsolutePathToProjectRoot() +
                      "res/img/komo2Logo.png");
+  std::cout << i++ << " set styling" << std::endl;
 
   // Create a css provider, get the style context, load the css file
   auto ctx = get_style_context();
+  std::cout << i++ << " set styling" << std::endl;
   auto css = Gtk::CssProvider::create();
+  std::cout << i++ << " set styling" << std::endl;
   css->load_from_path(getModel()->getAbsolutePathToProjectRoot() +
                       "res/styles.css");
+  std::cout << i++ << " set styling" << std::endl;
 
   // Adds a CSS class for the main window
   get_style_context()->add_class("mainWindow");
+  std::cout << i++ << " set styling" << std::endl;
 
   // Adds a CSS class for the layouts
   getControlsView()->get_style_context()->add_class("controls_layouts");
+  std::cout << i++ << " set styling" << std::endl;
   getControlsAndCompileBar()->get_style_context()->add_class(
       "topContainer_layouts");
+  std::cout << i++ << " set styling" << std::endl;
   getCompileLoadView()->get_style_context()->add_class("compileLoad_layouts");
+  std::cout << i++ << " set styling" << std::endl;
   getRegistersView()->get_style_context()->add_class("registers_layouts");
+  std::cout << i++ << " set styling" << std::endl;
   getDisassemblyView()->get_style_context()->add_class("dis_layouts");
+  std::cout << i++ << " set styling" << std::endl;
   getTerminalView()->get_style_context()->add_class("terminal_layouts");
+  std::cout << i++ << " set styling" << std::endl;
 
   // Add the CSS to the screen
   ctx->add_provider_for_screen(Gdk::Screen::get_default(), css,
                                GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+  std::cout << i++ << " set styling" << std::endl;
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!
