@@ -92,6 +92,8 @@ void MainWindowView::setStyling() {
   set_title("KoMo2");
   std::cout << i++ << " set styling" << std::endl;
 
+  std::cout << getModel()->getAbsolutePathToProjectRoot() << std::endl;
+
   // Sets the icon for the window
   // set_icon_from_file(getModel()->getAbsolutePathToProjectRoot() +
   //                    "res/img/komo2Logo.png");
