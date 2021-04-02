@@ -40,7 +40,6 @@ MainWindowView::MainWindowView(const int x, const int y)
       registersView(this),
       terminalView(this),
       disassemblyView(this) {
-  setStyling();
   set_border_width(1);
   set_default_size(x, y);
   set_gravity(Gdk::GRAVITY_WEST);
