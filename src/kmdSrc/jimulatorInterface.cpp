@@ -920,15 +920,15 @@ int view_chararr2int(int count, unsigned char* array) {
  * @param number The integer to add.
  * @param out Where to store the output string.
  */
-void view_chararrAdd(int count,
-                     unsigned char* byte_string,
+void view_chararrAdd(int length,
+                     unsigned char* data,
                      int number,
-                     unsigned char* acc) {
+                     unsigned char* out) {
   int index, temp;
 
-  for (index = 0; index < count; index++) {
-    temp = byte_string[index] + (number & 0xFF); /* Add next 8 bits */
-    acc[index] = temp & 0xFF;
+  for (index = 0; index < length; index++) {
+    temp = data[index] + (number & 0xFF); /* Add next 8 bits */
+    out[index] = temp & 0xFF;
     number = number >> 8; /* Shift to next byte */
     if (temp >= 0x100)
       number++; /* Propagate carry */
@@ -940,9 +940,10 @@ void view_chararrAdd(int count,
  * @brief Calculates the difference between the current address to display and
  * the next address that needs to be displayed.
  * @param src The current line in the source file.
- * @param addr
- * @param increment
- * @return int
+ * @param addr The current address pointed to.
+ * @param increment The amount to increment addresses by.
+ * @return int The difference between the current address to display and the
+ * next address that needs to be displayed.
  */
 int source_disassemble(source_line* src, unsigned int addr, int increment) {
   unsigned int diff;
@@ -1048,11 +1049,11 @@ const int check_hex(const char character) {
 }
 
 /**
- * @brief Read hex number and return bytes (2^N) also
- * @param fHandle
- * @param pC
- * @param number
- * @return int
+ * @brief Reads a number from a string of text in the .kmd file.
+ * @param fHandle A file handle.
+ * @param pC A pointer to the current character being read in the file.
+ * @param number A pointer for where to read the found number into.
+ * @return int The read number.
  */
 const int get_number(FILE* const fHandle,
                      char* const pC,
@@ -1088,20 +1089,9 @@ const int get_number(FILE* const fHandle,
 }
 
 /**
- * @brief determines if a character is "allowed"
- * @param c the character to determine.
- * @return int
- */
-const int allowed(const char c) {
-  return (c == '_') || ((c >= '0') && (c <= '9')) ||
-         (((c & 0xDF) >= 'A') && ((c & 0xDF) <= 'Z'));
-}
-
-/**
- * @brief Look-up function to encode length of memory transfer: Only four
- * legal sizes at present.
- * @param size
- * @return unsigned int
+ * @brief Converts a provided memory size into a Jimulator legal memory size.
+ * @param size The size to convert.
+ * @return unsigned int The Jimulator legal size.
  */
 constexpr const unsigned int boardTranslateMemsize(const int size) {
   switch (size) {
@@ -1127,7 +1117,8 @@ constexpr const unsigned int boardTranslateMemsize(const int size) {
  * @param address pointer to the address (in bytes)
  * @param value pointer to the new value to be stored
  * @param size width of current memory (in bytes)
- * @return TRUE for success, FALSE for failure
+ * @return bool true if successful.
+ * @return bool false if not successful.
  */
 const int boardSetMemory(const int count,
                          unsigned char* const address,
@@ -1139,7 +1130,7 @@ const int boardSetMemory(const int count,
       (4 != boardSendCharArray(4, address))                      // send address
       || (2 != board_send_n_bytes(count, 2))                     // send width
       || (bytecount != boardSendCharArray(bytecount, value))) {  // send value
-    printf("bad board version!\n");
+    std::cout << "bad board version!" << std::endl;
     return FALSE;
   }
 
