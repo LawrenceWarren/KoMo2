@@ -26,12 +26,15 @@
 const int SOURCE_BYTE_COUNT = 4;
 const int SOURCE_FIELD_COUNT = 4;
 const int SOURCE_TEXT_LENGTH = 100;
-const int SYM_BUF_SIZE = 64;
 const int IN_POLL_TIMEOUT = 1000;
 const int OUT_POLL_TIMEOUT = 100;
 const int MAX_SERIAL_WORD = 4;
 
-enum class clientState {
+/**
+ * @brief A series of values that represent state information returned from
+ * Jimulator.
+ */
+enum class clientState : unsigned char {
   CLASS_MASK = 0XC0,
   NORMAL = 0X00,
   CLASS_STOPPED = 0X40,
@@ -43,14 +46,27 @@ enum class clientState {
   BREAKPOINT = 0X41,
   WATCHPOINT = 0X42,
   MEMFAULT = 0X43,
-  PROG_FINISHED = 0X44,  // Program ended
-  RUNNING = 0X80,        // Program running
+  FINISHED = 0X44,
+  RUNNING = 0X80,
   RUNNING_BL = 0x81,
   RUNNING_SWI = 0x81,
   STEPPING = 0X82,
   BROKEN = 0x30,
 };
 
+/**
+ * @brief Performing an or between a clientState and an unsigned char.
+ * @param l The left hand clientState value.
+ * @param r The right hand unsigned char value.
+ * @return unsigned char The result of the or operation.
+ */
+inline unsigned char operator|(clientState l, unsigned char r) {
+  return static_cast<unsigned char>(l) | r;
+}
+
+/**
+ * @brief Flags that are used to declare how Jimulator should run.
+ */
 enum class runFlags {
   BL = 0x02,
   SWI = 0x04,
@@ -60,6 +76,9 @@ enum class runFlags {
   INIT = 0x30,
 };
 
+/**
+ * @brief Contains the information read from Jimulator about a given breakpoint.
+ */
 class breakpointInfo {
  public:
   unsigned int misc;
@@ -100,9 +119,9 @@ enum class boardInstruction : unsigned char {
   BP_SET = 0x32,
   BP_GET = 0x33,
 
-  GET_REG = 0x5A,  // not general case!
+  GET_REG = 0x5A,
   GET_MEM = 0x48,
-  SET_REG = 0x52,  // not general case!
+  SET_REG = 0x52,
   SET_MEM = 0x40,
 
   WP_WRITE = 0x34,
@@ -114,20 +133,33 @@ enum class boardInstruction : unsigned char {
 };
 
 /**
- * @brief An imported source code (listing) line
+ * @brief Performing an or between a boardInstruction and an unsigned char.
+ * @param l The left hand boardInstruction value.
+ * @param r The right hand unsigned char value.
+ * @return unsigned char The result of the or operation.
+ */
+inline unsigned char operator|(boardInstruction l, unsigned char r) {
+  return static_cast<unsigned char>(l) | r;
+}
+
+/**
+ * @brief Describes a single line of a .kmd file.
  */
 class sourceFileLine {
  public:
   sourceFileLine* pPrev;  // Previous line
   sourceFileLine* pNext;  // Next line
-  int corrupt;            // Flag if value changed
-  int nodata;             // Flag if line has no data fields
+  bool corrupt;           // Flag if value changed
+  bool nodata;            // Flag if line has no data fields
   unsigned int address;   // Address of entry
   int data_size[4];       // Sizes of fields
   int data_value[4];      // Data values
   char* text;             // Text, as imported
 };
 
+/**
+ * @brief Describes an entire file of a .kmd sourceFile.
+ */
 class sourceFile {
  public:
   sourceFileLine* pStart;  // First line in source (sorted into address order)

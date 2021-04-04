@@ -60,7 +60,7 @@ KoMo2Model::KoMo2Model(MainWindowView* const mainWindow,
  */
 const bool KoMo2Model::refreshViews() {
   // Check the state of the board first
-  if (Jimulator::checkBoardState() == clientState::PROG_FINISHED) {
+  if (Jimulator::checkBoardState() == clientState::FINISHED) {
     getParent()->changeJimulatorState(UNLOADED);
   }
 

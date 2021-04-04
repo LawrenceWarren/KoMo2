@@ -51,7 +51,7 @@ const int callback_memory_refresh();
 const clientState getBoardStatus();
 int boardSendNBytes(int, int);
 int boardGetNBytes(int*, int);
-int boardGetCharArray(int, unsigned char*);
+const int boardGetCharArray(int, unsigned char*);
 int boardSendCharArray(int, unsigned char*);
 std::string littleEndianBytesToHexString(int, unsigned char*, bool = false);
 bool getBreakpointStatus(unsigned int, unsigned int*, unsigned int*);
@@ -106,7 +106,7 @@ const int Jimulator::loadJimulator(const char* const pathToKMD) {
 void Jimulator::startJimulator(const int steps) {
   if (checkBoardState() == clientState::NORMAL) {
     // Sends a start signal &  whether breakpoints are on
-    boardSendChar(static_cast<unsigned char>(boardInstruction::START) | 48);
+    boardSendChar(boardInstruction::START | 48);
 
     boardSendNBytes(steps, 4);  // Send step count
   }
@@ -234,7 +234,7 @@ const clientState Jimulator::checkBoardState() {
       break;
     case clientState::BUSY:
       break;
-    case clientState::PROG_FINISHED:
+    case clientState::FINISHED:
       break;
     default:
       return clientState::NORMAL;
@@ -549,7 +549,7 @@ std::array<Jimulator::MemoryValues, 15> Jimulator::getJimulatorMemoryValues(
 bool getBreakpointStatus(unsigned int bp,
                          unsigned int* wordA,
                          unsigned int* wordB) {
-  boardSendChar(static_cast<unsigned char>(boardInstruction::BP_GET) |
+  boardSendChar(boardInstruction::BP_GET |
                 ((bp << 2) & 0xC));  // get breakpoint packet
   return ((boardGetNBytes((int*)wordA, 4) != 4) ||
           (boardGetNBytes((int*)wordB, 4) != 4));
@@ -570,7 +570,7 @@ bool getBreakpointStatus(unsigned int bp,
 bool getBreakpointDefinition(unsigned int bp,
                              unsigned int trap_number,
                              breakpointInfo* breakpointInfon) {
-  boardSendChar(static_cast<unsigned char>(boardInstruction::BP_READ) |
+  boardSendChar(boardInstruction::BP_READ |
                 ((bp << 2) & 0xC));  // send trap-read
                                      // packet
   boardSendChar(trap_number);        // send the number of the definition
@@ -618,7 +618,7 @@ int numericStringSubtraction(int i, unsigned char* s1, unsigned char* s2) {
 void setBreakpointStatus(unsigned int bp,
                          unsigned int wordA,
                          unsigned int wordB) {
-  boardSendChar(static_cast<unsigned char>(boardInstruction::BP_SET) |
+  boardSendChar(boardInstruction::BP_SET |
                 ((bp << 2) & 0xC)); /* set breakpoint packet */
   boardSendNBytes(wordA, 4);        /* send word a */
   boardSendNBytes(wordB, 4);        /* send word b */
@@ -650,7 +650,7 @@ void copyStringLiterals(int count,
 bool setBreakpointDefinition(unsigned int bp,
                              unsigned int trap_number,
                              breakpointInfo* breakpointInfon) {
-  boardSendChar(static_cast<unsigned char>(boardInstruction::BP_WRITE) |
+  boardSendChar(boardInstruction::BP_WRITE |
                 ((bp << 2) & 0xC));  // send trap-write packet
   boardSendChar(trap_number);        // send the number of the definition
   boardSendNBytes(((*breakpointInfon).misc),
@@ -708,9 +708,9 @@ const int boardSendChar(unsigned char to_send) {
  * @return int The number of bytes successfully received, up to `length` number
  * of characters.
  */
-int boardGetCharArray(int char_number, unsigned char* data_ptr) {
-  int reply_count; /* Number of chars fetched in latest attempt */
-  int reply_total; /* Total number of chars fetched during invocation */
+const int boardGetCharArray(int char_number, unsigned char* data_ptr) {
+  int reply_count;  // Number of chars fetched in latest attempt
+  int reply_total;  // Total number of chars fetched during invocation
   struct pollfd pollfd;
 
   pollfd.fd = readFromJimulator;
@@ -1111,9 +1111,8 @@ const int boardSetMemory(const int count,
                          const int size) {
   const int bytecount = count * size;
 
-  if ((1 !=
-       boardSendChar(static_cast<unsigned char>(boardInstruction::SET_MEM) |
-                     boardTranslateMemsize(size))) ||
+  if ((1 != boardSendChar(boardInstruction::SET_MEM |
+                          boardTranslateMemsize(size))) ||
       (4 != boardSendCharArray(4, address))                      // send address
       || (2 != boardSendNBytes(count, 2))                        // send width
       || (bytecount != boardSendCharArray(bytecount, value))) {  // send value
@@ -1231,7 +1230,7 @@ const int readSourceFile(const char* pathToKMD) {
           buffer[text_length++] = '\0';     // text_length now length incl. '\0'
           pNew = g_new(sourceFileLine, 1);  // Create new record
           pNew->address = address;
-          pNew->corrupt = FALSE;
+          pNew->corrupt = false;
 
           byte_total = 0;  // Inefficient
           for (j = 0; j < SOURCE_FIELD_COUNT; j++) {
