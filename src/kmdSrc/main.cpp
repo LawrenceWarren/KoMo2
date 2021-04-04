@@ -26,14 +26,12 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include "globals.h"
 #include "models/KoMo2Model.h"
 #include "views/MainWindowView.h"
 
 int writeToJimulator;
 int readFromJimulator;
 int emulator_PID = -1;
-unsigned char board_runflags = RUN_FLAG_INIT;
 
 // Communication pipes
 // ! Originally board_emulation_communication_from

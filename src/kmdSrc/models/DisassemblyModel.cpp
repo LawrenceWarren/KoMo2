@@ -230,7 +230,7 @@ const bool DisassemblyModel::handleKeyPress(const GdkEventKey* const e) {
 
   // Identifies if a child has focus - if not, return false
 
-  long int hasFocus = -1;
+  long unsigned int hasFocus = -1;
 
   for (long unsigned int i = 0; i < rows->size(); i++) {
     if ((*rows)[i].has_focus()) {
@@ -238,7 +238,7 @@ const bool DisassemblyModel::handleKeyPress(const GdkEventKey* const e) {
     }
   }
 
-  if (hasFocus == -1) {
+  if (hasFocus == static_cast<long unsigned int>(-1)) {
     return false;
   }
 
