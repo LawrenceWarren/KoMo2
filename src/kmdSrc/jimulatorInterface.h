@@ -23,29 +23,50 @@
 #include <array>
 #include <string>
 
+/**
+ * @brief This namespace groups together regular non-member functions such that,
+ * when called from other places in the codebase, it is clear where the
+ * functions are being called from.
+ */
 namespace Jimulator {
+/**
+ * @brief A class that returns all of the information associated with a single
+ * row of a memory window, as read from Jimulator.
+ */
 class MemoryValues {
  public:
+  /**
+   * @brief The address of the memory value.
+   */
   u_int32_t address;
+  /**
+   * @brief A hexadecimal representation of what is stored in that memory value.
+   */
   std::string hex;
+  /**
+   * @brief What the actual .s file says on this line.
+   */
   std::string disassembly;
+  /**
+   * @brief Whether or not a breakpoint is set for this address.
+   */
   bool breakpoint = false;
 };
 
-// Reading data
+// ! Reading data
 const int checkBoardState();
 const std::array<std::string, 16> getJimulatorRegisterValues();
 std::array<Jimulator::MemoryValues, 15> getJimulatorMemoryValues(
     const uint32_t s_address_int);
 const std::string getJimulatorTerminalMessages();
 
-// Loading data
+// ! Loading data
 const int compileJimulator(const char* const pathToBin,
                            const char* const pathToS,
                            const char* const pathToKMD);
 const int loadJimulator(const char* const pathToKMD);
 
-// Sending commands
+// ! Sending commands
 void startJimulator(const int steps);
 void continueJimulator();
 void pauseJimulator();

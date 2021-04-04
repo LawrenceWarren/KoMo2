@@ -89,8 +89,8 @@ void view_chararrAdd(int count,
 source_file source;
 
 /**
- * @brief Stolen from the original KMD source - runs the file specified by
- * `pathToFile` through the KoMoDo compile script.
+ * @brief Runs `pathToS` through the associated compiler binary, and outputs a
+ * .kmd file at `pathToKMD`.
  * @param pathToBin An absolute path to the `aasm` binary.
  * @param pathToS An absolute path to the `.s` file to be compiled.
  * @param pathToKMD an absolute path to the `.kmd` file that will be output.
@@ -109,9 +109,8 @@ const int Jimulator::compileJimulator(const char* const pathToBin,
 }
 
 /**
- * @brief A proven working version of load_data. This is legacy code from
- * KoMoDo, stripped down to disinclude anything related to serial ports,
- * networking, etc - it is pure emulation.
+ * @brief Clears the existing `source` object and loads the file at `pathToKMD`
+ * into Jimulator.
  * @param pathToKMD an absolute path to the `.kmd` file that will be loaded.
  */
 const int Jimulator::loadJimulator(const char* const pathToKMD) {
@@ -121,7 +120,7 @@ const int Jimulator::loadJimulator(const char* const pathToKMD) {
 
 /**
  * @brief Commences running the emulator.
- * @param steps The number of steps to run for (0 if indefinite)
+ * @param steps The number of steps to run for (0 for indefinite)
  */
 void Jimulator::startJimulator(const int steps) {
   run_board(steps);
@@ -197,7 +196,7 @@ const bool Jimulator::setBreakpoint(uint32_t addr) {
   }
   // See if we can set breakpoint
   else {
-    std::cout << "turning " << std::hex  << addr << " ON!" << std::endl;
+    std::cout << "turning " << std::hex << addr << " ON!" << std::endl;
     temp = (~worda) & wordb;  // Undefined => possible choice
 
     // If any free entries ...
@@ -231,7 +230,8 @@ const bool Jimulator::setBreakpoint(uint32_t addr) {
 
 /**
  * @brief Check the state of the board - logs what it is doing.
- * @return int 0 if the board is in a failed state. else 1.
+ * @return int 0 if the board is in a failed state, else a number greater than
+ * 0.
  */
 const int Jimulator::checkBoardState() {
   const int board_state = board_enq();
@@ -276,6 +276,10 @@ const std::array<std::string, 16> Jimulator::getJimulatorRegisterValues() {
   return a;
 }
 
+/**
+ * @brief Reads for messages from Jimulator, to display in the terminal output.
+ * @return const std::string The message to be displayed in the terminal output.
+ */
 const std::string Jimulator::getJimulatorTerminalMessages() {
   unsigned char
       string[256];  // (large enough) string to get the message from the board
@@ -301,6 +305,12 @@ const std::string Jimulator::getJimulatorTerminalMessages() {
   return output;
 }
 
+/**
+ * @brief Sends terminal information to Jimulator.
+ * @param val A key code.
+ * @return true If the key was sent to Jimulator successfully.
+ * @return false If the key was not sent to Jimulator successfully.
+ */
 const bool Jimulator::sendTerminalInputToJimulator(const unsigned int val) {
   unsigned int key_pressed = val;
   unsigned char res = 0;
@@ -511,33 +521,68 @@ std::array<Jimulator::MemoryValues, 15> Jimulator::getJimulatorMemoryValues(
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
 
 /**
- * @brief Gets the status of a trap.
- * @param trap_type
- * @param wordA
- * @param wordB
- * @return true
- * @return false
+ * @brief Gets the status of breakpoints from within Jimulator.
+ * @author Lawrence Warren
+ * @date 04/04/2021
+ * @warning The internals of Jimulator as a binary are a mystery to me. I have
+ * managed to decipher what this function does through trial and error. However
+ * I cannot decipher why it works in a (somewhat) mysterious way. This function
+ * works in tandem with other functions related to setting and reading
+ * breakpoints, and I would avoid changing it without serious understanding of
+ * how else it is used and what it does first.
+ * @param bp Always 0 - could be removed.
+ * @param wordA The first chunk of read breakpoint information will be read into
+ * here. It reveals the number of breakpoints in an unusual pattern:
+ * - `0` for 0 breakpoints
+ * - `1` for 1 breakpoint
+ * - `3` for 2 breakpoints
+ * - `7` for 3 breakpoints
+ * - `15` for 4 breakpoints
+ * - `31` for 5 breakpoints
+ * - `63`, `127` and so on...
+ *
+ * The pattern here is, if the number of breakpoints is 'n', it will return a
+ * 32-bit integer with the least significant 'n' bits set:
+ * - 0b00000000000000000000000000000000 = 0 breakpoints set = 0d0
+ * - 0b00000000000000000000000000000001 = 1 breakpoint set  = 0d1
+ * - 0b00000000000000000000000000000011 = 2 breakpoints set = 0d3
+ * - 0b00000000000000000000000000000111 = 3 breakpoints set = 0d7
+ * - 0b00000000000000000000000000001111 = 4 breakpoints set = 0d15
+ *
+ * This is why there can only be 32 breakpoints total.
+ *
+ * AGAIN, why this is the way Jimulator works is a mystery.
+ * @param wordB The second chunk of read breakpoint information will be read
+ * into here. Appears to always returns the largest 32-bit integer value
+ * (0xFFFFFFFF).
+ * @return true If reading for breakpoints was a success.
+ * @return false If reading for breakpoints was a failure.
  */
-bool trap_get_status(unsigned int trap_type,
+bool trap_get_status(unsigned int bp,
                      unsigned int* wordA,
                      unsigned int* wordB) {
-  boardSendChar(BR_BP_GET | ((trap_type << 2) & 0xC));  // get breakpoint packet
+  boardSendChar(BR_BP_GET | ((bp << 2) & 0xC));  // get breakpoint packet
   return ((board_get_n_bytes((int*)wordA, 4) != 4) ||
           (board_get_n_bytes((int*)wordB, 4) != 4));
 }
 
 /**
  * @brief Reads a trap definition for use by the breakpoints callbacks.
- * @param trap_type
- * @param trap_number
- * @param trap_defn
- * @return boolean
+ * @param bp always 0 - could be removed.
+ * @param breakpointlistIndex Internally within Jimulator, breakpoints are
+ * stored as an unordered list. This value the index within that list of
+ * breakpoints which should be read. `breakpointlistIndex` has a maximum value
+ * of 32, as there can only be 32 breakpoints.
+ * @param breakpointInfo The breakpoint information read from Jimulator will be
+ * stored in this struct.
+ * @return bool true if reading was a success.
+ * return bool false If reading was a failure.
  */
-bool read_trap_defn(unsigned int trap_type,
+bool read_trap_defn(unsigned int bp,
                     unsigned int trap_number,
                     trap_def* trap_defn) {
-  boardSendChar(BR_BP_READ | ((trap_type << 2) & 0xC));  // send trap-read
-                                                         // packet
+  boardSendChar(BR_BP_READ | ((bp << 2) & 0xC));  // send trap-read
+                                                  // packet
   boardSendChar(trap_number);  // send the number of the definition
 
   if ((2 != board_get_n_bytes((int*)&((*trap_defn).misc),
@@ -552,33 +597,46 @@ bool read_trap_defn(unsigned int trap_type,
     return TRUE;
 }
 
-int misc_chararr_sub_to_int(int count,
-                            unsigned char* value1,
-                            unsigned char* value2) {
+/**
+ * @brief Takes two string literals of equal length which represent string forms
+ * of integers - for example, the number 5 represented as the string {'5'}, or
+ * the number 327 represented as the string {'3', '2', '7'} - and performs
+ * subtraction on the integer values they represent as strings, returning that
+ * value as an int.
+ * For example, s1 = "400", s2 = "350", the return value 50.
+ * @param i The length of the two strings.
+ * @param s1 The "number" to have its value subtracted from.
+ * @param s2 The "number" to subtract by.
+ * @return int The output of the arithmetic.
+ */
+int misc_chararr_sub_to_int(int i, unsigned char* s1, unsigned char* s2) {
   int ret = 0; /* bit array - bit array => int */
 
-  while (count--) {
-    ret = (ret << 8) + (int)value1[count] - (int)value2[count];
+  while (i--) {
+    ret = (ret << 8) + (int)s1[i] - (int)s2[i];
   }
   return ret;  // Carry propagated because intermediate -int- can be negative
 }
 
-void trap_set_status(unsigned int trap_type,
-                     unsigned int wordA,
-                     unsigned int wordB) {
-  boardSendChar(BR_BP_SET |
-                ((trap_type << 2) & 0xC)); /* set breakpoint packet */
-  board_send_n_bytes(wordA, 4);            /* send word a */
-  board_send_n_bytes(wordB, 4);            /* send word b */
+/**
+ * @brief Overwrites some breakpoint information into Jimulator.
+ * @param bp always - could be removed.
+ * @param wordA The value to set the breakpoint to. POSSIBLY represents whether
+ * the breakpoint is active? (e.g. 0 for inactive)
+ * @param wordB The index that the breakpoint exists within the list.
+ */
+void trap_set_status(unsigned int bp, unsigned int wordA, unsigned int wordB) {
+  boardSendChar(BR_BP_SET | ((bp << 2) & 0xC)); /* set breakpoint packet */
+  board_send_n_bytes(wordA, 4);                 /* send word a */
+  board_send_n_bytes(wordB, 4);                 /* send word b */
   return;
 }
 
 /**
- * @brief Copy count characters from source to destination
- *
- * @param count
- * @param source
- * @param destination
+ * @brief Copy one string literal into another string literal.
+ * @param count The length of the string literals.
+ * @param source The value to be copied.
+ * @param destination The location to copy the value into.
  */
 void view_chararrCpychararr(int count,
                             unsigned char* source,
@@ -588,10 +646,18 @@ void view_chararrCpychararr(int count,
   }
 }
 
-bool write_trap_defn(unsigned int trap_type,
+/**
+ * @brief Writes a new breakpoint into the breakpoint list.
+ * @param bp Always 0 - could be removed.
+ * @param breakpointIndex The index that this breakpoint will exist in within
+ * Jimulators internal list of breakpoint.
+ * @param newBreakpoint A struct containing all of the information about the new
+ * breakpoint.
+ */
+bool write_trap_defn(unsigned int bp,
                      unsigned int trap_number,
                      trap_def* trap_defn) {
-  boardSendChar(BR_BP_WRITE | ((trap_type << 2) & 0xC));
+  boardSendChar(BR_BP_WRITE | ((bp << 2) & 0xC));
   // send trap-write packet
   boardSendChar(trap_number);  // send the number of the definition
   board_send_n_bytes(((*trap_defn).misc), 2);  // send the trap misc properties
@@ -603,12 +669,14 @@ bool write_trap_defn(unsigned int trap_type,
 }
 
 /**
- * @brief Sends char_number bytes located at data_ptr to current client
- * @param char_number The number of bytes to send from data_ptr.
- * @param data_ptr The data to send.
- * @return int number of bytes transmitted (currently always same as input)
+ * @brief Sends an array of characters to Jimulator.
+ * @param length The number of bytes to send from data.
+ * @param data An pointer to the data that should be sent.
+ * @todo Remove the return value here, as it is irrelevant - it simply outputs
+ * the length parameter.
+ * @return int The number of bytes that has been transmitted.
  */
-int boardSendCharArray(int char_number, unsigned char* data_ptr) {
+int boardSendCharArray(int length, unsigned char* data) {
   struct pollfd pollfd;
   pollfd.fd = writeToJimulator;
   pollfd.events = POLLOUT;
@@ -620,29 +688,30 @@ int boardSendCharArray(int char_number, unsigned char* data_ptr) {
   }
 
   // Write char_number bytes
-  if (write(writeToJimulator, data_ptr, char_number) == -1) {
+  if (write(writeToJimulator, data, length) == -1) {
     printf("Pipe write error!\n");
   }
 
-  return char_number;
+  return length;
 }
 
 /**
- * @brief send a single character/byte to the board using the general case of
- * sending an array of bytes.
- * @param to_send
- * @return int
+ * @brief Sends a singular character to Jimulator.
+ * @param data The character to send.
+ * @todo Remove the return value here, as it is irrelevant - it simply outputs
+ * the length parameter.
+ * @return int The number of bytes that was transmitted.
  */
 const int boardSendChar(unsigned char to_send) {
   return boardSendCharArray(1, &to_send);
 }
 
 /**
- * @brief Gets a character array from the board.
- * @param char_number
- * @param data_ptr
- * @return int Number of bytes received, up to char_number number of
- * characters in array at data_ptr.
+ * @brief reads an array of characters from Jimulator.
+ * @param length The number of characters to read from Jimulator.
+ * @param data A pointer to where to store the data rea from Jimulator.
+ * @return int The number of bytes successfully received, up to `length` number
+ * of characters.
  */
 int boardGetCharArray(int char_number, unsigned char* data_ptr) {
   int reply_count; /* Number of chars fetched in latest attempt */
@@ -684,21 +753,22 @@ int boardGetCharArray(int char_number, unsigned char* data_ptr) {
 }
 
 /**
- * @brief get a single character/byte from the board using the general case of
- * getting an array of bytes.
- * @param to_get
- * @return int
+ * @brief Reads a singular character from Jimulator.
+ * @param data A pointer to a memory location where the read data can be stored.
+ * @return int The number of bytes successfully received - either 1 or 0.
  */
 int boardGetChar(unsigned char* to_get) {
   return boardGetCharArray(1, to_get);
 }
 
 /**
- * @brief Gets N bytes from the board into the indicated val_ptr, LSB first.
- * If error suspected sets `board_version' to not present
- * @param val_ptr
- * @param n
- * @return int The number of bytes received successfully (i.e. N=>"Ok")
+ * @brief Reads n bytes of data from Jimulator.
+ * @warning This function reads data in a little-endian manner - that is, the
+ * least significant bit of data is on the left side of the array. Most systems
+ * use a big-endian architecture, so this may require conversion.
+ * @param data A pointer to a location where the data can be stored.
+ * @param n The number of bytes to read.
+ * @return int The number of bytes received successfully.
  */
 int board_get_n_bytes(int* val_ptr, int n) {
   if (n > MAX_SERIAL_WORD) {
@@ -717,8 +787,8 @@ int board_get_n_bytes(int* val_ptr, int n) {
 }
 
 /**
- * @brief Find the current execution state of the client
- * @return int client response if stopped, running, error, else "BROKEN"
+ * @brief Gets a code that indicates the internal state of Jimulator.
+ * @return int A code indicating the internal state of Jimulator.
  */
 const int board_enq() {
   unsigned char clientStatus = 0;
@@ -743,11 +813,13 @@ const int board_enq() {
 }
 
 /**
- * @brief Sends N bytes from the supplied value to the board, LSB first.
- * @param value The values to send.
- * @param n The number of bytes.
- * @return int The number of bytes believed received successfully (i.e.
- * N=>"Ok")
+ * @brief Writes n bytes of data to Jimulator.
+ * @warning Jimulator reads data in a little-endian manner - that is, the
+ * least significant bit of data is on the left side of a number. Data should be
+ * converted into little-endian before being sent.
+ * @param data The data to be written.
+ * @param n The number of bytes to write.
+ * @return int The number of bytes sent successfully.
  */
 int board_send_n_bytes(int value, int n) {
   unsigned char buffer[MAX_SERIAL_WORD];
@@ -765,7 +837,7 @@ int board_send_n_bytes(int value, int n) {
 }
 
 /**
- * @brief Signals the board to run for `steps` number of steps.
+ * @brief Signals the board to run for a set number of steps.
  * @param steps The number of steps to run for (0 if indefinite)
  */
 void run_board(const int steps) {
@@ -780,6 +852,8 @@ void run_board(const int steps) {
 /**
  * @brief Reads register information from the board.
  * @param data The pointer to read the register values into.
+ * @param count The number of registers values to read (will start from R0
+ * upwards)
  */
 void readRegistersIntoArray(unsigned char* data, unsigned int count) {
   boardSendChar(BR_GET_REG);
@@ -789,17 +863,19 @@ void readRegistersIntoArray(unsigned char* data, unsigned int count) {
 }
 
 /**
- * @brief Reads the values from a char array into a C++ string.
+ * @brief Converts a little-endian series of bits to a hexadecimal, big-endian
+ * string representation of that data. For example:
+ * The little endian 0b0111 = 0d14. The returned string will therefore be "E".
  * @warning This function does some bit-level trickery. This is very low
  * level, study carefully before altering control flow.
- * @param count The number of bytes to read out.
- * @param values The particular register value to read.
- * @param prepend Whether to prepend the output string with an "0x" or not.
+ * @param length The number of bits to read.
+ * @param values A pointer to the little-endian series of bits to read.
+ * @param prepend0x Whether to prepend the output string with an "0x" or not.
  * @return std::string A hexadecimal formatted register value.
  */
 std::string view_chararr2hexstrbe(int count,
                                   unsigned char* values,
-                                  bool prepend) {
+                                  bool prepend0x) {
   char ret[count * 2 + 1];
   char* ptr = ret;
 
@@ -808,7 +884,7 @@ std::string view_chararr2hexstrbe(int count,
     ptr += 2;  // Step string pointer
   }
 
-  if (prepend) {
+  if (prepend0x) {
     return std::string(ret).insert(0, "0x");
   } else {
     return std::string(ret);
@@ -816,13 +892,17 @@ std::string view_chararr2hexstrbe(int count,
 }
 
 /**
- * @brief Converts a bit array into an integer output.
- * @param count
- * @param array
- * @return int The converted array.
+ * @brief Takes a string literals which represent a string form of an integer -
+ * for example, the number 5 represented as the string {'5'}, or the number 327
+ * represented as the string {'3', '2', '7'} - and returns the value represented
+ * as an int. For example:
+ * Input string {'8', '1', '8'} will result in the output 818.
+ * @param i The length of the string.
+ * @param s The string representation of the number to have its value read.
+ * @return int The value read from the string.
  */
 int view_chararr2int(int count, unsigned char* array) {
-  int ret = 0; /* bit array => int */
+  int ret = 0;
 
   while (count--) {
     ret = (ret << 8) + (array[count] & 0xFF);
@@ -831,11 +911,14 @@ int view_chararr2int(int count, unsigned char* array) {
 }
 
 /**
- * @brief "acc" may be the same as "byte_string"
- * @param count
- * @param byte_string
- * @param number
- * @param acc
+ * @brief Takes a string representation of an integer - for example, the string
+ * {'5' '7' '2'} representing the integer 572 - and an integer number, adding
+ * these two "numbers" together into a second string literal. For example:
+ * The string {'6' '2'} and the integer 6 will output the string {'6' '6'}.
+ * @param length The length of the string.
+ * @param data The string representation of a number.
+ * @param number The integer to add.
+ * @param out Where to store the output string.
  */
 void view_chararrAdd(int count,
                      unsigned char* byte_string,
@@ -853,6 +936,14 @@ void view_chararrAdd(int count,
   return;
 }
 
+/**
+ * @brief Calculates the difference between the current address to display and
+ * the next address that needs to be displayed.
+ * @param src The current line in the source file.
+ * @param addr
+ * @param increment
+ * @return int
+ */
 int source_disassemble(source_line* src, unsigned int addr, int increment) {
   unsigned int diff;
 
