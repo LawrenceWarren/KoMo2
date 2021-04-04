@@ -104,10 +104,9 @@ const int Jimulator::loadJimulator(const char* const pathToKMD) {
  * @param steps The number of steps to run for (0 for indefinite)
  */
 void Jimulator::startJimulator(const int steps) {
-  if (checkBoardState() == clientState::NORMAL) {
-    // Sends a start signal &  whether breakpoints are on
+  if (checkBoardState() == clientState::NORMAL ||
+      Jimulator::checkBoardState() == clientState::BREAKPOINT) {
     boardSendChar(boardInstruction::START | 48);
-
     boardSendNBytes(steps, 4);  // Send step count
   }
 }
@@ -116,7 +115,8 @@ void Jimulator::startJimulator(const int steps) {
  * @brief Continues running Jimulator.
  */
 void Jimulator::continueJimulator() {
-  if (Jimulator::checkBoardState() == clientState::NORMAL) {
+  if (Jimulator::checkBoardState() == clientState::NORMAL ||
+      Jimulator::checkBoardState() == clientState::BREAKPOINT) {
     boardSendChar(static_cast<unsigned char>(boardInstruction::CONTINUE));
   }
 }
@@ -235,6 +235,8 @@ const clientState Jimulator::checkBoardState() {
     case clientState::BUSY:
       break;
     case clientState::FINISHED:
+      break;
+    case clientState::BREAKPOINT:
       break;
     default:
       return clientState::NORMAL;
