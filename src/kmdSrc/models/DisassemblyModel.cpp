@@ -48,8 +48,10 @@ DisassemblyModel::DisassemblyModel(DisassemblyView* const view,
  * row ID with the `memoryIndex` variable to identify what address the
  * breakpoint should be set at.
  */
-void DisassemblyModel::onBreakpointToggle(DisassemblyRows* const row) const {
+void DisassemblyModel::onBreakpointToggle(DisassemblyRows* const row) {
   row->setBreakpoint(Jimulator::setBreakpoint(row->getAddressVal()));
+  const auto s = buildDisassemblyRowAccessibilityString(*row);
+  row->get_accessible()->set_description(s);
 }
 
 /**
@@ -138,16 +140,27 @@ void DisassemblyModel::refreshViews() {
     row.setDisassembly(vals[i].disassembly);
     row.setBreakpoint(vals[i].breakpoint);
 
-    // Gets a string describing the state of the breakpoint
-    // Used for the accessibility object
-    std::string bp = vals[i].breakpoint ? "breakpoint set" : "no breakpoint";
-
-    // Set the accessibility for the view
-    std::stringstream ss;
-    ss << "address " << std::hex << vals[i].address << " : "
-       << vals[i].disassembly << " : " << bp;
-    row.get_accessible()->set_description(ss.str());
+    const auto s = buildDisassemblyRowAccessibilityString(row);
+    row.get_accessible()->set_description(s);
   }
+}
+
+/**
+ * @brief Generates the string to set for the accessibility model.
+ * @param row The row to build to accessibility string from.
+ * @return const std::string The accessibility string.
+ */
+const std::string DisassemblyModel::buildDisassemblyRowAccessibilityString(
+    DisassemblyRows& row) {
+  // Gets a string describing the state of the breakpoint
+  // Used for the accessibility object
+  std::string bp = row.getBreakpoint() ? "breakpoint set" : "no breakpoint";
+
+  // Set the accessibility for the view
+  std::stringstream ss;
+  ss << "address " << std::hex << row.getAddress() << " : "
+     << row.getDisassembly() << " : " << bp;
+  return ss.str();
 }
 
 /**

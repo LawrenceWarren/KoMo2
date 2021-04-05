@@ -40,15 +40,21 @@ class DisassemblyModel;
 class DisassemblyRows : public Gtk::HButtonBox {
  public:
   DisassemblyRows();
+
+  // SET
   void setBreakpoint(const bool text);
   void setAddress(const std::string text);
-  const std::string getAddress() const;
   void setHex(const std::string text);
   void setDisassembly(const std::string text);
+  void setAddressVal(const uint32_t val);
   void setModel(DisassemblyModel* const val);
+  
+  // GET
   Gtk::ToggleButton* const getButton();
   const uint32_t getAddressVal() const;
-  void setAddressVal(const uint32_t val);
+  const bool getBreakpoint();
+  const std::string getDisassembly();
+  const std::string getAddress() const;
 
  private:
   /**

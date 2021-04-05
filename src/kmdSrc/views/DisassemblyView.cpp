@@ -225,3 +225,13 @@ const uint32_t DisassemblyRows::getAddressVal() const {
 void DisassemblyRows::setAddressVal(const uint32_t val) {
   addressVal = val;
 }
+const bool DisassemblyRows::getBreakpoint() {
+  if (breakpoint.get_state_flags() == Gtk::STATE_FLAG_CHECKED) {
+    return true;
+  }
+
+  return false;
+}
+const std::string DisassemblyRows::getDisassembly() {
+  return disassembly.get_text();
+}

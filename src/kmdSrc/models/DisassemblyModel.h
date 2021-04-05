@@ -60,11 +60,13 @@ class DisassemblyModel : private Model {
   void incrementMemoryIndex(const uint32_t val);
   void addScrollRecognition();
   const std::array<Jimulator::MemoryValues, 15> getMemoryValues() const;
-  void onBreakpointToggle(DisassemblyRows* const row) const;
+  void onBreakpointToggle(DisassemblyRows* const row);
   void setupButtonHandlers();
   void updateCSSFlags(const Gtk::StateFlags state,
                       DisassemblyRows& row,
                       const uint32_t address);
+  const std::string buildDisassemblyRowAccessibilityString(
+      DisassemblyRows& val);
 
   // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error
