@@ -3,7 +3,7 @@
 value   DEFW 0 ; Store the read number here
 enterI  DEFB "Please enter your integer: ",0
 newline DEFB "\n",0
-message  DEFB " Enter a series of intigers\n",0
+message DEFB " Enter a series of intigers\n",0
 
         ALIGN
 main    ; Enter your code to read in the number here...
