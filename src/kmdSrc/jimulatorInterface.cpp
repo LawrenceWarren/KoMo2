@@ -177,12 +177,10 @@ const bool Jimulator::setBreakpoint(uint32_t addr) {
 
   // breakpoint(s) matched and deleted ???
   if (breakpoint_found) {
-    std::cout << "turning " << std::hex << addr << " OFF!" << std::endl;
     return false;
   }
   // See if we can set breakpoint
   else {
-    std::cout << "turning " << std::hex << addr << " ON!" << std::endl;
     temp = (~worda) & wordb;  // Undefined => possible choice
 
     // If any free entries ...

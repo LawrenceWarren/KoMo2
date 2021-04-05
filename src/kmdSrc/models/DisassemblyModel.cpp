@@ -158,8 +158,8 @@ const std::string DisassemblyModel::buildDisassemblyRowAccessibilityString(
 
   // Set the accessibility for the view
   std::stringstream ss;
-  ss << "address " << std::hex << row.getAddress() << " : "
-     << row.getDisassembly() << " : " << bp;
+  ss << "address " << std::hex << row.getAddress() << row.getDisassembly()
+     << bp;
   return ss.str();
 }
 

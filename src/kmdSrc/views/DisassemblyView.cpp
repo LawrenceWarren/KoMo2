@@ -225,17 +225,19 @@ const uint32_t DisassemblyRows::getAddressVal() const {
 void DisassemblyRows::setAddressVal(const uint32_t val) {
   addressVal = val;
 }
+/**
+ * @brief Returns if a breakpoint is set or not.
+ * @return true if the breakpoint is set.
+ * @return false if the breakpoint is not set.
+ */
 const bool DisassemblyRows::getBreakpoint() {
-  if (breakpoint.get_state_flags() ==
-      (Gtk::STATE_FLAG_CHECKED | Gtk::STATE_FLAG_DIR_LTR)) {
-    std::cout << "return true!" << std::endl;
-    return true;
-  }
-
-  std::cout << "false " << std::hex << breakpoint.get_state_flags()
-            << std::endl;
-  return false;
+  return breakpoint.get_state_flags() ==
+         (Gtk::STATE_FLAG_CHECKED | Gtk::STATE_FLAG_DIR_LTR);
 }
+/**
+ * @brief Gets the disassembly text for the breakpoint row.
+ * @return const std::string The disassembly text.
+ */
 const std::string DisassemblyRows::getDisassembly() {
   return disassembly.get_text();
 }
