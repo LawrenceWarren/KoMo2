@@ -30,7 +30,9 @@ class ControlsView;
  */
 class ControlsModel : private Model {
  public:
-  ControlsModel(ControlsView* const view, KoMo2Model* const parent);
+  ControlsModel(ControlsView* const view,
+                const std::string manual,
+                KoMo2Model* const parent);
   virtual const bool handleKeyPress(const GdkEventKey* const e) override;
   virtual void changeJimulatorState(const JimulatorState newState) override;
 

@@ -28,11 +28,13 @@
  * @brief Construct a new ControlsModel::ControlsModel object.
  * @param view A pointer to the accompanying view object.
  * @param parent A pointer to the parent model.
+ * // TODO: expand this
  */
-ControlsModel::ControlsModel(ControlsView* const view, KoMo2Model* const parent)
+ControlsModel::ControlsModel(ControlsView* const view,
+                             const std::string manual,
+                             KoMo2Model* const parent)
     : Model(parent), view(view) {
-  view->getHelpButton()->set_uri(
-      "https://github.com/LawrenceWarren/KoMo2#user-manual");
+  view->getHelpButton()->set_uri(manual);
 
   setButtonListener(view->getPauseResumeButton(), this,
                     &ControlsModel::onPauseResumeClick);

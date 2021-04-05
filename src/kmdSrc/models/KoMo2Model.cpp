@@ -32,17 +32,21 @@
  * events.
  * @param mainWindow A pointer to the mainWindow view object.
  * @param argv0 The absolutePathToProjectRoot - parsed from argv[0].
+ * // TODO: expand this paramter
  */
 KoMo2Model::KoMo2Model(MainWindowView* const mainWindow,
-                       const std::string argv0)
+                       const std::string argv0,
+                       const std::string manual,
+                       const int refreshRate)
     : Model(this),
       mainWindow(mainWindow),
       absolutePathToProjectRoot(argv0),
       compileLoadModel(mainWindow->getCompileLoadView(), this),
-      controlsModel(mainWindow->getControlsView(), this),
+      controlsModel(mainWindow->getControlsView(), manual, this),
       registersModel(mainWindow->getRegistersView(), this),
       terminalModel(mainWindow->getTerminalView(), this),
-      disassemblyModel(mainWindow->getDisassemblyView(), this) {
+      disassemblyModel(mainWindow->getDisassemblyView(), this),
+      refreshRate(refreshRate) {
   // Updates the main window to have a pointer to its model, sets its CSS.
   getMainWindow()->setModel(this);
   getMainWindow()->setStyling();

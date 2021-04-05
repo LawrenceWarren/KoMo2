@@ -45,7 +45,10 @@ class DisassemblyView;
  */
 class KoMo2Model : public Model {
  public:
-  KoMo2Model(MainWindowView* const mainWindow, const std::string argv0);
+  KoMo2Model(MainWindowView* const mainWindow,
+             const std::string argv0,
+             const std::string manual,
+             const int refreshRate);
   virtual void changeJimulatorState(const JimulatorState newState) override;
   const bool refreshViews();
 
@@ -107,7 +110,7 @@ class KoMo2Model : public Model {
    * @brief Defines how often the the refreshViews function should be called
    * when KoMo2 is in the RUNNING state.
    */
-  const unsigned int refreshRate = 50;  // TODO: read this from an external file
+  const unsigned int refreshRate;
 
   // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error

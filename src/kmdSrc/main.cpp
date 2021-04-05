@@ -23,9 +23,14 @@
 #include <libgen.h>
 #include <sys/signal.h>
 #include <unistd.h>
+#include <array>
 #include <fstream>
 #include <iostream>
+#include <regex>
 #include <sstream>
+#include <utility>
+#include <vector>
+#include "../../libs/rapidjson/document.h"
 #include "models/KoMo2Model.h"
 #include "views/MainWindowView.h"
 
@@ -41,6 +46,12 @@ int communicationToJimulator[2];
 // ! Originally compile_communication
 int compilerCommunication[2];
 
+// Default values for variables read from `variables.json`
+std::string version = "1.0.0";
+std::string manual = "https://github.com/LawrenceWarren/KoMo2#user-manual";
+std::string help = "Please view the user manual (" + manual + ") for help.";
+int refresh = 200;
+
 void initJimulator(std::string argv0);
 void initCompilerPipes(KoMo2Model* mainModel);
 const std::string getAbsolutePathToRootDirectory(const char* const arg);
@@ -50,6 +61,7 @@ const int initialiseCommandLine(
 const bool receivedCompilerOutput(GIOChannel* source,
                                   GIOCondition condition,
                                   gpointer data);
+void readProgramVariables();
 
 /**
  * @brief The program entry point.
@@ -62,6 +74,8 @@ int main(int argc, char* argv[]) {
   auto app = Gtk::Application::create(argc, argv, "uon.cs.KoMo2",
                                       Gio::APPLICATION_HANDLES_COMMAND_LINE);
 
+  readProgramVariables();
+
   // Setup communication to Jimulator child process
   initJimulator(argv0);
 
@@ -71,7 +85,7 @@ int main(int argc, char* argv[]) {
 
   // Setup model & view
   MainWindowView koMo2Window(400, 400);
-  KoMo2Model mainModel(&koMo2Window, argv0);
+  KoMo2Model mainModel(&koMo2Window, argv0, manual, refresh);
 
   // Setup communication methods to compile child process
   initCompilerPipes(&mainModel);
@@ -157,30 +171,55 @@ const std::string getAbsolutePathToRootDirectory(const char* const arg) {
 }
 
 /**
- * @brief Returns the version number as a string.
- * @returns std::string the version number contained in the plain text file
- * `version` in the project root.
+ * @brief Reads the program variables from the "variables.json" file and
+ * populates global variables with the values read.
  */
-const std::string getVersionNumber() {
-  std::string versionString;
-  std::ifstream versionFile("version");
+void readProgramVariables() {
+  // Reading the file into a large string
+  std::string s;
+  std::ifstream variablesFile("variables.json");
+  std::stringstream ss;
+  bool first = true;
 
-  if (versionFile.is_open()) {
-    if (not std::getline(versionFile, versionString)) {
-      std::cout << "error!";
+  if (variablesFile.is_open()) {
+    while (getline(variablesFile, s)) {
+      if (first) {
+        first = false;
+      } else {
+        ss << '\n';
+      }
+
+      ss << s;
     }
-    versionFile.close();
+    variablesFile.close();
   }
 
-  return versionString;
-}
+  // JSON parsing the string
+  rapidjson::Document d;
+  d.Parse(ss.str().c_str());
 
-/**
- * @brief read and print the help message.
- */
-void printHelpMessage() {
-  std::cout << "TODO: Help message!" << std::endl;
-  // TODO: stub - read a help message from a file and print it
+  if (not d.IsObject()) {
+    std::cout << "Can't read variables.json, using defaults." << std::endl;
+    return;
+  }
+
+  if (d.HasMember("version")) {
+    version = std::string(d["version"].GetString());
+  }
+
+  if (d.HasMember("manual")) {
+    manual = std::string(d["manual"].GetString());
+  }
+
+  if (d.HasMember("help")) {
+    help = std::string(d["help"].GetString());
+  } else {
+    help = "Please view the user manual (" + manual + ") for help.";
+  }
+
+  if (d.HasMember("refresh")) {
+    refresh = d["refresh"].GetInt();
+  }
 }
 
 /**
@@ -191,12 +230,12 @@ void printHelpMessage() {
  */
 const int handleCommandLine(const bool isVersion, const bool isHelp) {
   if (isVersion) {
-    std::cout << "v" << getVersionNumber() << std::endl;
+    std::cout << version << std::endl;
     return 1;
   }
 
   if (isHelp) {
-    printHelpMessage();
+    std::cout << help << std::endl;
     return 1;
   }
 
