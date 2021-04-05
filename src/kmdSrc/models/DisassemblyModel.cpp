@@ -49,8 +49,7 @@ DisassemblyModel::DisassemblyModel(DisassemblyView* const view,
  * breakpoint should be set at.
  */
 void DisassemblyModel::onBreakpointToggle(DisassemblyRows* const row) const {
-  row->setBreakpoint(
-      Jimulator::setBreakpoint(memoryIndex + (row->getId() * 4)));
+  row->setBreakpoint(Jimulator::setBreakpoint(row->getAddressVal()));
 }
 
 /**
@@ -133,6 +132,7 @@ void DisassemblyModel::refreshViews() {
     auto flag = row.get_state_flags();
 
     updateCSSFlags(flag, row, vals[i].address);
+    row.setAddressVal(vals[i].address);
     row.setAddress(intToFormattedHexString(vals[i].address));
     row.setHex(vals[i].hex);
     row.setDisassembly(vals[i].disassembly);

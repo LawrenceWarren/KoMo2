@@ -20,6 +20,7 @@
  */
 
 #include "KoMo2Model.h"
+#include <atkmm/action.h>
 #include <glibmm.h>
 #include <gtkmm/filechooserdialog.h>
 #include <iostream>
@@ -32,7 +33,9 @@
  * events.
  * @param mainWindow A pointer to the mainWindow view object.
  * @param argv0 The absolutePathToProjectRoot - parsed from argv[0].
- * // TODO: expand this paramter
+ * @param manual A UR(I/L) that describes where the user manual can be found.
+ * @param refreshRate An integer that describes how many milliseconds should be
+ * taken between refreshes when KoMo2 is in the `RUNNING` state.
  */
 KoMo2Model::KoMo2Model(MainWindowView* const mainWindow,
                        const std::string argv0,

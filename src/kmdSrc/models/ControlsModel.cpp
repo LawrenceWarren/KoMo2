@@ -28,7 +28,8 @@
  * @brief Construct a new ControlsModel::ControlsModel object.
  * @param view A pointer to the accompanying view object.
  * @param parent A pointer to the parent model.
- * // TODO: expand this
+ * @param refreshRate An integer that describes how many milliseconds should be
+ * taken between refreshes when KoMo2 is in the `RUNNING` state.
  */
 ControlsModel::ControlsModel(ControlsView* const view,
                              const std::string manual,

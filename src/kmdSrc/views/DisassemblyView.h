@@ -45,19 +45,15 @@ class DisassemblyRows : public Gtk::HButtonBox {
   const std::string getAddress() const;
   void setHex(const std::string text);
   void setDisassembly(const std::string text);
-  const unsigned int getId() const;
   void setModel(DisassemblyModel* const val);
   Gtk::ToggleButton* const getButton();
+  const uint32_t getAddressVal() const;
+  void setAddressVal(const uint32_t val);
 
  private:
   /**
-   * @brief A static integer used for seeding the id's of each individual
-   * `disassemblyRows` object.
-   */
-  static unsigned int idSeed;
-  /**
-   * @brief Setting exact size of widgets is hard; this container is needed to
-   * set the size of the button.
+   * @brief Setting exact size of widgets is hard; this container is needed
+   * to set the size of the button.
    */
   Gtk::HBox buttonSizer;
   /**
@@ -76,10 +72,12 @@ class DisassemblyRows : public Gtk::HButtonBox {
    * @brief Displays the current disassembly value of the memory.
    */
   Gtk::Label disassembly;
+
   /**
-   * @brief The unique id of each `disassemblyRows` object.
+   * @brief The address pointed to, as an integer.
    */
-  const unsigned int id;
+  uint32_t addressVal;
+
   /**
    * @brief A pointer to the model.
    */

@@ -63,6 +63,7 @@ void RegistersModel::refreshViews() {
 
   for (long unsigned int i = 0; i < 16; i++) {
     (*labelArray)[1][i].set_text(newValues[i]);
+    (*labelArray)[1][i].get_accessible()->set_name(newValues[i]);
   }
 
   // Send the new program counter value to disassembly model

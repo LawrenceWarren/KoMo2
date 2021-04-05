@@ -62,12 +62,10 @@ void RegistersView::initRegisterViewContainer() {
 void RegistersView::initLeftHandLabel(const int j) {
   labelArray[0][j].set_size_request(70, 22);
 
-  // registers 0 through 14 are generic registers, 15 is the program counter
-  if (j != 15) {
-    labelArray[0][j].set_text("R" + std::to_string(j));
-  } else {
-    labelArray[0][j].set_text("PC");
-  }
+  // Get some text for the left hand label
+  const auto s = j != 15 ? "R" + std::to_string(j) : "PC";
+  labelArray[0][j].set_text(s);
+  labelArray[0][j].get_accessible()->set_name(s);
 }
 
 /**

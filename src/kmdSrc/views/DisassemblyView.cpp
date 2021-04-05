@@ -23,9 +23,6 @@
 #include <sstream>
 #include "../models/DisassemblyModel.h"
 
-// Seed value used for giving breakpoint buttons their ID's
-unsigned int DisassemblyRows::idSeed = 0;
-
 /**
  * @brief Construct a new DisassemblyView::DisassemblyView object.
  * @param parent A pointer to this views parent, set during initialisation.
@@ -102,7 +99,7 @@ MainWindowView* const DisassemblyView::getParent() const {
 /**
  * @brief Construct a new DisassemblyRows::DisassemblyRows object.
  */
-DisassemblyRows::DisassemblyRows() : id(idSeed++) {
+DisassemblyRows::DisassemblyRows() {
   set_layout(Gtk::BUTTONBOX_START);
   initBreakpoint();
   initAddress();
@@ -201,13 +198,6 @@ Gtk::ToggleButton* const DisassemblyRows::getButton() {
   return &breakpoint;
 }
 /**
- * @brief Gets the value of the id member.
- * @return const unsigned int The id member.
- */
-const unsigned int DisassemblyRows::getId() const {
-  return id;
-}
-/**
  * @brief Sets the value of the model pointer.
  * @param val The value to set the model pointer to.
  */
@@ -220,4 +210,18 @@ void DisassemblyRows::setModel(DisassemblyModel* const val) {
  */
 const std::string DisassemblyRows::getAddress() const {
   return address.get_text();
+}
+/**
+ * @brief Get the addressVal member.
+ * @return const uint32_t The addressVal member.
+ */
+const uint32_t DisassemblyRows::getAddressVal() const {
+  return addressVal;
+}
+/**
+ * @brief Set the value of addressVal member.
+ * @param val The value to set it to.
+ */
+void DisassemblyRows::setAddressVal(const uint32_t val) {
+  addressVal = val;
 }
