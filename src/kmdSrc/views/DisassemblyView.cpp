@@ -226,10 +226,14 @@ void DisassemblyRows::setAddressVal(const uint32_t val) {
   addressVal = val;
 }
 const bool DisassemblyRows::getBreakpoint() {
-  if (breakpoint.get_state_flags() == Gtk::STATE_FLAG_CHECKED) {
+  if (breakpoint.get_state_flags() ==
+      (Gtk::STATE_FLAG_CHECKED | Gtk::STATE_FLAG_DIR_LTR)) {
+    std::cout << "return true!" << std::endl;
     return true;
   }
 
+  std::cout << "false " << std::hex << breakpoint.get_state_flags()
+            << std::endl;
   return false;
 }
 const std::string DisassemblyRows::getDisassembly() {
