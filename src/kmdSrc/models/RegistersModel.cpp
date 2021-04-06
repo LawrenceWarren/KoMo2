@@ -48,7 +48,125 @@ void RegistersModel::changeJimulatorState(const JimulatorState newState) {}
  * @return bool true if the key press was handled.
  */
 const bool RegistersModel::handleKeyPress(const GdkEventKey* const e) {
-  // TODO: readout label values upon Alt+0-9 OR Alt+A-F?
+  // MOD1_MASK is the alt key - if not pressed, return
+  if ((e->state & (GDK_SHIFT_MASK | GDK_CONTROL_MASK | GDK_MOD1_MASK)) !=
+      GDK_MOD1_MASK) {
+    return false;
+  }
+
+  auto* const labelArray = getView()->getLabels();
+  Glib::RefPtr<Atk::Object> accessible;
+  int index;
+
+  switch (e->keyval) {
+    case GDK_KEY_0:
+      index = 0;
+      accessible = (*labelArray)[1][0].get_accessible();
+      break;
+
+    case GDK_KEY_1:
+      index = 1;
+      accessible = (*labelArray)[1][1].get_accessible();
+      break;
+
+    case GDK_KEY_2:
+      index = 2;
+      accessible = (*labelArray)[1][2].get_accessible();
+      break;
+
+    case GDK_KEY_3:
+      index = 3;
+      accessible = (*labelArray)[1][3].get_accessible();
+      break;
+
+    case GDK_KEY_4:
+      index = 4;
+      accessible = (*labelArray)[1][4].get_accessible();
+      break;
+
+    case GDK_KEY_5:
+      index = 5;
+      accessible = (*labelArray)[1][5].get_accessible();
+      break;
+
+    case GDK_KEY_6:
+      index = 6;
+      accessible = (*labelArray)[1][6].get_accessible();
+      break;
+
+    case GDK_KEY_7:
+      index = 7;
+      accessible = (*labelArray)[1][7].get_accessible();
+      break;
+
+    case GDK_KEY_8:
+      index = 8;
+      accessible = (*labelArray)[1][8].get_accessible();
+      break;
+
+    case GDK_KEY_9:
+      index = 9;
+      accessible = (*labelArray)[1][9].get_accessible();
+      break;
+
+    case GDK_KEY_a:
+    case GDK_KEY_A:
+      index = 10;
+      accessible = (*labelArray)[1][10].get_accessible();
+      break;
+
+    case GDK_KEY_b:
+    case GDK_KEY_B:
+      index = 11;
+      accessible = (*labelArray)[1][11].get_accessible();
+      break;
+
+    case GDK_KEY_c:
+    case GDK_KEY_C:
+      index = 12;
+      accessible = (*labelArray)[1][12].get_accessible();
+      break;
+
+    case GDK_KEY_d:
+    case GDK_KEY_D:
+      index = 13;
+      accessible = (*labelArray)[1][13].get_accessible();
+      break;
+
+    case GDK_KEY_e:
+    case GDK_KEY_E:
+      index = 14;
+      accessible = (*labelArray)[1][14].get_accessible();
+      break;
+
+    case GDK_KEY_p:
+    case GDK_KEY_P:
+      index = 15;
+      accessible = (*labelArray)[1][15].get_accessible();
+      break;
+
+    // any other key
+    default:
+      return false;
+  }
+
+  if ((*labelArray)[1][index].get_can_focus()) {
+    std::cout << "Can focus already" << std::endl;
+  } else {
+    std::cout << "Can't focus already" << std::endl;
+  }
+
+  (*labelArray)[1][index].set_can_focus(true);
+  (*labelArray)[1][index].grab_focus();
+
+  if ((*labelArray)[1][index].get_can_focus()) {
+    std::cout << "Can focus now" << std::endl;
+  } else {
+    std::cout << "Can't focus now" << std::endl;
+  }
+
+  getParent()->getMainWindow()->get_accessible()->get_parent();
+
   return false;
 }
 
