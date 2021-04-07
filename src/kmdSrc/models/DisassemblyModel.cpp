@@ -157,13 +157,16 @@ const std::string DisassemblyModel::buildDisassemblyRowAccessibilityString(
   // Used for the accessibility object
   std::string bp = row.getBreakpoint() ? "breakpoint set" : "no breakpoint";
 
-  // TODO: remove leading strings of 0's
+  // Removes leading 0's from addresses
+  std::stringstream gHex;
+  gHex << std::hex << row.getAddress();
+  const auto addr = std::regex_replace(gHex.str(), std::regex("^0x0{0,7}"), "");
 
-  // Set the accessibility for the view
+  // TODO: convert disassembly into English?
+
   std::stringstream ss;
-  ss << "address " << std::hex << row.getAddress()
-     << std::regex_replace(row.getDisassembly(), std::regex("^0x0{0,7}"), "")
-     << bp;
+  ss << "address " << addr << row.getDisassembly() << bp;
+
   return ss.str();
 }
 
