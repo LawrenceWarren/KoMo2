@@ -41,6 +41,7 @@ class DisassemblyModel : private Model {
   // ! Virtual overrides
   virtual void changeJimulatorState(const JimulatorState newState) override;
   virtual const bool handleKeyPress(const GdkEventKey* const e) override;
+  void setEnglishMnemonic(const bool val);
 
  private:
   /**
@@ -76,9 +77,11 @@ class DisassemblyModel : private Model {
   const Gtk::StateFlags FOCUSED =
       Gtk::STATE_FLAG_DIR_LTR | Gtk::STATE_FLAG_FOCUSED;
 
+  bool englishMnemonic = false;
+
   /**
-   * @brief The CSS state flags for e memory row that has keyboard focus and is
-   * currently stored in the Program Counter.
+   * @brief The CSS state flags for e memory row that has keyboard focus and
+   * is currently stored in the Program Counter.
    */
   const Gtk::StateFlags PC_ADDRESS_FOCUSED = Gtk::STATE_FLAG_DIR_LTR |
                                              Gtk::STATE_FLAG_FOCUSED |

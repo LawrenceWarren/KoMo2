@@ -163,9 +163,12 @@ const std::string DisassemblyModel::buildDisassemblyRowAccessibilityString(
   gHex << std::hex << row.getAddress();
   const auto addr = std::regex_replace(gHex.str(), std::regex("^0x0{0,7}"), "");
 
+  const std::string disassemblyInfo =
+      englishMnemonic ? convertMnemonicToEnglish(row.getDisassembly())
+                      : row.getDisassembly();
+
   std::stringstream ss;
-  ss << "address " << addr << ", "
-     << convertMnemonicToEnglish(row.getDisassembly()) << bp;
+  ss << "address " << addr << ", " << disassemblyInfo << bp;
 
   return ss.str();
 }
@@ -280,7 +283,7 @@ const std::string DisassemblyModel::parse1Param(
 }
 
 /**
- * @brief Parse an ARM instruction that takes 2 additional parameter.
+ * @brief Parse an ARM instruction that takes 2 additional parameters.
  * @param v A vector of strings that made up a disassembly line.
  * @return const std::string A plain English string describing the contents of
  * the line.
@@ -308,7 +311,7 @@ const std::string DisassemblyModel::parse2Param(
 }
 
 /**
- * @brief Parse an ARM instruction that takes 3 additional parameter.
+ * @brief Parse an ARM instruction that takes 3 additional parameters.
  * @param v A vector of strings that made up a disassembly line.
  * @return const std::string A plain English string describing the contents of
  * the line.
@@ -335,7 +338,7 @@ const std::string DisassemblyModel::parse3Param(
 }
 
 /**
- * @brief Parse an ARM instruction that takes 4 additional parameter.
+ * @brief Parse an ARM instruction that takes 4 additional parameters.
  * @param v A vector of strings that made up a disassembly line.
  * @return const std::string A plain English string describing the contents of
  * the line.
@@ -522,4 +525,11 @@ DisassemblyModel::getMemoryValues() const {
  */
 void DisassemblyModel::setPCValue(const std::string val) {
   PCValue = val;
+}
+/**
+ * @brief Set the value of the englishMnemonic member variable.
+ * @param val The value to set englishMnemonic to.
+ */
+void DisassemblyModel::setEnglishMnemonic(const bool val) {
+  englishMnemonic = val;
 }

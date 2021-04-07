@@ -63,6 +63,9 @@ const bool receivedCompilerOutput(GIOChannel* source,
                                   gpointer data);
 void readProgramVariables(const std::string argv0);
 
+// A global reference to the mainModel
+void* model;
+
 /**
  * @brief The program entry point.
  * @param argc The number of command line arguments.
@@ -86,6 +89,8 @@ int main(int argc, char* argv[]) {
   // Setup model & view
   MainWindowView koMo2Window(400, 400);
   KoMo2Model mainModel(&koMo2Window, argv0, manual, refresh);
+
+  model = &mainModel;
 
   // Setup communication methods to compile child process
   initCompilerPipes(&mainModel);
@@ -226,9 +231,17 @@ void readProgramVariables(const std::string argv0) {
  * @brief Handles if a command line flag is set.
  * @param isVersion If the version flag has been set.
  * @param isHelp If the help flag has been set.
+ * @param isMnemonics If the mnemonics flag is set.
  * @return int status code.
  */
-const int handleCommandLine(const bool isVersion, const bool isHelp) {
+const int handleCommandLine(const bool isVersion,
+                            const bool isHelp,
+                            const bool isMnemonics) {
+  if (isMnemonics) {
+    static_cast<KoMo2Model*>(model)->getDisassemblyModel()->setEnglishMnemonic(
+        true);
+  }
+
   if (isVersion) {
     std::cout << version << std::endl;
     return 1;
@@ -256,9 +269,9 @@ const int initialiseCommandLine(
     const Glib::RefPtr<Gio::ApplicationCommandLine>& cmd,
     const Glib::RefPtr<Gtk::Application>& app) {
   Glib::OptionGroup group("options", "main options");
-  bool isVersion = false,
-       isHelp = false;              // Booleans for options being toggled
-  Glib::OptionEntry version, help;  // Option objects
+  bool isVersion = false, isHelp = false,
+       isMnemonics = false;  // Booleans for options being toggled
+  Glib::OptionEntry version, help, mnemonics;  // Option objects
 
   // Setting the version `-v` option
   version.set_long_name("version");
@@ -272,6 +285,12 @@ const int initialiseCommandLine(
   help.set_description("Display a help message.");
   group.add_entry(help, isHelp);
 
+  mnemonics.set_long_name("english");
+  mnemonics.set_short_name('e');
+  mnemonics.set_description(
+      "Play ARM mnemonics in English if using a screenreader.");
+  group.add_entry(mnemonics, isMnemonics);
+
   Glib::OptionContext context;
   context.add_group(group);
 
@@ -282,7 +301,7 @@ const int initialiseCommandLine(
   char** argv = cmd->get_arguments(argc);
   context.parse(argc, argv);
 
-  int returnVal = handleCommandLine(isVersion, isHelp);
+  int returnVal = handleCommandLine(isVersion, isHelp, isMnemonics);
 
   // If command line arguments were valid, activate app, else not.
   if (not returnVal) {
