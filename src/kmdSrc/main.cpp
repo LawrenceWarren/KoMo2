@@ -52,8 +52,8 @@ std::string manual = "https://github.com/LawrenceWarren/KoMo2#user-manual";
 std::string help = "Please view the user manual (" + manual + ") for help.";
 int refresh = 200;
 
-void initJimulator(std::string argv0);
-void initCompilerPipes(KoMo2Model* mainModel);
+void initJimulator(const std::string argv0);
+void initCompilerPipes(KoMo2Model* const mainModel);
 const std::string getAbsolutePathToRootDirectory(const char* const arg);
 const int initialiseCommandLine(
     const Glib::RefPtr<Gio::ApplicationCommandLine>&,
@@ -61,7 +61,7 @@ const int initialiseCommandLine(
 const bool receivedCompilerOutput(GIOChannel* source,
                                   GIOCondition condition,
                                   gpointer data);
-void readProgramVariables();
+void readProgramVariables(const std::string argv0);
 
 /**
  * @brief The program entry point.
@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
   auto app = Gtk::Application::create(argc, argv, "uon.cs.KoMo2",
                                       Gio::APPLICATION_HANDLES_COMMAND_LINE);
 
-  readProgramVariables();
+  readProgramVariables(argv0);
 
   // Setup communication to Jimulator child process
   initJimulator(argv0);
@@ -174,10 +174,10 @@ const std::string getAbsolutePathToRootDirectory(const char* const arg) {
  * @brief Reads the program variables from the "variables.json" file and
  * populates global variables with the values read.
  */
-void readProgramVariables() {
+void readProgramVariables(const std::string argv0) {
   // Reading the file into a large string
   std::string s;
-  std::ifstream variablesFile("variables.json");
+  std::ifstream variablesFile(argv0 + "/variables.json");
   std::stringstream ss;
   bool first = true;
 
