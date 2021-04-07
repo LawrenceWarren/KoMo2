@@ -48,6 +48,7 @@ class DisassemblyModel : private Model {
    * @brief The view this model represents.
    */
   DisassemblyView* const view;
+
   /**
    * @brief Fixed width integer representing the memory address of the view at
    * the top of the container.
@@ -77,6 +78,10 @@ class DisassemblyModel : private Model {
   const Gtk::StateFlags FOCUSED =
       Gtk::STATE_FLAG_DIR_LTR | Gtk::STATE_FLAG_FOCUSED;
 
+  /**
+   * @brief Whether or not ARM mnemonics should be read in English when being
+   * read by a screenreader, or if they should be left as ARM mnemonics.
+   */
   bool englishMnemonic = false;
 
   /**
