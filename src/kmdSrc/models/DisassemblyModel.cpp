@@ -21,6 +21,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <regex>
 #include <sstream>
 #include "../views/MainWindowView.h"
 #include "KoMo2Model.h"
@@ -160,7 +161,8 @@ const std::string DisassemblyModel::buildDisassemblyRowAccessibilityString(
 
   // Set the accessibility for the view
   std::stringstream ss;
-  ss << "address " << std::hex << row.getAddress() << row.getDisassembly()
+  ss << "address " << std::hex << row.getAddress()
+     << std::regex_replace(row.getDisassembly(), std::regex("^0x0{0,7}"), "")
      << bp;
   return ss.str();
 }

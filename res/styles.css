@@ -196,22 +196,19 @@
 .address_label {
   color: #ffffff;
   font-family: "Fira Code Retina", "Fira Code", monospace;
-  box-shadow: inset 2px 0px 0px #24292e;
-  /*background-color: #1edd8d;*/
+  border-left: 2px solid #1b1f23;
 }
 
 .hex_label {
   color: #ffffff;
   font-family: "Fira Code Retina", "Fira Code", monospace;
-  box-shadow: inset 2px 0px 0px #24292e;
-  /*background-color: #dd1e9d;*/
+  border-left: 2px solid #1b1f23;
 }
 
 .disassembly_label {
   color: #ffffff;
   font-family: "Fira Code Retina", "Fira Code", monospace;
-  box-shadow: inset 2px 0px 0px #24292e;
-  /*background-color: #dd741e;*/
+  border-left: 2px solid #1b1f23;
 }
 
 /* The terminal display box */

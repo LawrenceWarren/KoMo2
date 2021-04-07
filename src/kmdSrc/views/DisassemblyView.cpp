@@ -106,6 +106,8 @@ DisassemblyRows::DisassemblyRows() {
   initHex();
   initDisassembly();
 
+  set_spacing(0);
+
   buttonSizer.set_size_request(5, 5);
   buttonSizer.pack_start(breakpoint, false, false);
   pack_start(buttonSizer, false, false);
@@ -134,7 +136,7 @@ void DisassemblyRows::initBreakpoint() {
 void DisassemblyRows::initAddress() {
   address.get_style_context()->add_class("address_label");
   address.set_size_request(100, 10);
-  address.set_xalign(0.2);
+  address.set_xalign(0.0);
 }
 /**
  * @brief Initialises the hex label.
@@ -142,15 +144,15 @@ void DisassemblyRows::initAddress() {
 void DisassemblyRows::initHex() {
   hex.set_size_request(100, 10);
   hex.get_style_context()->add_class("hex_label");
-  hex.set_xalign(0.2);
+  hex.set_xalign(0.0);
 }
 /**
  * @brief Initialises the disassembly label.
  */
 void DisassemblyRows::initDisassembly() {
-  disassembly.set_xalign(0.2);
   disassembly.get_style_context()->add_class("disassembly_label");
-  disassembly.set_size_request(400, 10);
+  disassembly.set_size_request(500, 10);
+  disassembly.set_xalign(0.0);
 }
 
 // ! Getters and setters

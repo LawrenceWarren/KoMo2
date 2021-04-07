@@ -39,6 +39,7 @@
 #include <unistd.h>
 #include <iomanip>
 #include <iostream>
+#include <regex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -460,14 +461,17 @@ std::array<Jimulator::MemoryValues, 15> Jimulator::getJimulatorMemoryValues(
         }
 
         readValues[row].hex = std::string(pStr);
-        readValues[row].disassembly = std::string(src->text);
+
+        // Remove any comments that trail the disassembly
+        readValues[row].disassembly =
+            std::regex_replace(std::string(src->text), std::regex(";.*$"), "");
 
         g_free(pStr);
 
         do {
           if (src->pNext != NULL) {
-            src = src->pNext; /* Move on ... */
-          } else {            /* ... wrapping, if required */
+            src = src->pNext;  // Move on ...
+          } else {             // ... wrapping, if required
             if (not used_first) {
               src = source.pStart;
               used_first = true;
