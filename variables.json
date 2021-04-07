@@ -1,6 +1,6 @@
 {
   "version": "v1.0.0",
-  "help": "SOME MESSAGE\nTHAT SAYS\nPOO PEE POO poo",
+  "help": "For more information on what KoMo2 is and how to use it, please visit:\nhttps://github.com/LawrenceWarren/KoMo2#user-manual",
   "manual": "https://github.com/LawrenceWarren/KoMo2#user-manual",
   "refresh": 50
 }
