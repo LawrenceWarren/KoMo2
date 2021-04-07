@@ -17,7 +17,8 @@ checkB  SWI 1
         CMP R0, #10 ; If enter pressed, proceed
         BEQ readP
         CMP R0, #48 ; If not an integer, error
-        BLT errorB
+        
+        errorB
         CMP R0, #57 ; more error
         BGT errorB
         SUB R0, R0, #48 ; Else keep reading int

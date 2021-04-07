@@ -96,6 +96,12 @@ class DisassemblyModel : private Model {
                       const uint32_t address);
   const std::string buildDisassemblyRowAccessibilityString(
       DisassemblyRows& val);
+  const std::string convertMnemonicToEnglish(const std::string mnemonic);
+  const std::string parseDEFB(const std::vector<std::string> v);
+  const std::string parse1Param(const std::vector<std::string> v);
+  const std::string parse2Param(const std::vector<std::string> v);
+  const std::string parse3Param(const std::vector<std::string> v);
+  const std::string parse4Param(const std::vector<std::string> v);
 
   // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error
