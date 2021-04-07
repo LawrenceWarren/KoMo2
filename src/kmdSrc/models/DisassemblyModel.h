@@ -53,7 +53,36 @@ class DisassemblyModel : private Model {
    */
   static uint32_t memoryIndex;
 
+  /**
+   * @brief Stores the value currently in the program counter.
+   */
   std::string PCValue = "0x00000000";
+
+  /**
+   * @brief The CSS state flags for an un-highlighted memory row.
+   */
+  const Gtk::StateFlags NORMAL = Gtk::STATE_FLAG_DIR_LTR;
+
+  /**
+   * @brief The CSS state flags for if the memory row is currently stored in the
+   * Program Counter.
+   */
+  const Gtk::StateFlags PC_ADDRESS =
+      Gtk::STATE_FLAG_DIR_LTR | Gtk::STATE_FLAG_ACTIVE;
+
+  /**
+   * @brief The CSS state flags for a memory row that has keyboard focus.
+   */
+  const Gtk::StateFlags FOCUSED =
+      Gtk::STATE_FLAG_DIR_LTR | Gtk::STATE_FLAG_FOCUSED;
+
+  /**
+   * @brief The CSS state flags for e memory row that has keyboard focus and is
+   * currently stored in the Program Counter.
+   */
+  const Gtk::StateFlags PC_ADDRESS_FOCUSED = Gtk::STATE_FLAG_DIR_LTR |
+                                             Gtk::STATE_FLAG_FOCUSED |
+                                             Gtk::STATE_FLAG_ACTIVE;
 
   const std::string intToFormattedHexString(const uint32_t formatMe) const;
   const bool handleScroll(GdkEventScroll* const e);

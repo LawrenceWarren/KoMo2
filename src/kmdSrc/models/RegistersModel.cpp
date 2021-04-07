@@ -133,6 +133,11 @@ const bool RegistersModel::handleKeyPress(const GdkEventKey* const e) {
       return false;
   }
 
+  // Get the correct label
+  auto& theLabel = (*labelArray)[1][index];
+
+  // TODO: NOW READ IT aloud!
+
   return false;
 }
 

@@ -203,7 +203,7 @@ Once a file is selected, press the button labelled "Compile & Load", which will 
 
 The "Select File" and "Compile & Load" buttons are only accessible while _KoMo2_ is in certain states, and can be executed using the shortcuts **Ctrl+L** and **CTRL+R** respectively.
 
-#### Commencing, pausing, and resuming execution
+##### Commencing, pausing, and resuming execution
 
 Once a program has been compiled and loaded into the ARM emulator, execution of the program can commence.
 
@@ -213,25 +213,29 @@ The state of the button will change upon every click, alternating between pausin
 
 The commence, pause, and play buttons are only accessible when _KoMo2_ is in certain states, and can be executed using the shortcut **F5**.
 
-#### Perform a single-step execution
+##### Perform a single-step execution
 
 There is a button on the bar at the top of the screen which displays an arcing blow arrow. Upon pressing this button, the ARM emulator will perform perform a single step of execution - whatever instruction is at the memory address indicated by the value in the Program Counter register will be executed - and then stop.
 
 The single step execution button is only accessible when _KoMo2_ is in certain states, and can be executed using the shortcut **F6**.
 
-#### Halt program execution
+##### Halt program execution
 
 There is a button on the bar at the top of the screen which displays a hollow red square. Upon pressing this button, the ARM emulator will be set to a halted state - execution will stop, and will not be allowed to be resumed again, unless the program is recompiled and loaded.
 
 The halt execution button is only accessible when _KoMo2_ is in certain states, and can be executed using the shortcut **F1**.
 
-#### Reload the program
+##### Reload the program
 
 There is a button on the bar at the top of the screen which displays a blue arrow pointing to it's own tail in a circular shape. Upon pressing this button, the ARM emulator will reset itself - execution will stop and the Program Counter will return to 0, meaning that execution will begin again as if the program was running for the first time.
 
 The reload program button is only accessible when the _KoMo2_ is in certain states, and can be executed using the shortcut **Ctrl+R**.
 
-#### The register values
+#### _KoMo2_ GUI elements
+
+Below is a clear description of the remaining _KoMo2_ GUI elements, and what each of them represents and does.
+
+##### The register values
 
 There is a table of 16 rows and 2 columns on the left hand side of the _KoMo2_ GUI. This table displays all of the ARM emulator's CPU registers, and the values within them.
 
@@ -243,7 +247,7 @@ If the address within the PC is currently visible in the memory window, it will 
 
 As the CPU runs, the values within all of these registers may change depending on how your program utilises them.
 
-#### The memory window
+##### The memory window
 
 The large scrolling window that takes up the majority of the _KoMo2_ GUI is the memory window - this displays what is loaded into the ARM emulator's memory at the time, and at what address.
 
@@ -251,7 +255,7 @@ You can scroll up and down this window to view a wide range of memory addresses 
 
 As you look at the memory window, you can see red buttons on each row. These buttons can be toggled on or off to set breakpoints within the ARM emulator, which will pause execution of the program if the Program Counter reaches that memory address.
 
-#### The terminal
+##### The terminal
 
 As _KoMo2_ performs actions, it may log some outputs. These outputs are viewable in the terminal, which takes up the majority of the bottom of the _KoMo2_ GUI. The contents of the terminal can be cleared through a nearby button labelled "Clear".
 

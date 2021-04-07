@@ -156,6 +156,8 @@ const std::string DisassemblyModel::buildDisassemblyRowAccessibilityString(
   // Used for the accessibility object
   std::string bp = row.getBreakpoint() ? "breakpoint set" : "no breakpoint";
 
+  // TODO: remove leading strings of 0's
+
   // Set the accessibility for the view
   std::stringstream ss;
   ss << "address " << std::hex << row.getAddress() << row.getDisassembly()
@@ -173,28 +175,26 @@ const std::string DisassemblyModel::buildDisassemblyRowAccessibilityString(
 void DisassemblyModel::updateCSSFlags(const Gtk::StateFlags flag,
                                       DisassemblyRows& row,
                                       const uint32_t address) {
-  // If this is the program counter address...
+  // If this is the address in program counter:
   if (intToFormattedHexString(address) == PCValue) {
-    // if grey, make yellow
-    if (flag == Gtk::STATE_FLAG_DIR_LTR) {
-      row.set_state_flags(Gtk::STATE_FLAG_DIR_LTR | Gtk::STATE_FLAG_ACTIVE);
+    // Make it highlighted if it is not focused
+    if (flag == NORMAL) {
+      row.set_state_flags(PC_ADDRESS);
     }
-    // if blue, make yellow-blue
-    else if (flag == (Gtk::STATE_FLAG_DIR_LTR | Gtk::STATE_FLAG_FOCUSED)) {
-      row.set_state_flags(Gtk::STATE_FLAG_DIR_LTR | Gtk::STATE_FLAG_FOCUSED |
-                          Gtk::STATE_FLAG_ACTIVE);
+    // Highlight differently if it is focused
+    else if (flag == (FOCUSED)) {
+      row.set_state_flags(PC_ADDRESS_FOCUSED);
     }
   }
-  // If this is just a generic address
+  // If this is NOT the address in the program counter:
   else {
-    // if yellow, make grey
-    if (flag == (Gtk::STATE_FLAG_DIR_LTR | Gtk::STATE_FLAG_ACTIVE)) {
-      row.set_state_flags(Gtk::STATE_FLAG_DIR_LTR);
+    // If it is not focused, remove highlight
+    if (flag == PC_ADDRESS) {
+      row.set_state_flags(NORMAL);
     }
-    // if yellow-blue, make blue
-    else if (flag == (Gtk::STATE_FLAG_DIR_LTR | Gtk::STATE_FLAG_FOCUSED |
-                      Gtk::STATE_FLAG_ACTIVE)) {
-      row.set_state_flags(Gtk::STATE_FLAG_DIR_LTR | Gtk::STATE_FLAG_FOCUSED);
+    // If it is focused, set the focus highlight only
+    else if (flag == (PC_ADDRESS_FOCUSED)) {
+      row.set_state_flags(FOCUSED);
     }
   }
 }
