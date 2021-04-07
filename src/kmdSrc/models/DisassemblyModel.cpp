@@ -163,8 +163,6 @@ const std::string DisassemblyModel::buildDisassemblyRowAccessibilityString(
   gHex << std::hex << row.getAddress();
   const auto addr = std::regex_replace(gHex.str(), std::regex("^0x0{0,7}"), "");
 
-  // TODO: convert disassembly into English
-
   std::stringstream ss;
   ss << "address " << addr << ", "
      << convertMnemonicToEnglish(row.getDisassembly()) << bp;
@@ -172,26 +170,34 @@ const std::string DisassemblyModel::buildDisassemblyRowAccessibilityString(
   return ss.str();
 }
 
+/**
+ * @brief Converts a mnemonic into plain English.
+ * @param mnemonic An ARM instruction mnemonic.
+ * @return const std::string The input parameter converted into English.
+ */
 const std::string DisassemblyModel::convertMnemonicToEnglish(
-    const std::string mnemonic) {
+    const std::string mnemonic) const {
   // Splits mnemonic at the strimg
   std::istringstream iss(mnemonic);
   std::vector<std::string> results(std::istream_iterator<std::string>{iss},
                                    std::istream_iterator<std::string>());
 
+  // If there is nothing to convert, return
   if (results.size() <= 1) {
     return mnemonic;
   }
 
-  bool flag = false;
+  bool isLabel = false;
 
+  // Identify any labels
   for (auto c : results[0]) {
-    flag = flag | islower(c);
+    isLabel = isLabel | islower(c);
   }
 
   std::string outputText = "";
 
-  if (flag) {
+  // If is label, specify
+  if (isLabel) {
     outputText += "At label \"" + results[0] + "\", ";
     results.erase(results.begin());
   }
@@ -202,24 +208,17 @@ const std::string DisassemblyModel::convertMnemonicToEnglish(
 
   // Parse text
   switch (results.size()) {
-    case 2: {
+    case 2:
       return outputText + parse1Param(results);
-    }
-    case 3: {
+    case 3:
       return outputText + parse2Param(results);
-    }
-    case 4: {
+    case 4:
       return outputText + parse3Param(results);
-    }
-    case 5: {
+    case 5:
       return outputText + parse4Param(results);
-    }
-    default: {
+    default:
       return mnemonic;
-    }
   }
-
-  return mnemonic;
 }
 
 /**
@@ -229,8 +228,8 @@ const std::string DisassemblyModel::convertMnemonicToEnglish(
  * the line.
  */
 const std::string DisassemblyModel::parseDEFB(
-    const std::vector<std::string> v) {
-  std::string s = "defined as string ";
+    const std::vector<std::string> v) const {
+  std::string s = "defined a string ";
   for (long unsigned int i = 1; i < v.size(); i++) {
     s += v[i] + " ";
   }
@@ -245,34 +244,36 @@ const std::string DisassemblyModel::parseDEFB(
  * the line.
  */
 const std::string DisassemblyModel::parse1Param(
-    const std::vector<std::string> v) {
+    std::vector<std::string> v) const {
+  v[1] = sanitizeParamters(v[1]);
+
   if (v[0] == "SWI") {
     switch (std::stoi(v[1])) {
       case 0:
-        return "Printing character.";
+        return "Printing character";
       case 1:
-        return "Reading character.";
+        return "Reading character";
       case 2:
-        return "Halting execution.";
+        return "Halting execution";
       case 3:
-        return "Printing string.";
+        return "Printing string";
       case 4:
-        return "Printing integer.";
+        return "Printing integer";
       default:
         return v[0] + " " + v[1];
     }
   } else if (v[0] == "DEFW") {
     return "defined as integer " + v[1];
   } else if (v[0] == "BEQ") {
-    return "Branch to label \"" + v[1] + "\" if equal.";
+    return "Branch to label \"" + v[1] + "\" if equal";
   } else if (v[0] == "BLT") {
-    return "Branch to label \"" + v[1] + "\" if less than.";
+    return "Branch to label \"" + v[1] + "\" if less than";
   } else if (v[0] == "BNE") {
-    return "Branch to label \"" + v[1] + "\" if not equal.";
+    return "Branch to label \"" + v[1] + "\" if not equal";
   } else if (v[0] == "BGT") {
-    return "Branch to label \"" + v[1] + "\" if greater than.";
+    return "Branch to label \"" + v[1] + "\" if greater than";
   } else if (v[0] == "B") {
-    return "Branch to label \"" + v[1] + "\".";
+    return "Branch to label \"" + v[1] + "\"";
   }
 
   return v[0] + " " + v[1];
@@ -285,22 +286,21 @@ const std::string DisassemblyModel::parse1Param(
  * the line.
  */
 const std::string DisassemblyModel::parse2Param(
-    const std::vector<std::string> v) {
+    std::vector<std::string> v) const {
+  v[1] = sanitizeParamters(v[1]);
+  v[2] = sanitizeParamters(v[2]);
+
   if (v[0] == "MOV") {
     return "Moves " + v[2] + " into " + v[1];
   } else if (v[0] == "ADR" || v[0] == "ADRL") {
-    return "Value at " + v[2] + " moves into " + v[1];
-  }
-  if (v[0] == "CMP") {
+    return "Value at label " + v[2] + " moves into " + v[1];
+  } else if (v[0] == "CMP") {
     return "Compares " + v[1] + " to " + v[2];
-  }
-  if (v[0] == "CMN") {
+  } else if (v[0] == "CMN") {
     return "Negatively compares " + v[1] + " to " + v[2];
-  }
-  if (v[0] == "STR") {
+  } else if (v[0] == "STR") {
     return "Stores " + v[1] + " in " + v[2];
-  }
-  if (v[0] == "LDR") {
+  } else if (v[0] == "LDR") {
     return "Stores " + v[2] + " in " + v[1];
   } else {
     return v[0] + " " + v[1] + " " + v[2];
@@ -314,7 +314,11 @@ const std::string DisassemblyModel::parse2Param(
  * the line.
  */
 const std::string DisassemblyModel::parse3Param(
-    const std::vector<std::string> v) {
+    std::vector<std::string> v) const {
+  v[1] = sanitizeParamters(v[1]);
+  v[2] = sanitizeParamters(v[2]);
+  v[3] = sanitizeParamters(v[3]);
+
   if (v[0] == "SUB") {
     return "Subtract " + v[3] + " from " + v[2] + " and store in " + v[1];
   } else if (v[0] == "ADD") {
@@ -337,7 +341,12 @@ const std::string DisassemblyModel::parse3Param(
  * the line.
  */
 const std::string DisassemblyModel::parse4Param(
-    const std::vector<std::string> v) {
+    std::vector<std::string> v) const {
+  v[1] = sanitizeParamters(v[1]);
+  v[2] = sanitizeParamters(v[2]);
+  v[3] = sanitizeParamters(v[3]);
+  v[4] = sanitizeParamters(v[4]);
+
   if (v[0] == "MLA") {
     return "Multiplying " + v[2] + "  with " + v[3] + " adding " + v[4] +
            " and storing in " + v[1];
@@ -347,6 +356,21 @@ const std::string DisassemblyModel::parse4Param(
   }
 
   return v[0] + " " + v[1] + " " + v[2] + " " + v[3] + " " + v[4];
+}
+
+/**
+ * @brief Sanitizes any of the paramters used with an ARM mnemonic.
+ * @param param The parameter to be sanitized.
+ * @return const std::string The sanitized paramter.
+ */
+const std::string DisassemblyModel::sanitizeParamters(std::string param) const {
+  if (param[0] == 'R') {
+    return "Register " + param.erase(0, 1);
+  } else if (param[0] == '#') {
+    return param.erase(0, 1);
+  } else {
+    return param;
+  }
 }
 
 /**
