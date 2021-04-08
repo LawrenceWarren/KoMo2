@@ -158,9 +158,15 @@ void RegistersModel::refreshViews() {
   for (long unsigned int i = 0; i < 16; i++) {
     (*labelArray)[1][i].set_text(newValues[i]);
 
+    // A string describing the register
+    std::string reg = i != 15 ? std::string("Register ")
+                                    .append(std::to_string(i))
+                                    .append(" stores ")
+                              : "Program Counter stores ";
+
     // Set the accessibility object to describe
     (*labelArray)[1][i].get_accessible()->set_name(
-        std::regex_replace(newValues[i], std::regex("^0x0{0,7}"), ""));
+        reg + std::regex_replace(newValues[i], std::regex("^0x0{0,7}"), ""));
   }
 
   // Send the new program counter value to disassembly model
