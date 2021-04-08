@@ -22,6 +22,7 @@
  */
 
 #include <gdkmm/event.h>
+#include <regex>
 #include "../views/MainWindowView.h"
 #include "KoMo2Model.h"
 #include "iostream"
@@ -134,14 +135,13 @@ const bool RegistersModel::handleKeyPress(const GdkEventKey* const e) {
       return false;
   }
 
-  // Get the correct label
+  // Get the correct accessible object
   auto accessible = (*labelArray)[1][index].get_accessible();
 
+  // Build a notification of the object and send the notification to the
+  // screenreader
   accessible->set_role(Atk::ROLE_NOTIFICATION);
   accessible->notify_state_change(ATK_STATE_SHOWING, true);
-
-  std::cout << "Made it this far" << std::endl;
-  // TODO: NOW READ IT aloud!
 
   return false;
 }
@@ -157,7 +157,10 @@ void RegistersModel::refreshViews() {
 
   for (long unsigned int i = 0; i < 16; i++) {
     (*labelArray)[1][i].set_text(newValues[i]);
-    (*labelArray)[1][i].get_accessible()->set_name(newValues[i]);
+
+    // Set the accessibility object to describe
+    (*labelArray)[1][i].get_accessible()->set_name(
+        std::regex_replace(newValues[i], std::regex("^0x0{0,7}"), ""));
   }
 
   // Send the new program counter value to disassembly model
