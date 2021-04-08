@@ -159,6 +159,7 @@ void RegistersModel::refreshViews() {
     (*labelArray)[1][i].set_text(newValues[i]);
 
     // A string describing the register
+
     std::string reg = i != 15 ? std::string("Register ")
                                     .append(std::to_string(i))
                                     .append(" stores ")
