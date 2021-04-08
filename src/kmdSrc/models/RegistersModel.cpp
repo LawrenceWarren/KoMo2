@@ -138,7 +138,7 @@ const bool RegistersModel::handleKeyPress(const GdkEventKey* const e) {
   auto accessible = (*labelArray)[1][index].get_accessible();
 
   accessible->set_role(Atk::ROLE_NOTIFICATION);
-  accessible->notify_state_change(Atk::ROLE_NOTIFICATION, true);
+  accessible->notify_state_change(ATK_STATE_SHOWING, true);
 
   std::cout << "Made it this far" << std::endl;
   // TODO: NOW READ IT aloud!
