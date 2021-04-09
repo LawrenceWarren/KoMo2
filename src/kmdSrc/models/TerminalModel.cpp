@@ -20,6 +20,7 @@
  * https://www.gnu.org/copyleft/gpl.html
  */
 
+#include <iostream>
 #include "../views/TerminalView.h"
 #include "KoMo2Model.h"
 
@@ -106,6 +107,7 @@ void TerminalModel::appendTextToTextView(std::string text) {
   // Notify that text was logged
   view->get_accessible()->set_role(Atk::ROLE_NOTIFICATION);
   view->get_accessible()->notify_state_change(ATK_STATE_SHOWING, true);
+  view->get_accessible()->set_role(Atk::ROLE_TEXT);
 }
 
 /**

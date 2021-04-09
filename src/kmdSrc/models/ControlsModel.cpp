@@ -137,7 +137,7 @@ const bool ControlsModel::handleKeyPress(const GdkEventKey* const e) {
       }
       return true;
     case GDK_KEY_F12:
-      view->getHelpButton()->signal_clicked();
+      view->getHelpButton()->clicked();
       return true;
     default:
       return false;
