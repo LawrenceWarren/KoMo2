@@ -440,6 +440,7 @@ const bool DisassemblyModel::handleKeyPress(const GdkEventKey* const e) {
     // toggle mnemonics mode, else stop
     if (e->keyval == GDK_KEY_m || e->keyval == GDK_KEY_M) {
       setEnglishMnemonic(not englishMnemonic);
+      refreshViews(); // Also rebuilds the screenreader strings
     } else {
       return false;
     }
