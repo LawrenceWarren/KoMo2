@@ -46,7 +46,7 @@ DisassemblyModel::DisassemblyModel(DisassemblyView* const view,
 /**
  * @brief Handle the toggling of a breakpoint within the `DisassemblyView.`
  * @param row The row which has had it's breakpoint toggled. Row id's are a
- * direct index - the first row is 0, the last row is 14 - so we can combine the
+ * direct index - the first row is 0, the last row is 11 - so we can combine the
  * row ID with the `memoryIndex` variable to identify what address the
  * breakpoint should be set at.
  */
@@ -456,7 +456,7 @@ const bool DisassemblyModel::handleKeyPress(const GdkEventKey* const e) {
   }
 
   // If the bottom row has focus and it's a key press down, handle it
-  else if ((*rows)[14].has_focus() && e->keyval == GDK_KEY_Down) {
+  else if ((*rows)[11].has_focus() && e->keyval == GDK_KEY_Down) {
     auto scroll = GdkEventScroll();
     scroll.direction = GDK_SCROLL_DOWN;
     handleScroll(&scroll);

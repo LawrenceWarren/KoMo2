@@ -33,7 +33,7 @@
  * events.
  * @param mainWindow A pointer to the mainWindow view object.
  * @param argv0 The absolutePathToProjectRoot - parsed from argv[0].
- * @param manual A UR(I/L) that describes where the user manual can be found.
+ * @param manual A URI that describes where the user manual can be found.
  * @param refreshRate An integer that describes how many milliseconds should be
  * taken between refreshes when KoMo2 is in the `RUNNING` state.
  */
