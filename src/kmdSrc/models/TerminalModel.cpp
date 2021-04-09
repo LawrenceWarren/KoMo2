@@ -20,6 +20,7 @@
  * https://www.gnu.org/copyleft/gpl.html
  */
 
+#include <atkmm/relationset.h>
 #include <iostream>
 #include "../views/TerminalView.h"
 #include "KoMo2Model.h"
@@ -103,14 +104,6 @@ void TerminalModel::appendTextToTextView(std::string text) {
   // Scroll to the bottom of the scroll bar
   buff = view->get_buffer();
   view->scroll_to(buff->create_mark(buff->end(), false));
-
-  // Notify that text was logged
-  // This is a little hacky, using the scroll views accessibility object as a
-  // notification and assuming it will never get focus (it's child will)
-  view->get_parent()->get_accessible()->set_role(Atk::ROLE_NOTIFICATION);
-  view->get_parent()->get_accessible()->set_name("Text logged to terminal");
-  view->get_parent()->get_accessible()->notify_state_change(ATK_STATE_SHOWING,
-                                                            true);
 }
 
 /**
