@@ -125,7 +125,6 @@ The halt execution button is only accessible when _KoMo2_ is in certain states, 
 
 ##### Reload the program
 
-
 ![Reload symbol](./res/readme-pictures/refreshbutton.png)
 
 There is a button on the bar at the top of the screen which displays a blue arrow pointing to it's own tail in a circular shape. Upon pressing this button, the ARM emulator will reset itself - execution will stop and the Program Counter will return to 0, meaning that execution will begin again as if the program was running for the first time.
@@ -179,6 +178,8 @@ For reading the register values, which are not keyboard navigable, press the Alt
 For reading the Program Counter, press _Alt+P_.
 
 Furthermore, pressing _Alt+M_ toggles how the memory window mnemonics are read out. By default, the ARM instructions in the memory window are read it as they are displayed on the screen. However, this may not be the best way to communicate what they do to somebody who is hard of sight. Toggling the mnemonics mode allows for the mnemonics to be converted into English and read out that way - they are **not** converted in how they are displayed in the GUI.
+
+---
 
 ### Binaries
 
