@@ -131,7 +131,7 @@ void DisassemblyModel::refreshViews() {
   auto* const rows = getView()->getRows();
 
   // Loop through each of the fetched rows
-  for (int i = 0; i < 12; i++) {
+  for (int i = 0; i < 15; i++) {
     auto& row = (*rows)[i];
     auto flag = row.get_state_flags();
 
@@ -456,7 +456,7 @@ const bool DisassemblyModel::handleKeyPress(const GdkEventKey* const e) {
   }
 
   // If the bottom row has focus and it's a key press down, handle it
-  else if ((*rows)[11].has_focus() && e->keyval == GDK_KEY_Down) {
+  else if ((*rows)[rows->size() - 1].has_focus() && e->keyval == GDK_KEY_Down) {
     auto scroll = GdkEventScroll();
     scroll.direction = GDK_SCROLL_DOWN;
     handleScroll(&scroll);
@@ -522,11 +522,11 @@ DisassemblyView* const DisassemblyModel::getView() {
 }
 /**
  * @brief Reads memory values from Jimulator.
- * @return std::array<Jimulator::MemoryValues, 12> An array of the 12 memory
+ * @return std::array<Jimulator::MemoryValues, 15> An array of the 15 memory
  * values - their addresses, their hex columns and their disassembly/source
  * columns.
  */
-const std::array<Jimulator::MemoryValues, 12>
+const std::array<Jimulator::MemoryValues, 15>
 DisassemblyModel::getMemoryValues() const {
   return Jimulator::getJimulatorMemoryValues(memoryIndex);
 }

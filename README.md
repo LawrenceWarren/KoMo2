@@ -9,10 +9,10 @@
 - [What is _KoMo2_? A brief history](#what-is-komo2-a-brief-history)
 - [Installation](#installation)
 - [Dependencies](#dependencies)
+- [User Manual](#user-manual)
 - [Binaries](#binaries)
 - [Shell Scripts](#shell-scripts)
 - [Contributing to _KoMo2_](#contributing-to-komo2)
-- [User Manual](#user-manual)
 
 ---
 
@@ -72,6 +72,92 @@ _Fedora, RedHat & CentOS:_
 Alternatively, it is possible to compile them from source - instructions are readily available online - but this can be finicky and requires assembling your own toolchain.
 
 ---
+
+### User Manual
+
+#### Operating _KoMo2_
+
+Below is a clear description on how to utilise _KoMo2_.
+
+##### Selecting, compiling, and loading an ARM assembly file
+
+You must write your own ARM assembly programs (`.s` file extension) in an external text editor, and save them on your filesystem.
+
+In the top right corner of _KoMo2_ there is a button labelled "Select File", which will open a file browser that allows you to select any `.s` file on your system.
+
+Once a file is selected, press the button labelled "Compile & Load", which will create a compiled `.kmd` file in the same directory as your `.s` file, and will automatically load this into the ARM emulator.
+
+The "Select File" and "Compile & Load" buttons are only accessible while _KoMo2_ is in certain states, and can be executed using the shortcuts **Ctrl+L** and **CTRL+R** respectively.
+
+##### Commencing, pausing, and resuming execution
+
+Once a program has been compiled and loaded into the ARM emulator, execution of the program can commence.
+
+There is a button on the bar at the top of the screen which displays a green play symbol. Upon clicking this button, the program loaded will begin executing and the button will toggle to display a blue pause symbol. Upon pressing again, the program loaded will pauses execution and the button will toggle back to a green play symbol.
+
+The state of the button will change upon every click, alternating between pausing and playing, and the operation it performs will change similarly between commencing, pausing, and resuming execution.
+
+The commence, pause, and play buttons are only accessible when _KoMo2_ is in certain states, and can be executed using the shortcut **F5**.
+
+##### Perform a single-step execution
+
+There is a button on the bar at the top of the screen which displays an arcing blow arrow. Upon pressing this button, the ARM emulator will perform perform a single step of execution - whatever instruction is at the memory address indicated by the value in the Program Counter register will be executed - and then stop.
+
+The single step execution button is only accessible when _KoMo2_ is in certain states, and can be executed using the shortcut **F6**.
+
+##### Halt program execution
+
+There is a button on the bar at the top of the screen which displays a hollow red square. Upon pressing this button, the ARM emulator will be set to a halted state - execution will stop, and will not be allowed to be resumed again, unless the program is recompiled and loaded.
+
+The halt execution button is only accessible when _KoMo2_ is in certain states, and can be executed using the shortcut **F1**.
+
+##### Reload the program
+
+There is a button on the bar at the top of the screen which displays a blue arrow pointing to it's own tail in a circular shape. Upon pressing this button, the ARM emulator will reset itself - execution will stop and the Program Counter will return to 0, meaning that execution will begin again as if the program was running for the first time.
+
+The reload program button is only accessible when the _KoMo2_ is in certain states, and can be executed using the shortcut **Ctrl+R**.
+
+#### _KoMo2_ GUI elements
+
+Below is a clear description of the remaining _KoMo2_ GUI elements, and what each of them represents and does.
+
+##### The register values
+
+There is a table of 16 rows and 2 columns on the left hand side of the _KoMo2_ GUI. This table displays all of the ARM emulator's CPU registers, and the values within them.
+
+The first 15 registers - labelled `R0` through `R14` - are the values within the general purpose registers of the CPU.
+
+The final register - labelled `PC` - is the Program Counter, which contains the memory address of the next instruction to execute. For each cycle of the ARM CPU, this will change (it will usually increase linearly, but may jump up or down values if meeting a branch instruction)
+
+If the address within the PC is currently visible in the memory window, it will be highlighted in the memory window.
+
+As the CPU runs, the values within all of these registers may change depending on how your program utilises them.
+
+##### The memory window
+
+The large scrolling window that takes up the majority of the _KoMo2_ GUI is the memory window - this displays what is loaded into the ARM emulator's memory at the time, and at what address.
+
+You can scroll up and down this window to view a wide range of memory addresses - the ARM emulators address bus is 32-bit.
+
+As you look at the memory window, you can see red buttons on each row. These buttons can be toggled on or off to set breakpoints within the ARM emulator, which will pause execution of the program if the Program Counter reaches that memory address.
+
+##### The terminal
+
+As _KoMo2_ performs actions, it may log some outputs. These outputs are viewable in the terminal, which takes up the majority of the bottom of the _KoMo2_ GUI. The contents of the terminal can be cleared through a nearby button labelled "Clear".
+
+If you write a program which requests input, you may utilise the singular input box below the terminal window to provide this input. Text will not show in the input box - rather it is immediately captured and sent to ARM emulator, which will process the input and display some output into the terminal window in response.
+
+#### Screen reader support
+
+As part of ensuring _KoMo2_ is accessible for all who use it, the Accessibility ToolKit (ATK) API has been implemented within the program to allow for screen reader compatibility.
+
+If you are using a compatible screen reader - _KoMo2_'s screen reader implementation was tested with [Orca](https://help.gnome.org/users/orca/stable/) - information will be read out as you navigate over GUI elements. For example, if you navigate over a memory row, it will state what address it is, what is stored at that address, and if a breakpoint is set.
+
+For reading the register values, which are not keyboard navigable, press the Alt key + 0-9, A-E to read the relevant register values. For example, _Alt+0_ reads the value stored in register 0, _Alt+8_ reads the value in register 8, _Alt+A_ reads the value in register 10, and _Alt+E_ reads the value in register 14.
+
+For reading the Program Counter, press _Alt+P_.
+
+Furthermore, pressing _Alt+M_ toggles how the memory window mnemonics are read out. By default, the ARM instructions in the memory window are read it as they are displayed on the screen. However, this may not be the best way to communicate what they do to somebody who is hard of sight. Toggling the mnemonics mode allows for the mnemonics to be converted into English and read out that way - they are **not** converted in how they are displayed in the GUI.
 
 ### Binaries
 
@@ -186,89 +272,3 @@ Some possible areas for improvement are as follows:
 If you do make any improvements or additions to _KoMo2_, please open a pull request on the GitHub repository. I will happily discuss and review your changes, and merge them into the trunk if they are suitable. 🎉
 
 ---
-
-### User Manual
-
-#### Operating _KoMo2_
-
-Below is a clear description on how to utilise _KoMo2_.
-
-##### Selecting, compiling, and loading an ARM assembly file
-
-You must write your own ARM assembly programs (`.s` file extension) in an external text editor, and save them on your filesystem.
-
-In the top right corner of _KoMo2_ there is a button labelled "Select File", which will open a file browser that allows you to select any `.s` file on your system.
-
-Once a file is selected, press the button labelled "Compile & Load", which will create a compiled `.kmd` file in the same directory as your `.s` file, and will automatically load this into the ARM emulator.
-
-The "Select File" and "Compile & Load" buttons are only accessible while _KoMo2_ is in certain states, and can be executed using the shortcuts **Ctrl+L** and **CTRL+R** respectively.
-
-##### Commencing, pausing, and resuming execution
-
-Once a program has been compiled and loaded into the ARM emulator, execution of the program can commence.
-
-There is a button on the bar at the top of the screen which displays a green play symbol. Upon clicking this button, the program loaded will begin executing and the button will toggle to display a blue pause symbol. Upon pressing again, the program loaded will pauses execution and the button will toggle back to a green play symbol.
-
-The state of the button will change upon every click, alternating between pausing and playing, and the operation it performs will change similarly between commencing, pausing, and resuming execution.
-
-The commence, pause, and play buttons are only accessible when _KoMo2_ is in certain states, and can be executed using the shortcut **F5**.
-
-##### Perform a single-step execution
-
-There is a button on the bar at the top of the screen which displays an arcing blow arrow. Upon pressing this button, the ARM emulator will perform perform a single step of execution - whatever instruction is at the memory address indicated by the value in the Program Counter register will be executed - and then stop.
-
-The single step execution button is only accessible when _KoMo2_ is in certain states, and can be executed using the shortcut **F6**.
-
-##### Halt program execution
-
-There is a button on the bar at the top of the screen which displays a hollow red square. Upon pressing this button, the ARM emulator will be set to a halted state - execution will stop, and will not be allowed to be resumed again, unless the program is recompiled and loaded.
-
-The halt execution button is only accessible when _KoMo2_ is in certain states, and can be executed using the shortcut **F1**.
-
-##### Reload the program
-
-There is a button on the bar at the top of the screen which displays a blue arrow pointing to it's own tail in a circular shape. Upon pressing this button, the ARM emulator will reset itself - execution will stop and the Program Counter will return to 0, meaning that execution will begin again as if the program was running for the first time.
-
-The reload program button is only accessible when the _KoMo2_ is in certain states, and can be executed using the shortcut **Ctrl+R**.
-
-#### _KoMo2_ GUI elements
-
-Below is a clear description of the remaining _KoMo2_ GUI elements, and what each of them represents and does.
-
-##### The register values
-
-There is a table of 16 rows and 2 columns on the left hand side of the _KoMo2_ GUI. This table displays all of the ARM emulator's CPU registers, and the values within them.
-
-The first 15 registers - labelled `R0` through `R14` - are the values within the general purpose registers of the CPU.
-
-The final register - labelled `PC` - is the Program Counter, which contains the memory address of the next instruction to execute. For each cycle of the ARM CPU, this will change (it will usually increase linearly, but may jump up or down values if meeting a branch instruction)
-
-If the address within the PC is currently visible in the memory window, it will be highlighted in the memory window.
-
-As the CPU runs, the values within all of these registers may change depending on how your program utilises them.
-
-##### The memory window
-
-The large scrolling window that takes up the majority of the _KoMo2_ GUI is the memory window - this displays what is loaded into the ARM emulator's memory at the time, and at what address.
-
-You can scroll up and down this window to view a wide range of memory addresses - the ARM emulators address bus is 32-bit.
-
-As you look at the memory window, you can see red buttons on each row. These buttons can be toggled on or off to set breakpoints within the ARM emulator, which will pause execution of the program if the Program Counter reaches that memory address.
-
-##### The terminal
-
-As _KoMo2_ performs actions, it may log some outputs. These outputs are viewable in the terminal, which takes up the majority of the bottom of the _KoMo2_ GUI. The contents of the terminal can be cleared through a nearby button labelled "Clear".
-
-If you write a program which requests input, you may utilise the singular input box below the terminal window to provide this input. Text will not show in the input box - rather it is immediately captured and sent to ARM emulator, which will process the input and display some output into the terminal window in response.
-
-#### Screen reader support
-
-As part of ensuring _KoMo2_ is accessible for all who use it, the Accessibility ToolKit (ATK) API has been implemented within the program to allow for screen reader compatibility.
-
-If you are using a compatible screen reader - _KoMo2_'s screen reader implementation was tested with [Orca](https://help.gnome.org/users/orca/stable/) - information will be read out as you navigate over GUI elements. For example, if you navigate over a memory row, it will state what address it is, what is stored at that address, and if a breakpoint is set.
-
-For reading the register values, which are not keyboard navigable, press the Alt key + 0-9, A-E to read the relevant register values. For example, _Alt+0_ reads the value stored in register 0, _Alt+8_ reads the value in register 8, _Alt+A_ reads the value in register 10, and _Alt+E_ reads the value in register 14.
-
-For reading the Program Counter, press _Alt+P_.
-
-Furthermore, pressing _Alt+M_ toggles how the memory window mnemonics are read out. By default, the ARM instructions in the memory window are read it as they are displayed on the screen. However, this may not be the best way to communicate what they do to somebody who is hard of sight. Toggling the mnemonics mode allows for the mnemonics to be converted into English and read out that way - they are **not** converted in how they are displayed in the GUI.

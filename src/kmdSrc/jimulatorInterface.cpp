@@ -368,12 +368,12 @@ const bool Jimulator::sendTerminalInputToJimulator(const unsigned int val) {
 /**
  * @brief Get the memory values from Jimulator, starting to s_address_int.
  * @param s_address_int The address to start at, as an integer.
- * @return std::array<Jimulator::MemoryValues, 12> An array of all of the
+ * @return std::array<Jimulator::MemoryValues, 15> An array of all of the
  * values read from Jimulator, including each column.
  */
-std::array<Jimulator::MemoryValues, 12> Jimulator::getJimulatorMemoryValues(
+std::array<Jimulator::MemoryValues, 15> Jimulator::getJimulatorMemoryValues(
     const uint32_t s_address_int) {
-  const int count = 12;  // The number of values displayed in the memory window
+  const int count = 15;  // The number of values displayed in the memory window
   const int bytecount = 60;  // The number of bytes to fetch from memory
 
   // Bit level hacking happening here - converting the integer address into
@@ -420,11 +420,11 @@ std::array<Jimulator::MemoryValues, 12> Jimulator::getJimulatorMemoryValues(
   }
 
   // Data is read into this array
-  std::array<Jimulator::MemoryValues, 12> readValues;
+  std::array<Jimulator::MemoryValues, 15> readValues;
   auto bps = getAllBreakpoints();
 
   // Iterate over display rows
-  for (int row = 0; row < 12; row++) {
+  for (int row = 0; row < 15; row++) {
     int increment = 4;
 
     unsigned int addr = numericStringToInt(4, address);

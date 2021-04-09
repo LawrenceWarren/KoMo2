@@ -96,7 +96,7 @@ class DisassemblyModel : private Model {
   const bool handleScroll(GdkEventScroll* const e);
   void incrementMemoryIndex(const uint32_t val);
   void addScrollRecognition();
-  const std::array<Jimulator::MemoryValues, 12> getMemoryValues() const;
+  const std::array<Jimulator::MemoryValues, 15> getMemoryValues() const;
   void onBreakpointToggle(DisassemblyRows* const row);
   void setupButtonHandlers();
   void updateCSSFlags(const Gtk::StateFlags state,

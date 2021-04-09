@@ -38,22 +38,19 @@ DisassemblyView::DisassemblyView(MainWindowView* const parent)
  * containers, sets sizes and layouts, adds a CSS class.
  */
 void DisassemblyView::initDisassemblyContainer() {
-  container.set_layout(Gtk::BUTTONBOX_START);
   disassemblyContainer.set_layout(Gtk::BUTTONBOX_START);
   get_style_context()->add_class("disassemblyContainer");
-  container.pack_start(disassemblyContainer, false, false);
-  container.pack_start(navigationButtons, false, false);
-  add(container);
+  add(disassemblyContainer);
   show();
   show_all_children();
 }
 
 /**
- * @brief Packs the 12 disassemblyRows into their container and gives them a
+ * @brief Packs the 15 disassemblyRows into their container and gives them a
  * pointer to the DisassemblyModel object.
  */
 void DisassemblyView::initDisassemblyRows() {
-  for (long unsigned int i = 0; i < 12; i++) {
+  for (long unsigned int i = 0; i < 15; i++) {
     disassemblyContainer.pack_start(rows[i], false, false);
     rows[i].setModel(model);
   }
@@ -99,8 +96,8 @@ MainWindowView* const DisassemblyView::getParent() const {
 /**
  * @brief Construct a new DisassemblyRows::DisassemblyRows object.
  */
-DisassemblyRows::DisassemblyRows() {
-  set_layout(Gtk::BUTTONBOX_START);
+DisassemblyRows::DisassemblyRows()
+    : Box(Gtk::Orientation::ORIENTATION_HORIZONTAL, 0) {
   initBreakpoint();
   initAddress();
   initHex();
@@ -110,10 +107,10 @@ DisassemblyRows::DisassemblyRows() {
 
   buttonSizer.set_size_request(5, 5);
   buttonSizer.pack_start(breakpoint, false, false);
-  pack_start(buttonSizer, false, false);
-  pack_start(address, false, false);
-  pack_start(hex, false, false);
-  pack_start(disassembly, false, false);
+  add(buttonSizer);
+  add(address);
+  add(hex);
+  add(disassembly);
   get_style_context()->add_class("disassemblyRows");
   set_can_focus(true);
   set_focus_on_click(true);

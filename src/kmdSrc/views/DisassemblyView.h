@@ -37,7 +37,7 @@ class DisassemblyModel;
  * address and the associated data - this is shown as a single row in the
  * disassembly window.
  */
-class DisassemblyRows : public Gtk::HButtonBox {
+class DisassemblyRows : public Gtk::Box {
  public:
   DisassemblyRows();
 
@@ -133,25 +133,15 @@ class DisassemblyView : public Gtk::EventBox {
   DisassemblyModel* model;
 
   // ! GUI children
-
-  /**
-   * @brief A container for the 6 navigation buttons.
-   */
-  Gtk::VButtonBox navigationButtons;  // TODO: implement these
   /**
    * @brief A container for the disassembly rows.
    */
   Gtk::VButtonBox disassemblyContainer;
   /**
-   * @brief The master container for the entire view, and the sole child of the
-   * EventBox.
-   */
-  Gtk::HButtonBox container;
-  /**
-   * @brief An array of 12 rows. Each array entry represents a row of memory
+   * @brief An array of 15 rows. Each array entry represents a row of memory
    * values within the memory window.
    */
-  std::vector<DisassemblyRows> rows{std::vector<DisassemblyRows>(12)};
+  std::vector<DisassemblyRows> rows{std::vector<DisassemblyRows>(15)};
 
   // ! Functions
 
