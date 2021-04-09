@@ -88,6 +88,10 @@ const bool TerminalModel::handleKeyPress(const GdkEventKey* const e) {
  * @param text The text to append to the text view.
  */
 void TerminalModel::appendTextToTextView(std::string text) {
+  if (text == "") {
+    return;
+  }
+
   auto* const view = getView()->getTextView();
 
   // Append text to the buffer, reset the buffer
