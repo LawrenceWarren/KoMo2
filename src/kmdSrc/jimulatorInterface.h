@@ -223,7 +223,7 @@ class MemoryValues {
 // ! Reading data
 const clientState checkBoardState();
 const std::array<std::string, 16> getJimulatorRegisterValues();
-std::array<Jimulator::MemoryValues, 12> getJimulatorMemoryValues(
+std::array<Jimulator::MemoryValues, 13> getJimulatorMemoryValues(
     const uint32_t s_address_int);
 const std::string getJimulatorTerminalMessages();
 
