@@ -6,6 +6,11 @@
     inset -4px 4px 0px #1b1f23, inset 4px -4px 0px #1b1f23;
 }
 
+/* ! For the containers */
+.layouts {
+  border: solid 1px #1b1f23;
+}
+
 /* ! The label between the two file boxes */
 .fileLabel {
   font-size: 13px;
@@ -13,20 +18,17 @@
   border: 2px solid #1b1f23;
   background-color: #24292e;
 }
-
 /* ! For the compiler buttons */
 .compButtons {
   /* Text colors */
   color: #ffffff;
   text-shadow: none;
   font-size: 15px;
-
   background-color: #000000; /* Weird corner bits? */
   background-image: image(#1f2428); /* Main button background */
   border-color: #1b1f23; /* border colour */
   font-family: "Fira Code Retina", "Fira Code", monospace;
   box-shadow: none;
-
   /* Button borders */
   border-width: 2px;
   border-radius: 0px;
@@ -80,13 +82,11 @@
   color: #ffffff;
   text-shadow: none;
   font-size: 20px;
-
   background-color: #000000; /* Weird corner bits? */
   background-image: image(#1f2428); /* Main button background */
   border-color: #1b1f23; /* border colour */
   font-family: "Fira Code Retina", "Fira Code", monospace;
   box-shadow: none;
-
   /* Button borders */
   border-width: 2px;
   border-radius: 0px;
@@ -115,14 +115,15 @@
   box-shadow: inset 2px 2px 0px #1b1f23, inset -2px -2px 0px #1b1f23,
     inset -2px 2px 0px #1b1f23, inset 2px -2px 0px #1b1f23;
 }
+/* ! Register table */
 
 /* ! GRID */
+/* ! the grid */
 .registerTable {
   border-radius: 0px;
   border: 3px solid;
   border-color: #24292e;
 }
-
 /* ! The labels for within the table */
 .tableLabels {
   box-shadow: inset 2px -2px 2px #596166, inset -4px 4px 2px #1d2024;
@@ -133,6 +134,9 @@
 }
 
 /* ! Disassembly rows */
+/* ! The disassembly rows */
+
+/* ! Disassembly container */
 .disassemblyContainer {
   box-shadow: inset 2px -2px 2px #596166, inset -4px 4px 2px #1d2024;
   font-family: "Fira Code Retina", "Fira Code", monospace;
@@ -147,7 +151,6 @@
 .disassemblyRows:focus {
   background-color: #005cc5;
 }
-
 /* ! Styling for the breakpoint buttons */
 .breakpointButtons {
   border-radius: 1000px;
@@ -161,7 +164,6 @@
   border-color: #e51400;
   box-shadow: none;
 }
-
 /* ! The labels within the memory rows */
 .disassemblyLabels {
   color: #ffffff;
@@ -169,9 +171,7 @@
   font-family: "Fira Code Retina", "Fira Code", monospace;
   border-left: 2px solid #1b1f23;
 }
-
 /* ! The terminal */
-
 /* ! The terminal display box */
 .terminalDisplay text {
   color: #ffffff;
@@ -188,7 +188,6 @@
   font-size: 14px;
   font-family: "Fira Code Retina", "Fira Code", monospace;
 }
-
 /* ! The terminal input box */
 .terminalInput {
   font-size: 18px;

@@ -456,7 +456,7 @@ const bool DisassemblyModel::handleKeyPress(const GdkEventKey* const e) {
   }
 
   // If the bottom row has focus and it's a key press down, handle it
-  else if ((*rows)[14].has_focus() && e->keyval == GDK_KEY_Down) {
+  else if ((*rows)[rows->size() - 1].has_focus() && e->keyval == GDK_KEY_Down) {
     auto scroll = GdkEventScroll();
     scroll.direction = GDK_SCROLL_DOWN;
     handleScroll(&scroll);

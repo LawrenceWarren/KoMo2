@@ -52,8 +52,8 @@ MainWindowView::MainWindowView(const int x, const int y)
  * @brief Initialise the controls and compile bar.
  */
 void MainWindowView::initControlsAndCompileBar() {
-  getControlsAndCompileBar()->set_layout(Gtk::BUTTONBOX_START);
-  getControlsAndCompileBar()->pack_end(controlsView, false, false);
+  getControlsAndCompileBar()->set_layout(Gtk::BUTTONBOX_EDGE);
+  getControlsAndCompileBar()->pack_start(controlsView, false, false);
   getControlsAndCompileBar()->pack_end(compileLoadView, false, false);
 }
 
@@ -72,7 +72,7 @@ void MainWindowView::initRegistersAndDisassemblyBar() {
 void MainWindowView::initMasterLayout() {
   masterLayout.set_homogeneous(false);
   getMasterLayout()->add(controlsAndCompileBar);
-  getMasterLayout()->pack_start(registersAndDisassemblyBar, false, false);
+  getMasterLayout()->add(registersAndDisassemblyBar);
   getMasterLayout()->add(terminalView);
   getMasterLayout()->show_all_children();
   getMasterLayout()->show();
@@ -99,13 +99,12 @@ void MainWindowView::setStyling() {
   get_style_context()->add_class("mainWindow");
 
   // Adds a CSS class for the layouts
-  getControlsView()->get_style_context()->add_class("controls_layouts");
-  getControlsAndCompileBar()->get_style_context()->add_class(
-      "topContainer_layouts");
-  getCompileLoadView()->get_style_context()->add_class("compileLoad_layouts");
-  getRegistersView()->get_style_context()->add_class("registers_layouts");
-  getDisassemblyView()->get_style_context()->add_class("dis_layouts");
-  getTerminalView()->get_style_context()->add_class("terminal_layouts");
+  getControlsView()->get_style_context()->add_class("layouts");
+  getControlsAndCompileBar()->get_style_context()->add_class("layouts");
+  getCompileLoadView()->get_style_context()->add_class("layouts");
+  getRegistersView()->get_style_context()->add_class("layouts");
+  getDisassemblyView()->get_style_context()->add_class("layouts");
+  getTerminalView()->get_style_context()->add_class("layouts");
 
   // Add the CSS to the screen
   ctx->add_provider_for_screen(Gdk::Screen::get_default(), css,
