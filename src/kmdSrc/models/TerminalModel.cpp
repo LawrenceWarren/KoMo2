@@ -73,7 +73,7 @@ const bool TerminalModel::handleKeyPress(const GdkEventKey* const e) {
   }
   // If escape or up arrow pressed, give scroll view focus
   else if (e->keyval == GDK_KEY_Escape || e->keyval == GDK_KEY_Up) {
-    getView()->getTextView()->get_parent()->grab_focus();
+    getView()->getTextView()->grab_focus();
   }
   // Else send key press to Jimulator...
   else {
@@ -105,9 +105,12 @@ void TerminalModel::appendTextToTextView(std::string text) {
   view->scroll_to(buff->create_mark(buff->end(), false));
 
   // Notify that text was logged
-  view->get_accessible()->set_role(Atk::ROLE_NOTIFICATION);
-  view->get_accessible()->notify_state_change(ATK_STATE_SHOWING, true);
-  view->get_accessible()->set_role(Atk::ROLE_TEXT);
+  // This is a little hacky, using the scroll views accessibility object as a
+  // notification and assuming it will never get focus (it's child will)
+  view->get_parent()->get_accessible()->set_role(Atk::ROLE_NOTIFICATION);
+  view->get_parent()->get_accessible()->set_name("Text logged to terminal");
+  view->get_parent()->get_accessible()->notify_state_change(ATK_STATE_SHOWING,
+                                                            true);
 }
 
 /**
