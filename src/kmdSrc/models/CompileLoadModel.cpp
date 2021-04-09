@@ -78,7 +78,6 @@ void CompileLoadModel::onCompileLoadClick() const {
 
     // If child process failed
     if (status) {
-      std::cout << "Compiler failed - invalid file path!" << std::endl;
       return;
     }
 

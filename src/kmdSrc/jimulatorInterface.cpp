@@ -368,12 +368,12 @@ const bool Jimulator::sendTerminalInputToJimulator(const unsigned int val) {
 /**
  * @brief Get the memory values from Jimulator, starting to s_address_int.
  * @param s_address_int The address to start at, as an integer.
- * @return std::array<Jimulator::MemoryValues, 15> An array of all of the
+ * @return std::array<Jimulator::MemoryValues, 12> An array of all of the
  * values read from Jimulator, including each column.
  */
-std::array<Jimulator::MemoryValues, 15> Jimulator::getJimulatorMemoryValues(
+std::array<Jimulator::MemoryValues, 12> Jimulator::getJimulatorMemoryValues(
     const uint32_t s_address_int) {
-  const int count = 15;  // The number of values displayed in the memory window
+  const int count = 12;  // The number of values displayed in the memory window
   const int bytecount = 60;  // The number of bytes to fetch from memory
 
   // Bit level hacking happening here - converting the integer address into
@@ -420,11 +420,11 @@ std::array<Jimulator::MemoryValues, 15> Jimulator::getJimulatorMemoryValues(
   }
 
   // Data is read into this array
-  std::array<Jimulator::MemoryValues, 15> readValues;
+  std::array<Jimulator::MemoryValues, 12> readValues;
   auto bps = getAllBreakpoints();
 
   // Iterate over display rows
-  for (int row = 0; row < 15; row++) {
+  for (int row = 0; row < 12; row++) {
     int increment = 4;
 
     unsigned int addr = numericStringToInt(4, address);
@@ -682,13 +682,12 @@ int boardSendCharArray(int length, unsigned char* data) {
 
   // See if output possible
   if (not poll(&pollfd, 1, OUT_POLL_TIMEOUT)) {
-    printf("Client system not responding!\n");  // Warn; poss. communication
-                                                // problem
+    std::cout << "Client system not responding!\n";  // communication problem
   }
 
   // Write char_number bytes
   if (write(writeToJimulator, data, length) == -1) {
-    printf("Pipe write error!\n");
+    std::cout << "Pipe write error!\n";
   }
 
   return length;
@@ -800,7 +799,7 @@ const clientState getBoardStatus() {
   if (boardGetChar(&clientStatus) != 1 ||
       boardGetNBytes(&leftOfWalk, 4) != 4 ||       // Steps remaining
       boardGetNBytes(&stepsSinceReset, 4) != 4) {  // Steps since reset
-    printf("board not responding\n");
+    std::cout << "board not responding\n";
     return clientState::BROKEN;
   }
 
@@ -1147,13 +1146,13 @@ const int readSourceFile(const char* pathToKMD) {
   // running. If it fails (non-zero) It will print an error and return failure.
   if (system("pidof -x jimulator > /dev/null")) {
     // TODO: Jimulator is not running... so relaunch Jimulator?
-    printf("Jimulator is not running!\n");
+    std::cout << "Jimulator is not running!\n";
     return 1;
   }
 
   FILE* komodoSource = fopen(pathToKMD, "r");
   if (komodoSource == NULL) {
-    printf("Source could not be opened!\n");
+    std::cout << "Source could not be opened!\n";
     return 1;
   }
 
@@ -1277,8 +1276,9 @@ const int readSourceFile(const char* pathToKMD) {
             }
 
             // FIXME
-            printf("OVERFLOW %d %d %d %d  %d\n", d_size[0], d_size[1],
-                   d_size[2], d_size[3], byte_total);
+            std::cout << "OVERFLOW " << d_size[0] << " " << d_size[1] << " "
+                      << d_size[2] << " " << d_size[3] << " " << byte_total
+                      << std::endl;
             // Extend with some more records here? @@@ (plant in memory,
             // above, also)
           }

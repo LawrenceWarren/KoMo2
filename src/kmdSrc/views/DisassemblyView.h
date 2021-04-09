@@ -48,7 +48,7 @@ class DisassemblyRows : public Gtk::HButtonBox {
   void setDisassembly(const std::string text);
   void setAddressVal(const uint32_t val);
   void setModel(DisassemblyModel* const val);
-  
+
   // GET
   Gtk::ToggleButton* const getButton();
   const uint32_t getAddressVal() const;
@@ -148,10 +148,10 @@ class DisassemblyView : public Gtk::EventBox {
    */
   Gtk::HButtonBox container;
   /**
-   * @brief An array of 15 rows. Each array entry represents a row of memory
+   * @brief An array of 12 rows. Each array entry represents a row of memory
    * values within the memory window.
    */
-  std::vector<DisassemblyRows> rows{std::vector<DisassemblyRows>(15)};
+  std::vector<DisassemblyRows> rows{std::vector<DisassemblyRows>(12)};
 
   // ! Functions
 

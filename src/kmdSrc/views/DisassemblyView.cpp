@@ -49,11 +49,11 @@ void DisassemblyView::initDisassemblyContainer() {
 }
 
 /**
- * @brief Packs the 15 disassemblyRows into their container and gives them a
+ * @brief Packs the 12 disassemblyRows into their container and gives them a
  * pointer to the DisassemblyModel object.
  */
 void DisassemblyView::initDisassemblyRows() {
-  for (long unsigned int i = 0; i < 15; i++) {
+  for (long unsigned int i = 0; i < 12; i++) {
     disassemblyContainer.pack_start(rows[i], false, false);
     rows[i].setModel(model);
   }
