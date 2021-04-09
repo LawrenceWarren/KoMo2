@@ -88,14 +88,32 @@ const bool TerminalModel::handleKeyPress(const GdkEventKey* const e) {
  * @param text The text to append to the text view.
  */
 void TerminalModel::appendTextToTextView(std::string text) {
+  auto* const view = getView()->getTextView();
+
   // Append text to the buffer, reset the buffer
-  auto buff = getView()->getTextView()->get_buffer();
+  auto buff = view->get_buffer();
   buff->insert(buff->end(), text);
-  getView()->getTextView()->set_buffer(buff);
+  view->set_buffer(buff);
 
   // Scroll to the bottom of the scroll bar
-  buff = getView()->getTextView()->get_buffer();
-  getView()->getTextView()->scroll_to(buff->create_mark(buff->end(), false));
+  buff = view->get_buffer();
+  view->scroll_to(buff->create_mark(buff->end(), false));
+
+  auto accessible = view->get_accessible();
+
+  // Notify that text was added
+  const auto name = accessible->get_name();
+  const auto description = accessible->get_description();
+
+  accessible->set_name("Text was added to the text view.");
+  accessible->set_description("");
+
+  accessible->set_role(Atk::ROLE_NOTIFICATION);
+  accessible->notify_state_change(ATK_STATE_SHOWING, true);
+
+  // Reset accessibility information
+  accessible->set_name(name);
+  accessible->set_description(description);
 }
 
 /**
