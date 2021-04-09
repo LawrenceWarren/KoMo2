@@ -131,7 +131,7 @@ void DisassemblyModel::refreshViews() {
   auto* const rows = getView()->getRows();
 
   // Loop through each of the fetched rows
-  for (int i = 0; i < 15; i++) {
+  for (long unsigned int i = 0; i < vals.size(); i++) {
     auto& row = (*rows)[i];
     auto flag = row.get_state_flags();
 
@@ -522,11 +522,11 @@ DisassemblyView* const DisassemblyModel::getView() {
 }
 /**
  * @brief Reads memory values from Jimulator.
- * @return std::array<Jimulator::MemoryValues, 15> An array of the 15 memory
+ * @return std::array<Jimulator::MemoryValues, 12> An array of the 12 memory
  * values - their addresses, their hex columns and their disassembly/source
  * columns.
  */
-const std::array<Jimulator::MemoryValues, 15>
+const std::array<Jimulator::MemoryValues, 12>
 DisassemblyModel::getMemoryValues() const {
   return Jimulator::getJimulatorMemoryValues(memoryIndex);
 }
