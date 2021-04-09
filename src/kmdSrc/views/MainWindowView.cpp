@@ -70,7 +70,7 @@ void MainWindowView::initRegistersAndDisassemblyBar() {
  * @brief Initialise the master layout.
  */
 void MainWindowView::initMasterLayout() {
-  masterLayout.set_homogeneous(false);
+  getMasterLayout()->set_homogeneous(false);
   getMasterLayout()->add(controlsAndCompileBar);
   getMasterLayout()->add(registersAndDisassemblyBar);
   getMasterLayout()->add(terminalView);

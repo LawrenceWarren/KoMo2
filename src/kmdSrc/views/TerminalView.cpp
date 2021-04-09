@@ -40,7 +40,7 @@ TerminalView::TerminalView(MainWindowView* const parent) : parent(parent) {
  * @brief Initialises the scroll view.
  */
 void TerminalView::initScrollView() {
-  scroll.set_size_request(700, 200);
+  scroll.set_size_request(948, 150);
   scroll.get_accessible()->set_name("Terminal output window.");
 }
 
@@ -60,7 +60,7 @@ void TerminalView::initClearButton() {
  * @brief Initialises the output box.
  */
 void TerminalView::initTextView() {
-  textView.set_size_request(700, 200);
+  textView.set_size_request(948, 150);
   textView.get_style_context()->add_class("terminalDisplay");
   textView.set_wrap_mode(Gtk::WRAP_WORD_CHAR);
   textView.set_can_focus(true);
@@ -72,7 +72,7 @@ void TerminalView::initTextView() {
  * @brief Initialises the input box.
  */
 void TerminalView::initInputBox() {
-  inputBox.set_size_request(600, 20);
+  inputBox.set_size_request(848, 20);
   inputBox.get_style_context()->add_class("terminalInput");
   inputBox.get_accessible()->set_name("Terminal input window.");
 }
@@ -81,11 +81,11 @@ void TerminalView::initInputBox() {
  * @brief Pack all of the child elements together and show them.
  */
 void TerminalView::packChildren() {
-  layout.pack_start(inputBox, false, false);
-  layout.pack_start(clearButton, false, true);
+  layout.pack_start(inputBox, true, true);
+  layout.pack_start(clearButton, true, true);
   scroll.add(textView);
-  pack_start(scroll, false, true);
-  pack_start(layout, false, true);
+  pack_start(scroll, true, true);
+  pack_start(layout, true, true);
 
   show();
   show_all_children();
