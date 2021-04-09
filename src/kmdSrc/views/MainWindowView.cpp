@@ -33,7 +33,7 @@
  * @param y The height of the window.
  */
 MainWindowView::MainWindowView(const int x, const int y)
-    : masterLayout(),
+    : masterLayout(Gtk::Orientation::ORIENTATION_VERTICAL, 0),
       controlsAndCompileBar(),
       compileLoadView(this),
       controlsView(this),
@@ -41,7 +41,7 @@ MainWindowView::MainWindowView(const int x, const int y)
       terminalView(this),
       disassemblyView(this) {
   set_border_width(1);
-  set_default_size(x, y);
+  // set_default_size(x, y);
   set_gravity(Gdk::GRAVITY_WEST);
   initControlsAndCompileBar();
   initRegistersAndDisassemblyBar();
@@ -70,10 +70,10 @@ void MainWindowView::initRegistersAndDisassemblyBar() {
  * @brief Initialise the master layout.
  */
 void MainWindowView::initMasterLayout() {
-  getMasterLayout()->set_layout(Gtk::BUTTONBOX_START);
-  getMasterLayout()->pack_start(controlsAndCompileBar, false, false);
+  masterLayout.set_homogeneous(false);
+  getMasterLayout()->add(controlsAndCompileBar);
   getMasterLayout()->pack_start(registersAndDisassemblyBar, false, false);
-  getMasterLayout()->pack_start(terminalView, false, false);
+  getMasterLayout()->add(terminalView);
   getMasterLayout()->show_all_children();
   getMasterLayout()->show();
   add(masterLayout);
@@ -183,6 +183,6 @@ Gtk::HButtonBox* const MainWindowView::getRegistersAndDisassemblyBar() {
  * @brief Gets the masterLayout layout.
  * @return Gtk::VButtonBox* const The masterLayout layout.
  */
-Gtk::VButtonBox* const MainWindowView::getMasterLayout() {
+Gtk::Box* const MainWindowView::getMasterLayout() {
   return &masterLayout;
 }

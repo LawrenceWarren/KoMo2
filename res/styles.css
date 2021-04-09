@@ -1,6 +1,5 @@
 /* ! Main window background colour */
 .mainWindow {
-  /*background-color: #1e7edd;*/
   background-color: #1f2428;
   color: #000000;
   box-shadow: inset 4px 4px 0px #1b1f23, inset -4px -4px 0px #1b1f23,
@@ -32,22 +31,18 @@
   border-width: 2px;
   border-radius: 0px;
 }
-/* Set background when hovering over */
 .compButtons:hover {
   background-image: image(#24292e);
 }
-/* Set look when disabled */
 .compButtons:disabled {
   background-image: image(#24292e);
   box-shadow: inset 1px -1px 0px #3f454b, inset -1px 1px 0px #000000;
   color: #3f454b;
 }
-/* Set background and border when focused */
 .compButtons:focus {
   background-image: image(#24292e);
   border-color: #005cc5;
 }
-/* Set background, border and box shadow when focused and active */
 .compButtons:focus:active {
   background-image: image(#24292e);
   border-color: #267594;
@@ -56,39 +51,27 @@
 
 /* ! For the containers */
 .controls_layouts {
-  /*background-color: #ffe608;*/
-  box-shadow: inset 2px 2px 0px #1b1f23, inset -2px -2px 0px #1b1f23,
-    inset -2px 2px 0px #1b1f23, inset 2px -2px 0px #1b1f23;
+  border: solid 1px red;
 }
 
 .terminal_layouts {
-  /*background-color: #ff6600;*/
-  box-shadow: inset 2px 2px 0px #1b1f23, inset -2px -2px 0px #1b1f23,
-    inset -2px 2px 0px #1b1f23, inset 2px -2px 0px #1b1f23;
+  border: solid 1px red;
 }
 
 .dis_layouts {
-  /*background-color: #ee3d3d;*/
-  box-shadow: inset 2px 2px 0px #1b1f23, inset -2px -2px 0px #1b1f23,
-    inset -2px 2px 0px #1b1f23, inset 2px -2px 0px #1b1f23;
+  border: solid 1px red;
 }
 
 .topContainer_layouts {
-  /*background-color: #382130;*/
-  box-shadow: inset 2px 2px 0px #1b1f23, inset -2px -2px 0px #1b1f23,
-    inset -2px 2px 0px #1b1f23, inset 2px -2px 0px #1b1f23;
+  border: solid 1px green;
 }
 
 .compileLoad_layouts {
-  /*background-color: #e74747;*/
-  box-shadow: inset 2px 2px 0px #1b1f23, inset -2px -2px 0px #1b1f23,
-    inset -2px 2px 0px #1b1f23, inset 2px -2px 0px #1b1f23;
+  border: solid 1px red;
 }
 
 .registers_layouts {
-  /*background-color: #00ff22;*/
-  box-shadow: inset 2px 2px 0px #1b1f23, inset -2px -2px 0px #1b1f23,
-    inset -2px 2px 0px #1b1f23, inset 2px -2px 0px #1b1f23;
+  border: solid 1px red;
 }
 
 /* ! For the control buttons */
@@ -108,22 +91,18 @@
   border-width: 2px;
   border-radius: 0px;
 }
-/* Set background when hovering over */
 .controlButtons:hover {
   background-image: image(#24292e);
 }
-/* Set look when disabled */
 .controlButtons:disabled {
   background-image: image(#24292e);
   box-shadow: inset 1px -1px 0px #3f454b, inset -1px 1px 0px #000000;
   color: #3f454b;
 }
-/* Set background and border when focused */
 .controlButtons:focus {
   background-image: image(#24292e);
   border-color: #005cc5;
 }
-/* Set background, border and box shadow when focused and active */
 .controlButtons:focus:active {
   background-image: image(#24292e);
   border-color: #267594;
@@ -137,24 +116,14 @@
     inset -2px 2px 0px #1b1f23, inset 2px -2px 0px #1b1f23;
 }
 
-/*
-.dialog {
-  color: #1b1f23;
-  background-color: #ff00ff;
-  background-image: image(#1b1f23);
-  outline-color: #1c7428;
-  border-color: #ffff00;
-}
-*/
-
 /* ! GRID */
-
-.grid {
+.registerTable {
   border-radius: 0px;
   border: 3px solid;
   border-color: #24292e;
 }
 
+/* ! The labels for within the table */
 .tableLabels {
   box-shadow: inset 2px -2px 2px #596166, inset -4px 4px 2px #1d2024;
   font-family: "Fira Code Retina", "Fira Code", monospace;
@@ -163,55 +132,47 @@
   background-color: #444d56;
 }
 
-.disassembly_container {
+/* ! Disassembly rows */
+.disassemblyContainer {
   box-shadow: inset 2px -2px 2px #596166, inset -4px 4px 2px #1d2024;
   font-family: "Fira Code Retina", "Fira Code", monospace;
   background-color: #444d56;
 }
-
-.disassembly_rows:active {
+.disassemblyRows:active {
   background-color: #634e18;
 }
-
-.disassembly_rows:active:focus {
+.disassemblyRows:active:focus {
   background-color: #4d84ac;
 }
-
-.disassembly_rows:focus {
+.disassemblyRows:focus {
   background-color: #005cc5;
 }
 
-.breakpoint_buttons {
-  border-radius: 100%;
+/* ! Styling for the breakpoint buttons */
+.breakpointButtons {
+  border-radius: 1000px;
+  margin: 1px;
   background-image: image(#72211c);
   border-color: #72211c;
   box-shadow: none;
 }
-.breakpoint_buttons:checked {
+.breakpointButtons:checked {
   background-image: image(#e51400);
   border-color: #e51400;
   box-shadow: none;
 }
 
-.address_label {
+/* ! The labels within the memory rows */
+.disassemblyLabels {
   color: #ffffff;
+  font-size: 12px;
   font-family: "Fira Code Retina", "Fira Code", monospace;
   border-left: 2px solid #1b1f23;
 }
 
-.hex_label {
-  color: #ffffff;
-  font-family: "Fira Code Retina", "Fira Code", monospace;
-  border-left: 2px solid #1b1f23;
-}
+/* ! The terminal */
 
-.disassembly_label {
-  color: #ffffff;
-  font-family: "Fira Code Retina", "Fira Code", monospace;
-  border-left: 2px solid #1b1f23;
-}
-
-/* The terminal display box */
+/* ! The terminal display box */
 .terminalDisplay text {
   color: #ffffff;
   background-color: #24292e;
@@ -220,17 +181,15 @@
   border-color: #1b1f23;
   border-radius: 0%;
 }
-
 .terminalDisplay:focus text {
   border-color: #005cc5;
 }
-
 .terminalDisplay {
   font-size: 14px;
   font-family: "Fira Code Retina", "Fira Code", monospace;
 }
 
-/* The terminal input box */
+/* ! The terminal input box */
 .terminalInput {
   font-size: 18px;
   font-family: "Fira Code Retina", "Fira Code", monospace;

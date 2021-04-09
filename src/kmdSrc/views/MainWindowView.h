@@ -61,7 +61,7 @@ class MainWindowView : public Gtk::Window {
   // Get layouts
   Gtk::HButtonBox* const getControlsAndCompileBar();
   Gtk::HButtonBox* const getRegistersAndDisassemblyBar();
-  Gtk::VButtonBox* const getMasterLayout();
+  Gtk::Box* const getMasterLayout();
 
   void initControlsAndCompileBar();
   void initRegistersAndDisassemblyBar();
@@ -73,7 +73,7 @@ class MainWindowView : public Gtk::Window {
    * @brief The master layout - every other view or layout should be nested
    * within this layout.
    */
-  Gtk::VButtonBox masterLayout;
+  Gtk::Box masterLayout;
   /**
    * @brief The layout for the top bar running along the screen. Contains the
    * compile and load layout, and the program controls layout.

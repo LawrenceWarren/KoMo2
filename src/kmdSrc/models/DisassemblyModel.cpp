@@ -438,7 +438,7 @@ const bool DisassemblyModel::handleKeyPress(const GdkEventKey* const e) {
   if ((e->state & (GDK_SHIFT_MASK | GDK_CONTROL_MASK | GDK_MOD1_MASK)) ==
       GDK_MOD1_MASK) {
     // toggle mnemonics mode, else stop
-    if (e->keyval == GDK_KEY_e || e->keyval == GDK_KEY_E) {
+    if (e->keyval == GDK_KEY_m || e->keyval == GDK_KEY_M) {
       setEnglishMnemonic(not englishMnemonic);
     } else {
       return false;

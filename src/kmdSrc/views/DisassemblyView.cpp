@@ -40,7 +40,7 @@ DisassemblyView::DisassemblyView(MainWindowView* const parent)
 void DisassemblyView::initDisassemblyContainer() {
   container.set_layout(Gtk::BUTTONBOX_START);
   disassemblyContainer.set_layout(Gtk::BUTTONBOX_START);
-  get_style_context()->add_class("disassembly_container");
+  get_style_context()->add_class("disassemblyContainer");
   container.pack_start(disassemblyContainer, false, false);
   container.pack_start(navigationButtons, false, false);
   add(container);
@@ -114,7 +114,7 @@ DisassemblyRows::DisassemblyRows() {
   pack_start(address, false, false);
   pack_start(hex, false, false);
   pack_start(disassembly, false, false);
-  get_style_context()->add_class("disassembly_rows");
+  get_style_context()->add_class("disassemblyRows");
   set_can_focus(true);
   set_focus_on_click(true);
   show();
@@ -126,7 +126,7 @@ DisassemblyRows::DisassemblyRows() {
  */
 void DisassemblyRows::initBreakpoint() {
   breakpoint.set_size_request(5, 5);
-  breakpoint.get_style_context()->add_class("breakpoint_buttons");
+  breakpoint.get_style_context()->add_class("breakpointButtons");
   breakpoint.set_tooltip_text("Toggle breakpoint");
   breakpoint.set_can_focus(false);
 }
@@ -134,7 +134,7 @@ void DisassemblyRows::initBreakpoint() {
  * @brief Initialises the address label.
  */
 void DisassemblyRows::initAddress() {
-  address.get_style_context()->add_class("address_label");
+  address.get_style_context()->add_class("disassemblyLabels");
   address.set_size_request(100, 10);
   address.set_xalign(0.0);
 }
@@ -142,15 +142,15 @@ void DisassemblyRows::initAddress() {
  * @brief Initialises the hex label.
  */
 void DisassemblyRows::initHex() {
+  hex.get_style_context()->add_class("disassemblyLabels");
   hex.set_size_request(100, 10);
-  hex.get_style_context()->add_class("hex_label");
   hex.set_xalign(0.0);
 }
 /**
  * @brief Initialises the disassembly label.
  */
 void DisassemblyRows::initDisassembly() {
-  disassembly.get_style_context()->add_class("disassembly_label");
+  disassembly.get_style_context()->add_class("disassemblyLabels");
   disassembly.set_size_request(500, 10);
   disassembly.set_xalign(0.0);
 }

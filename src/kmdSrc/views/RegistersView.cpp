@@ -95,7 +95,7 @@ void RegistersView::initGrid() {
   grid.set_column_homogeneous(false);
   grid.set_column_spacing(3);
   grid.set_row_spacing(3);
-  grid.get_style_context()->add_class("grid");
+  grid.get_style_context()->add_class("registerTable");
   pack_start(grid, true, true);
   show_all_children();
 }

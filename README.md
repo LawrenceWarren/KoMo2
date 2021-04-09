@@ -1,4 +1,4 @@
-# KoMo2:
+# _KoMo2_:
 
 ## Modernising an Advanced Reduced Instruction Set Computing Machine architecture emulator
 
@@ -16,7 +16,7 @@
 
 ---
 
-### What is KoMo2? A brief history
+### What is _KoMo2_? A brief history
 
 1<sup>st</sup> year students at _The University of Nottingham_ are taught a compulsory module, _Systems and Architecture (SYS)_, which teaches them the fundamentals of a CPU architecture such as registers, memory, and assembly instructions. To do this, students are tasked with writing their own basic ARM assembly programs and running them in a program called _KoMoDo_.
 
@@ -260,3 +260,15 @@ As you look at the memory window, you can see red buttons on each row. These but
 As _KoMo2_ performs actions, it may log some outputs. These outputs are viewable in the terminal, which takes up the majority of the bottom of the _KoMo2_ GUI. The contents of the terminal can be cleared through a nearby button labelled "Clear".
 
 If you write a program which requests input, you may utilise the singular input box below the terminal window to provide this input. Text will not show in the input box - rather it is immediately captured and sent to ARM emulator, which will process the input and display some output into the terminal window in response.
+
+#### Screen reader support
+
+As part of ensuring _KoMo2_ is accessible for all who use it, the Accessibility ToolKit (ATK) API has been implemented within the program to allow for screen reader compatibility.
+
+If you are using a compatible screen reader - _KoMo2_'s screen reader implementation was tested with [Orca](https://help.gnome.org/users/orca/stable/) - information will be read out as you navigate over GUI elements. For example, if you navigate over a memory row, it will state what address it is, what is stored at that address, and if a breakpoint is set.
+
+For reading the register values, which are not keyboard navigable, press the Alt key + 0-9, A-E to read the relevant register values. For example, _Alt+0_ reads the value stored in register 0, _Alt+8_ reads the value in register 8, _Alt+A_ reads the value in register 10, and _Alt+E_ reads the value in register 14.
+
+For reading the Program Counter, press _Alt+P_.
+
+Furthermore, pressing _Alt+M_ toggles how the memory window mnemonics are read out. By default, the ARM instructions in the memory window are read it as they are displayed on the screen. However, this may not be the best way to communicate what they do to somebody who is hard of sight. Toggling the mnemonics mode allows for the mnemonics to be converted into English and read out that way - they are **not** converted in how they are displayed in the GUI.
