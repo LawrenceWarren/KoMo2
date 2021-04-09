@@ -41,7 +41,7 @@ TerminalView::TerminalView(MainWindowView* const parent) : parent(parent) {
  */
 void TerminalView::initScrollView() {
   scroll.set_size_request(948, 150);
-  scroll.get_accessible()->set_name("Terminal output window.");
+  scroll.get_accessible()->set_name("Terminal output");
 }
 
 /**
@@ -65,7 +65,7 @@ void TerminalView::initTextView() {
   textView.set_wrap_mode(Gtk::WRAP_WORD_CHAR);
   textView.set_can_focus(true);
   textView.set_editable(false);
-  textView.get_accessible()->set_name("Terminal output window.");
+  textView.get_accessible()->set_name("Terminal output");
 }
 
 /**
@@ -74,7 +74,7 @@ void TerminalView::initTextView() {
 void TerminalView::initInputBox() {
   inputBox.set_size_request(848, 20);
   inputBox.get_style_context()->add_class("terminalInput");
-  inputBox.get_accessible()->set_name("Terminal input window.");
+  inputBox.get_accessible()->set_name("Terminal input window");
 }
 
 /**

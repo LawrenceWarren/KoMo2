@@ -99,21 +99,9 @@ void TerminalModel::appendTextToTextView(std::string text) {
   buff = view->get_buffer();
   view->scroll_to(buff->create_mark(buff->end(), false));
 
-  auto accessible = view->get_accessible();
-
-  // Notify that text was added
-  const auto name = accessible->get_name();
-  const auto description = accessible->get_description();
-
-  accessible->set_name("Text was added to the text view.");
-  accessible->set_description("");
-
-  accessible->set_role(Atk::ROLE_NOTIFICATION);
-  accessible->notify_state_change(ATK_STATE_SHOWING, true);
-
-  // Reset accessibility information
-  accessible->set_name(name);
-  accessible->set_description(description);
+  // Notify that text was logged
+  view->get_accessible()->set_role(Atk::ROLE_NOTIFICATION);
+  view->get_accessible()->notify_state_change(ATK_STATE_SHOWING, true);
 }
 
 /**
