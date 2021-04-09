@@ -4,6 +4,8 @@
 
 ###### A 3<sup>rd</sup> year dissertation project by Lawrence Warren for Dr. Steven Bagley of _The University of Nottingham_.
 
+![The whole KoMo2 GUI](./res/readme-pictures/wholegui.png)
+
 ##### Table of Contents
 
 - [What is _KoMo2_? A brief history](#what-is-komo2-a-brief-history)
