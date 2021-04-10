@@ -69,6 +69,7 @@ const int boardGetCharArray(int, unsigned char*);
 
 // Breakpoints
 
+constexpr const int getNextFreeBreakpoint(const int);
 const bool getBreakpointStatus(unsigned int*, unsigned int*);
 const bool getBreakpointDefinition(unsigned int, BreakpointInfo*);
 void setBreakpointStatus(unsigned int, unsigned int);
@@ -78,11 +79,10 @@ const std::unordered_map<u_int32_t, bool> getAllBreakpoints();
 // Helpers
 
 constexpr void copyStringLiterals(int, unsigned char*, unsigned char*);
-constexpr const int numericStringSubtraction(int,
-                                             unsigned char*,
-                                             unsigned char*);
-constexpr const int numericStringToInt(int, unsigned char* const);
-constexpr void numericStringAndIntAdition(unsigned char* const, int);
+constexpr const int numericStringSubtraction(const unsigned char* const,
+                                             const unsigned char* const);
+constexpr const int numericStringToInt(int, const unsigned char* const);
+constexpr void numericStringAndIntAddition(unsigned char* const, int);
 const std::string integerArrayToHexString(int,
                                           unsigned char* const,
                                           const bool = false);
@@ -160,79 +160,55 @@ void Jimulator::resetJimulator() {
  * @param addr The address to set the breakpoint at.
  * @return const bool If setting the breakpoint succeeded.
  */
-const bool Jimulator::setBreakpoint(uint32_t addr) {
-  unsigned int wordA, wordB;
-  unsigned char address[ADDRESS_BUS_WIDTH];
+const bool Jimulator::setBreakpoint(const uint32_t addr) {
+  unsigned int wordA = 0, wordB = 0;
+  unsigned char address[ADDRESS_BUS_WIDTH] = {0};
 
   // Unpack address to byte array
   for (int i = 0; i < ADDRESS_BUS_WIDTH; i++) {
     address[i] = getLeastSignificantByte(addr >> (8 * i));
   }
 
+  // Reads the breakpoints
   if (not getBreakpointStatus(&wordA, &wordB)) {
-    // TODO: handle this event gracefully?
     return false;
   }
 
-  bool breakpoint_found = false;
-
-  // Maximum of 32 breakpoints - loop through to see if more can be set
+  // Checks to see if a breakpoint exists at this address and turns it off if so
   for (int i = 0; i < MAX_NUMBER_OF_BREAKPOINTS; i++) {
     if (((wordA >> i) & 1) != 0) {
-      BreakpointInfo bp;  // Space to store fetched definition
+      BreakpointInfo bp;
 
-      bool error = not getBreakpointDefinition(i, &bp);
-
-      // If this breakpoint was found
-      if (not error && (not numericStringSubtraction(ADDRESS_BUS_WIDTH, address,
-                                                     bp.addressA))) {
-        breakpoint_found = true;
+      // Gets breakpoint i from the list;
+      // checks if that breakpoint is set for current address;
+      // turns it off if so
+      if (getBreakpointDefinition(i, &bp) &&
+          (numericStringSubtraction(address, bp.addressA) == 0)) {
         setBreakpointStatus(0, 1 << i);
+        return false;
       }
     }
   }
 
-  // breakpoint(s) matched and deleted ???
-  if (breakpoint_found) {
+  // See if there are any more breakpoints to be set, return if not
+  int temp = (~wordA) & wordB;
+
+  if (temp == 0) {
     return false;
   }
-  // See if we can set breakpoint
-  else {
-    int temp = (~wordA) & wordB;  // Undefined => possible choice
 
-    // If any free entries ...
-    if (temp != 0) {  // Define (set) breakpoint
-      BreakpointInfo bp;
-      int count, i;
+  BreakpointInfo bp;
+  copyStringLiterals(ADDRESS_BUS_WIDTH, address, bp.addressA);
 
-      for (i = 0; (((temp >> i) & 1) == 0); i++)
-        ;
-
-      // Choose free(?) number
-      bp.misc = -1;  // Really two byte parameters
-
-      // Should send 2*words address then two*double words data @@@
-      copyStringLiterals(ADDRESS_BUS_WIDTH, address, bp.addressA);
-      for (count = 0; count < ADDRESS_BUS_WIDTH; count++) {
-        bp.addressB[count] = 0xFF;
-      }
-      for (count = 0; count < 8; count++) {
-        bp.dataA[count] = 0x00;
-        bp.dataB[count] = 0x00;
-      }
-
-      setBreakpointDefinition(i, &bp);
-      return true;
-    } else {
-      return false;
-    }
-  }
+  int i = getNextFreeBreakpoint(temp);
+  setBreakpointDefinition(i, &bp);
+  return true;
 }
 
 /**
  * @brief Check the state of the board - logs what it is doing.
- * @return int 0 if the board is in a failed state, else a number greater than
- * 0.
+ * @return int 0 if the board is in a failed state, else a number greater
+ * than 0.
  */
 const ClientState Jimulator::checkBoardState() {
   const auto board_state = getBoardStatus();
@@ -515,7 +491,7 @@ std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
     }
 
     // Move the address on
-    numericStringAndIntAdition(address, increment);
+    numericStringAndIntAddition(address, increment);
   }
 
   return readValues;
@@ -524,6 +500,20 @@ std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
 // !!!!!!!!!! Functions below are not included in the header file !!!!!!!!!! //
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
+
+/**
+ * @brief Gets the index of the next free breakpoint from Jimulators internal
+ * breakpoint list.
+ * @param v Indicates which breakpoints are set, as an array of bits.
+ * @return const int The index of the next free breakpoint.
+ */
+constexpr const int getNextFreeBreakpoint(const int v) {
+  int i = 0;
+  for (; (((v >> i) & 1) == 0); i++)
+    ;
+
+  return i;
+}
 
 /**
  * @brief Get the least significant byte out of an integer - if little endian,
@@ -627,17 +617,15 @@ const bool getBreakpointDefinition(unsigned int breakpointlistIndex,
  * subtraction on the integer values they represent as strings, returning that
  * value as an int.
  * For example, s1 = "400", s2 = "350", the return value 50.
- * @param i The length of the two strings.
  * @param s1 The "number" to have its value subtracted from.
  * @param s2 The "number" to subtract by.
  * @return int The output of the arithmetic.
  */
-constexpr const int numericStringSubtraction(int i,
-                                             unsigned char* s1,
-                                             unsigned char* s2) {
+constexpr const int numericStringSubtraction(const unsigned char* const s1,
+                                             const unsigned char* const s2) {
   int ret = 0;
 
-  while (i--) {
+  for (int i = ADDRESS_BUS_WIDTH; i--;) {
     ret = rotateLeft1Byte(ret) + (int)s1[i] - (int)s2[i];
   }
   return ret;
@@ -898,7 +886,7 @@ const std::string integerArrayToHexString(int i,
  * @param s The string representation of the number to have its value read.
  * @return int The value read from the string.
  */
-constexpr const int numericStringToInt(int i, unsigned char* const s) {
+constexpr const int numericStringToInt(int i, const unsigned char* const s) {
   int ret = 0;
 
   while (i--) {
@@ -912,12 +900,13 @@ constexpr const int numericStringToInt(int i, unsigned char* const s) {
  * @brief Takes a string representation of an integer - for example, the string
  * {'5' '7' '2'} representing the integer 572 - and an integer number, adding
  * these two "numbers" together into a second string literal. For example:
- * The string {'6' '2'} and the integer 6 will output the string {'6' '6'}.
+ * The string {'6' '2'} and the integer 6 will output the string {'6' '6'}. The
+ * output of the addition is stored in the string paramter.
  * @param s The string representation of a number, and also where the output of
  * the addition is stored.
  * @param n The integer to add.
  */
-constexpr void numericStringAndIntAdition(unsigned char* const s, int n) {
+constexpr void numericStringAndIntAddition(unsigned char* const s, int n) {
   int temp = 0;
 
   for (int i = 0; i < ADDRESS_BUS_WIDTH; i++) {

@@ -63,11 +63,11 @@ inline unsigned char operator|(ClientState l, unsigned char r) {
  */
 class BreakpointInfo {
  public:
-  unsigned int misc;
   unsigned char addressA[ADDRESS_BUS_WIDTH];
-  unsigned char addressB[ADDRESS_BUS_WIDTH];
-  unsigned char dataA[8];
-  unsigned char dataB[8];
+  unsigned char addressB[ADDRESS_BUS_WIDTH] = {0xFF, 0XFF, 0XFF, 0XFF};
+  unsigned char dataA[8] = {0};
+  unsigned char dataB[8] = {0};
+  unsigned int misc = 0xFFFFFFFF;
 };
 
 /**
@@ -206,5 +206,5 @@ void continueJimulator();
 void pauseJimulator();
 void resetJimulator();
 const bool sendTerminalInputToJimulator(const unsigned int val);
-const bool setBreakpoint(uint32_t address);
+const bool setBreakpoint(const uint32_t address);
 }  // namespace Jimulator
