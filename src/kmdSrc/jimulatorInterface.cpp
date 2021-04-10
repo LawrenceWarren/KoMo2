@@ -23,7 +23,7 @@
 #include "jimulatorInterface.h"
 #include <ctype.h>
 #include <fcntl.h>
-#include <gdk/gdkkeysyms.h>  // Definitions of `special' keys
+#include <gdk/gdkkeysyms.h>
 #include <glib.h>
 #include <gtk/gtk.h>
 #include <math.h>
@@ -80,9 +80,9 @@ constexpr void numericStringAndIntAdition(const int,
                                           unsigned char* const,
                                           int,
                                           unsigned char* const);
-const std::string littleEndianBytesToHexString(int,
-                                               unsigned char*,
-                                               bool = false);
+const std::string integerArrayToHexString(int,
+                                          unsigned char* const,
+                                          const bool = false);
 constexpr const char getLeastSignificantByte(const int);
 
 // The read .kmd file
@@ -269,7 +269,7 @@ const std::array<std::string, 16> Jimulator::getJimulatorRegisterValues() {
 
   // Loop through the array
   for (long unsigned int i = 0; i < ret.size(); i++) {
-    ret[i] = littleEndianBytesToHexString(4, &bytes[i * 4], true);
+    ret[i] = integerArrayToHexString(4, &bytes[i * 4], true);
   }
 
   return ret;
@@ -456,8 +456,8 @@ std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
             char spaces[5];  // Max. one per byte plus terminator
 
             auto data =
-                littleEndianBytesToHexString(
-                    src->data_size[i], &memdata[addr - start_addr + increment])
+                integerArrayToHexString(src->data_size[i],
+                                        &memdata[addr - start_addr + increment])
                     .c_str();
 
             int j = 0;
@@ -850,32 +850,30 @@ const std::array<unsigned char, 64> readRegistersIntoArray() {
 }
 
 /**
- * @brief Converts a little-endian series of bits to a hexadecimal, big-endian
- * string representation of that data. For example:
- * The little endian 0b0111 = 0d14. The returned string will therefore be "E".
- * @warning This function does some bit-level trickery. This is very low
- * level, study carefully before altering control flow.
- * @param length The number of bits to read.
- * @param values A pointer to the little-endian series of bits to read.
+ * @brief Converts an array of integers into a formatted hexadecimal string.
+ * @warning Jimulator often treats arrays of characters as plain arrays of bits
+ * to be manipulated. In this instance, although it is an array of characters,
+ * the paramter `v` is actually an array of integers.
+ * @param i The number of bits to read.
+ * @param v A pointer to the array of integers.
  * @param prepend0x Whether to prepend the output string with an "0x" or not.
  * @return std::string A hexadecimal formatted register value.
  */
-const std::string littleEndianBytesToHexString(int count,
-                                               unsigned char* values,
-                                               bool prepend0x) {
-  char ret[count * 2 + 1];
-  char* ptr = ret;
-
-  while (count--) {
-    g_snprintf(ptr, 3, "%02X", (int)values[count]);
-    ptr += 2;  // Step string pointer
-  }
+const std::string integerArrayToHexString(int i,
+                                          unsigned char* const v,
+                                          const bool prepend0x) {
+  std::stringstream ss;
 
   if (prepend0x) {
-    return std::string(ret).insert(0, "0x");
-  } else {
-    return std::string(ret);
+    ss << "0x";
   }
+
+  while (i--) {
+    ss << std::setfill('0') << std::setw(2) << std::uppercase << std::hex
+       << (int)v[i];
+  }
+
+  return ss.str();
 }
 
 /**
@@ -1126,13 +1124,13 @@ void boardSetMemory(const int count,
  * @return true if successful.
  */
 const bool readSourceFile(const char* const pathToKMD) {
-  // TODO: this function is a jumbled mess. refactor and remove sections
+  // TODO: this function is a jumbled mess, refactor and remove sections
   unsigned int address, old_address;
   unsigned int d_size[SOURCE_FIELD_COUNT], d_value[SOURCE_FIELD_COUNT];
   int i, j, m;
   bool flag;
   int byte_total, text_length;
-  char c, buffer[SOURCE_TEXT_LENGTH + 1]; /* + 1 for terminator */
+  char c, buffer[SOURCE_TEXT_LENGTH + 1];  // + 1 for terminator
   sourceFileLine *pNew, *pTemp1, *pTemp2;
   struct stat status;
 
