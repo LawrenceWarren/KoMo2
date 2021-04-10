@@ -263,16 +263,16 @@ const clientState Jimulator::checkBoardState() {
  * @return The values read from the registers.
  */
 const std::array<std::string, 16> Jimulator::getJimulatorRegisterValues() {
-  auto regVals = readRegistersIntoArray();  // regVals now has reg values
+  auto bytes = readRegistersIntoArray();
 
-  std::array<std::string, 16> a;  // vector of strings
+  std::array<std::string, 16> ret;  // vector of strings
 
   // Loop through the array
-  for (long unsigned int j = 0; j < a.size(); j++) {
-    a[j] = littleEndianBytesToHexString(4, &regVals[j * 4], true);
+  for (long unsigned int i = 0; i < ret.size(); i++) {
+    ret[i] = littleEndianBytesToHexString(4, &bytes[i * 4], true);
   }
 
-  return a;
+  return ret;
 }
 
 /**
@@ -287,11 +287,10 @@ const std::string Jimulator::getJimulatorTerminalMessages() {
   std::string output("");
 
   do {
-    boardSendChar(static_cast<unsigned char>(
-        boardInstruction::FR_READ));  // send appropriate command
-    boardSendChar(0);                 // send the terminal number
-    boardSendChar(32);                // send the maximum length possible
-    boardGetChar(&length);            // get length of message
+    boardSendChar(static_cast<unsigned char>(boardInstruction::FR_READ));
+    boardSendChar(0);       // send the terminal number
+    boardSendChar(32);      // send the maximum length possible
+    boardGetChar(&length);  // get length of message
 
     // non-zero received from board - not an empty packet
     if (length != 0) {
@@ -398,7 +397,7 @@ std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
   unsigned char memdata[bytecount];
 
   // Reading data into arrays!
-  boardSendChar(72 | 2);
+  boardSendChar(static_cast<unsigned char>(boardInstruction::GET_MEM));
   boardSendCharArray(ADDRESS_BUS_WIDTH, start_address);
   boardSendNBytes(count, 2);
   boardGetCharArray(bytecount, memdata);

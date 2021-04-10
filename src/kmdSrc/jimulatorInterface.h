@@ -37,20 +37,12 @@ const int MAX_NUMBER_OF_BREAKPOINTS = 32;
  * Jimulator.
  */
 enum class clientState : unsigned char {
-  CLASS_MASK = 0XC0,
   NORMAL = 0X00,
-  CLASS_STOPPED = 0X40,
-  CLASS_RUNNING = 0X80,
-  CLASS_ERROR = 0XC0,
-  RESET = 0X00,
   BUSY = 0X01,
-  STOPPED = 0X40,
   BREAKPOINT = 0X41,
-  WATCHPOINT = 0X42,
   MEMFAULT = 0X43,
   FINISHED = 0X44,
   RUNNING = 0X80,
-  RUNNING_BL = 0x81,
   RUNNING_SWI = 0x81,
   STEPPING = 0X82,
   BROKEN = 0x30,
@@ -65,18 +57,6 @@ enum class clientState : unsigned char {
 inline unsigned char operator|(clientState l, unsigned char r) {
   return static_cast<unsigned char>(l) | r;
 }
-
-/**
- * @brief Flags that are used to declare how Jimulator should run.
- */
-enum class runFlags {
-  BL = 0x02,
-  SWI = 0x04,
-  ABORT = 0x08,
-  BREAK = 0x10,
-  WATCH = 0x20,
-  INIT = 0x30,
-};
 
 /**
  * @brief Contains the information read from Jimulator about a given breakpoint.
@@ -94,44 +74,30 @@ class breakpointInfo {
  * @brief A container for a series of codes used as board instructions.
  */
 enum class boardInstruction : unsigned char {
-  NOP = 0x00,
-  PING = 0x01,
-  WOT_R_U = 0x02,
-  RESET = 0x04,
-  COMM_W = 0x06,
-  COMM_R = 0x07,
-
-  FR_GET = 0x10,
-  FR_SET = 0x11,
-  FR_WRITE = 0x12,
-  FR_READ = 0x13,
-  FR_FILE = 0x14,
-  FR_SEND = 0x15,
-
+  // General commands
+  START = 0xB0,
   WOT_U_DO = 0x20,
   STOP = 0x21,
-  PAUSE = 0x22,
   CONTINUE = 0x23,
+  RESET = 0x04,
 
-  RTF_SET = 0x24,
-  RTF_GET = 0x25,
+  // Terminal read/write
+  FR_WRITE = 0x12,
+  FR_READ = 0x13,
 
+  // Breakpoint read/write
   BP_WRITE = 0x30,
   BP_READ = 0x31,
   BP_SET = 0x32,
   BP_GET = 0x33,
 
+  // Register read/write
   GET_REG = 0x5A,
-  GET_MEM = 0x48,
-  SET_REG = 0x52,
+  SET_REG = 0x52,  // Unused
+
+  // Memory read/write
+  GET_MEM = 0x4A,
   SET_MEM = 0x40,
-
-  WP_WRITE = 0x34,
-  WP_READ = 0x35,
-  WP_SET = 0x36,
-  WP_GET = 0x37,
-
-  START = 0xB0
 };
 
 /**
