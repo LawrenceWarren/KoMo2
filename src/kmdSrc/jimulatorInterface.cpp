@@ -192,11 +192,11 @@ const bool Jimulator::setBreakpoint(const uint32_t addr) {
 
   // See if there are any more breakpoints to be set, return if not
   int temp = (~wordA) & wordB;
-
   if (temp == 0) {
     return false;
   }
 
+  // Set the breakpoint
   BreakpointInfo bp;
   copyStringLiterals(ADDRESS_BUS_WIDTH, address, bp.addressA);
 
@@ -354,46 +354,39 @@ const bool Jimulator::sendTerminalInputToJimulator(const unsigned int val) {
 }
 
 /**
- * @brief Get the memory values from Jimulator, starting to s_address_int.
- * @param s_address_int The address to start at, as an integer.
+ * @brief Get the memory values from Jimulator, starting to s_address.
+ * @param s_address The address to start at, as an integer.
  * @return std::array<Jimulator::MemoryValues, 13> An array of all of the
  * values read from Jimulator, including each column.
  */
 std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
-    const uint32_t s_address_int) {
+    const uint32_t s_address) {
   const int count = 13;  // The number of values displayed in the memory window
   const int bytecount = count * ADDRESS_BUS_WIDTH;  // How many bytes to read
 
   // Bit level hacking happening here - converting the integer address into
   // an array of characters.
-  unsigned char* p = (unsigned char*)&s_address_int;
-  unsigned char start_address[ADDRESS_BUS_WIDTH] = {p[0], p[1], p[2], p[3]};
-  start_address[0] &= -4;  // Normalise down to the previous multiple of 4
-
-  unsigned char memdata[bytecount];
+  unsigned char* p = (unsigned char*)&s_address;
+  unsigned char currentAddressS[ADDRESS_BUS_WIDTH] = {p[0], p[1], p[2], p[3]};
+  currentAddressS[0] &= -4;  // Normalise address down
 
   // Reading data into arrays!
+  unsigned char memdata[bytecount];
   boardSendChar(static_cast<unsigned char>(BoardInstruction::GET_MEM));
-  boardSendCharArray(ADDRESS_BUS_WIDTH, start_address);
+  boardSendCharArray(ADDRESS_BUS_WIDTH, currentAddressS);
   boardSendNBytes(count, 2);
   boardGetCharArray(bytecount, memdata);
 
   // ! Dangerous old logic ahead is used to read memory.
   // ! This is very much C-style code, be careful
 
-  // Switches the endianness of the address
-  unsigned char address[ADDRESS_BUS_WIDTH] = {
-      start_address[0], start_address[1], start_address[2], start_address[3]};
-
   SourceFileLine* src = NULL;
   bool used_first = false;
-  unsigned int start_addr =
-      numericStringToInt(ADDRESS_BUS_WIDTH, start_address);
 
-  // Setup src variable
+  // Moves our src line to the relevant line of the src file
   if (source.pStart != NULL) {
     src = source.pStart;  // Known to be valid
-    while ((src != NULL) && ((src->address < start_addr) || not src->hasData)) {
+    while ((src != NULL) && ((src->address < s_address) || not src->hasData)) {
       src = src->next;
     }
 
@@ -401,6 +394,7 @@ std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
     if (src == NULL) {
       src = source.pStart;
       used_first = true;
+
       // Find a record with some data
       while ((src != NULL) && not src->hasData) {
         src = src->next;
@@ -413,85 +407,70 @@ std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
   const auto bps = getAllBreakpoints();
 
   // Iterate over display rows
-  for (long unsigned int row = 0; row < readValues.size(); row++) {
-    int increment = 4;
+  for (long unsigned int i = 0; i < readValues.size(); i++) {
+    int increment = 0;
+    unsigned int currentAddressI =
+        numericStringToInt(ADDRESS_BUS_WIDTH, currentAddressS);
+    readValues[i].address = currentAddressI;
+    readValues[i].hex = std::string("00000000");
+    readValues[i].disassembly = std::string("...");
 
-    unsigned int addr = numericStringToInt(ADDRESS_BUS_WIDTH, address);
-    readValues[row].address = addr;
+    // Generate the hex
+    if (src != NULL && currentAddressI == src->address) {
+      readValues[i].disassembly =
+          std::regex_replace(std::string(src->text), std::regex(";.*$"), "");
 
-    // If the source file can be read
-    if (src != NULL) {
-      // If the src address is valid
-      if (addr == src->address) {
-        increment = 0;             // How far should we move?
-        char* str = g_strdup("");  // Seed hex string
+      std::string hex;
 
-        // Source field entries
-        for (int i = 0; i < SOURCE_FIELD_COUNT; i++) {
-          if (src->dataSize[i] > 0) {
-            char spaces[5];  // Max. one per byte plus terminator
+      // Source field entries
+      for (int i = 0; i < SOURCE_FIELD_COUNT; i++) {
+        if (src->dataSize[i] > 0) {
+          char spaces[5];
 
-            auto data =
-                integerArrayToHexString(src->dataSize[i],
-                                        &memdata[addr - start_addr + increment])
-                    .c_str();
+          auto data = integerArrayToHexString(
+              src->dataSize[i],
+              &memdata[currentAddressI - s_address + increment]);
 
-            int j = 0;
-            for (; j < src->dataSize[i]; j++) {
-              spaces[j] = ' ';
-            }
-
-            spaces[j] = '\0';
-            auto trash = str;
-            str = g_strconcat(str, data, spaces, NULL);
-            g_free(trash);
+          int j = 0;
+          for (; j < src->dataSize[i]; j++) {
+            spaces[j] = ' ';
           }
-          increment = increment + src->dataSize[i];
+
+          spaces[j] = '\0';
+          hex += data;
+          hex += spaces;
         }
-
-        readValues[row].hex = std::string(str);
-
-        // Remove any comments that trail the disassembly
-        readValues[row].disassembly =
-            std::regex_replace(std::string(src->text), std::regex(";.*$"), "");
-
-        g_free(str);
-
-        do {
-          if (src->next != NULL) {
-            src = src->next;  // Move on ...
-          } else {            // ... wrapping, if required
-            if (not used_first) {
-              src = source.pStart;
-              used_first = true;
-            } else {
-              src = NULL;  // Been here before - give in
-            }
-          }
-        } while ((src != NULL) && not src->hasData);
-      } else {
-        // If a src line is invalid
-        readValues[row].hex = std::string("00000000");
-        readValues[row].disassembly = std::string("...");
-        increment = disassembleSourceFile(src, addr);
+        increment = increment + src->dataSize[i];
       }
-    } else {
-      // If there is no src line to read
-      readValues[row].hex = std::string("00000000");
-      readValues[row].disassembly = std::string("...");
+
+      readValues[i].hex = hex;
+
+      // step the src file over
+      do {
+        if (src->next != NULL) {
+          src = src->next;  // Move on ...
+        } else {            // ... wrapping, if required
+          if (not used_first) {
+            src = source.pStart;
+            used_first = true;
+          } else {
+            src = NULL;  // Been here before - give in
+          }
+        }
+      } while ((src != NULL) && not src->hasData);
     }
 
     // Find if a breakpoint is set on this line
-    auto iter = bps.find(readValues[row].address);
-
     // if the iterator is not at the end of the map, the breakpoint was found
     // and can be set
+    auto iter = bps.find(readValues[i].address);
     if (iter != bps.end()) {
-      readValues[row].breakpoint = true;
+      readValues[i].breakpoint = true;
     }
 
-    // Move the address on
-    numericStringAndIntAddition(address, increment);
+    // Calculate where the next address is and move the address there
+    increment = disassembleSourceFile(src, currentAddressI);
+    numericStringAndIntAddition(currentAddressS, increment);
   }
 
   return readValues;
@@ -632,18 +611,6 @@ constexpr const int numericStringSubtraction(const unsigned char* const s1,
 }
 
 /**
- * @brief Overwrites some breakpoint information into Jimulator.
- * @param wordA The value to set the breakpoint to. POSSIBLY represents whether
- * the breakpoint is active? (e.g. 0 for inactive)
- * @param wordB The index that the breakpoint exists within the list.
- */
-void setBreakpointStatus(unsigned int wordA, unsigned int wordB) {
-  boardSendChar(static_cast<unsigned char>(BoardInstruction::BP_SET));
-  boardSendNBytes(wordA, 4);  // send word a
-  boardSendNBytes(wordB, 4);  // send word b
-}
-
-/**
  * @brief Copy one string literal into another string literal.
  * @param i The length of the string literals.
  * @param source The value to be copied.
@@ -655,6 +622,18 @@ constexpr void copyStringLiterals(int i,
   while (i--) {
     dest[i] = source[i];
   }
+}
+
+/**
+ * @brief Overwrites some breakpoint information into Jimulator.
+ * @param wordA The value to set the breakpoint to. POSSIBLY represents whether
+ * the breakpoint is active? (e.g. 0 for inactive)
+ * @param wordB The index that the breakpoint exists within the list.
+ */
+void setBreakpointStatus(unsigned int wordA, unsigned int wordB) {
+  boardSendChar(static_cast<unsigned char>(BoardInstruction::BP_SET));
+  boardSendNBytes(wordA, 4);  // send word a
+  boardSendNBytes(wordB, 4);  // send word b
 }
 
 /**
@@ -929,6 +908,10 @@ constexpr void numericStringAndIntAddition(unsigned char* const s, int n) {
  */
 constexpr const int disassembleSourceFile(SourceFileLine* src,
                                           unsigned int addr) {
+  if (src == NULL || src == nullptr) {
+    return 4;
+  }
+
   unsigned int diff = src->address - addr;  // How far to next line start?
 
   // Do have a source line, but shan't use it
@@ -1248,12 +1231,10 @@ const bool readSourceFile(const char* const pathToKMD) {
               }
             }
 
-            // FIXME
+            // error here?
             std::cout << "OVERFLOW " << dSize[0] << " " << dSize[1] << " "
                       << dSize[2] << " " << dSize[3] << " " << byteTotal
                       << std::endl;
-            // Extend with some more records here? @@@ (plant in memory,
-            // above, also)
           }
 
           // Copy text to buffer
