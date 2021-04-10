@@ -54,6 +54,12 @@ const bool readSourceFile(const char* const);
 const ClientState getBoardStatus();
 const std::array<unsigned char, 64> readRegistersIntoArray();
 constexpr const int disassembleSourceFile(SourceFileLine*, unsigned int);
+constexpr const bool moveSrc(bool firstFlag, SourceFileLine** src);
+inline const std::string generateMemoryHex(SourceFileLine** src,
+                                           const uint32_t s_address,
+                                           int* const increment,
+                                           const int currentAddressI,
+                                           unsigned char (*memdata)[52]);
 
 // Low level sending
 
@@ -377,11 +383,8 @@ std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
   boardSendNBytes(count, 2);
   boardGetCharArray(bytecount, memdata);
 
-  // ! Dangerous old logic ahead is used to read memory.
-  // ! This is very much C-style code, be careful
-
   SourceFileLine* src = NULL;
-  bool used_first = false;
+  bool firstFlag = false;
 
   // Moves our src line to the relevant line of the src file
   if (source.pStart != NULL) {
@@ -393,7 +396,7 @@ std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
     // We fell off the end; wrap to start
     if (src == NULL) {
       src = source.pStart;
-      used_first = true;
+      firstFlag = true;
 
       // Find a record with some data
       while ((src != NULL) && not src->hasData) {
@@ -402,6 +405,7 @@ std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
     }
   }
 
+  // ! Building an array of memory values from here
   // Data is read into this array
   std::array<Jimulator::MemoryValues, 13> readValues;
   const auto bps = getAllBreakpoints();
@@ -419,45 +423,10 @@ std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
     if (src != NULL && currentAddressI == src->address) {
       readValues[i].disassembly =
           std::regex_replace(std::string(src->text), std::regex(";.*$"), "");
+      readValues[i].hex = generateMemoryHex(&src, s_address, &increment,
+                                            currentAddressI, &memdata);
 
-      std::string hex;
-
-      // Source field entries
-      for (int i = 0; i < SOURCE_FIELD_COUNT; i++) {
-        if (src->dataSize[i] > 0) {
-          char spaces[5];
-
-          auto data = integerArrayToHexString(
-              src->dataSize[i],
-              &memdata[currentAddressI - s_address + increment]);
-
-          int j = 0;
-          for (; j < src->dataSize[i]; j++) {
-            spaces[j] = ' ';
-          }
-
-          spaces[j] = '\0';
-          hex += data;
-          hex += spaces;
-        }
-        increment = increment + src->dataSize[i];
-      }
-
-      readValues[i].hex = hex;
-
-      // step the src file over
-      do {
-        if (src->next != NULL) {
-          src = src->next;  // Move on ...
-        } else {            // ... wrapping, if required
-          if (not used_first) {
-            src = source.pStart;
-            used_first = true;
-          } else {
-            src = NULL;  // Been here before - give in
-          }
-        }
-      } while ((src != NULL) && not src->hasData);
+      firstFlag = moveSrc(firstFlag, &src);
     }
 
     // Find if a breakpoint is set on this line
@@ -561,6 +530,76 @@ const bool getBreakpointStatus(unsigned int* wordA, unsigned int* wordB) {
   boardSendChar(static_cast<unsigned char>(BoardInstruction::BP_GET));
   return not((boardGetNBytes((int*)wordA, 4) != 4) ||
              (boardGetNBytes((int*)wordB, 4) != 4));
+}
+
+/**
+ * @brief Steps any given source line to the next valid source line.
+ * @param firstFlag If this is the first time the source file has an error (?)
+ * @param src A pointer to the source line pointer.
+ * @return bool true if the firstFlag is set.
+ */
+constexpr const bool moveSrc(bool firstFlag, SourceFileLine** src) {
+  do {
+    if ((*src)->next != NULL) {
+      (*src) = (*src)->next;
+    } else {
+      if (not firstFlag) {
+        (*src) = source.pStart;
+        firstFlag = true;
+      } else {
+        (*src) = NULL;
+      }
+    }
+  } while (((*src) != NULL) && not(*src)->hasData);
+
+  return firstFlag;
+}
+
+/**
+ * @brief Get the hex values from the memory data.
+ * @warning This function is very side-effecty. I would not changing it if you
+ * can help it.
+ * @param src A pointer to the source line pointer.
+ * @param s_address The starting address of the memory window (the address of
+ * the row at the top of the window).
+ * @param increment The amount to add onto the current address to get the
+ * address of the next memory row.
+ * @param currentAddressI The current address of the current memory row.
+ * @param memdata The memory information fetched from Jimulator.
+ * @return const std::string The hex string.
+ */
+inline const std::string generateMemoryHex(SourceFileLine** src,
+                                           const uint32_t s_address,
+                                           int* const increment,
+                                           const int currentAddressI,
+                                           unsigned char (*memdata)[52]) {
+  std::string hex = "";
+
+  for (int i = 0; i < SOURCE_FIELD_COUNT; i++) {
+    if ((*src)->dataSize[i] > 0) {
+      char spaces[5] = {0};
+
+      // Get the data string
+      auto data = integerArrayToHexString(
+          (*src)->dataSize[i],
+          &((*memdata)[currentAddressI - s_address + *increment]));
+
+      int j = 0;
+      for (; j < (*src)->dataSize[i]; j++) {
+        spaces[j] = ' ';
+      }
+
+      // Append to the string
+      spaces[j] = '\0';
+      hex += data;
+      hex += spaces;
+    }
+
+    // Increase the increment
+    *increment = *increment + (*src)->dataSize[i];
+  }
+
+  return hex;
 }
 
 /**
