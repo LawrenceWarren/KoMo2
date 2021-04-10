@@ -63,15 +63,15 @@ inline const std::string generateMemoryHex(SourceFileLine** src,
 
 // Low level sending
 
-void boardSendNBytes(int, int);
-void boardSendChar(unsigned char);
-void boardSendCharArray(int, unsigned char*);
+inline void boardSendNBytes(int, int);
+inline void boardSendChar(unsigned char);
+inline void boardSendCharArray(int, unsigned char*);
 
 // Low level receiving
 
-const int boardGetNBytes(int*, int);
-const int boardGetChar(unsigned char*);
-const int boardGetCharArray(int, unsigned char*);
+inline const int boardGetNBytes(int*, int);
+inline const int boardGetChar(unsigned char*);
+inline const int boardGetCharArray(int, unsigned char*);
 
 // Breakpoints
 
@@ -697,7 +697,7 @@ void setBreakpointDefinition(unsigned int breakpointIndex, BreakpointInfo* bp) {
  * @param length The number of bytes to send from data.
  * @param data An pointer to the data that should be sent.
  */
-void boardSendCharArray(int length, unsigned char* data) {
+inline void boardSendCharArray(int length, unsigned char* data) {
   struct pollfd pollfd;
   pollfd.fd = writeToJimulator;
   pollfd.events = POLLOUT;
@@ -717,8 +717,31 @@ void boardSendCharArray(int length, unsigned char* data) {
  * @brief Sends a singular character to Jimulator.
  * @param data The character to send.
  */
-void boardSendChar(unsigned char to_send) {
+inline void boardSendChar(unsigned char to_send) {
   boardSendCharArray(1, &to_send);
+}
+
+/**
+ * @brief Writes n bytes of data to Jimulator.
+ * @warning Jimulator reads data in a little-endian manner - that is, the
+ * least significant bit of data is on the left side of a number. Data should be
+ * converted into little-endian before being sent.
+ * @param data The data to be written.
+ * @param n The number of bytes to write.
+ */
+inline void boardSendNBytes(int value, int n) {
+  unsigned char buffer[MAX_SERIAL_WORD];
+
+  if (n > MAX_SERIAL_WORD) {
+    n = MAX_SERIAL_WORD;  // Clip, just in case...
+  }
+
+  for (int i = 0; i < n; i++) {
+    buffer[i] = getLeastSignificantByte(value);  // Byte into buffer
+    value = rotateRight1Byte(value);             // Get next byte
+  }
+
+  boardSendCharArray(n, buffer);
 }
 
 /**
@@ -728,7 +751,7 @@ void boardSendChar(unsigned char to_send) {
  * @return int The number of bytes successfully received, up to `length` number
  * of characters.
  */
-const int boardGetCharArray(int char_number, unsigned char* data_ptr) {
+inline const int boardGetCharArray(int char_number, unsigned char* data_ptr) {
   int reply_count;  // Number of chars fetched in latest attempt
   int reply_total = 0;
   struct pollfd pollfd;
@@ -771,7 +794,7 @@ const int boardGetCharArray(int char_number, unsigned char* data_ptr) {
  * @param data A pointer to a memory location where the read data can be stored.
  * @return int The number of bytes successfully received - either 1 or 0.
  */
-const int boardGetChar(unsigned char* to_get) {
+inline const int boardGetChar(unsigned char* to_get) {
   return boardGetCharArray(1, to_get);
 }
 
@@ -784,7 +807,7 @@ const int boardGetChar(unsigned char* to_get) {
  * @param n The number of bytes to read.
  * @return int The number of bytes received successfully.
  */
-const int boardGetNBytes(int* data, int n) {
+inline const int boardGetNBytes(int* data, int n) {
   if (n > MAX_SERIAL_WORD) {
     n = MAX_SERIAL_WORD;  // Clip, just in case
   }
@@ -823,29 +846,6 @@ const ClientState getBoardStatus() {
   //       reflected in the view? and the same with stepsSinceReset
 
   return static_cast<ClientState>(clientStatus);
-}
-
-/**
- * @brief Writes n bytes of data to Jimulator.
- * @warning Jimulator reads data in a little-endian manner - that is, the
- * least significant bit of data is on the left side of a number. Data should be
- * converted into little-endian before being sent.
- * @param data The data to be written.
- * @param n The number of bytes to write.
- */
-void boardSendNBytes(int value, int n) {
-  unsigned char buffer[MAX_SERIAL_WORD];
-
-  if (n > MAX_SERIAL_WORD) {
-    n = MAX_SERIAL_WORD;  // Clip, just in case...
-  }
-
-  for (int i = 0; i < n; i++) {
-    buffer[i] = getLeastSignificantByte(value);  // Byte into buffer
-    value = rotateRight1Byte(value);             // Get next byte
-  }
-
-  boardSendCharArray(n, buffer);
 }
 
 /**
