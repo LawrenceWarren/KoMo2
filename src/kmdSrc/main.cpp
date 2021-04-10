@@ -338,7 +338,6 @@ const bool receivedCompilerOutput(GIOChannel* source,
 
   // There was a pipe reading failure.
   if (x < 0) {
-    // TODO: handle error gracefully
     std::cout << "Error reading from compiler communcation pipe." << std::endl;
     return false;
   }

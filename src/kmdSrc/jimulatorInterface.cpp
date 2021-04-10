@@ -1142,7 +1142,6 @@ inline const bool readSourceFile(const char* const pathToKMD) {
   // new process) `pidof` checks to see if a process by the name `jimulator` is
   // running. If it fails (non-zero) It will print an error and return failure.
   if (system("pidof -x jimulator > /dev/null")) {
-    // TODO: Jimulator is not running... so relaunch Jimulator?
     std::cout << "Jimulator is not running!\n";
     return false;
   }

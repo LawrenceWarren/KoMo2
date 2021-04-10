@@ -42,9 +42,6 @@ TerminalModel::TerminalModel(TerminalView* const view, KoMo2Model* const parent)
  */
 void TerminalModel::changeJimulatorState(const JimulatorState newState) {
   switch (newState) {
-    case FINISHED:
-      appendTextToTextView("Program execution finished!\n\n");
-      break;
     default:
       break;
   }
