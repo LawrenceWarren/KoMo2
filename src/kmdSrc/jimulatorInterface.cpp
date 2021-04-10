@@ -286,26 +286,24 @@ const std::array<std::string, 16> Jimulator::getJimulatorRegisterValues() {
  * @return const std::string The message to be displayed in the terminal output.
  */
 const std::string Jimulator::getJimulatorTerminalMessages() {
-  unsigned char
-      string[256];  // (large enough) string to get the message from the board
-  unsigned char length;
+  unsigned char string[256];  // Arbitrary size
+  unsigned char length = 1;
 
   std::string output("");
 
-  do {
+  while (length > 0) {
     boardSendChar(static_cast<unsigned char>(BoardInstruction::FR_READ));
-    boardSendChar(0);       // send the terminal number
-    boardSendChar(32);      // send the maximum length possible
+    boardSendChar(0);  // send the terminal number
+    boardSendChar(32);
     boardGetChar(&length);  // get length of message
 
     // non-zero received from board - not an empty packet
     if (length != 0) {
-      boardGetCharArray(length,
-                        string);  // get the message recorded in string
+      boardGetCharArray(length, string);  // Store the message
       string[length] = '\0';
       output.append((char*)string);
     }
-  } while (length == 255);
+  }
 
   return output;
 }
@@ -391,8 +389,7 @@ const bool Jimulator::sendTerminalInputToJimulator(const unsigned int val) {
 std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
     const uint32_t s_address_int) {
   const int count = 13;  // The number of values displayed in the memory window
-  const int bytecount =
-      count * ADDRESS_BUS_WIDTH;  // The number of bytes to fetch from memory
+  const int bytecount = count * ADDRESS_BUS_WIDTH;  // How many bytes to read
 
   // Bit level hacking happening here - converting the integer address into
   // an array of characters.
@@ -453,8 +450,8 @@ std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
     if (src != NULL) {
       // If the src address is valid
       if (addr == src->address) {
-        increment = 0;              // How far should we move?
-        char* pStr = g_strdup("");  // Seed hex string
+        increment = 0;             // How far should we move?
+        char* str = g_strdup("");  // Seed hex string
 
         // Source field entries
         for (int i = 0; i < SOURCE_FIELD_COUNT; i++) {
@@ -472,20 +469,20 @@ std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
             }
 
             spaces[j] = '\0';
-            auto trash = pStr;
-            pStr = g_strconcat(pStr, data, spaces, NULL);
+            auto trash = str;
+            str = g_strconcat(str, data, spaces, NULL);
             g_free(trash);
           }
           increment = increment + src->dataSize[i];
         }
 
-        readValues[row].hex = std::string(pStr);
+        readValues[row].hex = std::string(str);
 
         // Remove any comments that trail the disassembly
         readValues[row].disassembly =
             std::regex_replace(std::string(src->text), std::regex(";.*$"), "");
 
-        g_free(pStr);
+        g_free(str);
 
         do {
           if (src->next != NULL) {
@@ -495,7 +492,7 @@ std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
               src = source.pStart;
               used_first = true;
             } else {
-              src = NULL; /* Been here before - give in */
+              src = NULL;  // Been here before - give in
             }
           }
         } while ((src != NULL) && not src->hasData);
@@ -623,7 +620,7 @@ const bool getBreakpointDefinition(unsigned int breakpointlistIndex,
 constexpr const int numericStringSubtraction(int i,
                                              unsigned char* s1,
                                              unsigned char* s2) {
-  int ret = 0; /* bit array - bit array => int */
+  int ret = 0;
 
   while (i--) {
     ret = (ret << 8) + (int)s1[i] - (int)s2[i];
@@ -641,20 +638,19 @@ void setBreakpointStatus(unsigned int wordA, unsigned int wordB) {
   boardSendChar(static_cast<unsigned char>(BoardInstruction::BP_SET));
   boardSendNBytes(wordA, 4);  // send word a
   boardSendNBytes(wordB, 4);  // send word b
-  return;
 }
 
 /**
  * @brief Copy one string literal into another string literal.
- * @param count The length of the string literals.
+ * @param i The length of the string literals.
  * @param source The value to be copied.
- * @param destination The location to copy the value into.
+ * @param dest The location to copy the value into.
  */
-constexpr void copyStringLiterals(int count,
+constexpr void copyStringLiterals(int i,
                                   unsigned char* source,
-                                  unsigned char* destination) {
-  while (count--) {
-    destination[count] = source[count];  // Copy char array
+                                  unsigned char* dest) {
+  while (i--) {
+    dest[i] = source[i];
   }
 }
 
@@ -803,9 +799,8 @@ const ClientState getBoardStatus() {
     return ClientState::BROKEN;
   }
 
-  /* TODO: clientStatus represents what the board is doing and why - can be
-   reflected in the view? and the same with stepsSinceReset
-   */
+  // TODO: clientStatus represents what the board is doing and why - can be
+  //       reflected in the view? and the same with stepsSinceReset
 
   return static_cast<ClientState>(clientStatus);
 }
@@ -1002,20 +997,20 @@ const std::unordered_map<u_int32_t, bool> getAllBreakpoints() {
  * @brief removes all of the old references to the previous file.
  */
 void flushSourceFile() {
-  SourceFileLine *pOld, *pTrash;
+  SourceFileLine *old, *trash;
 
-  pOld = source.pStart;
+  old = source.pStart;
   source.pStart = NULL;
   source.pEnd = NULL;
 
-  while (pOld != NULL) {
-    if (pOld->text != NULL) {
-      g_free(pOld->text);
+  while (old != NULL) {
+    if (old->text != NULL) {
+      g_free(old->text);
     }
 
-    pTrash = pOld;
-    pOld = pOld->next;
-    g_free(pTrash);
+    trash = old;
+    old = old->next;
+    g_free(trash);
   }
 }
 
@@ -1279,25 +1274,25 @@ const bool readSourceFile(const char* const pathToKMD) {
             currentLine->text[j] = buffer[j];
           }
 
-          SourceFileLine* pTemp1 = source.pStart;
-          SourceFileLine* pTemp2 = NULL;
+          SourceFileLine* temp1 = source.pStart;
+          SourceFileLine* temp2 = NULL;
 
-          while ((pTemp1 != NULL) && (address >= pTemp1->address)) {
-            pTemp2 = pTemp1;
-            pTemp1 = pTemp1->next;
+          while ((temp1 != NULL) && (address >= temp1->address)) {
+            temp2 = temp1;
+            temp1 = temp1->next;
           }
 
-          currentLine->next = pTemp1;
-          currentLine->prev = pTemp2;
+          currentLine->next = temp1;
+          currentLine->prev = temp2;
 
-          if (pTemp1 != NULL) {
-            pTemp1->prev = currentLine;
+          if (temp1 != NULL) {
+            temp1->prev = currentLine;
           } else {
             source.pEnd = currentLine;
           }
 
-          if (pTemp2 != NULL) {
-            pTemp2->next = currentLine;
+          if (temp2 != NULL) {
+            temp2->next = currentLine;
           } else {
             source.pStart = currentLine;
           }
