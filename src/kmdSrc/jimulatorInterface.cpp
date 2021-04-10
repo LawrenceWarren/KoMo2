@@ -49,10 +49,10 @@
 
 // Workers
 
-void flushSourceFile();
-const bool readSourceFile(const char* const);
-const ClientState getBoardStatus();
-const std::array<unsigned char, 64> readRegistersIntoArray();
+inline void flushSourceFile();
+inline const bool readSourceFile(const char* const);
+inline const ClientState getBoardStatus();
+inline const std::array<unsigned char, 64> readRegistersIntoArray();
 constexpr const int disassembleSourceFile(SourceFileLine*, unsigned int);
 constexpr const bool moveSrc(bool firstFlag, SourceFileLine** src);
 inline const std::string generateMemoryHex(SourceFileLine** src,
@@ -76,11 +76,11 @@ inline const int boardGetCharArray(int, unsigned char*);
 // Breakpoints
 
 constexpr const int getNextFreeBreakpoint(const int);
-const bool getBreakpointStatus(unsigned int*, unsigned int*);
-const bool getBreakpointDefinition(unsigned int, BreakpointInfo*);
-void setBreakpointStatus(unsigned int, unsigned int);
-void setBreakpointDefinition(unsigned int, BreakpointInfo*);
-const std::unordered_map<u_int32_t, bool> getAllBreakpoints();
+inline const bool getBreakpointStatus(unsigned int*, unsigned int*);
+inline const bool getBreakpointDefinition(unsigned int, BreakpointInfo*);
+inline void setBreakpointStatus(unsigned int, unsigned int);
+inline void setBreakpointDefinition(unsigned int, BreakpointInfo*);
+inline const std::unordered_map<u_int32_t, bool> getAllBreakpoints();
 
 // Helpers
 
@@ -89,9 +89,9 @@ constexpr const int numericStringSubtraction(const unsigned char* const,
                                              const unsigned char* const);
 constexpr const int numericStringToInt(int, const unsigned char* const);
 constexpr void numericStringAndIntAddition(unsigned char* const, int);
-const std::string integerArrayToHexString(int,
-                                          unsigned char* const,
-                                          const bool = false);
+inline const std::string integerArrayToHexString(int,
+                                                 unsigned char* const,
+                                                 const bool = false);
 constexpr const char getLeastSignificantByte(const int);
 
 // The read .kmd file
@@ -526,7 +526,8 @@ constexpr const int rotateLeft1Byte(const int val) {
  * @return true If reading for breakpoints was a success.
  * @return false If reading for breakpoints was a failure.
  */
-const bool getBreakpointStatus(unsigned int* wordA, unsigned int* wordB) {
+inline const bool getBreakpointStatus(unsigned int* wordA,
+                                      unsigned int* wordB) {
   boardSendChar(static_cast<unsigned char>(BoardInstruction::BP_GET));
   return not((boardGetNBytes((int*)wordA, 4) != 4) ||
              (boardGetNBytes((int*)wordB, 4) != 4));
@@ -612,8 +613,8 @@ inline const std::string generateMemoryHex(SourceFileLine** src,
  * stored in this struct.
  * @return bool true if reading was a success, else false.
  */
-const bool getBreakpointDefinition(unsigned int breakpointlistIndex,
-                                   BreakpointInfo* bp) {
+inline const bool getBreakpointDefinition(unsigned int breakpointlistIndex,
+                                          BreakpointInfo* bp) {
   boardSendChar(static_cast<unsigned char>(BoardInstruction::BP_READ));
   boardSendChar(breakpointlistIndex);  // send the number of the definition
 
@@ -669,7 +670,7 @@ constexpr void copyStringLiterals(int i,
  * the breakpoint is active? (e.g. 0 for inactive)
  * @param wordB The index that the breakpoint exists within the list.
  */
-void setBreakpointStatus(unsigned int wordA, unsigned int wordB) {
+inline void setBreakpointStatus(unsigned int wordA, unsigned int wordB) {
   boardSendChar(static_cast<unsigned char>(BoardInstruction::BP_SET));
   boardSendNBytes(wordA, 4);  // send word a
   boardSendNBytes(wordB, 4);  // send word b
@@ -682,7 +683,8 @@ void setBreakpointStatus(unsigned int wordA, unsigned int wordB) {
  * @param bp A struct containing all of the information about the new
  * breakpoint.
  */
-void setBreakpointDefinition(unsigned int breakpointIndex, BreakpointInfo* bp) {
+inline void setBreakpointDefinition(unsigned int breakpointIndex,
+                                    BreakpointInfo* bp) {
   boardSendChar(static_cast<unsigned char>(BoardInstruction::BP_WRITE));
   boardSendChar(breakpointIndex);  // send the list index of the breakpoint
   boardSendNBytes(bp->misc, 2);
@@ -827,7 +829,7 @@ inline const int boardGetNBytes(int* data, int n) {
  * @brief Gets a code that indicates the internal state of Jimulator.
  * @return int A code indicating the internal state of Jimulator.
  */
-const ClientState getBoardStatus() {
+inline const ClientState getBoardStatus() {
   unsigned char clientStatus = 0;
   int stepsSinceReset;
   int leftOfWalk;
@@ -854,7 +856,7 @@ const ClientState getBoardStatus() {
  * @returns const std::array<unsigned char, 64> An array of bytes fetched from
  * Jimulator representing the memory values.
  */
-const std::array<unsigned char, 64> readRegistersIntoArray() {
+inline const std::array<unsigned char, 64> readRegistersIntoArray() {
   unsigned char data[64];
 
   boardSendChar(static_cast<unsigned char>(BoardInstruction::GET_REG));
@@ -877,9 +879,9 @@ const std::array<unsigned char, 64> readRegistersIntoArray() {
  * @param prepend0x Whether to prepend the output string with an "0x" or not.
  * @return std::string A hexadecimal formatted register value.
  */
-const std::string integerArrayToHexString(int i,
-                                          unsigned char* const v,
-                                          const bool prepend0x) {
+inline const std::string integerArrayToHexString(int i,
+                                                 unsigned char* const v,
+                                                 const bool prepend0x) {
   std::stringstream ss;
 
   if (prepend0x) {
@@ -979,7 +981,7 @@ constexpr const int disassembleSourceFile(SourceFileLine* src,
  * there.
  * @return const std::unordered_map<u_int32_t, bool> A map of addresses.
  */
-const std::unordered_map<u_int32_t, bool> getAllBreakpoints() {
+inline const std::unordered_map<u_int32_t, bool> getAllBreakpoints() {
   std::unordered_map<u_int32_t, bool> breakpointAddresses;
   unsigned int wordA, wordB;
   bool error = false;
@@ -1011,7 +1013,7 @@ const std::unordered_map<u_int32_t, bool> getAllBreakpoints() {
 /**
  * @brief removes all of the old references to the previous file.
  */
-void flushSourceFile() {
+inline void flushSourceFile() {
   SourceFileLine* old = source.pStart;
   source.pStart = NULL;
   source.pEnd = NULL;
@@ -1114,9 +1116,9 @@ constexpr const unsigned int boardTranslateMemsize(const int size) {
  * @param value pointer to the new value to be stored
  * @param size width of current memory (in bytes)
  */
-void boardSetMemory(unsigned char* const address,
-                    unsigned char* const value,
-                    const int size) {
+inline void boardSetMemory(unsigned char* const address,
+                           unsigned char* const value,
+                           const int size) {
   boardSendChar(BoardInstruction::SET_MEM | boardTranslateMemsize(size));
   boardSendCharArray(ADDRESS_BUS_WIDTH, address);  // send address
   boardSendNBytes(1, 2);                           // send width
@@ -1128,7 +1130,7 @@ void boardSetMemory(unsigned char* const address,
  * @param pathToKMD A path to the `.kmd` file to be loaded.
  * @return true if successful, false otherwise.
  */
-const bool readSourceFile(const char* const pathToKMD) {
+inline const bool readSourceFile(const char* const pathToKMD) {
   // TODO: this function is a jumbled mess, refactor and remove sections
   unsigned int oldAddress, dSize[SOURCE_FIELD_COUNT],
       dValue[SOURCE_FIELD_COUNT];
