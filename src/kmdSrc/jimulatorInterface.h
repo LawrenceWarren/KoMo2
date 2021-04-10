@@ -29,7 +29,7 @@ const int SOURCE_TEXT_LENGTH = 100;
 const int IN_POLL_TIMEOUT = 1000;
 const int OUT_POLL_TIMEOUT = 100;
 const int MAX_SERIAL_WORD = 4;
-const int ADDRES_BUS_WIDTH = 4;
+const int ADDRESS_BUS_WIDTH = 4;
 const int MAX_NUMBER_OF_BREAKPOINTS = 32;
 
 /**
@@ -84,8 +84,8 @@ enum class runFlags {
 class breakpointInfo {
  public:
   unsigned int misc;
-  unsigned char addressA[ADDRES_BUS_WIDTH];
-  unsigned char addressB[ADDRES_BUS_WIDTH];
+  unsigned char addressA[ADDRESS_BUS_WIDTH];
+  unsigned char addressB[ADDRESS_BUS_WIDTH];
   unsigned char dataA[8];
   unsigned char dataB[8];
 };
@@ -231,9 +231,9 @@ const std::string getJimulatorTerminalMessages();
 
 // ! Loading data
 void compileJimulator(const char* const pathToBin,
-                           const char* const pathToS,
-                           const char* const pathToKMD);
-const int loadJimulator(const char* const pathToKMD);
+                      const char* const pathToS,
+                      const char* const pathToKMD);
+const bool loadJimulator(const char* const pathToKMD);
 
 // ! Sending commands
 void startJimulator(const int steps);

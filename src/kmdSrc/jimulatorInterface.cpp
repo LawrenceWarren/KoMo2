@@ -45,28 +45,44 @@
 #include <vector>
 
 // ! Forward declaring auxiliary load functions
+// Workers
 void flushSourceFile();
-const int readSourceFile(const char*);
-const int callback_memory_refresh();
+const bool readSourceFile(const char* const);
 const clientState getBoardStatus();
-void boardSendChar(unsigned char);
-void boardSendNBytes(int, int);
-void boardSendCharArray(int, unsigned char*);
-int boardGetNBytes(int*, int);
-const int boardGetCharArray(int, unsigned char*);
-std::string littleEndianBytesToHexString(int, unsigned char*, bool = false);
-bool getBreakpointStatus(unsigned int*, unsigned int*);
-bool getBreakpointDefinition(unsigned int, breakpointInfo*);
-int numericStringSubtraction(int, unsigned char*, unsigned char*);
-void setBreakpointStatus(unsigned int, unsigned int);
-constexpr void copyStringLiterals(int, unsigned char*, unsigned char*);
-void setBreakpointDefinition(unsigned int, breakpointInfo*);
 void readRegistersIntoArray(unsigned char*, unsigned int);
-int boardGetChar(unsigned char*);
+const int disassembleSourceFile(sourceFileLine*, unsigned int, int);
+
+// Low level sending
+void boardSendNBytes(int, int);
+void boardSendChar(unsigned char);
+void boardSendCharArray(int, unsigned char*);
+
+// Low level receiving
+const int boardGetNBytes(int*, int);
+const int boardGetChar(unsigned char*);
+const int boardGetCharArray(int, unsigned char*);
+
+// Breakpoints
+const bool getBreakpointStatus(unsigned int*, unsigned int*);
+const bool getBreakpointDefinition(unsigned int, breakpointInfo*);
+void setBreakpointStatus(unsigned int, unsigned int);
+void setBreakpointDefinition(unsigned int, breakpointInfo*);
 const std::unordered_map<u_int32_t, bool> getAllBreakpoints();
-int numericStringToInt(int, unsigned char*);
-int disassembleSourceFile(sourceFileLine*, unsigned int, int);
-void numericStringAndIntAdition(int, unsigned char*, int, unsigned char*);
+
+// Helpers
+constexpr void copyStringLiterals(int, unsigned char*, unsigned char*);
+constexpr const int numericStringSubtraction(int,
+                                             unsigned char*,
+                                             unsigned char*);
+constexpr const int numericStringToInt(int, unsigned char* const);
+constexpr void numericStringAndIntAdition(const int,
+                                          unsigned char* const,
+                                          int,
+                                          unsigned char* const);
+const std::string littleEndianBytesToHexString(int,
+                                               unsigned char*,
+                                               bool = false);
+constexpr const char getLeastSignificantByte(const int);
 
 // The read .kmd file
 sourceFile source;
@@ -92,8 +108,9 @@ void Jimulator::compileJimulator(const char* const pathToBin,
  * @brief Clears the existing `source` object and loads the file at `pathToKMD`
  * into Jimulator.
  * @param pathToKMD an absolute path to the `.kmd` file that will be loaded.
+ * @returns
  */
-const int Jimulator::loadJimulator(const char* const pathToKMD) {
+const bool Jimulator::loadJimulator(const char* const pathToKMD) {
   flushSourceFile();
   return readSourceFile(pathToKMD);
 }
@@ -140,15 +157,15 @@ void Jimulator::resetJimulator() {
  * @return const bool If setting the breakpoint succeeded.
  */
 const bool Jimulator::setBreakpoint(uint32_t addr) {
-  unsigned int worda, wordb;
-  unsigned char address[ADDRES_BUS_WIDTH];
+  unsigned int wordA, wordB;
+  unsigned char address[ADDRESS_BUS_WIDTH];
 
   // Unpack address to byte array
-  for (int i = 0; i < ADDRES_BUS_WIDTH; i++) {
-    address[i] = (addr >> (8 * i)) & 0xFF;
+  for (int i = 0; i < ADDRESS_BUS_WIDTH; i++) {
+    address[i] = getLeastSignificantByte(addr >> (8 * i));
   }
 
-  if (getBreakpointStatus(&worda, &wordb)) {
+  if (not getBreakpointStatus(&wordA, &wordB)) {
     // TODO: handle this event gracefully?
     return false;
   }
@@ -157,13 +174,13 @@ const bool Jimulator::setBreakpoint(uint32_t addr) {
 
   // Maximum of 32 breakpoints - loop through to see if more can be set
   for (int i = 0; i < MAX_NUMBER_OF_BREAKPOINTS; i++) {
-    if (((worda >> i) & 1) != 0) {
+    if (((wordA >> i) & 1) != 0) {
       breakpointInfo bp;  // Space to store fetched definition
 
       bool error = not getBreakpointDefinition(i, &bp);
 
       // If this breakpoint was found
-      if (not error && (not numericStringSubtraction(ADDRES_BUS_WIDTH, address,
+      if (not error && (not numericStringSubtraction(ADDRESS_BUS_WIDTH, address,
                                                      bp.addressA))) {
         breakpoint_found = true;
         setBreakpointStatus(0, 1 << i);
@@ -177,7 +194,7 @@ const bool Jimulator::setBreakpoint(uint32_t addr) {
   }
   // See if we can set breakpoint
   else {
-    int temp = (~worda) & wordb;  // Undefined => possible choice
+    int temp = (~wordA) & wordB;  // Undefined => possible choice
 
     // If any free entries ...
     if (temp != 0) {  // Define (set) breakpoint
@@ -191,8 +208,8 @@ const bool Jimulator::setBreakpoint(uint32_t addr) {
       bp.misc = -1;  // Really two byte parameters
 
       // Should send 2*words address then two*double words data @@@
-      copyStringLiterals(ADDRES_BUS_WIDTH, address, bp.addressA);
-      for (count = 0; count < ADDRES_BUS_WIDTH; count++) {
+      copyStringLiterals(ADDRESS_BUS_WIDTH, address, bp.addressA);
+      for (count = 0; count < ADDRESS_BUS_WIDTH; count++) {
         bp.addressB[count] = 0xFF;
       }
       for (count = 0; count < 8; count++) {
@@ -370,19 +387,19 @@ std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
     const uint32_t s_address_int) {
   const int count = 13;  // The number of values displayed in the memory window
   const int bytecount =
-      count * ADDRES_BUS_WIDTH;  // The number of bytes to fetch from memory
+      count * ADDRESS_BUS_WIDTH;  // The number of bytes to fetch from memory
 
   // Bit level hacking happening here - converting the integer address into
   // an array of characters.
   unsigned char* p = (unsigned char*)&s_address_int;
-  unsigned char start_address[ADDRES_BUS_WIDTH] = {p[0], p[1], p[2], p[3]};
+  unsigned char start_address[ADDRESS_BUS_WIDTH] = {p[0], p[1], p[2], p[3]};
   start_address[0] &= -4;  // Normalise down to the previous multiple of 4
 
   unsigned char memdata[bytecount];
 
   // Reading data into arrays!
   boardSendChar(72 | 2);
-  boardSendCharArray(ADDRES_BUS_WIDTH, start_address);
+  boardSendCharArray(ADDRESS_BUS_WIDTH, start_address);
   boardSendNBytes(count, 2);
   boardGetCharArray(bytecount, memdata);
 
@@ -390,12 +407,13 @@ std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
   // ! This is very much C-style code, be careful
 
   // Switches the endianness of the address
-  unsigned char address[ADDRES_BUS_WIDTH] = {
+  unsigned char address[ADDRESS_BUS_WIDTH] = {
       start_address[0], start_address[1], start_address[2], start_address[3]};
 
   sourceFileLine* src = NULL;
   bool used_first = false;
-  unsigned int start_addr = numericStringToInt(ADDRES_BUS_WIDTH, start_address);
+  unsigned int start_addr =
+      numericStringToInt(ADDRESS_BUS_WIDTH, start_address);
 
   // Setup src variable
   if (source.pStart != NULL) {
@@ -417,13 +435,13 @@ std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
 
   // Data is read into this array
   std::array<Jimulator::MemoryValues, 13> readValues;
-  auto bps = getAllBreakpoints();
+  const auto bps = getAllBreakpoints();
 
   // Iterate over display rows
   for (long unsigned int row = 0; row < readValues.size(); row++) {
     int increment = 4;
 
-    unsigned int addr = numericStringToInt(ADDRES_BUS_WIDTH, address);
+    unsigned int addr = numericStringToInt(ADDRESS_BUS_WIDTH, address);
     readValues[row].address = addr;
 
     // If the source file can be read
@@ -498,7 +516,7 @@ std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
     }
 
     // Move the address on
-    numericStringAndIntAdition(ADDRES_BUS_WIDTH, address, increment, address);
+    numericStringAndIntAdition(ADDRESS_BUS_WIDTH, address, increment, address);
   }
 
   return readValues;
@@ -509,9 +527,17 @@ std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
 
 /**
+ * @brief Get the least significant byte out of an integer - if little endian,
+ * get the most signficant byte.
+ * @param val The integer to get the least significant byte of.
+ * @return const char The least significant byte.
+ */
+constexpr const char getLeastSignificantByte(const int val) {
+  return val & 0xFF;
+}
+
+/**
  * @brief Gets the status of breakpoints from within Jimulator.
- * @author Lawrence Warren
- * @date 10-04-2021
  * @warning The internals of Jimulator as a binary are a mystery to me. I have
  * managed to decipher what this function does through trial and error. However
  * I cannot decipher why it works in a (somewhat) mysterious way. This function
@@ -545,10 +571,10 @@ std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
  * @return true If reading for breakpoints was a success.
  * @return false If reading for breakpoints was a failure.
  */
-bool getBreakpointStatus(unsigned int* wordA, unsigned int* wordB) {
-  boardSendChar(boardInstruction::BP_GET | 0);  // get breakpoint packet
-  return ((boardGetNBytes((int*)wordA, 4) != 4) ||
-          (boardGetNBytes((int*)wordB, 4) != 4));
+const bool getBreakpointStatus(unsigned int* wordA, unsigned int* wordB) {
+  boardSendChar(static_cast<unsigned char>(boardInstruction::BP_GET));
+  return not((boardGetNBytes((int*)wordA, 4) != 4) ||
+             (boardGetNBytes((int*)wordB, 4) != 4));
 }
 
 /**
@@ -562,9 +588,9 @@ bool getBreakpointStatus(unsigned int* wordA, unsigned int* wordB) {
  * @return bool true if reading was a success.
  * @return bool false If reading was a failure.
  */
-bool getBreakpointDefinition(unsigned int trap_number,
-                             breakpointInfo* breakpointInfo) {
-  boardSendChar(boardInstruction::BP_READ | 0);  // send trap-read packet
+const bool getBreakpointDefinition(unsigned int trap_number,
+                                   breakpointInfo* breakpointInfo) {
+  boardSendChar(static_cast<unsigned char>(boardInstruction::BP_READ));
   boardSendChar(trap_number);  // send the number of the definition
 
   if ((2 != boardGetNBytes((int*)&((*breakpointInfo).misc),
@@ -591,7 +617,9 @@ bool getBreakpointDefinition(unsigned int trap_number,
  * @param s2 The "number" to subtract by.
  * @return int The output of the arithmetic.
  */
-int numericStringSubtraction(int i, unsigned char* s1, unsigned char* s2) {
+constexpr const int numericStringSubtraction(int i,
+                                             unsigned char* s1,
+                                             unsigned char* s2) {
   int ret = 0; /* bit array - bit array => int */
 
   while (i--) {
@@ -607,9 +635,9 @@ int numericStringSubtraction(int i, unsigned char* s1, unsigned char* s2) {
  * @param wordB The index that the breakpoint exists within the list.
  */
 void setBreakpointStatus(unsigned int wordA, unsigned int wordB) {
-  boardSendChar(boardInstruction::BP_SET | 0);  // set breakpoint packet
-  boardSendNBytes(wordA, 4);                    // send word a
-  boardSendNBytes(wordB, 4);                    // send word b
+  boardSendChar(static_cast<unsigned char>(boardInstruction::BP_SET));
+  boardSendNBytes(wordA, 4);  // send word a
+  boardSendNBytes(wordB, 4);  // send word b
   return;
 }
 
@@ -636,11 +664,11 @@ constexpr void copyStringLiterals(int count,
  */
 void setBreakpointDefinition(unsigned int trap_number,
                              breakpointInfo* breakpointInfon) {
-  boardSendChar(boardInstruction::BP_WRITE | 0);  // send trap-write packet
+  boardSendChar(static_cast<unsigned char>(boardInstruction::BP_WRITE));
   boardSendChar(trap_number);  // send the list index of the breakpoint
   boardSendNBytes(((*breakpointInfon).misc), 2);
-  boardSendCharArray(ADDRES_BUS_WIDTH, (*breakpointInfon).addressA);
-  boardSendCharArray(ADDRES_BUS_WIDTH, (*breakpointInfon).addressB);
+  boardSendCharArray(ADDRESS_BUS_WIDTH, (*breakpointInfon).addressA);
+  boardSendCharArray(ADDRESS_BUS_WIDTH, (*breakpointInfon).addressB);
   boardSendCharArray(8, (*breakpointInfon).dataA);
   boardSendCharArray(8, (*breakpointInfon).dataB);
 }
@@ -724,7 +752,7 @@ const int boardGetCharArray(int char_number, unsigned char* data_ptr) {
  * @param data A pointer to a memory location where the read data can be stored.
  * @return int The number of bytes successfully received - either 1 or 0.
  */
-int boardGetChar(unsigned char* to_get) {
+const int boardGetChar(unsigned char* to_get) {
   return boardGetCharArray(1, to_get);
 }
 
@@ -737,7 +765,7 @@ int boardGetChar(unsigned char* to_get) {
  * @param n The number of bytes to read.
  * @return int The number of bytes received successfully.
  */
-int boardGetNBytes(int* val_ptr, int n) {
+const int boardGetNBytes(int* val_ptr, int n) {
   if (n > MAX_SERIAL_WORD) {
     n = MAX_SERIAL_WORD;  // Clip, just in case
   }
@@ -747,7 +775,8 @@ int boardGetNBytes(int* val_ptr, int n) {
   *val_ptr = 0;
 
   for (int i = 0; i < numberOfReceivedBytes; i++) {
-    *val_ptr = *val_ptr | ((buffer[i] & 0xFF) << (i * 8));  // Assemble integer
+    *val_ptr = *val_ptr | (getLeastSignificantByte(buffer[i])
+                           << (i * 8));  // Assemble integer
   }
 
   return numberOfReceivedBytes;
@@ -772,9 +801,10 @@ const clientState getBoardStatus() {
     return clientState::BROKEN;
   }
 
-  // TODO: clientStatus represents what the board is doing and why - can be
-  // reflected in the view?
-  // and the same with stepsSinceReset
+  /* TODO: clientStatus represents what the board is doing and why - can be
+   * reflected in the view?
+     and the same with stepsSinceReset
+     */
 
   return static_cast<clientState>(clientStatus);
 }
@@ -795,8 +825,8 @@ void boardSendNBytes(int value, int n) {
   }
 
   for (int i = 0; i < n; i++) {
-    buffer[i] = value & 0xFF;  // Byte into buffer
-    value = value >> 8;        // Get next byte
+    buffer[i] = getLeastSignificantByte(value);  // Byte into buffer
+    value = value >> 8;                          // Get next byte
   }
 
   boardSendCharArray(n, buffer);
@@ -809,6 +839,7 @@ void boardSendNBytes(int value, int n) {
  * upwards)
  */
 void readRegistersIntoArray(unsigned char* data, unsigned int count) {
+  // TODO: this
   boardSendChar(static_cast<unsigned char>(boardInstruction::GET_REG));
   boardSendNBytes(0, 4);
   boardSendNBytes(16, 2);
@@ -826,9 +857,9 @@ void readRegistersIntoArray(unsigned char* data, unsigned int count) {
  * @param prepend0x Whether to prepend the output string with an "0x" or not.
  * @return std::string A hexadecimal formatted register value.
  */
-std::string littleEndianBytesToHexString(int count,
-                                         unsigned char* values,
-                                         bool prepend0x) {
+const std::string littleEndianBytesToHexString(int count,
+                                               unsigned char* values,
+                                               bool prepend0x) {
   char ret[count * 2 + 1];
   char* ptr = ret;
 
@@ -854,12 +885,13 @@ std::string littleEndianBytesToHexString(int count,
  * @param s The string representation of the number to have its value read.
  * @return int The value read from the string.
  */
-int numericStringToInt(int count, unsigned char* array) {
+constexpr const int numericStringToInt(int i, unsigned char* const s) {
   int ret = 0;
 
-  while (count--) {
-    ret = (ret << 8) + (array[count] & 0xFF);
+  while (i--) {
+    ret = (ret << 8) + (s[i]);
   }
+
   return ret;
 }
 
@@ -873,18 +905,19 @@ int numericStringToInt(int count, unsigned char* array) {
  * @param number The integer to add.
  * @param out Where to store the output string.
  */
-void numericStringAndIntAdition(int length,
-                                unsigned char* data,
-                                int number,
-                                unsigned char* out) {
-  int index, temp;
+constexpr void numericStringAndIntAdition(const int length,
+                                          unsigned char* const data,
+                                          int number,
+                                          unsigned char* const out) {
+  int temp = 0;
 
-  for (index = 0; index < length; index++) {
-    temp = data[index] + (number & 0xFF); /* Add next 8 bits */
-    out[index] = temp & 0xFF;
-    number = number >> 8; /* Shift to next byte */
-    if (temp >= 0x100)
-      number++; /* Propagate carry */
+  for (int i = 0; i < length; i++) {
+    temp = data[i] + getLeastSignificantByte(number);  // Add next 8 bits
+    out[i] = getLeastSignificantByte(temp);
+    number = number >> 8;  // Shift to next byte
+    if (temp >= 0x100) {
+      number++;  // Propagate carry
+    }
   }
 }
 
@@ -897,9 +930,9 @@ void numericStringAndIntAdition(int length,
  * @return int The difference between the current address to display and the
  * next address that needs to be displayed.
  */
-int disassembleSourceFile(sourceFileLine* src,
-                          unsigned int addr,
-                          int increment) {
+const int disassembleSourceFile(sourceFileLine* src,
+                                unsigned int addr,
+                                int increment) {
   unsigned int diff;
 
   diff = src->address - addr;  // How far to next line start?
@@ -934,15 +967,15 @@ int disassembleSourceFile(sourceFileLine* src,
  */
 const std::unordered_map<u_int32_t, bool> getAllBreakpoints() {
   std::unordered_map<u_int32_t, bool> breakpointAddresses;
-  unsigned int worda, wordb;
+  unsigned int wordA, wordB;
   bool error = false;
 
   // Have trap status info okay: get breaks and breaksinactive list
-  if (not getBreakpointStatus(&worda, &wordb)) {
+  if (getBreakpointStatus(&wordA, &wordB)) {
     // Loop through every breakpoint
     for (int i = 0; (i < MAX_NUMBER_OF_BREAKPOINTS) && not error; i++) {
       // If breakpoint found, read the breakpoint value
-      if (((worda >> i) & 1) != 0) {
+      if (((wordA >> i) & 1) != 0) {
         breakpointInfo trap;
 
         // if okay
@@ -1087,9 +1120,9 @@ void boardSetMemory(const int count,
 /**
  * @brief Reads the source of the file pointer to by pathToKMD
  * @param pathToKMD A path to the `.kmd` file to be loaded.
- * @return int status code (1 is failure, 0 is success)
+ * @return true if successful.
  */
-const int readSourceFile(const char* pathToKMD) {
+const bool readSourceFile(const char* const pathToKMD) {
   // TODO: this function is a jumbled mess. refactor and remove sections
   unsigned int address, old_address;
   unsigned int d_size[SOURCE_FIELD_COUNT], d_value[SOURCE_FIELD_COUNT];
@@ -1106,13 +1139,13 @@ const int readSourceFile(const char* pathToKMD) {
   if (system("pidof -x jimulator > /dev/null")) {
     // TODO: Jimulator is not running... so relaunch Jimulator?
     std::cout << "Jimulator is not running!\n";
-    return 1;
+    return false;
   }
 
   FILE* komodoSource = fopen(pathToKMD, "r");
   if (komodoSource == NULL) {
     std::cout << "Source could not be opened!\n";
-    return 1;
+    return false;
   }
 
   bool has_old_addr = false;  // Don't know where we start
@@ -1204,10 +1237,12 @@ const int readSourceFile(const char* pathToKMD) {
               unsigned char addr[4], data[4];
 
               for (i = 0; i < 4; i++) {
-                addr[i] = ((address + byte_total) >> (8 * i)) & 0xFF;
+                addr[i] =
+                    getLeastSignificantByte((address + byte_total) >> (8 * i));
               }
               for (i = 0; i < pNew->data_size[j]; i++) {
-                data[i] = (pNew->data_value[j] >> (8 * i)) & 0xFF;
+                data[i] =
+                    getLeastSignificantByte(pNew->data_value[j] >> (8 * i));
               }
 
               // Ignore Boolean error return value for now
@@ -1279,5 +1314,5 @@ const int readSourceFile(const char* pathToKMD) {
   }
 
   fclose(komodoSource);
-  return 0;
+  return true;
 }

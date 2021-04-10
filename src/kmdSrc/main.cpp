@@ -29,7 +29,6 @@
 #include <regex>
 #include <sstream>
 #include <utility>
-#include <vector>
 #include "../../libs/rapidjson/document.h"
 #include "models/KoMo2Model.h"
 #include "views/MainWindowView.h"

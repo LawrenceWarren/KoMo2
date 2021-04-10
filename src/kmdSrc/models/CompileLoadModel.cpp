@@ -83,11 +83,10 @@ void CompileLoadModel::onCompileLoadClick() const {
 
     // Perform the load
     Jimulator::resetJimulator();
-    status = Jimulator::loadJimulator(
-        makeKmdPath(getAbsolutePathToSelectedFile()).c_str());
 
     // If load function failed
-    if (status) {
+    if (not Jimulator::loadJimulator(
+            makeKmdPath(getAbsolutePathToSelectedFile()).c_str())) {
       std::cout << "Error loading file into KoMo2." << std::endl;
       return;
     }
