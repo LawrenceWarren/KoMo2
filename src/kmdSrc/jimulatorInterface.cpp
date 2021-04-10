@@ -53,7 +53,7 @@ void flushSourceFile();
 const bool readSourceFile(const char* const);
 const ClientState getBoardStatus();
 const std::array<unsigned char, 64> readRegistersIntoArray();
-const int disassembleSourceFile(SourceFileLine*, unsigned int, int);
+constexpr const int disassembleSourceFile(SourceFileLine*, unsigned int);
 
 // Low level sending
 
@@ -82,10 +82,7 @@ constexpr const int numericStringSubtraction(int,
                                              unsigned char*,
                                              unsigned char*);
 constexpr const int numericStringToInt(int, unsigned char* const);
-constexpr void numericStringAndIntAdition(const int,
-                                          unsigned char* const,
-                                          int,
-                                          unsigned char* const);
+constexpr void numericStringAndIntAdition(unsigned char* const, int);
 const std::string integerArrayToHexString(int,
                                           unsigned char* const,
                                           const bool = false);
@@ -500,7 +497,7 @@ std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
         // If a src line is invalid
         readValues[row].hex = std::string("00000000");
         readValues[row].disassembly = std::string("...");
-        increment = disassembleSourceFile(src, addr, increment);
+        increment = disassembleSourceFile(src, addr);
       }
     } else {
       // If there is no src line to read
@@ -518,7 +515,7 @@ std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
     }
 
     // Move the address on
-    numericStringAndIntAdition(ADDRESS_BUS_WIDTH, address, increment, address);
+    numericStringAndIntAdition(address, increment);
   }
 
   return readValues;
@@ -536,6 +533,24 @@ std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
  */
 constexpr const char getLeastSignificantByte(const int val) {
   return val & 0xFF;
+}
+
+/**
+ * @brief Rotates an integers bits to the right by 1 byte.
+ * @param val The integer to rotate.
+ * @return const int The rotated integer.
+ */
+constexpr const int rotateRight1Byte(const int val) {
+  return val >> 8;
+}
+
+/**
+ * @brief Rotates an integers bits to the left by 1 byte.
+ * @param val The integer to rotate.
+ * @return const int The rotated integer.
+ */
+constexpr const int rotateLeft1Byte(const int val) {
+  return val << 8;
 }
 
 /**
@@ -569,7 +584,7 @@ constexpr const char getLeastSignificantByte(const int val) {
  * AGAIN, why this is the way Jimulator works is a mystery.
  * @param wordB The second chunk of read breakpoint information will be read
  * into here. Appears to always returns the largest 32-bit integer value
- * (0xFFFFFFFF).
+ * (0xFFFFFFFF)
  * @return true If reading for breakpoints was a success.
  * @return false If reading for breakpoints was a failure.
  */
@@ -623,9 +638,9 @@ constexpr const int numericStringSubtraction(int i,
   int ret = 0;
 
   while (i--) {
-    ret = (ret << 8) + (int)s1[i] - (int)s2[i];
+    ret = rotateLeft1Byte(ret) + (int)s1[i] - (int)s2[i];
   }
-  return ret;  // Carry propagated because intermediate -int- can be negative
+  return ret;
 }
 
 /**
@@ -763,18 +778,17 @@ const int boardGetChar(unsigned char* to_get) {
  * @param n The number of bytes to read.
  * @return int The number of bytes received successfully.
  */
-const int boardGetNBytes(int* val_ptr, int n) {
+const int boardGetNBytes(int* data, int n) {
   if (n > MAX_SERIAL_WORD) {
     n = MAX_SERIAL_WORD;  // Clip, just in case
   }
 
   char unsigned buffer[MAX_SERIAL_WORD];
   int numberOfReceivedBytes = boardGetCharArray(n, buffer);
-  *val_ptr = 0;
+  *data = 0;
 
   for (int i = 0; i < numberOfReceivedBytes; i++) {
-    *val_ptr = *val_ptr | (getLeastSignificantByte(buffer[i])
-                           << (i * 8));  // Assemble integer
+    *data = *data | (getLeastSignificantByte(buffer[i]) << (i * 8));
   }
 
   return numberOfReceivedBytes;
@@ -822,7 +836,7 @@ void boardSendNBytes(int value, int n) {
 
   for (int i = 0; i < n; i++) {
     buffer[i] = getLeastSignificantByte(value);  // Byte into buffer
-    value = value >> 8;                          // Get next byte
+    value = rotateRight1Byte(value);             // Get next byte
   }
 
   boardSendCharArray(n, buffer);
@@ -888,7 +902,7 @@ constexpr const int numericStringToInt(int i, unsigned char* const s) {
   int ret = 0;
 
   while (i--) {
-    ret = (ret << 8) + (s[i]);
+    ret = rotateLeft1Byte(ret) + (s[i]);
   }
 
   return ret;
@@ -899,23 +913,19 @@ constexpr const int numericStringToInt(int i, unsigned char* const s) {
  * {'5' '7' '2'} representing the integer 572 - and an integer number, adding
  * these two "numbers" together into a second string literal. For example:
  * The string {'6' '2'} and the integer 6 will output the string {'6' '6'}.
- * @param length The length of the string.
- * @param data The string representation of a number.
- * @param number The integer to add.
- * @param out Where to store the output string.
+ * @param s The string representation of a number, and also where the output of
+ * the addition is stored.
+ * @param n The integer to add.
  */
-constexpr void numericStringAndIntAdition(const int length,
-                                          unsigned char* const data,
-                                          int number,
-                                          unsigned char* const out) {
+constexpr void numericStringAndIntAdition(unsigned char* const s, int n) {
   int temp = 0;
 
-  for (int i = 0; i < length; i++) {
-    temp = data[i] + getLeastSignificantByte(number);  // Add next 8 bits
-    out[i] = getLeastSignificantByte(temp);
-    number = number >> 8;  // Shift to next byte
+  for (int i = 0; i < ADDRESS_BUS_WIDTH; i++) {
+    temp = s[i] + getLeastSignificantByte(n);
+    s[i] = getLeastSignificantByte(temp);
+    n = rotateRight1Byte(n);  // Shift to next byte
     if (temp >= 0x100) {
-      number++;  // Propagate carry
+      n++;  // Propagate carry
     }
   }
 }
@@ -925,34 +935,28 @@ constexpr void numericStringAndIntAdition(const int length,
  * the next address that needs to be displayed.
  * @param src The current line in the source file.
  * @param addr The current address pointed to.
- * @param increment The amount to increment addresses by.
- * @return int The difference between the current address to display and the
- * next address that needs to be displayed.
+ * @return const int The difference between the current address to display and
+ * the next address that needs to be displayed.
  */
-const int disassembleSourceFile(SourceFileLine* src,
-                                unsigned int addr,
-                                int increment) {
-  unsigned int diff;
-
-  diff = src->address - addr;  // How far to next line start?
+constexpr const int disassembleSourceFile(SourceFileLine* src,
+                                          unsigned int addr) {
+  unsigned int diff = src->address - addr;  // How far to next line start?
 
   // Do have a source line, but shan't use it
   if (diff == 0) {
-    src = src->next;  // Use the one after ...
+    src = src->next;  // Use the one after
     if (src != NULL) {
-      diff = src->address - addr;  // if present/
+      diff = src->address - addr;  // if present
     } else {
       diff = 1000;  // Effectively infinity
     }
   }
 
   if (diff < 4) {
-    increment = diff;  // Next source entry
+    return diff;  // Next source entry
   } else {
-    increment = 4 - (addr % 4);  // To next word alignment
+    return 4 - (addr % 4);  // To next word alignment
   }
-
-  return increment;  // A hack when routine was extracted from below
 }
 
 /**
@@ -997,9 +1001,7 @@ const std::unordered_map<u_int32_t, bool> getAllBreakpoints() {
  * @brief removes all of the old references to the previous file.
  */
 void flushSourceFile() {
-  SourceFileLine *old, *trash;
-
-  old = source.pStart;
+  SourceFileLine* old = source.pStart;
   source.pStart = NULL;
   source.pEnd = NULL;
 
@@ -1008,7 +1010,7 @@ void flushSourceFile() {
       g_free(old->text);
     }
 
-    trash = old;
+    SourceFileLine* trash = old;
     old = old->next;
     g_free(trash);
   }
@@ -1019,7 +1021,7 @@ void flushSourceFile() {
  * @param character the character under test
  * @return int the hex value or -1 if not a legal hex digit
  */
-const int checkHexCharacter(const char character) {
+constexpr const int checkHexCharacter(const char character) {
   if ((character >= '0') && (character <= '9')) {
     return character - '0';
   } else if ((character >= 'A') && (character <= 'F')) {
@@ -1032,33 +1034,33 @@ const int checkHexCharacter(const char character) {
 }
 
 /**
- * @brief Reads a number from a string of text in the .kmd file.
- * @param fHandle A file handle.
- * @param pC A pointer to the current character being read in the file.
- * @param number A pointer for where to read the found number into.
- * @return int The read number.
+ * @brief Reads a n from a string of text in the .kmd file.
+ * @param f A file handle.
+ * @param c A pointer to the current character being read in the file.
+ * @param n A pointer for where to read the found n into.
+ * @return int The read n.
  */
-const int readNumberFromFile(FILE* const fHandle,
-                             char* const pC,
-                             unsigned int* const number) {
-  while ((*pC == ' ') || (*pC == '\t')) {
-    *pC = getc(fHandle);  // Skip spaces
+constexpr const int readNumberFromFile(FILE* const f,
+                                       char* const c,
+                                       unsigned int* const n) {
+  while ((*c == ' ') || (*c == '\t')) {
+    *c = getc(f);  // Skip spaces
   }
 
   int j = 0, value = 0;
-  for (int digit = checkHexCharacter(*pC); digit >= 0;
-       digit = checkHexCharacter(*pC), j++) {
+  for (int digit = checkHexCharacter(*c); digit >= 0;
+       digit = checkHexCharacter(*c), j++) {
     value = (value << 4) | digit;  // Accumulate digit
-    *pC = getc(fHandle);           // Get next character
+    *c = getc(f);                  // Get next character
   }  // Exits at first non-hex character (which is discarded)
 
   j = (j + 1) / 2;  // Round digit count to bytes
 
-  int k;
+  int k = 0;
   if (j == 0) {
     k = 0;
   } else {
-    *number = value;  // Only if number found
+    *n = value;  // Only if n found
 
     if (j > 4) {
       k = 4;  // Currently clips at 32-bit
@@ -1097,20 +1099,17 @@ constexpr const unsigned int boardTranslateMemsize(const int size) {
  * This code is LEGACY. It used to run with a check on `board_version`:
  * however `board_version` always passed the check due to the certainty of the
  * "hardware" run under the emulator; therefore the check has been removed.
- * @param count number of elements
  * @param address pointer to the address (in bytes)
  * @param value pointer to the new value to be stored
  * @param size width of current memory (in bytes)
  */
-void boardSetMemory(const int count,
-                    unsigned char* const address,
+void boardSetMemory(unsigned char* const address,
                     unsigned char* const value,
                     const int size) {
-  const int bytecount = count * size;
   boardSendChar(BoardInstruction::SET_MEM | boardTranslateMemsize(size));
-  boardSendCharArray(4, address);  // send address
-  boardSendNBytes(count, 2);       // send width
-  boardSendCharArray(bytecount, value);
+  boardSendCharArray(ADDRESS_BUS_WIDTH, address);  // send address
+  boardSendNBytes(1, 2);                           // send width
+  boardSendCharArray(size, value);
 }
 
 /**
@@ -1127,7 +1126,7 @@ const bool readSourceFile(const char* const pathToKMD) {
   SourceFileLine* currentLine;
 
   // `system` runs the paramter string as a shell command (i.e. it launches a
-  // new process). `pidof` checks to see if a process by the name `jimulator` is
+  // new process) `pidof` checks to see if a process by the name `jimulator` is
   // running. If it fails (non-zero) It will print an error and return failure.
   if (system("pidof -x jimulator > /dev/null")) {
     // TODO: Jimulator is not running... so relaunch Jimulator?
@@ -1238,7 +1237,7 @@ const bool readSourceFile(const char* const pathToKMD) {
               }
 
               // Ignore Boolean error return value for now
-              boardSetMemory(1, addr, data, currentLine->dataSize[j]);
+              boardSetMemory(addr, data, currentLine->dataSize[j]);
             }
 
             byteTotal = byteTotal + currentLine->dataSize[j];
