@@ -51,7 +51,7 @@ void flushSourceFile();
 const bool readSourceFile(const char* const);
 const clientState getBoardStatus();
 const std::array<unsigned char, 64> readRegistersIntoArray();
-const int disassembleSourceFile(sourceFileLine*, unsigned int, int);
+const int disassembleSourceFile(SourceFileLine*, unsigned int, int);
 
 // Low level sending
 void boardSendNBytes(int, int);
@@ -409,7 +409,7 @@ std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
   unsigned char address[ADDRESS_BUS_WIDTH] = {
       start_address[0], start_address[1], start_address[2], start_address[3]};
 
-  sourceFileLine* src = NULL;
+  SourceFileLine* src = NULL;
   bool used_first = false;
   unsigned int start_addr =
       numericStringToInt(ADDRESS_BUS_WIDTH, start_address);
@@ -931,7 +931,7 @@ constexpr void numericStringAndIntAdition(const int length,
  * @return int The difference between the current address to display and the
  * next address that needs to be displayed.
  */
-const int disassembleSourceFile(sourceFileLine* src,
+const int disassembleSourceFile(SourceFileLine* src,
                                 unsigned int addr,
                                 int increment) {
   unsigned int diff;
@@ -1002,7 +1002,7 @@ const std::unordered_map<u_int32_t, bool> getAllBreakpoints() {
  * @brief removes all of the old references to the previous file.
  */
 void flushSourceFile() {
-  sourceFileLine *pOld, *pTrash;
+  SourceFileLine *pOld, *pTrash;
 
   pOld = source.pStart;
   source.pStart = NULL;
@@ -1121,18 +1121,15 @@ void boardSetMemory(const int count,
 /**
  * @brief Reads the source of the file pointer to by pathToKMD
  * @param pathToKMD A path to the `.kmd` file to be loaded.
- * @return true if successful.
+ * @return true if successful, false otherwise.
  */
 const bool readSourceFile(const char* const pathToKMD) {
   // TODO: this function is a jumbled mess, refactor and remove sections
-  unsigned int address, old_address;
-  unsigned int d_size[SOURCE_FIELD_COUNT], d_value[SOURCE_FIELD_COUNT];
-  int i, j, m;
-  bool flag;
-  int byte_total, text_length;
-  char c, buffer[SOURCE_TEXT_LENGTH + 1];  // + 1 for terminator
-  sourceFileLine *pNew, *pTemp1, *pTemp2;
-  struct stat status;
+  unsigned int oldAddress, dSize[SOURCE_FIELD_COUNT],
+      dValue[SOURCE_FIELD_COUNT];
+  int byteTotal, textLength;
+  char buffer[SOURCE_TEXT_LENGTH + 1];  // + 1 for terminator
+  SourceFileLine* currentLine;
 
   // `system` runs the paramter string as a shell command (i.e. it launches a
   // new process). `pidof` checks to see if a process by the name `jimulator` is
@@ -1149,28 +1146,27 @@ const bool readSourceFile(const char* const pathToKMD) {
     return false;
   }
 
-  bool has_old_addr = false;  // Don't know where we start
-  stat(pathToKMD, &status);
+  bool hasOldAddress = false;  // Don't know where we start
 
   // Repeat until end of file
   while (not feof(komodoSource)) {
-    address = 0;   // Really needed?
-    flag = false;  // Haven't found an address yet
-    c = getc(komodoSource);
+    unsigned int address = 0;     // Really needed?
+    bool flag = false;            // Haven't found an address yet
+    char c = getc(komodoSource);  // The current character being parsed
 
     // If the first character is a colon, read a symbol record
     if (c == ':') {
-      has_old_addr = false;  // Don't retain position
+      hasOldAddress = false;  // Don't retain position
     }
 
     // Read a source line record
     else {
-      for (j = 0; j < SOURCE_FIELD_COUNT; j++) {
-        d_size[j] = 0;
-        d_value[j] = 0;
+      for (int j = 0; j < SOURCE_FIELD_COUNT; j++) {
+        dSize[j] = 0;
+        dValue[j] = 0;
       }
 
-      byte_total = 0;
+      byteTotal = 0;
       flag = (readNumberFromFile(komodoSource, &c, &address) != 0);
 
       // Read a new address - and if we got an address, try for data fields
@@ -1181,23 +1177,23 @@ const bool readSourceFile(const char* const pathToKMD) {
 
         // Loop on data fields
         // repeat several times or until `illegal' character met
-        for (j = 0; j < SOURCE_FIELD_COUNT; j++) {
-          d_size[j] = readNumberFromFile(komodoSource, &c, &d_value[j]);
+        for (int j = 0; j < SOURCE_FIELD_COUNT; j++) {
+          dSize[j] = readNumberFromFile(komodoSource, &c, &dValue[j]);
 
-          if (d_size[j] == 0) {
+          if (dSize[j] == 0) {
             break;  // Quit if nothing found
           }
 
-          byte_total = byte_total + d_size[j];  // Total input
+          byteTotal = byteTotal + dSize[j];  // Total input
         }
 
-        old_address = address + byte_total;  // Predicted -next- address
-        has_old_addr = true;
+        oldAddress = address + byteTotal;  // Predicted -next- address
+        hasOldAddress = true;
       }
       // Address field not found  Maybe something useable?
-      else if (has_old_addr) {
-        address = old_address;  // Use predicted address
-        flag = true;            // Note we do have an address
+      else if (hasOldAddress) {
+        address = oldAddress;  // Use predicted address
+        flag = true;           // Note we do have an address
       }
 
       // We have a record with an address
@@ -1213,97 +1209,99 @@ const bool readSourceFile(const char* const pathToKMD) {
             c = getc(komodoSource);  // Skip formatting space
           }
 
-          text_length = 0;  // Measure (& buffer) source line
+          textLength = 0;  // Measure (& buffer) source line
 
           // Everything to end of line (or clip)
           while ((c != '\n') && not feof(komodoSource) &&
-                 (text_length < SOURCE_TEXT_LENGTH)) {
-            buffer[text_length++] = c;
+                 (textLength < SOURCE_TEXT_LENGTH)) {
+            buffer[textLength++] = c;
             c = getc(komodoSource);
           }
 
-          buffer[text_length++] = '\0';     // text_length now length incl. '\0'
-          pNew = g_new(sourceFileLine, 1);  // Create new record
-          pNew->address = address;
-          pNew->corrupt = false;
+          buffer[textLength++] = '\0';  // textLength now length incl. '\0'
+          currentLine = g_new(SourceFileLine, 1);  // Create new record
+          currentLine->address = address;
+          currentLine->corrupt = false;
 
-          byte_total = 0;  // Inefficient
-          for (j = 0; j < SOURCE_FIELD_COUNT; j++) {
-            pNew->data_size[j] = d_size[j];  // Bytes, not digits
-            pNew->data_value[j] = d_value[j];
+          byteTotal = 0;  // Inefficient
+          for (int j = 0; j < SOURCE_FIELD_COUNT; j++) {
+            currentLine->data_size[j] = dSize[j];  // Bytes, not digits
+            currentLine->data_value[j] = dValue[j];
 
             // clips memory load - debatable
-            if ((pNew->data_size[j] > 0) &&
-                ((pNew->data_size[j] + byte_total) <= SOURCE_BYTE_COUNT)) {
+            if ((currentLine->data_size[j] > 0) &&
+                ((currentLine->data_size[j] + byteTotal) <=
+                 SOURCE_BYTE_COUNT)) {
               unsigned char addr[4], data[4];
 
-              for (i = 0; i < 4; i++) {
+              for (int i = 0; i < 4; i++) {
                 addr[i] =
-                    getLeastSignificantByte((address + byte_total) >> (8 * i));
+                    getLeastSignificantByte((address + byteTotal) >> (8 * i));
               }
-              for (i = 0; i < pNew->data_size[j]; i++) {
-                data[i] =
-                    getLeastSignificantByte(pNew->data_value[j] >> (8 * i));
+              for (int i = 0; i < currentLine->data_size[j]; i++) {
+                data[i] = getLeastSignificantByte(currentLine->data_value[j] >>
+                                                  (8 * i));
               }
 
               // Ignore Boolean error return value for now
-              boardSetMemory(1, addr, data, pNew->data_size[j]);
+              boardSetMemory(1, addr, data, currentLine->data_size[j]);
             }
 
-            byte_total = byte_total + pNew->data_size[j];
-            pNew->nodata = (byte_total == 0); /* Mark record if `blank' line */
+            byteTotal = byteTotal + currentLine->data_size[j];
+            currentLine->nodata =
+                (byteTotal == 0); /* Mark record if `blank' line */
           }
 
           // clips source record - essential
-          if (byte_total > SOURCE_BYTE_COUNT) {
-            m = 0;
+          if (byteTotal > SOURCE_BYTE_COUNT) {
+            int m = 0;
 
-            for (j = 0; j < SOURCE_FIELD_COUNT; j++) {
-              m = m + pNew->data_size[j];
+            for (int j = 0; j < SOURCE_FIELD_COUNT; j++) {
+              m = m + currentLine->data_size[j];
               if (m <= SOURCE_BYTE_COUNT) {
-                d_size[j] = 0;
-                byte_total = byte_total - pNew->data_size[j];
+                dSize[j] = 0;
+                byteTotal = byteTotal - currentLine->data_size[j];
               } else {
-                d_size[j] = pNew->data_size[j];  // Bytes, not digits
-                pNew->data_size[j] = 0;
+                dSize[j] = currentLine->data_size[j];  // Bytes, not digits
+                currentLine->data_size[j] = 0;
               }
             }
 
             // FIXME
-            std::cout << "OVERFLOW " << d_size[0] << " " << d_size[1] << " "
-                      << d_size[2] << " " << d_size[3] << " " << byte_total
+            std::cout << "OVERFLOW " << dSize[0] << " " << dSize[1] << " "
+                      << dSize[2] << " " << dSize[3] << " " << byteTotal
                       << std::endl;
             // Extend with some more records here? @@@ (plant in memory,
             // above, also)
           }
 
           // Copy text to buffer
-          pNew->text = g_new(char, text_length);
-          for (j = 0; j < text_length; j++) {
-            pNew->text[j] = buffer[j];
+          currentLine->text = g_new(char, textLength);
+          for (int j = 0; j < textLength; j++) {
+            currentLine->text[j] = buffer[j];
           }
 
-          pTemp1 = source.pStart;  // Place new record in address ordered list
-          pTemp2 = NULL;  // behind any earlier records with same address.
+          SourceFileLine* pTemp1 = source.pStart;
+          SourceFileLine* pTemp2 = NULL;
 
           while ((pTemp1 != NULL) && (address >= pTemp1->address)) {
             pTemp2 = pTemp1;
             pTemp1 = pTemp1->pNext;
           }
 
-          pNew->pNext = pTemp1;
-          pNew->pPrev = pTemp2;
+          currentLine->pNext = pTemp1;
+          currentLine->pPrev = pTemp2;
 
           if (pTemp1 != NULL) {
-            pTemp1->pPrev = pNew;
+            pTemp1->pPrev = currentLine;
           } else {
-            source.pEnd = pNew;
+            source.pEnd = currentLine;
           }
 
           if (pTemp2 != NULL) {
-            pTemp2->pNext = pNew;
+            pTemp2->pNext = currentLine;
           } else {
-            source.pStart = pNew;
+            source.pStart = currentLine;
           }
         }
       }  // Source line

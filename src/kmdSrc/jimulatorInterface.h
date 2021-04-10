@@ -113,10 +113,10 @@ inline unsigned char operator|(boardInstruction l, unsigned char r) {
 /**
  * @brief Describes a single line of a .kmd file.
  */
-class sourceFileLine {
+class SourceFileLine {
  public:
-  sourceFileLine* pPrev;  // Previous line
-  sourceFileLine* pNext;  // Next line
+  SourceFileLine* pPrev;  // Previous line
+  SourceFileLine* pNext;  // Next line
   bool corrupt;           // Flag if value changed
   bool nodata;            // Flag if line has no data fields
   unsigned int address;   // Address of entry
@@ -130,8 +130,8 @@ class sourceFileLine {
  */
 class sourceFile {
  public:
-  sourceFileLine* pStart;  // First line in source (sorted into address order)
-  sourceFileLine* pEnd;    // Last line in source
+  SourceFileLine* pStart;  // First line in source (sorted into address order)
+  SourceFileLine* pEnd;    // Last line in source
 };
 
 /**
