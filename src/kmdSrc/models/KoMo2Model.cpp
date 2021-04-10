@@ -68,10 +68,10 @@ KoMo2Model::KoMo2Model(MainWindowView* const mainWindow,
 const bool KoMo2Model::refreshViews() {
   // Check the state of the board first
   switch (Jimulator::checkBoardState()) {
-    case clientState::FINISHED:
+    case ClientState::FINISHED:
       getParent()->changeJimulatorState(UNLOADED);
       break;
-    case clientState::BREAKPOINT:
+    case ClientState::BREAKPOINT:
       getParent()->changeJimulatorState(PAUSED);
       break;
     default:

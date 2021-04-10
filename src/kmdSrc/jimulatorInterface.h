@@ -36,7 +36,7 @@ const int MAX_NUMBER_OF_BREAKPOINTS = 32;
  * @brief A series of values that represent state information returned from
  * Jimulator.
  */
-enum class clientState : unsigned char {
+enum class ClientState : unsigned char {
   NORMAL = 0X00,
   BUSY = 0X01,
   BREAKPOINT = 0X41,
@@ -49,19 +49,19 @@ enum class clientState : unsigned char {
 };
 
 /**
- * @brief Performing an or between a clientState and an unsigned char.
- * @param l The left hand clientState value.
+ * @brief Performing an or between a ClientState and an unsigned char.
+ * @param l The left hand ClientState value.
  * @param r The right hand unsigned char value.
  * @return unsigned char The result of the or operation.
  */
-inline unsigned char operator|(clientState l, unsigned char r) {
+inline unsigned char operator|(ClientState l, unsigned char r) {
   return static_cast<unsigned char>(l) | r;
 }
 
 /**
  * @brief Contains the information read from Jimulator about a given breakpoint.
  */
-class breakpointInfo {
+class BreakpointInfo {
  public:
   unsigned int misc;
   unsigned char addressA[ADDRESS_BUS_WIDTH];
@@ -73,7 +73,7 @@ class breakpointInfo {
 /**
  * @brief A container for a series of codes used as board instructions.
  */
-enum class boardInstruction : unsigned char {
+enum class BoardInstruction : unsigned char {
   // General commands
   START = 0xB0,
   WOT_U_DO = 0x20,
@@ -101,12 +101,12 @@ enum class boardInstruction : unsigned char {
 };
 
 /**
- * @brief Performing an or between a boardInstruction and an unsigned char.
- * @param l The left hand boardInstruction value.
+ * @brief Performing an or between a BoardInstruction and an unsigned char.
+ * @param l The left hand BoardInstruction value.
  * @param r The right hand unsigned char value.
  * @return unsigned char The result of the or operation.
  */
-inline unsigned char operator|(boardInstruction l, unsigned char r) {
+inline unsigned char operator|(BoardInstruction l, unsigned char r) {
   return static_cast<unsigned char>(l) | r;
 }
 
@@ -115,14 +115,13 @@ inline unsigned char operator|(boardInstruction l, unsigned char r) {
  */
 class SourceFileLine {
  public:
-  SourceFileLine* pPrev;  // Previous line
-  SourceFileLine* pNext;  // Next line
-  bool corrupt;           // Flag if value changed
-  bool nodata;            // Flag if line has no data fields
-  unsigned int address;   // Address of entry
-  int data_size[4];       // Sizes of fields
-  int data_value[4];      // Data values
-  char* text;             // Text, as imported
+  SourceFileLine* prev;  // Previous line
+  SourceFileLine* next;  // Next line
+  bool hasData;          // Flag if line has no data fields
+  unsigned int address;  // Address of entry
+  int dataSize[4];       // Sizes of fields
+  int dataValue[4];      // Data values
+  char* text;            // Text, as imported
 };
 
 /**
@@ -189,7 +188,7 @@ class MemoryValues {
 };
 
 // ! Reading data
-const clientState checkBoardState();
+const ClientState checkBoardState();
 const std::array<std::string, 16> getJimulatorRegisterValues();
 std::array<Jimulator::MemoryValues, 13> getJimulatorMemoryValues(
     const uint32_t s_address_int);
