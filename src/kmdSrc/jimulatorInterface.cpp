@@ -37,6 +37,7 @@
 #include <sys/types.h>
 #include <termios.h>
 #include <unistd.h>
+#include <algorithm>
 #include <iomanip>
 #include <iostream>
 #include <regex>
@@ -49,7 +50,7 @@
 void flushSourceFile();
 const bool readSourceFile(const char* const);
 const clientState getBoardStatus();
-void readRegistersIntoArray(unsigned char*, unsigned int);
+const std::array<unsigned char, 64> readRegistersIntoArray();
 const int disassembleSourceFile(sourceFileLine*, unsigned int, int);
 
 // Low level sending
@@ -262,8 +263,7 @@ const clientState Jimulator::checkBoardState() {
  * @return The values read from the registers.
  */
 const std::array<std::string, 16> Jimulator::getJimulatorRegisterValues() {
-  unsigned char regVals[64];            // 64-byte array
-  readRegistersIntoArray(regVals, 16);  // regVals now has reg values
+  auto regVals = readRegistersIntoArray();  // regVals now has reg values
 
   std::array<std::string, 16> a;  // vector of strings
 
@@ -802,9 +802,8 @@ const clientState getBoardStatus() {
   }
 
   /* TODO: clientStatus represents what the board is doing and why - can be
-   * reflected in the view?
-     and the same with stepsSinceReset
-     */
+   reflected in the view? and the same with stepsSinceReset
+   */
 
   return static_cast<clientState>(clientStatus);
 }
@@ -833,17 +832,22 @@ void boardSendNBytes(int value, int n) {
 }
 
 /**
- * @brief Reads register information from the board.
- * @param data The pointer to read the register values into.
- * @param count The number of registers values to read (will start from R0
- * upwards)
+ * @brief Gets serialized bit data from the board that represents 16 register
+ * values - 15 general purpose registers and the PC.
+ * @returns const std::array<unsigned char, 64> An array of bytes fetched from
+ * Jimulator representing the memory values.
  */
-void readRegistersIntoArray(unsigned char* data, unsigned int count) {
-  // TODO: this
+const std::array<unsigned char, 64> readRegistersIntoArray() {
+  unsigned char data[64];
+
   boardSendChar(static_cast<unsigned char>(boardInstruction::GET_REG));
   boardSendNBytes(0, 4);
   boardSendNBytes(16, 2);
   boardGetCharArray(64, data);
+
+  std::array<unsigned char, 64> ret;
+  std::copy(std::begin(data), std::end(data), std::begin(ret));
+  return ret;
 }
 
 /**
