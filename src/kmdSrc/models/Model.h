@@ -3,8 +3,8 @@
  * @author Lawrence Warren (lawrencewarren2@gmail.com)
  * @brief A file containing the declaration of the class `Model` and the
  * enumerable type `JimulatorState`.
- * @version 0.2
- * @date 2020-12-28
+ * @version 1.0.0
+ * @date 10-04-2021
  * @section LICENSE
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as

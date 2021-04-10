@@ -5,8 +5,8 @@
  * which represents the input & output text boxes at the bottom of the screen.
  * Any data, and functions related to the manipulation of data, can be found in
  * the accompanying TerminalModel class.
- * @version 0.1
- * @date 2021-03-31
+ * @version 1.0.0
+ * @date 10-04-2021
  * @section LICENSE
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as

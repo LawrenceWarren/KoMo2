@@ -3,7 +3,7 @@
  * @author Lawrence Warren (lawrencewarren2@gmail.com)
  * @brief Definitions of the functions declared in the class definition, found
  * at `MainWindowView.h`.
- * @version 0.1
+ * @version 1.0.0
  * @date 2020-12-28
  * @section LICENSE
  * This program is free software; you can redistribute it and/or

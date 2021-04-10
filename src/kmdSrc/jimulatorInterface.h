@@ -4,8 +4,8 @@
  * @brief The header file associated with the `jimulatorInterface.c` file -
  * specifies functions which can be accessed externally to by other files which
  * include this header.
- * @version 0.1
- * @date 2020-11-27
+ * @version 1.0.0
+ * @date 10-04-2021
  * @section LICENSE
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -29,6 +29,8 @@ const int SOURCE_TEXT_LENGTH = 100;
 const int IN_POLL_TIMEOUT = 1000;
 const int OUT_POLL_TIMEOUT = 100;
 const int MAX_SERIAL_WORD = 4;
+const int ADDRES_BUS_WIDTH = 4;
+const int MAX_NUMBER_OF_BREAKPOINTS = 32;
 
 /**
  * @brief A series of values that represent state information returned from
@@ -82,8 +84,8 @@ enum class runFlags {
 class breakpointInfo {
  public:
   unsigned int misc;
-  unsigned char addressA[8];
-  unsigned char addressB[8];
+  unsigned char addressA[ADDRES_BUS_WIDTH];
+  unsigned char addressB[ADDRES_BUS_WIDTH];
   unsigned char dataA[8];
   unsigned char dataB[8];
 };
@@ -129,7 +131,7 @@ enum class boardInstruction : unsigned char {
   WP_SET = 0x36,
   WP_GET = 0x37,
 
-  START = 0x80
+  START = 0xB0
 };
 
 /**
@@ -228,7 +230,7 @@ std::array<Jimulator::MemoryValues, 13> getJimulatorMemoryValues(
 const std::string getJimulatorTerminalMessages();
 
 // ! Loading data
-const int compileJimulator(const char* const pathToBin,
+void compileJimulator(const char* const pathToBin,
                            const char* const pathToS,
                            const char* const pathToKMD);
 const int loadJimulator(const char* const pathToKMD);

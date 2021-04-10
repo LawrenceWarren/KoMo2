@@ -3,8 +3,8 @@
  * @author Lawrence Warren (lawrencewarren2@gmail.com)
  * @brief A class declaration for the `MainWindowView` class, which inherits
  * from `GTK::Window`.
- * @version 0.1
- * @date 2020-12-22
+ * @version 1.0.0
+ * @date 10-04-2021
  * @section LICENSE
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as

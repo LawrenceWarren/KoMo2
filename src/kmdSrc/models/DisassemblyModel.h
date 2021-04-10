@@ -5,8 +5,8 @@
  * logical data in memory that relates to the memory window you see in the KoMo2
  * GUI. The view is represented in the file `DisassemblyView.cpp` and it's
  * header.
- * @version 0.1
- * @date 2021-03-18
+ * @version 1.0.0
+ * @date 10-04-2021
  * @section LICENSE
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
