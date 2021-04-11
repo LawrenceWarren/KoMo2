@@ -54,6 +54,7 @@ void TerminalView::initClearButton() {
   clearButton.get_accessible()->set_name("Clear");
   clearButton.get_accessible()->set_description(
       "Clears the terminal of any logged information.");
+  clearButton.set_tooltip_text("Clear the terminal output pane");
 }
 
 /**
@@ -65,7 +66,8 @@ void TerminalView::initTextView() {
   textView.set_wrap_mode(Gtk::WRAP_WORD_CHAR);
   textView.set_can_focus(true);
   textView.set_editable(false);
-  textView.get_accessible()->set_name("Terminal output");
+  textView.get_accessible()->set_name("Terminal output window");
+  textView.set_tooltip_text("Emulator output is logged here");
 }
 
 /**
@@ -75,6 +77,7 @@ void TerminalView::initInputBox() {
   inputBox.set_size_request(848, 20);
   inputBox.get_style_context()->add_class("terminalInput");
   inputBox.get_accessible()->set_name("Terminal input window");
+  inputBox.set_tooltip_text("Text input here is sent to the emulator");
 }
 
 /**
