@@ -79,18 +79,18 @@ class DisassemblyModel : private Model {
       Gtk::STATE_FLAG_DIR_LTR | Gtk::STATE_FLAG_FOCUSED;
 
   /**
-   * @brief Whether or not ARM mnemonics should be read in English when being
-   * read by a screenreader, or if they should be left as ARM mnemonics.
-   */
-  bool englishMnemonic = false;
-
-  /**
    * @brief The CSS state flags for e memory row that has keyboard focus and
    * is currently stored in the Program Counter.
    */
   const Gtk::StateFlags PC_ADDRESS_FOCUSED = Gtk::STATE_FLAG_DIR_LTR |
                                              Gtk::STATE_FLAG_FOCUSED |
                                              Gtk::STATE_FLAG_ACTIVE;
+
+  /**
+   * @brief Whether or not ARM mnemonics should be read in English when being
+   * read by a screenreader, or if they should be left as ARM mnemonics.
+   */
+  bool englishMnemonic = false;
 
   const std::string intToFormattedHexString(const uint32_t formatMe) const;
   const bool handleScroll(GdkEventScroll* const e);

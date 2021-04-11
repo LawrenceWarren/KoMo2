@@ -180,7 +180,7 @@ const std::string DisassemblyModel::buildDisassemblyRowAccessibilityString(
  */
 const std::string DisassemblyModel::convertMnemonicToEnglish(
     const std::string mnemonic) const {
-  // Splits mnemonic at the strimg
+  // Splits mnemonic string into an array, at the space
   std::istringstream iss(mnemonic);
   std::vector<std::string> results(std::istream_iterator<std::string>{iss},
                                    std::istream_iterator<std::string>());

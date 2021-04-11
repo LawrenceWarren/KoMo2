@@ -367,8 +367,8 @@ const bool Jimulator::sendTerminalInputToJimulator(const unsigned int val) {
  */
 std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
     const uint32_t s_address) {
-  const int count = 13;  // The number of values displayed in the memory window
-  const int bytecount = count * ADDRESS_BUS_WIDTH;  // How many bytes to read
+  constexpr int count = 13;  // How many values displayed in the memory window
+  constexpr int bytecount = count * ADDRESS_BUS_WIDTH;  // bytes to read
 
   // Bit level hacking happening here - converting the integer address into
   // an array of characters.

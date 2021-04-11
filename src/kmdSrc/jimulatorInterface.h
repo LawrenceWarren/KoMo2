@@ -23,14 +23,14 @@
 #include <array>
 #include <string>
 
-const int SOURCE_BYTE_COUNT = 4;
-const int SOURCE_FIELD_COUNT = 4;
-const int SOURCE_TEXT_LENGTH = 100;
-const int IN_POLL_TIMEOUT = 1000;
-const int OUT_POLL_TIMEOUT = 100;
-const int MAX_SERIAL_WORD = 4;
-const int ADDRESS_BUS_WIDTH = 4;
-const int MAX_NUMBER_OF_BREAKPOINTS = 32;
+constexpr int SOURCE_BYTE_COUNT = 4;
+constexpr int SOURCE_FIELD_COUNT = 4;
+constexpr int SOURCE_TEXT_LENGTH = 100;
+constexpr int IN_POLL_TIMEOUT = 1000;
+constexpr int OUT_POLL_TIMEOUT = 100;
+constexpr int MAX_SERIAL_WORD = 4;
+constexpr int ADDRESS_BUS_WIDTH = 4;
+constexpr int MAX_NUMBER_OF_BREAKPOINTS = 32;
 
 /**
  * @brief A series of values that represent state information returned from
