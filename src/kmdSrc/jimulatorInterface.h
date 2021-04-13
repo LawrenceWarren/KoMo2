@@ -11,13 +11,45 @@
 #include <array>
 #include <string>
 
+/**
+ * @brief The maximum number of bytes that can be read from a source file.
+ */
 constexpr int SOURCE_BYTE_COUNT = 4;
+
+/**
+ * @brief The number of fields that can be used in a source file.
+ */
 constexpr int SOURCE_FIELD_COUNT = 4;
+
+/**
+ * @brief The maximum length of a line in a source file.
+ */
 constexpr int SOURCE_TEXT_LENGTH = 100;
+
+/**
+ * @brief The maximum amount of time to wait after sending input to the pipes.
+ */
 constexpr int IN_POLL_TIMEOUT = 1000;
+
+/**
+ * @brief The maximum amount of time to wait waiting for output from the pipes.
+ */
 constexpr int OUT_POLL_TIMEOUT = 100;
+
+/**
+ * @brief The maximum amount of bytes that can be sent or received from the
+ * Jimulator pipes.
+ */
 constexpr int MAX_SERIAL_WORD = 4;
+
+/**
+ * @brief The width of Jimulators internal address bus.
+ */
 constexpr int ADDRESS_BUS_WIDTH = 4;
+
+/**
+ * @brief The maximum number of breakpoints within the application.
+ */
 constexpr int MAX_NUMBER_OF_BREAKPOINTS = 32;
 
 /**
@@ -51,10 +83,35 @@ inline unsigned char operator|(ClientState l, unsigned char r) {
  */
 class BreakpointInfo {
  public:
+  /**
+   * @brief The address of the breakpoint.
+   */
   unsigned char addressA[ADDRESS_BUS_WIDTH];
+
+  /**
+   * @brief A secondary address for a breakpoint - this is a legacy feature that
+   * is not used in KoMo2, but must persist as they are stored within Jimulator.
+   */
   unsigned char addressB[ADDRESS_BUS_WIDTH] = {0xFF, 0XFF, 0XFF, 0XFF};
+
+  /**
+   * @brief Data associated with the breakpoint - this is a legacy feature that
+   * is not used in KoMo2, but must persist as they are stored within Jimulator.
+   */
   unsigned char dataA[8] = {0};
+
+  /**
+   * @brief Data associated with the secondary breakpoint - this is a legacy
+   * feature that is not used in KoMo2, but must persist as they are stored
+   * within Jimulator.
+   */
   unsigned char dataB[8] = {0};
+
+  /**
+   * @brief Miscellaneous information associated with the breakpoint - this is a
+   * legacy feature that is not used in KoMo2, but must persist as they are
+   * stored within Jimulator.
+   */
   unsigned int misc = 0xFFFFFFFF;
 };
 
@@ -103,13 +160,40 @@ inline unsigned char operator|(BoardInstruction l, unsigned char r) {
  */
 class SourceFileLine {
  public:
-  SourceFileLine* prev;  // Previous line
-  SourceFileLine* next;  // Next line
-  bool hasData;          // Flag if line has no data fields
-  unsigned int address;  // Address of entry
-  int dataSize[4];       // Sizes of fields
-  int dataValue[4];      // Data values
-  char* text;            // Text, as imported
+  /**
+   * @brief The previous line of the overall source file.
+   */
+  SourceFileLine* prev;
+
+  /**
+   * @brief The next line of the overall source file.
+   */
+  SourceFileLine* next;
+
+  /**
+   * @brief A flag that indicates that the line stores internal data or not.
+   */
+  bool hasData;
+
+  /**
+   * @brief The address of the source line.
+   */
+  unsigned int address;
+
+  /**
+   * @brief Stores the size of the data fields.
+   */
+  int dataSize[4];
+
+  /**
+   * @brief Stores the data values.
+   */
+  int dataValue[4];
+
+  /**
+   * @brief Text, as read from the source file.
+   */
+  char* text;
 };
 
 /**
@@ -117,8 +201,15 @@ class SourceFileLine {
  */
 class sourceFile {
  public:
-  SourceFileLine* pStart;  // First line in source (sorted into address order)
-  SourceFileLine* pEnd;    // Last line in source
+  /**
+   * @brief The first line in a source file.
+   */
+  SourceFileLine* pStart;
+
+  /**
+   * @brief The last line in a source file.
+   */
+  SourceFileLine* pEnd;
 };
 
 /**

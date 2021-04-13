@@ -15,9 +15,8 @@
 /**
  * @brief Construct a new ControlsModel::ControlsModel object.
  * @param view A pointer to the accompanying view object.
+ * @param manual A URL to a site hosting the user manual for KoMo2.
  * @param parent A pointer to the parent model.
- * @param refreshRate An integer that describes how many milliseconds should be
- * taken between refreshes when KoMo2 is in the `JimulatorState::RUNNING` state.
  */
 ControlsModel::ControlsModel(ControlsView* const view,
                              const std::string manual,

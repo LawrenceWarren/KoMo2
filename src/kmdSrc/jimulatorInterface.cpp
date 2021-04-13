@@ -82,7 +82,9 @@ inline const std::string integerArrayToHexString(int,
                                                  const bool = false);
 constexpr const char getLeastSignificantByte(const int);
 
-// The read .kmd file
+/**
+ * @brief The source file that is currently loaded into Jimulator.
+ */
 sourceFile source;
 
 /**
@@ -707,8 +709,8 @@ inline void boardSendCharArray(int length, unsigned char* data) {
  * @brief Sends a singular character to Jimulator.
  * @param data The character to send.
  */
-inline void boardSendChar(unsigned char to_send) {
-  boardSendCharArray(1, &to_send);
+inline void boardSendChar(unsigned char data) {
+  boardSendCharArray(1, &data);
 }
 
 /**
@@ -719,7 +721,7 @@ inline void boardSendChar(unsigned char to_send) {
  * @param data The data to be written.
  * @param n The number of bytes to write.
  */
-inline void boardSendNBytes(int value, int n) {
+inline void boardSendNBytes(int data, int n) {
   unsigned char buffer[MAX_SERIAL_WORD];
 
   if (n > MAX_SERIAL_WORD) {
@@ -727,8 +729,8 @@ inline void boardSendNBytes(int value, int n) {
   }
 
   for (int i = 0; i < n; i++) {
-    buffer[i] = getLeastSignificantByte(value);  // Byte into buffer
-    value = rotateRight1Byte(value);             // Get next byte
+    buffer[i] = getLeastSignificantByte(data);  // Byte into buffer
+    data = rotateRight1Byte(data);              // Get next byte
   }
 
   boardSendCharArray(n, buffer);
@@ -741,7 +743,7 @@ inline void boardSendNBytes(int value, int n) {
  * @return int The number of bytes successfully received, up to `length` number
  * of characters.
  */
-inline const int boardGetCharArray(int char_number, unsigned char* data_ptr) {
+inline const int boardGetCharArray(int length, unsigned char* data) {
   int reply_count;  // Number of chars fetched in latest attempt
   int reply_total = 0;
   struct pollfd pollfd;
@@ -750,7 +752,7 @@ inline const int boardGetCharArray(int char_number, unsigned char* data_ptr) {
   pollfd.events = POLLIN;
 
   // while there is more to get
-  while (char_number > 0) {
+  while (length > 0) {
     // If nothing available
     if (not poll(&pollfd, 1, IN_POLL_TIMEOUT)) {
       reply_count = 0;  // Will force loop termination
@@ -759,11 +761,11 @@ inline const int boardGetCharArray(int char_number, unsigned char* data_ptr) {
     // attempt to read the number of bytes requested  and store the number of
     // bytes received
     else {
-      reply_count = read(readFromJimulator, data_ptr, char_number);
+      reply_count = read(readFromJimulator, data, length);
     }
 
     if (reply_count == 0) {
-      char_number = -1;  // Set to terminate
+      length = -1;  // Set to terminate
     }
 
     // Set minimum to 0
@@ -772,8 +774,8 @@ inline const int boardGetCharArray(int char_number, unsigned char* data_ptr) {
     }
 
     reply_total += reply_count;
-    char_number -= reply_count;  // Update No. bytes that are still required
-    data_ptr += reply_count;     // Move the data pointer to its new location
+    length -= reply_count;  // Update No. bytes that are still required
+    data += reply_count;    // Move the data pointer to its new location
   }
 
   return reply_total;  // return the number of bytes received
@@ -784,8 +786,8 @@ inline const int boardGetCharArray(int char_number, unsigned char* data_ptr) {
  * @param data A pointer to a memory location where the read data can be stored.
  * @return int The number of bytes successfully received - either 1 or 0.
  */
-inline const int boardGetChar(unsigned char* to_get) {
-  return boardGetCharArray(1, to_get);
+inline const int boardGetChar(unsigned char* data) {
+  return boardGetCharArray(1, data);
 }
 
 /**
@@ -1222,7 +1224,6 @@ inline const bool readSourceFile(const char* const pathToKMD) {
             currentLine->dataSize[j] = dSize[j];  // Bytes, not digits
             currentLine->dataValue[j] = dValue[j];
 
-            // clips memory load - debatable
             if ((currentLine->dataSize[j] > 0) &&
                 ((currentLine->dataSize[j] + byteTotal) <= SOURCE_BYTE_COUNT)) {
               unsigned char addr[4], data[4];

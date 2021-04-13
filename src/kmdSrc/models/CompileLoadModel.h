@@ -1,5 +1,5 @@
 /**
- * @file compileLoadController.h
+ * @file CompileLoadModel.h
  * @author Lawrence Warren (lawrencewarren2@gmail.com)
  * @brief A file containing the definition of the CompileLoadModel class.
  * @version 1.0.0

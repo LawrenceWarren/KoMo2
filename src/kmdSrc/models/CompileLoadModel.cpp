@@ -1,5 +1,5 @@
 /**
- * @file compileLoadController.cpp
+ * @file CompileLoadModel.cpp
  * @author Lawrence Warren (lawrencewarren2@gmail.com)
  * @brief Definitions of the functions declared in the class declaration, found
  * at `CompileLoadModel.h`.

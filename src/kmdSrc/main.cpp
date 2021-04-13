@@ -35,24 +35,7 @@
 #include "models/KoMo2Model.h"
 #include "views/MainWindowView.h"
 
-int writeToJimulator;
-int readFromJimulator;
-int emulator_PID = -1;
-
-// Communication pipes
-// ! Originally board_emulation_communication_from
-int communicationFromJimulator[2];
-// ! Originally board_emulation_communication_to
-int communicationToJimulator[2];
-// ! Originally compile_communication
-int compilerCommunication[2];
-
-// Default values for variables read from `variables.json`
-std::string version = "1.0.0";
-std::string manual = "https://github.com/LawrenceWarren/KoMo2#user-manual";
-std::string help = "Please view the user manual (" + manual + ") for help.";
-int refresh = 200;
-
+// ! Forward function declarations
 void initJimulator(const std::string argv0);
 void initCompilerPipes(KoMo2Model* const mainModel);
 const std::string getAbsolutePathToRootDirectory(const char* const arg);
@@ -64,7 +47,42 @@ const bool receivedCompilerOutput(GIOChannel* source,
                                   gpointer data);
 void readProgramVariables(const std::string argv0);
 
-// A global reference to the mainModel
+/**
+ * @brief This variable will store the PID of the Jimulator process.
+ */
+int emulator_PID = -1;
+
+// Communication pipes
+int communicationFromJimulator[2];
+int communicationToJimulator[2];
+int compilerCommunication[2];
+// Defined as extern in jimulatorInterface.h
+int writeToJimulator;
+int readFromJimulator;
+
+/**
+ * @brief Version information read from variables.json is stored here.
+ */
+std::string version = "1.0.0";
+
+/**
+ * @brief Manual information read from variables.json is stored here.
+ */
+std::string manual = "https://github.com/LawrenceWarren/KoMo2#user-manual";
+
+/**
+ * @brief Help information read from variables.json is stored here.
+ */
+std::string help = "Please view the user manual (" + manual + ") for help.";
+
+/**
+ * @brief Refresh rate information read from variables.json is stored here.
+ */
+int refresh = 200;
+
+/**
+ * @brief Used as a reference to the master KoMo2Model.
+ */
 void* model;
 
 /**
