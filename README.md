@@ -4,7 +4,7 @@
 
 ###### A 3<sup>rd</sup> year dissertation project by Lawrence Warren for Dr. Steven Bagley of _The University of Nottingham_.
 
-![The whole KoMo2 GUI](./res/readme-pictures/wholegui.png)
+![The whole KoMo2 GUI](https://raw.githubusercontent.com/LawrenceWarren/KoMo2/26e6771845a6569be36f1eaf304c4ed5889006af/res/readme-pictures/wholegui.png)
 
 ### Table of Contents
 
@@ -83,7 +83,7 @@ Below is a clear description on how to utilise _KoMo2_.
 
 ##### Selecting, compiling, and loading an ARM assembly file
 
-![Select and load container](./res/readme-pictures/selectandload.png)
+![Select and load container](https://raw.githubusercontent.com/LawrenceWarren/KoMo2/26e6771845a6569be36f1eaf304c4ed5889006af/res/readme-pictures/selectandload.png)
 
 You must write your own ARM assembly programs (`.s` file extension) in an external text editor, and save them on your filesystem.
 
@@ -95,9 +95,9 @@ The "Select File" and "Compile & Load" buttons are only accessible while _KoMo2_
 
 ##### Commencing, pausing, and resuming execution
 
-![Commence button](./res/readme-pictures/commencebutton.png)
-![Pause button](./res/readme-pictures/pausebutton.png)
-![Resume button](./res/readme-pictures/playbutton.png)
+![Commence button](https://raw.githubusercontent.com/LawrenceWarren/KoMo2/26e6771845a6569be36f1eaf304c4ed5889006af/res/readme-pictures/commencebutton.png)
+![Pause button](https://raw.githubusercontent.com/LawrenceWarren/KoMo2/26e6771845a6569be36f1eaf304c4ed5889006af/res/readme-pictures/pausebutton.png)
+![Resume button](https://raw.githubusercontent.com/LawrenceWarren/KoMo2/26e6771845a6569be36f1eaf304c4ed5889006af/res/readme-pictures/playbutton.png)
 
 Once a program has been compiled and loaded into the ARM emulator, execution of the program can commence.
 
@@ -109,7 +109,7 @@ The commence, pause, and play buttons are only accessible when _KoMo2_ is in cer
 
 ##### Perform a single-step execution
 
-![Single-step execute button](./res/readme-pictures/singlestepbutton.png)
+![Single-step execute button](https://raw.githubusercontent.com/LawrenceWarren/KoMo2/26e6771845a6569be36f1eaf304c4ed5889006af/res/readme-pictures/singlestepbutton.png)
 
 There is a button on the bar at the top of the screen which displays an arcing blue arrow. Upon pressing this button, the ARM emulator will perform perform a single step of execution - whatever instruction is at the memory address indicated by the value in the Program Counter register will be executed - and then stop.
 
@@ -117,7 +117,7 @@ The single step execution button is only accessible when _KoMo2_ is in certain s
 
 ##### Halt program execution
 
-![Halt button](./res/readme-pictures/haltbutton.png)
+![Halt button](https://raw.githubusercontent.com/LawrenceWarren/KoMo2/26e6771845a6569be36f1eaf304c4ed5889006af/res/readme-pictures/haltbutton.png)
 
 There is a button on the bar at the top of the screen which displays a hollow red square. Upon pressing this button, the ARM emulator will be set to a halted state - execution will stop, and will not be allowed to be resumed again, unless the program is recompiled and loaded.
 
@@ -125,7 +125,7 @@ The halt execution button is only accessible when _KoMo2_ is in certain states, 
 
 ##### Reload the program
 
-![Reload symbol](./res/readme-pictures/refreshbutton.png)
+![Reload symbol](https://raw.githubusercontent.com/LawrenceWarren/KoMo2/26e6771845a6569be36f1eaf304c4ed5889006af/res/readme-pictures/refreshbutton.png)
 
 There is a button on the bar at the top of the screen which displays a blue arrow pointing to it's own tail in a circular shape. Upon pressing this button, the ARM emulator will reset itself - execution will stop and the Program Counter will return to 0, meaning that execution will begin again as if the program was running for the first time.
 
@@ -137,7 +137,7 @@ Below is a clear description of the remaining _KoMo2_ GUI elements, and what eac
 
 ##### The register values
 
-![The register table](./res/readme-pictures/registers.png)
+![The register table](https://raw.githubusercontent.com/LawrenceWarren/KoMo2/26e6771845a6569be36f1eaf304c4ed5889006af/res/readme-pictures/registers.png)
 
 There is a table of 16 rows and 2 columns on the left hand side of the _KoMo2_ GUI. This table displays all of the ARM emulator's CPU registers, and the values within them.
 
@@ -151,7 +151,7 @@ As the CPU runs, the values within all of these registers may change depending o
 
 ##### The memory window
 
-![The memory window](./res/readme-pictures/memory.png)
+![The memory window](https://raw.githubusercontent.com/LawrenceWarren/KoMo2/26e6771845a6569be36f1eaf304c4ed5889006af/res/readme-pictures/memory.png)
 
 The large scrolling window that takes up the majority of the _KoMo2_ GUI is the memory window - this displays what is loaded into the ARM emulator's memory at each given address.
 
@@ -163,7 +163,7 @@ Furthermore, the address stored in the Program Counter is highlighted in yellow 
 
 ##### The terminal
 
-![The terminal](./res/readme-pictures/terminal.png)
+![The terminal](https://raw.githubusercontent.com/LawrenceWarren/KoMo2/26e6771845a6569be36f1eaf304c4ed5889006af/res/readme-pictures/terminal.png)
 
 As _KoMo2_ performs actions, it may log some outputs. These outputs are viewable in the terminal, which takes up the majority of the bottom of the _KoMo2_ GUI. The contents of the terminal can be cleared through a nearby button labelled "Clear".
 
