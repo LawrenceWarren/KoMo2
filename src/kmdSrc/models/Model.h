@@ -28,7 +28,7 @@
 /**
  * @brief Describe the 5 states of Jimulator
  */
-enum JimulatorState : int {
+enum class JimulatorState : int {
   INITIAL = -1,  // Jimulator starting state
   UNLOADED,      // Jimulator idle; needs a program to be loaded in.
   LOADED,        // File just loaded for first time (not yet run)

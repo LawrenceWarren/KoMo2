@@ -46,7 +46,7 @@ CompileLoadModel::CompileLoadModel(CompileLoadView* const view,
 
   // Set's the views model & updates the compile load models inner state.
   view->setModel(this);
-  setInnerState(NO_FILE);
+  setInnerState(CompileLoadInnerState::NO_FILE);
 }
 
 /**
@@ -91,7 +91,7 @@ void CompileLoadModel::onCompileLoadClick() const {
       return;
     }
 
-    getParent()->changeJimulatorState(LOADED);
+    getParent()->changeJimulatorState(JimulatorState::LOADED);
   }
 }
 
@@ -135,20 +135,20 @@ void CompileLoadModel::handleResultFromFileBrowser(
     // A file was selected - update inner state and overall state
     case (Gtk::RESPONSE_OK): {
       setAbsolutePathToSelectedFile(dialog->get_filename());
-      setInnerState(FILE_SELECTED);
-      getParent()->changeJimulatorState(UNLOADED);
+      setInnerState(CompileLoadInnerState::FILE_SELECTED);
+      getParent()->changeJimulatorState(JimulatorState::UNLOADED);
       return;
     }
     // Dialog was cancelled - update inner state but not overall state
     case (Gtk::RESPONSE_CANCEL): {
       setAbsolutePathToSelectedFile("");
-      setInnerState(NO_FILE);
+      setInnerState(CompileLoadInnerState::NO_FILE);
       return;
     }
     default: {
       // Some unexpected behaviour - update inner state but not overall state
       setAbsolutePathToSelectedFile("");
-      setInnerState(NO_FILE);
+      setInnerState(CompileLoadInnerState::NO_FILE);
       return;
     }
   }
@@ -172,7 +172,7 @@ const std::string CompileLoadModel::makeKmdPath(
  */
 void CompileLoadModel::changeJimulatorState(const JimulatorState newState) {
   // Sets the default button state for compileLoadButton
-  if (getInnerState() == NO_FILE) {
+  if (getInnerState() == CompileLoadInnerState::NO_FILE) {
     setButtonState(view->getCompileAndLoadButton(), false);
   } else {
     setButtonState(view->getCompileAndLoadButton(), true);
@@ -181,24 +181,24 @@ void CompileLoadModel::changeJimulatorState(const JimulatorState newState) {
   // Sets the state of the browseButton
   switch (newState) {
     // some unloaded state
-    case UNLOADED:
+    case JimulatorState::UNLOADED:
       setButtonState(view->getBrowseButton(), true);
       break;
 
     // loaded, not yet run state
-    case LOADED:
+    case JimulatorState::LOADED:
       setButtonState(view->getBrowseButton(), true);
       setButtonState(view->getCompileAndLoadButton(), false);
       break;
 
     // Currently running
-    case RUNNING:
+    case JimulatorState::RUNNING:
       setButtonState(view->getBrowseButton(), false);
       setButtonState(view->getCompileAndLoadButton(), false);
       break;
 
     // Has been running; is paused
-    case PAUSED:
+    case JimulatorState::PAUSED:
       setButtonState(view->getBrowseButton(), true);
       break;
     // Error state
@@ -224,14 +224,15 @@ const bool CompileLoadModel::handleKeyPress(const GdkEventKey* const e) {
     // Ctrl + (lower- & upper-case l)
     case GDK_KEY_L:
     case GDK_KEY_l:
-      if (getJimulatorState() != RUNNING) {
+      if (getJimulatorState() != JimulatorState::RUNNING) {
         onBrowseClick();
       }
       return true;
     // Ctrl + (lower- & upper-case r)
     case GDK_KEY_R:
     case GDK_KEY_r:
-      if (getJimulatorState() != RUNNING && getInnerState() != NO_FILE) {
+      if (getJimulatorState() != JimulatorState::RUNNING &&
+          getInnerState() != CompileLoadInnerState::NO_FILE) {
         onCompileLoadClick();
       }
       return true;
@@ -262,11 +263,11 @@ void CompileLoadModel::setInnerState(const CompileLoadInnerState val) {
   innerState = val;
 
   switch (val) {
-    case FILE_SELECTED:
+    case CompileLoadInnerState::FILE_SELECTED:
       setButtonState(view->getCompileAndLoadButton(), true);
       getParent()->getMainWindow()->set_title(" KoMo2 - " + filename);
       break;
-    case NO_FILE:
+    case CompileLoadInnerState::NO_FILE:
       setButtonState(view->getCompileAndLoadButton(), false);
       getParent()->getMainWindow()->set_title(" KoMo2");
       break;

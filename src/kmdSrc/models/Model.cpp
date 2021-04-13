@@ -25,7 +25,7 @@
 #include <string>
 
 // Sets the static jimulatorState to its initial value
-JimulatorState Model::jimulatorState = INITIAL;
+JimulatorState Model::jimulatorState = JimulatorState::INITIAL;
 
 /**
  * @brief Constructs a new Model object - just assigns the parent variable.

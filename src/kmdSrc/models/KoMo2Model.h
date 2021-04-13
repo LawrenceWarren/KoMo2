@@ -108,7 +108,7 @@ class KoMo2Model : public Model {
 
   /**
    * @brief Defines how often the the refreshViews function should be called
-   * when KoMo2 is in the RUNNING state.
+   * when KoMo2 is in the JimulatorState::RUNNING state.
    */
   const unsigned int refreshRate;
 

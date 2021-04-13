@@ -29,7 +29,7 @@ class CompileLoadView;
  * @brief An enum indicating the state of the specific compile and load section
  * of the GUI - specifically, whether a file had been selected or not.
  */
-enum CompileLoadInnerState : int {
+enum class CompileLoadInnerState : int {
   FILE_SELECTED = 0,  // A file has been selected.
   NO_FILE             // No file has been selected.
 };

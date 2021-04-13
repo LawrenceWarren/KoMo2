@@ -35,7 +35,7 @@
  * @param argv0 The absolutePathToProjectRoot - parsed from argv[0].
  * @param manual A URI that describes where the user manual can be found.
  * @param refreshRate An integer that describes how many milliseconds should be
- * taken between refreshes when KoMo2 is in the `RUNNING` state.
+ * taken between refreshes when KoMo2 is in the `JimulatorState::RUNNING` state.
  */
 KoMo2Model::KoMo2Model(MainWindowView* const mainWindow,
                        const std::string argv0,
@@ -58,7 +58,7 @@ KoMo2Model::KoMo2Model(MainWindowView* const mainWindow,
   getMainWindow()->signal_key_press_event().connect(
       sigc::mem_fun(*this, &Model::handleKeyPress), false);
 
-  changeJimulatorState(UNLOADED);
+  changeJimulatorState(JimulatorState::UNLOADED);
 }
 
 /**
@@ -69,10 +69,10 @@ const bool KoMo2Model::refreshViews() {
   // Check the state of the board first
   switch (Jimulator::checkBoardState()) {
     case ClientState::FINISHED:
-      getParent()->changeJimulatorState(UNLOADED);
+      getParent()->changeJimulatorState(JimulatorState::UNLOADED);
       break;
     case ClientState::BREAKPOINT:
-      getParent()->changeJimulatorState(PAUSED);
+      getParent()->changeJimulatorState(JimulatorState::PAUSED);
       break;
     default:
       break;
@@ -84,7 +84,7 @@ const bool KoMo2Model::refreshViews() {
   terminalModel.appendTextToTextView(terminalModel.readJimulator());
 
   // Returns true if this function should continue looping (i.e. is running)
-  return getJimulatorState() == RUNNING;
+  return getJimulatorState() == JimulatorState::RUNNING;
 }
 
 /**
@@ -117,12 +117,12 @@ void KoMo2Model::changeJimulatorState(const JimulatorState newState) {
 
   // Handles refreshing the views
   switch (newState) {
-    case RUNNING:
+    case JimulatorState::RUNNING:
       Glib::signal_timeout().connect(
           sigc::mem_fun(this, &KoMo2Model::refreshViews), refreshRate);
       break;
-    case LOADED:
-    case UNLOADED:
+    case JimulatorState::LOADED:
+    case JimulatorState::UNLOADED:
       refreshViews();
       break;
     default:

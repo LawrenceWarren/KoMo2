@@ -29,7 +29,7 @@
  * @param view A pointer to the accompanying view object.
  * @param parent A pointer to the parent model.
  * @param refreshRate An integer that describes how many milliseconds should be
- * taken between refreshes when KoMo2 is in the `RUNNING` state.
+ * taken between refreshes when KoMo2 is in the `JimulatorState::RUNNING` state.
  */
 ControlsModel::ControlsModel(ControlsView* const view,
                              const std::string manual,
@@ -58,39 +58,40 @@ ControlsModel::ControlsModel(ControlsView* const view,
 
 /**
  * @brief Handles the `haltExecutionButton` click events -  changes
- * `JimulatorState` to "UNLOADED".
+ * `JimulatorState` to "JimulatorState::UNLOADED".
  */
 void ControlsModel::onHaltExecutionClick() {
-  getParent()->changeJimulatorState(UNLOADED);
+  getParent()->changeJimulatorState(JimulatorState::UNLOADED);
 }
 
 /**
  * @brief Handles the `reloadJimulatorButton` click events - sends a command to
- * Jimulator and changes `JimulatorState` to "LOADED".
+ * Jimulator and changes `JimulatorState` to "JimulatorState::LOADED".
  */
 void ControlsModel::onReloadJimulatorClick() {
   Jimulator::resetJimulator();
-  getParent()->changeJimulatorState(LOADED);
+  getParent()->changeJimulatorState(JimulatorState::LOADED);
 }
 
 /**
  * @brief Handles the `pauseResumeButton` click events - changes
- * `JimulatorState` to "RUNNING" if currently PAUSED, and "PAUSED" if currently
- * RUNNING. Sends a command to Jimulator in every case.
+ * `JimulatorState` to "JimulatorState::RUNNING" if currently
+ * JimulatorState::PAUSED, and "JimulatorState::PAUSED" if currently
+ * JimulatorState::RUNNING. Sends a command to Jimulator in every case.
  */
 void ControlsModel::onPauseResumeClick() {
   switch (getJimulatorState()) {
-    case RUNNING:
+    case JimulatorState::RUNNING:
       Jimulator::pauseJimulator();
-      getParent()->changeJimulatorState(PAUSED);
+      getParent()->changeJimulatorState(JimulatorState::PAUSED);
       break;
-    case PAUSED:
+    case JimulatorState::PAUSED:
       Jimulator::continueJimulator();
-      getParent()->changeJimulatorState(RUNNING);
+      getParent()->changeJimulatorState(JimulatorState::RUNNING);
       break;
-    case LOADED:
+    case JimulatorState::LOADED:
       Jimulator::startJimulator(0);
-      getParent()->changeJimulatorState(RUNNING);
+      getParent()->changeJimulatorState(JimulatorState::RUNNING);
       break;
     default:
       // TODO: Handle error state gracefully
@@ -100,15 +101,15 @@ void ControlsModel::onPauseResumeClick() {
 
 /**
  * @brief Handles the `singleStepExecuteButton` click events - changes
- * `JimulatorState` to "PAUSED" if state is already LOADED, and sends a command
- * to Jimulator.
+ * `JimulatorState` to "JimulatorState::PAUSED" if state is already LOADED, and
+ * sends a command to Jimulator.
  */
 void ControlsModel::onSingleStepExecuteClick() {
   Jimulator::startJimulator(1);
   getParent()->refreshViews();
 
-  if (getJimulatorState() == LOADED) {
-    getParent()->changeJimulatorState(PAUSED);
+  if (getJimulatorState() == JimulatorState::LOADED) {
+    getParent()->changeJimulatorState(JimulatorState::PAUSED);
   }
 }
 
@@ -122,17 +123,19 @@ void ControlsModel::onSingleStepExecuteClick() {
 const bool ControlsModel::handleKeyPress(const GdkEventKey* const e) {
   switch (e->keyval) {
     case GDK_KEY_F5:
-      if (getJimulatorState() != UNLOADED) {
+      if (getJimulatorState() != JimulatorState::UNLOADED) {
         onPauseResumeClick();
       }
       return true;
     case GDK_KEY_F6:
-      if (getJimulatorState() == LOADED || getJimulatorState() == PAUSED) {
+      if (getJimulatorState() == JimulatorState::LOADED ||
+          getJimulatorState() == JimulatorState::PAUSED) {
         onSingleStepExecuteClick();
       }
       return true;
     case GDK_KEY_F1:
-      if (getJimulatorState() == RUNNING || getJimulatorState() == PAUSED) {
+      if (getJimulatorState() == JimulatorState::RUNNING ||
+          getJimulatorState() == JimulatorState::PAUSED) {
         onHaltExecutionClick();
       }
       return true;
@@ -155,7 +158,7 @@ const bool ControlsModel::handleKeyPress(const GdkEventKey* const e) {
 void ControlsModel::changeJimulatorState(const JimulatorState newState) {
   switch (newState) {
     // some unloaded state
-    case UNLOADED: {
+    case JimulatorState::UNLOADED: {
       setButtonState(view->getHelpButton(), true);
       setButtonState(view->getReloadJimulatorButton(), false);
       setButtonState(
@@ -173,7 +176,7 @@ void ControlsModel::changeJimulatorState(const JimulatorState newState) {
       return;
     }
     // loaded, not yet run state
-    case LOADED: {
+    case JimulatorState::LOADED: {
       setButtonState(view->getHelpButton(), true);
       setButtonState(view->getReloadJimulatorButton(), false);
       setButtonState(
@@ -193,7 +196,7 @@ void ControlsModel::changeJimulatorState(const JimulatorState newState) {
       return;
     }
     // Currently running
-    case RUNNING: {
+    case JimulatorState::RUNNING: {
       setButtonState(view->getHelpButton(), true);
       setButtonState(view->getReloadJimulatorButton(), false);
       setButtonState(
@@ -213,7 +216,7 @@ void ControlsModel::changeJimulatorState(const JimulatorState newState) {
       return;
     }
     // Has been running; is paused
-    case PAUSED: {
+    case JimulatorState::PAUSED: {
       setButtonState(view->getHelpButton(), true);
       setButtonState(view->getReloadJimulatorButton(), true);
       setButtonState(
