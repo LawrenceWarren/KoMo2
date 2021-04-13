@@ -237,9 +237,9 @@ extern int communicationToJimulator[2];
 extern int compilerCommunication[2];
 
 /**
- * @brief This namespace groups together regular non-member functions such that,
- * when called from other places in the codebase, it is clear where the
- * functions are being called from.
+ * @brief Groups together functions that make up the Jimulator API layer - these
+ * functions and classes are used for sending and receiving information from
+ * the emulator.
  */
 namespace Jimulator {
 /**
