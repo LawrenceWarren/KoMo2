@@ -41,13 +41,12 @@ class RegistersView : public Gtk::VButtonBox {
   void initGrid();
 
   /**
-   * @brief
-   *
+   * @brief The layout that stores all of the labelArray members.
    */
   Gtk::Grid grid;
   /**
-   * @brief
-   *
+   * @brief An array of labels, with the left side representing the registers
+   * name and the right side representing the registers value.
    */
   std::array<std::array<Gtk::Label, 16>, 2> labelArray;
 
