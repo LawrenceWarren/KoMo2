@@ -290,7 +290,6 @@ const std::string DisassemblyModel::buildMnemonicString(
     s = std::regex_replace(s, std::regex(reg), m[i]);
   }
 
-  std::cout << s << std::endl;
   return s + ", ";
 }
 
