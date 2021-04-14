@@ -7,31 +7,31 @@ message DEFB " Enter a series of intigers\n" , 0
 
         ALIGN
 main    ; Enter your code to read in the number here...
-        MOV R10, #10
-        MOV R1, #0
-        ADR R0, enterI
-        SWI 3
-start   SWI 1
-        CMP R0, #10
-        BEQ continue
-        CMP R0, #48
-        BLT error
-        CMP R0, #57
-        BGT error
-        SUB R0, R0, #48
-        SWI 4
-        MLA R1, R1, R10, R0
+        mov R10, #10
+        mov R1, #0
+        adr R0, enterI
+        swi 3
+start   swi 1
+        cmp R0, #10
+        beq continue
+        cmp R0, #48
+        blt error
+        cmp R0, #57
+        bgt error
+        sub R0, R0, #48
+        swi 4
+        mla R1, R1, R10, R0
 
-        B start
-error   ADR R0, message
-        SWI 3
-        B main
+        b start
+error   adr R0, message
+        swi 3
+        b main
         
         ; Prints out the number stored in value
 continue  
-        STR R1, value
-        ADR R0, newline
-        SWI 3
-        LDR R0, value        
-        SWI 4
-        SWI 2
+        str R1, value
+        adr R0, newline
+        swi 3
+        ldr R0, value        
+        swi 4
+        swi 2

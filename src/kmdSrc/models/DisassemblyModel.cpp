@@ -151,6 +151,7 @@ const std::string DisassemblyModel::buildDisassemblyRowAccessibilityString(
   gHex << std::hex << row.getAddress();
   const auto addr = std::regex_replace(gHex.str(), std::regex("^0x0{0,7}"), "");
 
+  // Gets the mnemonic OR an English "translation"
   const std::string disassemblyInfo =
       englishMnemonic ? convertMnemonicToEnglish(row.getDisassembly())
                       : row.getDisassembly();
@@ -170,183 +171,126 @@ const std::string DisassemblyModel::convertMnemonicToEnglish(
     const std::string mnemonic) const {
   // Splits mnemonic string into an array, at the space
   std::istringstream iss(mnemonic);
-  std::vector<std::string> results(std::istream_iterator<std::string>{iss},
-                                   std::istream_iterator<std::string>());
+  std::vector<std::string> m(std::istream_iterator<std::string>{iss},
+                             std::istream_iterator<std::string>());
 
-  // If there is nothing to convert, return
-  if (results.size() <= 1) {
+  // If there is nothing to convert, return - should not be met
+  if (m.size() <= 1) {
     return mnemonic;
   }
 
-  bool isLabel = false;
-
-  // Identify any labels
-  for (auto c : results[0]) {
-    isLabel = isLabel | islower(c);
+  // Sanitize all parameters
+  for (auto& s : m) {
+    s = sanitizeParamters(s);
   }
 
+  m[0] = toLowerCase(m[0]);
+  m = parseSWI(m);
   std::string outputText = "";
+  tie(m, outputText) = parseLabel(m);
 
-  // If is label, specify
-  if (isLabel) {
-    outputText += "At label \"" + results[0] + "\", ";
-    results.erase(results.begin());
-  }
-
-  if (results[0] == "DEFB") {
-    return outputText + parseDEFB(results);
-  }
-
-  // Parse text
-  switch (results.size()) {
-    case 2:
-      return outputText + parse1Param(results);
-    case 3:
-      return outputText + parse2Param(results);
-    case 4:
-      return outputText + parse3Param(results);
-    case 5:
-      return outputText + parse4Param(results);
-    default:
-      return mnemonic;
+  try {
+    return buildMnemonicString(outputText + mnemonicsMap.at(m[0]), m);
+  } catch (std::out_of_range const&) {
+    // ! Only happens in mnemonic is unrecognised - consider adding to the map
+    return mnemonic;
   }
 }
 
 /**
- * @brief Parses a DEFB disassembly line.
- * @param v A vector of strings that made up the line.
- * @return const std::string A plain English string describing the contents of
- * the line.
+ * @brief Parses the DEFB ARM mnemonic - since a single ARM command is broken
+ * into a vector by the spaces between strings, the string that the DEFB command
+ * defines will be split across several vector indexes. This function packs this
+ * string back into a single index of the vector.
+ * @param m The vector of strings making up the current ARM command.
+ * @return const std::vector<std::string> The parsed vector of string making up
+ * the current ARM command.
  */
-const std::string DisassemblyModel::parseDEFB(
-    const std::vector<std::string> v) const {
-  std::string s = "defined a string ";
-  for (long unsigned int i = 1; i < v.size(); i++) {
-    s += v[i] + " ";
-  }
-
-  return std::regex_replace(s, std::regex(",[^,]*$"), "");
-}
-
-/**
- * @brief Parse an ARM instruction that takes 1 additional parameter.
- * @param v A vector of strings that made up a disassembly line.
- * @return const std::string A plain English string describing the contents of
- * the line.
- */
-const std::string DisassemblyModel::parse1Param(
-    std::vector<std::string> v) const {
-  v[1] = sanitizeParamters(v[1]);
-
-  if (v[0] == "SWI") {
-    switch (std::stoi(v[1])) {
-      case 0:
-        return "Printing character";
-      case 1:
-        return "Reading character";
-      case 2:
-        return "Halting execution";
-      case 3:
-        return "Printing string";
-      case 4:
-        return "Printing integer";
-      default:
-        return v[0] + " " + v[1];
+const std::vector<std::string> DisassemblyModel::parseDEFB(
+    std::vector<std::string> m) const {
+  if (m[0] == "defb") {
+    // Pack the string into the first paramter vector entry
+    std::string s;
+    for (long unsigned int i = 1; i < m.size(); i++) {
+      s += m[i] + " ";
     }
-  } else if (v[0] == "DEFW") {
-    return "defined as integer " + v[1];
-  } else if (v[0] == "BEQ") {
-    return "Branch to label \"" + v[1] + "\" if equal";
-  } else if (v[0] == "BLT") {
-    return "Branch to label \"" + v[1] + "\" if less than";
-  } else if (v[0] == "BNE") {
-    return "Branch to label \"" + v[1] + "\" if not equal";
-  } else if (v[0] == "BGT") {
-    return "Branch to label \"" + v[1] + "\" if greater than";
-  } else if (v[0] == "B") {
-    return "Branch to label \"" + v[1] + "\"";
+
+    // replace anything past the final comma
+    m[1] = std::regex_replace(s, std::regex(",[^,]*$"), "");
   }
 
-  return v[0] + " " + v[1];
+  return m;
 }
 
 /**
- * @brief Parse an ARM instruction that takes 2 additional parameters.
- * @param v A vector of strings that made up a disassembly line.
- * @return const std::string A plain English string describing the contents of
- * the line.
+ * @brief Parses the SWI ARM mnemonic - the SWI command always takes 1 paramter,
+ * but means very different things depending on the parameter, meaning that a
+ * single entry in `mnemonicsMap` for the SWI command cannot work. This function
+ * packs the paramter of the SWI command in with the SWI key word for easier
+ * lookup in the map, if the first key word in the vector is SWI.
+ * @param m The vector of strings making up the current ARM command.
+ * @return const std::vector<std::string> The parsed vector of strings making up
+ * the current ARM command.
  */
-const std::string DisassemblyModel::parse2Param(
-    std::vector<std::string> v) const {
-  v[1] = sanitizeParamters(v[1]);
-  v[2] = sanitizeParamters(v[2]);
-
-  if (v[0] == "MOV") {
-    return "Moves " + v[2] + " into " + v[1];
-  } else if (v[0] == "ADR" || v[0] == "ADRL") {
-    return "Value at label " + v[2] + " moves into " + v[1];
-  } else if (v[0] == "CMP") {
-    return "Compares " + v[1] + " to " + v[2];
-  } else if (v[0] == "CMN") {
-    return "Negatively compares " + v[1] + " to " + v[2];
-  } else if (v[0] == "STR") {
-    return "Stores " + v[1] + " in " + v[2];
-  } else if (v[0] == "LDR") {
-    return "Stores " + v[2] + " in " + v[1];
-  } else {
-    return v[0] + " " + v[1] + " " + v[2];
+const std::vector<std::string> DisassemblyModel::parseSWI(
+    std::vector<std::string> m) const {
+  if (m[0] == "swi") {
+    m[0] += " " + m[1];
   }
+
+  return m;
 }
 
 /**
- * @brief Parse an ARM instruction that takes 3 additional parameters.
- * @param v A vector of strings that made up a disassembly line.
- * @return const std::string A plain English string describing the contents of
- * the line.
+ * @brief Parses labels from an ARM command. If the first index in the vector is
+ * not a recognised keyword, then it must be a label. This function defines an
+ * initial string that is only defined if the first index is a label. It then
+ * updates the vector such that upon returning, the first index is the keyword.
+ * It returns this parsed vector along with the new output text.
+ * @param m The vector of strings making up the current ARM command.
+ * @return const std::pair<std::vector<std::string>, std::string> A pair making
+ * up the parsed vector and any output text that was derived from this function.
  */
-const std::string DisassemblyModel::parse3Param(
-    std::vector<std::string> v) const {
-  v[1] = sanitizeParamters(v[1]);
-  v[2] = sanitizeParamters(v[2]);
-  v[3] = sanitizeParamters(v[3]);
+const std::pair<std::vector<std::string>, std::string>
+DisassemblyModel::parseLabel(std::vector<std::string> m) const {
+  std::string out = "";
 
-  if (v[0] == "SUB") {
-    return "Subtract " + v[3] + " from " + v[2] + " and store in " + v[1];
-  } else if (v[0] == "ADD") {
-    return "Add " + v[3] + " from " + v[2] + " and store in " + v[1];
-  } else if (v[0] == "MUL") {
-    return "Multiply " + v[3] + " from " + v[2] + " and store in " + v[1];
-  } else if (v[0] == "AND") {
-    return "Bitwise AND " + v[2] + " with " + v[3] + " and store in " + v[1];
-  } else if (v[0] == "ORR") {
-    return "Bitwise OR " + v[2] + " with " + v[3] + " and store in " + v[1];
+  try {
+    auto t = mnemonicsMap.at(m[0]);  // If not present in the map, throws
+  } catch (std::out_of_range const&) {
+    out += "At label \"" + m[0] + "\", ";
+
+    // Remove label from vector - m[1] becomes m[0]
+    m.erase(m.begin());
+
+    // The next element is now assumed to be the keyword.
+    m[0] = toLowerCase(m[0]);
+    m = parseSWI(m);
+    m = parseDEFB(m);
   }
 
-  return v[0] + " " + v[1] + " " + v[2] + " " + v[3];
+  return std::make_pair(m, out);
 }
 
 /**
- * @brief Parse an ARM instruction that takes 4 additional parameters.
- * @param v A vector of strings that made up a disassembly line.
- * @return const std::string A plain English string describing the contents of
- * the line.
+ * @brief Builds the output mnemonics string from the vector making up the
+ * current ARM command and the value read from the map. See the comment for
+ * mnemonicMap for details on the syntax of the value read from the map.
+ * @param s The value read from the map.
+ * @param m The vector making up the current ARM command.
+ * @return const std::string The mnemonic, translated into English.
  */
-const std::string DisassemblyModel::parse4Param(
-    std::vector<std::string> v) const {
-  v[1] = sanitizeParamters(v[1]);
-  v[2] = sanitizeParamters(v[2]);
-  v[3] = sanitizeParamters(v[3]);
-  v[4] = sanitizeParamters(v[4]);
-
-  if (v[0] == "MLA") {
-    return "Multiplying " + v[2] + "  with " + v[3] + " adding " + v[4] +
-           " and storing in " + v[1];
-  } else if (v[0] == "MLS") {
-    return "Multiplying " + v[2] + "  with " + v[3] + " subtracting " + v[4] +
-           " and storing in " + v[1];
+const std::string DisassemblyModel::buildMnemonicString(
+    std::string s,
+    std::vector<std::string> m) const {
+  for (long unsigned int i = 1; i < m.size(); i++) {
+    // Builds the regex match string
+    std::string reg = "@" + std::to_string(i) + "@";
+    // Replaces the regex match string with the parameter
+    s = std::regex_replace(s, std::regex(reg), m[i]);
   }
 
-  return v[0] + " " + v[1] + " " + v[2] + " " + v[3] + " " + v[4];
+  return s;
 }
 
 /**
@@ -355,13 +299,26 @@ const std::string DisassemblyModel::parse4Param(
  * @return const std::string The sanitized paramter.
  */
 const std::string DisassemblyModel::sanitizeParamters(std::string param) const {
-  if (param[0] == 'R') {
+  if (param[0] == 'R' || param[0] == 'r') {
     return "Register " + param.erase(0, 1);
   } else if (param[0] == '#') {
     return param.erase(0, 1);
   } else {
     return param;
   }
+}
+
+/**
+ * @brief Converts a string to lower case.
+ * @param s The string to convert to lower case.
+ * @return const std::string The lower case string.
+ */
+const std::string DisassemblyModel::toLowerCase(std::string s) const {
+  for (auto& c : s) {
+    c = ::tolower(c);
+  }
+
+  return s;
 }
 
 /**
@@ -428,7 +385,7 @@ const bool DisassemblyModel::handleKeyPress(const GdkEventKey* const e) {
     // toggle mnemonics mode, else stop
     if (e->keyval == GDK_KEY_m || e->keyval == GDK_KEY_M) {
       setEnglishMnemonic(not englishMnemonic);
-      refreshViews(); // Also rebuilds the screenreader strings
+      refreshViews();  // Also rebuilds the screenreader strings
     } else {
       return false;
     }

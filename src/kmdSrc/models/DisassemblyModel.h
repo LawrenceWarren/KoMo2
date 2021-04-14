@@ -10,6 +10,7 @@
  */
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 #include "TerminalModel.h"
 
@@ -75,6 +76,51 @@ class DisassemblyModel : private Model {
                                              Gtk::STATE_FLAG_ACTIVE;
 
   /**
+   * @brief A map pairing ARM mnemonic commands with the English translation
+   * string associated with them for the screenreader.
+   * For ARM commands that take paramters, the English equivalent string has a
+   * paramter notation that is regexed away. This notation is:
+   * @paramter_number@.
+   *
+   * For example, in the command "ADD R1, R2, R3", R1 is paramter 1, R2 is
+   * paramter 2, R3 is paramter 3. So the associated English string "Add @3@ to
+   * @2@ and store in @1@" swaps @1@ with R1, @2@ with R2, and @3@ with R3, to
+   * result in the string "Add R3 to R2 and store in R1."
+   */
+  const std::unordered_map<std::string, std::string> mnemonicsMap = {
+      // SWI
+      {"swi 0", "Printing character"},
+      {"swi 1", "Reading character"},
+      {"swi 2", "Halting execution"},
+      {"swi 3", "Printing string"},
+      {"swi 4", "Printing integer"},
+      // 1 paramter
+      {"defw", "defined as integer @1@"},
+      {"defb", "Defined as string @1@"},
+      {"beq", "Branch to label @1@ if equal"},
+      {"blt", "Branch to label @1@ if less than"},
+      {"bne", "Branch to label @1@ if not equal"},
+      {"bgt", "Branch to label @1@ if greater than"},
+      {"b", "Branch to label @1@"},
+      // 2 paramters
+      {"mov", "Move @2@ into @1@"},
+      {"adr", "Value at @2@ moves into @1@"},
+      {"adrl", "Value at @2@ moves into @1@"},
+      {"cmp", "Compare @1@ to @2@"},
+      {"cmn", "Negatively compare @1@ to @2@"},
+      {"str", "Store @1@ in @2@"},
+      {"ldr", "Stores @2@ in @1@"},
+      // 3 paramters
+      {"sub", "Subtract @3@ from @2@ and store in @1@"},
+      {"add", "Add @3@ to @2@ and store in @1@"},
+      {"mul", "Multiply @3@ with @2@ and store in @1@"},
+      {"and", "bitwise and @2@ with @3@ and store in @1@"},
+      {"orr", "bitwise or @2@ with @3@ and store in @1@"},
+      // 4 paramters
+      {"mla", "Multiply @2@ with @3@ , add @4@ and store in @1@"},
+      {"mls", "Multiply @2@ with @3@ , subtract @4@ and store in @1@"}};
+
+  /**
    * @brief Whether or not ARM mnemonics should be read in English when being
    * read by a screenreader, or if they should be left as ARM mnemonics.
    */
@@ -93,12 +139,14 @@ class DisassemblyModel : private Model {
   const std::string buildDisassemblyRowAccessibilityString(
       DisassemblyRows& val);
   const std::string convertMnemonicToEnglish(const std::string mnemonic) const;
-  const std::string parseDEFB(const std::vector<std::string> v) const;
-  const std::string parse1Param(std::vector<std::string> v) const;
-  const std::string parse2Param(std::vector<std::string> v) const;
-  const std::string parse3Param(std::vector<std::string> v) const;
-  const std::string parse4Param(std::vector<std::string> v) const;
   const std::string sanitizeParamters(std::string param) const;
+  const std::string toLowerCase(std::string s) const;
+  const std::vector<std::string> parseDEFB(std::vector<std::string> v) const;
+  const std::vector<std::string> parseSWI(std::vector<std::string> m) const;
+  const std::pair<std::vector<std::string>, std::string> parseLabel(
+      std::vector<std::string> m) const;
+  const std::string buildMnemonicString(std::string s,
+                                        std::vector<std::string> m) const;
 
   // ! Deleted special member functions
   // stops these functions from being misused, creates a sensible error
