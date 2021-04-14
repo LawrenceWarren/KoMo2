@@ -285,11 +285,12 @@ const std::string DisassemblyModel::buildMnemonicString(
     std::vector<std::string> m) const {
   for (long unsigned int i = 1; i < m.size(); i++) {
     // Builds the regex match string
-    std::string reg = "?" + std::to_string(i) + "?";
+    std::string reg = "\\?" + std::to_string(i) + "\\?";
     // Replaces the regex match string with the parameter
     s = std::regex_replace(s, std::regex(reg), m[i]);
   }
 
+  std::cout << s << std::endl;
   return s + ", ";
 }
 
