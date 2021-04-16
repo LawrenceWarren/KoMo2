@@ -33,6 +33,182 @@
 #include <unordered_map>
 #include <vector>
 
+/**
+ * @brief The maximum number of bytes that can be read from a source file.
+ */
+constexpr int SOURCE_BYTE_COUNT = 4;
+
+/**
+ * @brief The number of fields that can be used in a source file.
+ */
+constexpr int SOURCE_FIELD_COUNT = 4;
+
+/**
+ * @brief The maximum length of a line in a source file.
+ */
+constexpr int SOURCE_TEXT_LENGTH = 100;
+
+/**
+ * @brief The maximum amount of time to wait after sending input to the pipes.
+ */
+constexpr int IN_POLL_TIMEOUT = 1000;
+
+/**
+ * @brief The maximum amount of time to wait waiting for output from the pipes.
+ */
+constexpr int OUT_POLL_TIMEOUT = 100;
+
+/**
+ * @brief The width of Jimulators internal address bus.
+ */
+constexpr int ADDRESS_BUS_WIDTH = 4;
+
+/**
+ * @brief The maximum number of breakpoints within the application.
+ */
+constexpr int MAX_NUMBER_OF_BREAKPOINTS = 32;
+
+/**
+ * @brief Contains the information read from Jimulator about a given breakpoint.
+ */
+class BreakpointInfo {
+ public:
+  /**
+   * @brief The address of the breakpoint.
+   */
+  unsigned char addressA[ADDRESS_BUS_WIDTH];
+
+  /**
+   * @brief A secondary address for a breakpoint
+   * @warning This is a legacy feature that is not used in KoMo2, but must
+   * persist as they are stored within Jimulator.
+   */
+  unsigned char addressB[ADDRESS_BUS_WIDTH] = {0xFF, 0XFF, 0XFF, 0XFF};
+
+  /**
+   * @brief Data associated with the breakpoint
+   * @warning This is a legacy feature that is not used in KoMo2, but must
+   * persist as they are stored within Jimulator.
+   */
+  unsigned char dataA[8] = {0};
+
+  /**
+   * @brief Data associated with the secondary breakpoint
+   * @warning This is a legacy feature that is not used in KoMo2, but must
+   * persist as they are stored within Jimulator.
+   */
+  unsigned char dataB[8] = {0};
+
+  /**
+   * @brief Miscellaneous information associated with the breakpoint
+   * @warning This is a legacy feature that is not used in KoMo2, but must
+   * persist as they are read and written to Jimulator.
+   */
+  unsigned int misc = 0xFFFFFFFF;
+};
+
+/**
+ * @brief A container for a series of codes used as board instructions.
+ */
+enum class BoardInstruction : unsigned char {
+  // General commands
+  START = 0xB0,
+  WOT_U_DO = 0x20,
+  STOP = 0x21,
+  CONTINUE = 0x23,
+  RESET = 0x04,
+
+  // Terminal read/write
+  FR_WRITE = 0x12,
+  FR_READ = 0x13,
+
+  // Breakpoint read/write
+  BP_WRITE = 0x30,
+  BP_READ = 0x31,
+  BP_SET = 0x32,
+  BP_GET = 0x33,
+
+  // Register read/write
+  GET_REG = 0x5A,
+  SET_REG = 0x52,  // Unused
+
+  // Memory read/write
+  GET_MEM = 0x4A,
+  SET_MEM = 0x40,
+};
+
+/**
+ * @brief Performing an or between a BoardInstruction and an unsigned char.
+ * @param l The left hand BoardInstruction value.
+ * @param r The right hand unsigned char value.
+ * @return unsigned char The result of the or operation.
+ */
+inline unsigned char operator|(BoardInstruction l, unsigned char r) {
+  return static_cast<unsigned char>(l) | r;
+}
+
+/**
+ * @brief Describes a single line of a .kmd file.
+ */
+class SourceFileLine {
+ public:
+  /**
+   * @brief The previous line of the overall source file.
+   */
+  SourceFileLine* prev;
+
+  /**
+   * @brief The next line of the overall source file.
+   */
+  SourceFileLine* next;
+
+  /**
+   * @brief A flag that indicates that the line stores internal data or not.
+   */
+  bool hasData;
+
+  /**
+   * @brief The address of the source line.
+   */
+  unsigned int address;
+
+  /**
+   * @brief Stores the size of the data fields.
+   */
+  int dataSize[4];
+
+  /**
+   * @brief Stores the data values.
+   */
+  int dataValue[4];
+
+  /**
+   * @brief Text, as read from the source file.
+   */
+  char* text;
+};
+
+/**
+ * @brief Describes an entire file of a .kmd sourceFile.
+ */
+class sourceFile {
+ public:
+  /**
+   * @brief The first line in a source file.
+   */
+  SourceFileLine* pStart;
+
+  /**
+   * @brief The last line in a source file.
+   */
+  SourceFileLine* pEnd;
+};
+
+/**
+ * @brief The source file that is currently loaded into Jimulator.
+ */
+sourceFile source;
+
 // ! Forward declaring auxiliary load functions
 
 // Workers
@@ -81,11 +257,6 @@ inline const std::string integerArrayToHexString(int,
                                                  unsigned char* const,
                                                  const bool = false);
 constexpr const char getLeastSignificantByte(const int);
-
-/**
- * @brief The source file that is currently loaded into Jimulator.
- */
-sourceFile source;
 
 /**
  * @brief Runs `pathToS` through the associated compiler binary, and outputs a
