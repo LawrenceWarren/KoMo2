@@ -715,22 +715,20 @@ inline void boardSendChar(unsigned char data) {
 
 /**
  * @brief Writes n bytes of data to Jimulator.
- * @warning Jimulator reads data in a little-endian manner - that is, the
- * least significant bit of data is on the left side of a number. Data should be
- * converted into little-endian before being sent.
  * @param data The data to be written.
  * @param n The number of bytes to write.
  */
 inline void boardSendNBytes(int data, int n) {
-  unsigned char buffer[MAX_SERIAL_WORD];
-
-  if (n > MAX_SERIAL_WORD) {
-    n = MAX_SERIAL_WORD;  // Clip, just in case...
+  if (n > ADDRESS_BUS_WIDTH) {
+    n = ADDRESS_BUS_WIDTH;  // Clip n
   }
 
+  unsigned char buffer[n];
+
+  // Conversion to little endian
   for (int i = 0; i < n; i++) {
-    buffer[i] = getLeastSignificantByte(data);  // Byte into buffer
-    data = rotateRight1Byte(data);              // Get next byte
+    buffer[i] = getLeastSignificantByte(data);
+    data = rotateRight1Byte(data);
   }
 
   boardSendCharArray(n, buffer);
@@ -800,11 +798,11 @@ inline const int boardGetChar(unsigned char* data) {
  * @return int The number of bytes received successfully.
  */
 inline const int boardGetNBytes(int* data, int n) {
-  if (n > MAX_SERIAL_WORD) {
-    n = MAX_SERIAL_WORD;  // Clip, just in case
+  if (n > ADDRESS_BUS_WIDTH) {
+    n = ADDRESS_BUS_WIDTH;  // Clip, just in case
   }
 
-  char unsigned buffer[MAX_SERIAL_WORD];
+  char unsigned buffer[ADDRESS_BUS_WIDTH];
   int numberOfReceivedBytes = boardGetCharArray(n, buffer);
   *data = 0;
 

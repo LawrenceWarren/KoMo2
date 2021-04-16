@@ -37,12 +37,6 @@ constexpr int IN_POLL_TIMEOUT = 1000;
 constexpr int OUT_POLL_TIMEOUT = 100;
 
 /**
- * @brief The maximum amount of bytes that can be sent or received from the
- * Jimulator pipes.
- */
-constexpr int MAX_SERIAL_WORD = 4;
-
-/**
  * @brief The width of Jimulators internal address bus.
  */
 constexpr int ADDRESS_BUS_WIDTH = 4;
