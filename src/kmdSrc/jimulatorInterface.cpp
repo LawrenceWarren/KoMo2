@@ -726,8 +726,8 @@ inline void boardSendNBytes(int data, int n) {
   unsigned char buffer[n];
 
   // Conversion to little endian
-  for (int i = 0; i < n; i++) {
-    buffer[i] = getLeastSignificantByte(data);
+  for (auto& c : buffer) {
+    c = getLeastSignificantByte(data);
     data = rotateRight1Byte(data);
   }
 
