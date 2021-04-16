@@ -61,11 +61,12 @@ const bool TerminalModel::handleKeyPress(const GdkEventKey* const e) {
   else if (e->keyval == GDK_KEY_Escape || e->keyval == GDK_KEY_Up) {
     getView()->getTextView()->grab_focus();
   }
-  // Else send key press to Jimulator...
-  else {
+  // Else send key press to Jimulator if running or paused
+  else if (Model::getJimulatorState() == JimulatorState::PAUSED ||
+           Model::getJimulatorState() == JimulatorState::RUNNING) {
     return Jimulator::sendTerminalInputToJimulator(e->keyval);
   }
-
+  
   return true;
 }
 
