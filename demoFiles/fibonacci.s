@@ -14,6 +14,7 @@ main
         MOV R6, #0
         ADRL R0, enterI
         SWI 3
+
 start   SWI 1
         CMP R0, #10
         BEQ CONT
@@ -25,11 +26,13 @@ start   SWI 1
         SWI 4
         MLA R6, R6, R10, R0      
         B start
+
 error   ADRL R0, newline
         SWI 3
         ADRL R0, message
         SWI 3
-        B main     
+        B main
+
 CONT    ADRL R0, newline
         SWI 3
         ADRL R4, 1
@@ -49,6 +52,7 @@ CONT    ADRL R0, newline
         SWI 3
         CMP R4, R6
         BEQ END
+
 FIBBO   ADRL R0, fibbo
         SWI 3
         MOV R0, R4
@@ -64,5 +68,5 @@ FIBBO   ADRL R0, fibbo
         ADRL R0, end
         SWI 3
         BNE FIBBO
-        
+
 END     SWI 2 

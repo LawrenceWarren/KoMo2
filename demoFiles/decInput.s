@@ -3,7 +3,7 @@
 value   DEFW 0 ; Store the read number here
 enterI  DEFB "Please enter your integer: " , 0
 newline DEFB "\n" , 0
-message DEFB " Enter a series of intigers\n" , 0
+message DEFB "\nPlease only input numeric characters:\n\n" , 0
 
         ALIGN
 main    ; Enter your code to read in the number here...
@@ -11,6 +11,7 @@ main    ; Enter your code to read in the number here...
         mov R1, #0
         adr R0, enterI
         swi 3
+
 start   swi 1
         cmp R0, #10
         beq continue
@@ -26,7 +27,7 @@ start   swi 1
 error   adr R0, message
         swi 3
         b main
-        
+
         ; Prints out the number stored in value
 continue  
         str R1, value
