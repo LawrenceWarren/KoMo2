@@ -92,6 +92,7 @@ class MemoryValues {
 };
 
 // ! Reading data
+
 const ClientState checkBoardState();
 const std::array<std::string, 16> getJimulatorRegisterValues();
 std::array<Jimulator::MemoryValues, 13> getJimulatorMemoryValues(
@@ -99,12 +100,14 @@ std::array<Jimulator::MemoryValues, 13> getJimulatorMemoryValues(
 const std::string getJimulatorTerminalMessages();
 
 // ! Loading data
+
 void compileJimulator(const char* const pathToBin,
                       const char* const pathToS,
                       const char* const pathToKMD);
 const bool loadJimulator(const char* const pathToKMD);
 
 // ! Sending commands
+
 void startJimulator(const int steps);
 void continueJimulator();
 void pauseJimulator();
