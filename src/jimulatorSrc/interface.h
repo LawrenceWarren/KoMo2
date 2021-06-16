@@ -147,7 +147,7 @@ typedef struct reg_bank {
   GList** individualRegisterNames;
   unsigned char* values;  // array of values (regvalue = values+regnumber*width
   int pointer;            // does this regbank store memory pointers
-  boolean valid;          // Indicates that registers have been fetched
+  bool valid;             // Indicates that registers have been fetched
 } reg_bank;
 
 /**
@@ -161,7 +161,7 @@ typedef struct special_reg {
   char** pixmap_data;
   cairo_surface_t* pixmap;
   cairo_surface_t* bitmap;
-  boolean active; /* if activated or not */
+  bool active; /* if activated or not */
   int* valid;
 } special_reg; /* flags use 1 char each */
 
@@ -189,9 +189,9 @@ typedef enum { SERIAL, NETWORK, EMULATOR, FAKE } target_type;
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-char* rcfile;         /* The name of the file to be opened - .komodo */
-boolean use_internal; /* ... config. file */
-boolean VERBOSE;      /* Be loud and informative or not */
+char* rcfile;      /* The name of the file to be opened - .komodo */
+bool use_internal; /* ... config. file */
+bool VERBOSE;      /* Be loud and informative or not */
 
 GtkStyle* fixed_style;
 
@@ -227,15 +227,15 @@ lock_state load_lock;
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-boolean board_mini_ping(void);
-boolean board_micro_ping(void); /* micro is even faster */
-int board_enq(unsigned int*);   /* Ask the board what it is doing */
+bool board_mini_ping(void);
+bool board_micro_ping(void);  /* micro is even faster */
+int board_enq(unsigned int*); /* Ask the board what it is doing */
 int board_get_regbank(int); /* Update the info on all registers in that bank */
 int board_set_register(int, int, unsigned char*);
 /* Set one register (regbank,regnumber,value) */
-boolean board_get_memory(int, unsigned char*, unsigned char*, int);
+bool board_get_memory(int, unsigned char*, unsigned char*, int);
 /* Get memory (count,address,destination, size) */
-boolean board_set_memory(int, unsigned char*, unsigned char*, int);
+bool board_set_memory(int, unsigned char*, unsigned char*, int);
 /* Set memory (count,address,source, size) */
 
 /***************************/
@@ -250,18 +250,18 @@ typedef struct {
   unsigned char dataB[8];
 } trap_def;
 
-boolean trap_get_status(unsigned int trap_type,
-                        unsigned int* wordA,
-                        unsigned int* wordB);
+bool trap_get_status(unsigned int trap_type,
+                     unsigned int* wordA,
+                     unsigned int* wordB);
 void trap_set_status(unsigned int trap_type,
                      unsigned int wordA,
                      unsigned int wordB);
-boolean read_trap_defn(unsigned int trap_type,
-                       unsigned int trap_number,
-                       trap_def* trap_defn);
-boolean write_trap_defn(unsigned int trap_type,
-                        unsigned int trap_number,
-                        trap_def* trap_defn);
+bool read_trap_defn(unsigned int trap_type,
+                    unsigned int trap_number,
+                    trap_def* trap_defn);
+bool write_trap_defn(unsigned int trap_type,
+                     unsigned int trap_number,
+                     trap_def* trap_defn);
 
 /*****************************/
 /** Board control functions **/
@@ -272,10 +272,10 @@ void continue_board(void);
 void reset_board(void);
 void set_interrupt_service(int, int);
 /* int  run_board(int steps); */
-boolean run_board(int* steps); /* Interface changed (corrected) 21/6/06 */
+bool run_board(int* steps); /* Interface changed (corrected) 21/6/06 */
 void walk_board(int, int);
 void change_start_command(int, int);
-boolean test_run_flag(unsigned int);
+bool test_run_flag(unsigned int);
 void verbosePrint(const char* userData, ...);
 
 /*****************************/

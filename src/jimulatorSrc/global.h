@@ -68,8 +68,6 @@ typedef struct { /* holds data about the counters */
   GtkWidget* display;
 } counter_data;
 
-typedef int boolean;
-
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /* Required by interface and callbacks                                        */
 

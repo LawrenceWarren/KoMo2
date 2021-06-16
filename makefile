@@ -15,5 +15,5 @@ aasm: src/aasmSrc/aasm.c
 	gcc -O0 -o bin/aasm src/aasmSrc/aasm.c
 
 # Compile the jimulator binary.
-jimulator: src/jimulatorSrc/jimulator.c
-	gcc `pkg-config --cflags gtkmm-3.0` -o bin/jimulator src/jimulatorSrc/jimulator.c `pkg-config --libs gtkmm-3.0` -O2
+jimulator: src/jimulatorSrc/jimulator.cpp
+	g++ `pkg-config --cflags gtkmm-3.0` -o bin/jimulator src/jimulatorSrc/jimulator.cpp `pkg-config --libs gtkmm-3.0` -O2

@@ -62,12 +62,13 @@ struct pollfd pollfd;
 void step(void);
 void comm(struct pollfd*);
 
-int emulsetup(void);
+void emulsetup(void);
 void save_state(unsigned char new_status);
 void initialise(unsigned int start_address, int initial_mode);
 void execute(unsigned int op_code);
 
 /* ARM execute */
+
 void data_op(unsigned int op_code);
 void clz(unsigned int op_code);
 void transfer(unsigned int op_code);
@@ -88,19 +89,21 @@ void normal_data_op(unsigned int op_code, int operation);
 void ldm(int mode, int Rn, int reg_list, int write_back, int hat);
 void stm(int mode, int Rn, int reg_list, int write_back, int hat);
 
-int transfer_offset(int op2, int add, int imm, boolean sbhw);
+int check_watchpoints(unsigned int address, int data, int size, int direction);
+
+int transfer_offset(int op2, int add, int imm, bool sbhw);
 
 int b_reg(int op2, int* cf);
 int b_immediate(int op2, int* cf);
 
 int bit_count(unsigned int source, int* first);
 
-int check_cc(int condition);
+bool check_cc(int condition);
 
-int not(int x);
-int and (int x, int y);
-int or (int x, int y);
-int xor (int x, int y);
+int jNot(int x);
+int jAnd(int x, int y);
+int jOr(int x, int y);
+int jXor(int x, int y);
 int zf(int cpsr);
 int cf(int cpsr);
 int nf(int cpsr);
@@ -120,12 +123,8 @@ int instruction_length();
 unsigned int fetch();
 void inc_pc();
 void endian_swap(unsigned int start, unsigned int end);
-int read_mem(unsigned int address,
-             int size,
-             boolean sign,
-             boolean T,
-             int source);
-void write_mem(unsigned int address, int data, int size, boolean T, int source);
+int read_mem(unsigned int address, int size, bool sign, bool T, int source);
+void write_mem(unsigned int address, int data, int size, bool T, int source);
 
 /* THUMB execute */
 void data0(unsigned int op_code);
@@ -139,8 +138,6 @@ void thumb_branch(unsigned int op_code);
 
 int load_fpe();
 void fpe_install();
-
-int check_watchpoints(unsigned int address, int data, int size, int direction);
 
 int get_number(char* ptr);
 int lsl(int value, int distance, int* cf);
@@ -179,8 +176,8 @@ int get_buffer(ring_buffer*, unsigned char*);
 
 #define max_instructions 10000000
 
-//  const int   FALSE = 0;
-//  const int   TRUE = -1;
+//  const int   false = 0;
+//  const int   true = -1;
 
 const unsigned int nf_mask = 0X80000000;
 const unsigned int zf_mask = 0X40000000;
@@ -270,8 +267,8 @@ const int flag_sub = 2;
 
 typedef struct {
   int state;
-  char cond;
-  char size;
+  unsigned char cond;
+  unsigned char size;
   int addra;
   int addrb;
   int dataa[2];
@@ -315,15 +312,14 @@ unsigned int emul_wp_flag[2];
 uchar memory[RAMSIZE];  // @@@
 
 uchar status, old_status;
-unsigned int
-    steps_togo; /*Number of left steps before halting (0 is infinite) */
+int steps_togo; /*Number of left steps before halting (0 is infinite) */
 unsigned int steps_reset; /* Number of steps since last reset */
 char runflags;
 uchar rtf;
-boolean breakpoint_enable;  /* Breakpoints will be checked */
-boolean breakpoint_enabled; /* Breakpoints will be checked now */
-boolean run_through_BL;     /* Treat BL as a single step */
-boolean run_through_SWI;    /* Treat SWI as a single step */
+bool breakpoint_enable;  /* Breakpoints will be checked */
+bool breakpoint_enabled; /* Breakpoints will be checked now */
+bool run_through_BL;     /* Treat BL as a single step */
+bool run_through_SWI;    /* Treat SWI as a single step */
 
 unsigned int tube_address;
 
@@ -336,7 +332,7 @@ int undef_r[2];
 unsigned int cpsr;
 unsigned int spsr[32]; /* Lots of wasted space - safe for any "mode" */
 
-boolean print_out;
+bool print_out;
 int run_until_PC, run_until_SP, run_until_mode; /* Used to determine when */
 uchar run_until_status; /*   to finish a `stepped' subroutine, SWI, etc. */
 
@@ -376,14 +372,13 @@ ring_buffer terminal0_Tx, terminal0_Rx;
 ring_buffer terminal1_Tx, terminal1_Rx;
 ring_buffer* terminal_table[16][2];  // @@@
 
-/*----------------------------------------------------------------------------*/
-/* Entry point                                                                */
-
-int main() {
+/**
+ * @brief Program entry point.
+ * @return int Exit code.
+ */
+int main(int argc, char** argv) {
   {
-    int i;
-
-    for (i = 0; i < 16; i++) {
+    for (int i = 0; i < 16; i++) {
       terminal_table[i][0] = NULL;
       terminal_table[i][1] = NULL;
     }
@@ -404,35 +399,30 @@ int main() {
 
   emulsetup();
 
-  /* These can cause compiler warnings; C does not understand shifts properly.
-   */
-  /* They are safe. */
-  // emul_bp_flag[0] = 0; emul_bp_flag[1] = (1 << NO_OF_BREAKPOINTS) - 1;
-  // emul_wp_flag[0] = 0; emul_wp_flag[1] = (1 << NO_OF_WATCHPOINTS) - 1;
   emul_bp_flag[0] = 0;
   if (NO_OF_BREAKPOINTS == 0) {
-    emul_bp_flag[1] = 0x00000000; /* C work around */
+    emul_bp_flag[1] = 0x00000000;  // C work around
   } else {
-    emul_bp_flag[1] = ((1 << (NO_OF_BREAKPOINTS - 1)) << 1) - 1;
+    emul_bp_flag[1] = (1 << NO_OF_WATCHPOINTS) - 1;
   }
 
   emul_wp_flag[0] = 0;
   if (NO_OF_WATCHPOINTS == 0) {
-    emul_wp_flag[1] = 0x00000000; /* C work around */
+    emul_wp_flag[1] = 0x00000000;  // C work around
   } else {
-    emul_wp_flag[1] = ((1 << (NO_OF_WATCHPOINTS - 1)) << 1) - 1;
+    emul_wp_flag[1] = (1 << NO_OF_WATCHPOINTS) - 1;
   }
 
-  while (TRUE) /* Main loop */
-  {
-    comm(&pollfd); /* Check for monitor command */
+  while (true) {
+    comm(&pollfd);  // Check for monitor command
     if ((status & CLIENT_STATE_CLASS_MASK) == CLIENT_STATE_CLASS_RUNNING) {
-      step(); /* Step emulator as required */
+      step();  // Step emulator as required
     } else {
-      poll(&pollfd, 1,
-           -1); /* If not running, deschedule until command arrives */
+      poll(&pollfd, 1, -1);  // If not running, deschedule until command arrives
     }
   }
+
+  return 0;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -468,7 +458,7 @@ void step(void) {
   }
 
   if ((status & CLIENT_STATE_CLASS_MASK) != CLIENT_STATE_CLASS_RUNNING) {
-    breakpoint_enabled = FALSE; /* No longer running - allow "continue" */
+    breakpoint_enabled = false; /* No longer running - allow "continue" */
   }
 
   return;
@@ -659,12 +649,12 @@ void monitor_options_misc(uchar command) {
 
 void monitor_memory(uchar c) {
   int addr;
-  char* pointer;
+  unsigned char* pointer;
   int size;
 
   emul_getbN(&addr, 4);  // Start address really
   if ((c & 0x30) == 0x10) {
-    unsigned int temp;
+    int temp;
     int reg_bank, reg_number;
 
     switch (addr & 0xE0) {
@@ -753,29 +743,32 @@ void comm(struct pollfd* pPollfd) {
   }
 }
 
-/******************************************************************************/
-
-int emul_getchar(unsigned char* to_get) /* Get 1 character from host */
-{
+/**
+ * @brief Get 1 character from host.
+ * @param to_get
+ * @return int
+ */
+int emul_getchar(unsigned char* to_get) {
   return emul_getchararray(1, to_get);
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-
-int emul_sendchar(unsigned char to_send) /* Send 1 character to host */
-{
+/**
+ * @brief Send 1 character to host
+ * @param to_send
+ * @return int
+ */
+int emul_sendchar(unsigned char to_send) {
   return emul_sendchararray(1, &to_send);
 }
 
-/******************************************************************************/
-
-/******************************************************************************/
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-/* Sends N bytes from the supplied value to the host (??), LSB first.         */
-/* Returns the number of bytes believed received successfully (i.e. N=>"Ok")  */
-
+/**
+ * @brief Sends N bytes from the supplied value to the host (??), LSB first.
+ * @param value
+ * @param N
+ * @return int The number of bytes believed received successfully (i.e. N=>"Ok")
+ */
 int emul_sendbN(int value, int N) {
-  char buffer[MAX_SERIAL_WORD];
+  unsigned char buffer[MAX_SERIAL_WORD];
   int i;
 
   if (N > MAX_SERIAL_WORD)
@@ -789,22 +782,19 @@ int emul_sendbN(int value, int N) {
   return emul_sendchararray(N, buffer);
 }
 
-/*                                                                            */
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-/******************************************************************************/
-
-/******************************************************************************/
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-/* Gets N bytes from the host (??) into the indicated val_ptr, LSB first.     */
-/* Returns the number of bytes received successfully (i.e. N=>"Ok")           */
-/* If error suspected sets `board_version' to not present                     */
-
+/**
+ * @brief Gets N bytes from the host (??) into the indicated val_ptr, LSB first.
+ * If error suspected sets `board_version' to not present
+ * @param val_ptr
+ * @param N
+ * @return int The number of bytes received successfully (i.e. N=>"Ok")
+ */
 int emul_getbN(int* val_ptr, int N) {
-  char buffer[MAX_SERIAL_WORD];
+  unsigned char buffer[MAX_SERIAL_WORD];
   int i, No_received;
 
   if (N > MAX_SERIAL_WORD) {
-    N = MAX_SERIAL_WORD; /* Clip, just in case ... */
+    N = MAX_SERIAL_WORD;  // Clip, just in case ...
   }
 
   No_received = emul_getchararray(N, buffer);
@@ -823,18 +813,13 @@ int emul_getbN(int* val_ptr, int N) {
   return No_received;
 }
 
-/*                                                                            */
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-/******************************************************************************/
-
-/******************************************************************************/
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-/* reads a character array from buffer                                        */
-/* sends char_number number of characters given by data_ptr.                  */
-/* returns number of bytes received                                           */
-/*                                                                            */
-/*                                                                            */
-
+/**
+ * @brief Reads a character array from buffer. Sends char_number number of
+ * characters given by data_ptr.
+ * @param char_number
+ * @param data_ptr
+ * @return int Number of bytes received.
+ */
 int emul_getchararray(int char_number, unsigned char* data_ptr) {
   int ret = char_number;
   int replycount = 0;
@@ -844,39 +829,37 @@ int emul_getchararray(int char_number, unsigned char* data_ptr) {
   pollfd.events = POLLIN;
 
   while (char_number) {
-    if (!poll(&pollfd, 1, -1))
+    if (!poll(&pollfd, 1, -1)) {
       return ret - char_number;
+    }
+
     replycount = read(0, data_ptr, char_number);
-    if (replycount < 0)
+    if (replycount < 0) {
       replycount = 0;
+    }
+
     char_number -= replycount;
     data_ptr += replycount;
   }
+
   return ret;
 }
 
-/*                                                                            */
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-/******************************************************************************/
-
-/******************************************************************************/
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-/* writes an array of bytes in the buffer                                     */
-/* sends char_number - number of bytes given by data_ptr                      */
-/* data pointer points to the beginning of the sequence to be sent            */
-/*                                                                            */
-/*                                                                            */
-
+/**
+ * @brief writes an array of bytes in the buffer.
+ * @param char_number number of bytes given by data_ptr
+ * @param data_ptr points to the beginning of the sequence to be sent
+ * @return int
+ */
 int emul_sendchararray(int char_number, unsigned char* data_ptr) {
   write(1, data_ptr, char_number);
-  return char_number; /* send char array to the board */
+  return char_number;  // send char array to the board
 }
 
-/*                                                                            */
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-/******************************************************************************/
-
-int emulsetup(void) {
+/**
+ * @brief
+ */
+void emulsetup() {
   int initial_mode;
 
   glob1 = 0;
@@ -894,98 +877,83 @@ int emulsetup(void) {
   }
 
   initial_mode = 0xC0 | sup_mode;
-  print_out = FALSE;
+  print_out = false;
 
   next_file_handle = 1;
 
   initialise(0, initial_mode);
-
-  return 0;
 }
 
-/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+/**
+ * @brief
+ *
+ * @param instr_addr
+ * @param instr
+ * @return true
+ * @return false
+ */
+bool check_breakpoint(unsigned int instr_addr, unsigned int instr) {
+  bool may_break = false;
+
+  for (int i = 0; (i < NO_OF_BREAKPOINTS) && !may_break; i++) {
+    may_break = ((emul_bp_flag[0] & emul_bp_flag[1] & (1 << i)) !=
+                 0);  // Breakpoint is active
+
+    // Try address comparison
+    if (may_break) {
+      switch (breakpoints[i].cond & 0x0C) {
+        case 0x00:
+        case 0x04:
+          may_break = false;
+          break;
+        // Case of between address A and address B
+        case 0x08:
+          if ((instr_addr < breakpoints[i].addra) ||
+              (instr_addr > breakpoints[i].addrb)) {
+            may_break = false;
+          }
+          break;
+        // case of mask
+        case 0x0C:
+          if ((instr_addr & breakpoints[i].addrb) != breakpoints[i].addra) {
+            may_break = false;
+          }
+          break;
+      }
+    }
+
+    // Try data comparison
+    if (may_break) {
+      switch (breakpoints[i].cond & 0x03) {
+        case 0x00:
+          may_break = false;
+          break;
+
+        case 0x01:
+          may_break = false;
+          break;
+
+        case 0x02:  // Case of between data A and data B
+          if ((instr < breakpoints[i].dataa[0]) ||
+              (instr > breakpoints[i].datab[0])) {
+            may_break = false;
+          }
+          break;
+
+        case 0x03:  // Case of mask
+          if ((instr & breakpoints[i].datab[0]) != breakpoints[i].dataa[0]) {
+            may_break = false;
+          }
+          break;
+      }
+    }
+  }
+  return may_break;
+}
 
 void execute_instruction(void) {
   unsigned int instr_addr, instr;
   int i;
-
-  /* - - - - - - - - - - - - - - breakpoints - - - - - - - - - - - - - - - - -
-   * -*/
-
-  /* Breakpoints - ignoring lots of things yet @@@              */
-  /* Needs amalgamating with watchpoint checker */
-
-  int check_breakpoint(unsigned int instr_addr, unsigned int instr) {
-    boolean may_break;
-
-    for (i = 0, may_break = FALSE; (i < NO_OF_BREAKPOINTS) && !may_break; i++) {
-      /* Search breakpoints */
-      may_break = ((emul_bp_flag[0] & emul_bp_flag[1] & (1 << i)) != 0);
-      /* Breakpoint is active */
-
-      if (may_break) /* Try address comparison */
-      {
-        switch (breakpoints[i].cond & 0x0C) {
-          case 0x00:
-            may_break = FALSE;
-            break;
-          case 0x04:
-            may_break = FALSE;
-            break;
-          case 0x08: /* Case of between address A and address B */
-            if ((instr_addr < breakpoints[i].addra) ||
-                (instr_addr > breakpoints[i].addrb)) {
-              may_break = FALSE;
-            }
-            break;
-
-          case 0x0C: /* case of mask */
-            if ((instr_addr & breakpoints[i].addrb) != breakpoints[i].addra) {
-              may_break = FALSE;
-            }
-            break;
-        }
-      }
-
-      if (may_break) /* Try data comparison */
-      {
-        switch (breakpoints[i].cond & 0x03) {
-          case 0x00:
-            may_break = FALSE;
-            break;
-
-          case 0x01:
-            may_break = FALSE;
-            break;
-
-          case 0x02: /* Case of between data A and data B */
-            if ((instr < breakpoints[i].dataa[0]) ||
-                (instr > breakpoints[i].datab[0])) {
-              may_break = FALSE;
-            }
-            break;
-
-          case 0x03: /* Case of mask */
-            if ((instr & breakpoints[i].datab[0]) != breakpoints[i].dataa[0]) {
-              may_break = FALSE;
-            }
-            break;
-        }
-      }
-
-      if (may_break) {
-        // Expansion space for more comparisons @@@
-        //      fprintf(stderr, "BREAKING  %08X  %08X\n", instr_addr, instr);
-      }
-    } /* End of for loop */
-    return may_break;
-  }
-
-  /* - - - - - - - - - - - - - end breakpoint - - - - - - - - - - - - - - - - -
-   */
-
-  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   * -*/
 
   instr_addr = get_reg(15, reg_current) - instruction_length();
   last_addr = get_reg(15, reg_current) - instruction_length();
@@ -1088,7 +1056,7 @@ void execute(unsigned int op_code) {
     }
   } else {
     /* Check condition */
-    if ((check_cc(op_code >> 28) == TRUE) ||
+    if ((check_cc(op_code >> 28) == true) ||
         ((op_code & 0XFE000000) == 0XFA000000)) /* Nasty non-orthogonal BLX */
     {
       switch ((op_code >> 25) & 0X00000007) {
@@ -1130,11 +1098,11 @@ int is_it_sbhw(unsigned int op_code) {
       && ((op_code & 0X00100040) != 0X00000040)) /* No signed stores */
   {
     if (((op_code & 0X00400000) != 0) || ((op_code & 0X00000F00) == 0))
-      return TRUE;
+      return true;
     else
-      return FALSE;
+      return false;
   } else
-    return FALSE;
+    return false;
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -1145,7 +1113,7 @@ void data_op(unsigned int op_code) {
   if (((op_code & mul_mask) == mul_op) ||
       ((op_code & long_mul_mask) == long_mul_op)) {
     my_multi(op_code);
-  } else if (is_it_sbhw(op_code) == TRUE) {
+  } else if (is_it_sbhw(op_code) == true) {
     transfer_sbhw(op_code);
   } else if ((op_code & swp_mask) == swp_op) {
     swap(op_code);
@@ -1184,7 +1152,7 @@ void transfer_sbhw(unsigned int op_code) {
   unsigned int address;
   int size;
   int offset, rd;
-  boolean sign;
+  bool sign;
 
   switch (op_code & 0X00000060) {
     case 0X00:
@@ -1192,15 +1160,15 @@ void transfer_sbhw(unsigned int op_code) {
       break; /* Error! */
     case 0X20:
       size = 2;
-      sign = FALSE;
+      sign = false;
       break; /* H */
     case 0X40:
       size = 1;
-      sign = TRUE;
+      sign = true;
       break; /* SB */
     case 0X60:
       size = 2;
-      sign = TRUE;
+      sign = true;
       break; /* SH */
   }
 
@@ -1209,15 +1177,15 @@ void transfer_sbhw(unsigned int op_code) {
   address = get_reg(((op_code & rn_mask) >> 16), reg_current);
 
   offset = transfer_offset(op_code & op2_mask, op_code & up_mask,
-                           op_code & imm_hw_mask, TRUE);
+                           op_code & imm_hw_mask, true);
 
   if ((op_code & pre_mask) != 0)
     address = address + offset; /* pre-index */
 
   if ((op_code & load_mask) == 0) /* store */
-    write_mem(address, get_reg(rd, reg_current), size, FALSE, mem_data);
+    write_mem(address, get_reg(rd, reg_current), size, false, mem_data);
   else /* load */
-    put_reg(rd, read_mem(address, size, sign, FALSE, mem_data), reg_current);
+    put_reg(rd, read_mem(address, size, sign, false, mem_data), reg_current);
   /* post index */
 
   if ((op_code & pre_mask) == 0) /* post index with writeback */
@@ -1264,7 +1232,8 @@ void msr(unsigned int op_code) {
   if ((op_code & imm_mask) == 0) /* Test applies for both cases */
     source = get_reg(op_code & rm_mask, reg_current) & mask;
   else {
-    unsigned int x, y, dummy;
+    unsigned int x, y;
+    int dummy;
 
     x = op_code & 0X0FF;        /* Immediate value */
     y = (op_code & 0XF00) >> 7; /* Number of rotates */
@@ -1401,8 +1370,8 @@ void swap(unsigned int op_code) {
   else
     size = 4;
 
-  data = read_mem(address, size, FALSE, FALSE, mem_data);
-  write_mem(address, get_reg(op_code & rm_mask, reg_current), size, FALSE,
+  data = read_mem(address, size, false, false, mem_data);
+  write_mem(address, get_reg(op_code & rm_mask, reg_current), size, false,
             mem_data);
   put_reg((op_code & rd_mask) >> 12, data, reg_current);
 
@@ -1417,9 +1386,9 @@ void normal_data_op(unsigned int op_code, int operation) {
   int CPSR_special;
 
   mode = cpsr & mode_mask;
-  CPSR_special = FALSE;
+  CPSR_special = false;
   shift_carry = 0;
-  a = get_reg((op_code & rn_mask) >> 16, reg_current); /* force_user = FALSE */
+  a = get_reg((op_code & rn_mask) >> 16, reg_current); /* force_user = false */
 
   if ((op_code & imm_mask) == 0)
     b = b_reg(op_code & op2_mask, &shift_carry);
@@ -1465,7 +1434,7 @@ void normal_data_op(unsigned int op_code, int operation) {
       rd = a ^ b;                        /* TEQ */
       if ((op_code & rd_mask) == 0XF000) /* TEQP */
       {
-        CPSR_special = TRUE;
+        CPSR_special = true;
         if (mode != user_mode)
           cpsr = spsr[mode];
       }
@@ -1493,7 +1462,7 @@ void normal_data_op(unsigned int op_code, int operation) {
   if ((operation & 0XC) != 0X8) /* Return result unless a compare */
     put_reg((op_code & rd_mask) >> 12, rd, reg_current);
 
-  if (((op_code & s_mask) != 0) && (CPSR_special != TRUE)) /* S-bit */
+  if (((op_code & s_mask) != 0) && (CPSR_special != true)) /* S-bit */
   {                                         /* Want to change CPSR */
     if (((op_code & rd_mask) >> 12) == 0XF) /* PC and S-bit */
     {
@@ -1513,7 +1482,7 @@ void normal_data_op(unsigned int op_code, int operation) {
         case 0XE:          /* BIC */
         case 0XF:          /* MVN */
           set_NZ(rd);
-          if (shift_carry == TRUE)
+          if (shift_carry == true)
             cpsr = cpsr | cf_mask; /* CF := output */
           else
             cpsr = cpsr & ~cf_mask; /* from shifter */
@@ -1597,16 +1566,17 @@ int b_reg(int op2, int* cf) {
   }
 
   if (*cf)
-    *cf = TRUE;
+    *cf = true;
   else
-    *cf = FALSE; /* Change to "Boolean" */
+    *cf = false; /* Change to "bool" */
   return result;
 }
 
 /*----------------------------------------------------------------------------*/
 
 int b_immediate(int op2, int* cf) {
-  unsigned int x, y, dummy;
+  unsigned int x, y;
+  int dummy;
 
   x = op2 & 0X0FF;        /* Immediate value */
   y = (op2 & 0XF00) >> 7; /* Number of rotates */
@@ -1615,9 +1585,9 @@ int b_immediate(int op2, int* cf) {
   else
     *cf = (((x >> (y - 1)) & bit_0) != 0);
   if (*cf)
-    *cf = TRUE;
+    *cf = true;
   else
-    *cf = FALSE;            /* Change to "Boolean" */
+    *cf = false;            /* Change to "bool" */
   return ror(x, y, &dummy); /* Circular rotation */
 }
 
@@ -1648,7 +1618,7 @@ void clz(unsigned int op_code) {
 void transfer(unsigned int op_code) {
   unsigned int address;
   int offset, rd, size;
-  boolean T;
+  bool T;
 
   if ((op_code & undef_mask) == undef_code) {
     undefined();
@@ -1659,9 +1629,9 @@ void transfer(unsigned int op_code) {
       size = 1;
 
     //  if (((op_code & pre_mask) == 0) && ((op_code & write_back_mask) != 0))
-    //    T = TRUE;
+    //    T = true;
     //  else
-    //    T = FALSE;
+    //    T = false;
 
     T = (((op_code & pre_mask) == 0) && ((op_code & write_back_mask) != 0));
 
@@ -1671,7 +1641,7 @@ void transfer(unsigned int op_code) {
 
     offset =
         transfer_offset(op_code & op2_mask, op_code & up_mask,
-                        op_code & imm_mask, FALSE); /* bit(25) = 1 -> reg */
+                        op_code & imm_mask, false); /* bit(25) = 1 -> reg */
 
     if ((op_code & pre_mask) != 0) {
       address = address + offset; /* Pre-index */
@@ -1680,7 +1650,7 @@ void transfer(unsigned int op_code) {
     if ((op_code & load_mask) == 0) {
       write_mem(address, get_reg(rd, reg_current), size, T, mem_data);
     } else {
-      put_reg(rd, read_mem(address, size, FALSE, T, mem_data), reg_current);
+      put_reg(rd, read_mem(address, size, false, T, mem_data), reg_current);
     }
 
     if ((op_code & pre_mask) == 0) /* Post-index */
@@ -1700,7 +1670,7 @@ void transfer(unsigned int op_code) {
 int transfer_offset(int op2,
                     int add,
                     int imm,
-                    boolean sbhw) { /* add and imm are zero/non-zero Booleans */
+                    bool sbhw) { /* add and imm are zero/non-zero bools */
   int offset;
   int cf; /* Dummy parameter */
 
@@ -1768,11 +1738,11 @@ void ldm(int mode,
          int Rn,
          int reg_list,
          int write_back,
-         int hat) { /* Last two parameters are zero/non-zero Booleans */
+         int hat) { /* Last two parameters are zero/non-zero bools */
 
   int address, new_base, count, first_reg, reg, data;
   int force_user;
-  int r15_inc; /* internal `Boolean' */
+  int r15_inc; /* internal `bool' */
 
   address = get_reg(Rn, reg_current);
   count = bit_count(reg_list, &first_reg);
@@ -1810,7 +1780,7 @@ void ldm(int mode,
 
   while (reg_list != 0) {
     if ((reg_list & bit_0) != 0) {
-      data = read_mem(address, 4, FALSE, FALSE, mem_data); /* Keep for later */
+      data = read_mem(address, 4, false, false, mem_data); /* Keep for later */
       put_reg(reg, data, force_user);
       address = address + 4;
     }
@@ -1837,11 +1807,11 @@ void stm(int mode,
          int Rn,
          int reg_list,
          int write_back,
-         int hat) { /* Last two parameters are zero/non-zero Booleans */
+         int hat) { /* Last two parameters are zero/non-zero bools */
 
   int address, new_base, count, first_reg, reg;
   int force_user;
-  boolean special;
+  bool special;
 
   address = get_reg(Rn, reg_current);
   count = bit_count(reg_list, &first_reg);
@@ -1866,10 +1836,10 @@ void stm(int mode,
 
   address = address & 0XFFFFFFFC; /* Bottom 2 bits ignored in address */
 
-  special = FALSE;
+  special = false;
   if (write_back != 0) {
     if (Rn == first_reg)
-      special = TRUE;
+      special = true;
     else
       put_reg(Rn, new_base, reg_current);
   }
@@ -1883,7 +1853,7 @@ void stm(int mode,
 
   while (reg_list != 0) {
     if ((reg_list & bit_0) != 0) {
-      write_mem(address, get_reg(reg, force_user), 4, FALSE, mem_data);
+      write_mem(address, get_reg(reg, force_user), 4, false, mem_data);
       address = address + 4;
     }
     reg_list = reg_list >> 1;
@@ -1931,21 +1901,31 @@ void coprocessor(unsigned int op_code) {
 
 /*----------------------------------------------------------------------------*/
 
-void my_system(unsigned int op_code) {
-  int swi_char_out(char c) {
-    int okay;
-
-    okay = (0 == 0);
-    while (!put_buffer(&terminal0_Tx, c)) {
-      if (status == CLIENT_STATE_RESET) {
-        okay = (0 == 1);
-        break;
-      } else
-        comm(SWI_poll); /* If stalled, retain monitor communications */
-    }
-    return okay;
+bool swi_char_out(char c) {
+  while (!put_buffer(&terminal0_Tx, c)) {
+    if (status == CLIENT_STATE_RESET) {
+      return false;
+    } else
+      comm(SWI_poll); /* If stalled, retain monitor communications */
   }
 
+  return true;
+}
+
+/* Recursive zero suppression */
+int swi_dec_print(unsigned int number) {
+  int okay;
+
+  okay = true;
+  if (number > 0) {
+    okay = swi_dec_print(number / 10); /* Recursive call */
+    if (okay)
+      swi_char_out((number % 10) | '0'); /* Returns if reset */
+  }
+  return okay;
+}
+
+void my_system(unsigned int op_code) {
   int temp;
 
   if (((op_code & 0X0F000000) == 0X0E000000)
@@ -1953,16 +1933,11 @@ void my_system(unsigned int op_code) {
       || ((op_code & 0X0F000000) == 0X0C000000) ||
       ((op_code & 0X0F000000) == 0X0D000000)) { /* Coprocessor op.s */
     fprintf(stderr, "whoops -undefined \n");
-    /*
-     if ((op_code & 0X00000010) == 0X00000000)
-     printf("Coprocessor %d data operation\n", (op_code>>8) & 0XF);
-     else
-     printf("Coprocessor %d register transfer\n", (op_code>>8) & 0XF);
-     */
     undefined();
   } else {
-    if (print_out)
+    if (print_out) {
       fprintf(stderr, "\n*** SWI CALL %06X ***\n\n", op_code & 0X00FFFFFF);
+    }
 
     switch (op_code & 0X00FFFFFF) {
       case 0: /* Output character R0 (to terminal) */
@@ -1976,7 +1951,7 @@ void my_system(unsigned int op_code) {
 
       case 1: /* Input character R0 (from terminal) */
       {
-        char c;
+        unsigned char c;
         put_reg(15, get_reg(15, reg_current) - 8, reg_current);
         /* Bodge PC so that stall looks `correct' */
         while ((!get_buffer(&terminal0_Rx, &c)) &&
@@ -2002,7 +1977,7 @@ void my_system(unsigned int op_code) {
         /* Bodge PC so that stall looks `correct' */
 
         str_ptr = get_reg(0, reg_current);
-        while (((c = read_mem(str_ptr, 1, FALSE, FALSE, mem_system)) != '\0') &&
+        while (((c = read_mem(str_ptr, 1, false, false, mem_system)) != '\0') &&
                (status != CLIENT_STATE_RESET)) {
           swi_char_out(c); /* Returns if reset */
           str_ptr++;
@@ -2014,20 +1989,6 @@ void my_system(unsigned int op_code) {
 
       case 4: /* Decimal print R0 */
       {
-        int swi_dec_print(unsigned int number) /* Recursive zero suppression */
-        {
-          int okay;
-
-          okay = TRUE;
-          if (number > 0) /* else nothing - suppress leading zeros */
-          {
-            okay = swi_dec_print(number / 10); /* Recursive call */
-            if (okay)
-              swi_char_out((number % 10) | '0'); /* Returns if reset */
-          }
-          return okay;
-        }
-
         unsigned int number;
         int okay;
 
@@ -2035,10 +1996,12 @@ void my_system(unsigned int op_code) {
         /* Bodge PC so that stall looks `correct' */
 
         number = get_reg(0, reg_current);
-        if (number == 0)
+        if (number == 0) {
           okay = swi_char_out('0'); /* Don't suppress last zero */
-        else
+
+        } else {
           okay = swi_dec_print(number); /* Returns if reset */
+        }
 
         if (status != CLIENT_STATE_RESET)
           put_reg(15, get_reg(15, reg_current), reg_current); /* Correct PC */
@@ -2145,120 +2108,108 @@ void set_VF_SUB(int a, int b, int rd) {
 
 /*----------------------------------------------------------------------------*/
 
-int check_cc(int condition) /*checks CC against flag status */
-{
-  int go;
-
+/**
+ * @brief checks CC against flag status
+ *
+ * @param condition
+ * @return true
+ * @return false
+ */
+bool check_cc(int condition) {
   switch (condition & 0XF) {
     case 0X0:
-      go = zf(cpsr);
-      break;
+      return zf(cpsr);
     case 0X1:
-      go = not(zf(cpsr));
-      break;
+      return jNot(zf(cpsr));
     case 0X2:
-      go = cf(cpsr);
-      break;
+      return cf(cpsr);
     case 0X3:
-      go = not(cf(cpsr));
-      break;
+      return jNot(cf(cpsr));
     case 0X4:
-      go = nf(cpsr);
-      break;
+      return nf(cpsr);
     case 0X5:
-      go = not(nf(cpsr));
-      break;
+      return jNot(nf(cpsr));
     case 0X6:
-      go = vf(cpsr);
-      break;
+      return vf(cpsr);
     case 0X7:
-      go = not(vf(cpsr));
-      break;
+      return jNot(vf(cpsr));
     case 0X8:
-      go = and(cf(cpsr), not(zf(cpsr)));
-      break;
+      return jAnd(cf(cpsr), jNot(zf(cpsr)));
     case 0X9:
-      go = or (not(cf(cpsr)), zf(cpsr));
-      break;
+      return jOr(jNot(cf(cpsr)), zf(cpsr));
     case 0XA:
-      go = not(xor(nf(cpsr), vf(cpsr)));
-      break;
+      return jNot(jXor(nf(cpsr), vf(cpsr)));
     case 0XB:
-      go = xor(nf(cpsr), vf(cpsr));
-      break;
+      return jXor(nf(cpsr), vf(cpsr));
     case 0XC:
-      go = and(not(zf(cpsr)), not(xor(nf(cpsr), vf(cpsr))));
-      break;
+      return jAnd(jNot(zf(cpsr)), jNot(jXor(nf(cpsr), vf(cpsr))));
     case 0XD:
-      go = or (zf(cpsr), xor(nf(cpsr), vf(cpsr)));
-      break;
+      return jOr(zf(cpsr), jXor(nf(cpsr), vf(cpsr)));
     case 0XE:
-      go = TRUE;
-      break;
+      return true;
     case 0XF:
-      go = FALSE;
-      break;
+      return false;
+    default:
+      return true;
   }
-  return go;
 }
 
-/*----------------------------------------------------------------------------*/
-/*----------------------------------------------------------------------------*/
-
-int not(int x) {
-  if (x == TRUE)
-    return FALSE;
+int jNot(int x) {
+  if (x == true)
+    return false;
   else
-    return TRUE;
+    return true;
 }
 
-int and (int x, int y) {
-  if ((x == TRUE) && (y == TRUE))
-    return TRUE;
+int jAnd(int x, int y) {
+  if ((x == true) && (y == true))
+    return true;
   else
-    return FALSE;
+    return false;
 }
 
-int or (int x, int y) {
-  if ((x == TRUE) || (y == TRUE))
-    return TRUE;
+int jOr(int x, int y) {
+  if ((x == true) || (y == true))
+    return true;
   else
-    return FALSE;
+    return false;
 }
 
-int xor
-    (int x, int y) {
-      if (((x == TRUE) && (y == FALSE)) || ((x == FALSE) && (y == TRUE)))
-        return TRUE;
-      else
-        return FALSE;
-    }
+int jXor(int x, int y) {
+  if (((x == true) && (y == false)) || ((x == false) && (y == true))) {
+    return true;
 
-    /*----------------------------------------------------------------------------*/
+  } else {
+    return false;
+  }
+}
 
-    int zf(int cpsr) {
+int zf(int cpsr) {
   if ((zf_mask & cpsr) != 0)
-    return TRUE;
+    return true;
   else
-    return FALSE;
+    return false;
 }
+
 int cf(int cpsr) {
   if ((cf_mask & cpsr) != 0)
-    return TRUE;
+    return true;
   else
-    return FALSE;
+    return false;
 }
+
 int nf(int cpsr) {
   if ((nf_mask & cpsr) != 0)
-    return TRUE;
+    return true;
   else
-    return FALSE;
+    return false;
 }
+
 int vf(int cpsr) {
   if ((vf_mask & cpsr) != 0)
-    return TRUE;
+    return true;
   else
-    return FALSE;
+    return false;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2460,7 +2411,7 @@ unsigned int fetch() {
   int i;
 
   op_code = read_mem((get_reg(15, reg_current) - instruction_length()),
-                     instruction_length(), FALSE, FALSE, mem_instruction);
+                     instruction_length(), false, false, mem_instruction);
 
   for (i = 0; i < 32; i++) {
     if (past_opc_addr[i] == get_reg(15, reg_current) - instruction_length()) {
@@ -2502,11 +2453,7 @@ void endian_swap(unsigned int start, unsigned int end) {
 /*----------------------------------------------------------------------------*/
 /* source indicates type of read {mem_system, mem_instruction, mem_data}      */
 
-int read_mem(unsigned int address,
-             int size,
-             boolean sign,
-             boolean T,
-             int source) {
+int read_mem(unsigned int address, int size, bool sign, bool T, int source) {
   int data, alignment;
 
   if (address < mem_size) {
@@ -2554,20 +2501,18 @@ int read_mem(unsigned int address,
         fprintf(stderr, "Illegally sized memory read\n");
     }
 
-    if ((runflags & 0x20) &&
-        (source == mem_data)) /* check watchpoints enabled */
-    {
-      if (check_watchpoints(address, data, size, 1))  // @@@
-      {
+    /* check watchpoints enabled */
+    if ((runflags & 0x20) && (source == mem_data)) {
+      if (check_watchpoints(address, data, size, 1)) {
         status = CLIENT_STATE_WATCHPOINT;
       }
     }
   } else {
     data = 0X12345678;
-    print_out = FALSE;
+    print_out = false;
   }
 
-  /*if (T == TRUE) printf("User space forced\n"); */
+  /*if (T == true) printf("User space forced\n"); */
 
   /*
    switch(source)
@@ -2583,11 +2528,7 @@ int read_mem(unsigned int address,
 
 /*----------------------------------------------------------------------------*/
 
-void write_mem(unsigned int address,
-               int data,
-               int size,
-               boolean T,
-               int source) {
+void write_mem(unsigned int address, int data, int size, bool T, int source) {
   unsigned int mask;
 
   if ((address == tube_address) &&
@@ -2640,7 +2581,7 @@ void write_mem(unsigned int address,
       }
     } else {
       // fprintf(stderr, "Writing %08X  data = %08X\n", address, data);
-      print_out = FALSE;
+      print_out = false;
     }
 
     if ((runflags & 0x20) &&
@@ -2652,7 +2593,7 @@ void write_mem(unsigned int address,
       }
     }
 
-    /*if (T == TRUE) printf("User space forced\n");   */
+    /*if (T == true) printf("User space forced\n");   */
 
     /*
      switch(source)
@@ -2676,17 +2617,9 @@ void write_mem(unsigned int address,
 /* Needs privilege information @@@*/
 
 int check_watchpoints(unsigned int address, int data, int size, int direction) {
-  int i, may_break;
+  bool may_break = false;
 
-  // if (direction == 0)
-  //  fprintf(stderr, "Data write, address %08X, data %08X, size %d\n", address,
-  //  data, size);
-  // else
-  //  fprintf(stderr, "Data read,  address %08X, data %08X, size %d\n", address,
-  //  data, size);
-
-  for (i = 0, may_break = FALSE; (i < NO_OF_WATCHPOINTS) && !may_break;
-       i++) { /* Search watchpoints */
+  for (int i = 0; (i < NO_OF_WATCHPOINTS) && !may_break; i++) {
     may_break = ((emul_wp_flag[0] & emul_wp_flag[1] & (1 << i)) != 0);
     /* Watchpoint is active */
 
@@ -2701,73 +2634,44 @@ int check_watchpoints(unsigned int address, int data, int size, int direction) {
     if (may_break) /* Try address comparison */
       switch (watchpoints[i].cond & 0x0C) {
         case 0x00:
-          may_break = FALSE;
+          may_break = false;
           break;
         case 0x04:
-          may_break = FALSE;
+          may_break = false;
           break;
         case 0x08: /* Case of between address A and address B */
           if ((address < watchpoints[i].addra) ||
               (address > watchpoints[i].addrb))
-            may_break = FALSE;
+            may_break = false;
           break;
 
         case 0x0C: /* Case of mask */
           if ((address & watchpoints[i].addrb) != watchpoints[i].addra)
-            may_break = FALSE;
+            may_break = false;
           break;
       }
 
     if (may_break) /* Try data comparison */
       switch (watchpoints[i].cond & 0x03) {
         case 0x00:
-          may_break = FALSE;
+          may_break = false;
           break;
         case 0x01:
-          may_break = FALSE;
+          may_break = false;
           break;
         case 0x02: /* Case of between data A and data B */
           if ((data < watchpoints[i].dataa[0]) ||
               (data > watchpoints[i].datab[0]))
-            may_break = FALSE;
+            may_break = false;
           break;
 
         case 0x03: /* Case of mask */
           if ((data & watchpoints[i].datab[0]) != watchpoints[i].dataa[0])
-            may_break = FALSE;
+            may_break = false;
           break;
       }
     // Expansion space for more comparisons @@@  e.g. privilege
-
-  } /* End of for loop */
-
-  //
-  // if (may_break) fprintf(stderr, "Watchpoint!\n");
-  //
-  // for (i = 0; i < NO_OF_WATCHPOINTS; i++)
-  //  {
-  //  fprintf(stderr,"====== WATCHPOINT %d ====\n", i);
-  //  fprintf(stderr,"address A: %08x\n",  watchpoints[i].addra);
-  //  fprintf(stderr,"address B: %08x\n",  watchpoints[i].addrb);
-  //  fprintf(stderr,"Data A: %08x%08x\n", watchpoints[i].dataa[1],
-  //                                       watchpoints[i].dataa[0]);
-  //  fprintf(stderr,"Data B: %08x%08x\n", watchpoints[i].datab[1],
-  //                                       watchpoints[i].datab[0]);
-  //  fprintf(stderr,"State: %08x\n",      watchpoints[i].state);
-  //  fprintf(stderr,"Condition: %08X\n",  watchpoints[i].cond);
-  //  fprintf(stderr,"Size: %d\n", watchpoints[i].size);
-  //  }
-  //
-  //
-  //     typedef struct {
-  //     int state;
-  //     char cond;
-  //     char size;
-  //     int addra;
-  //     int addrb;
-  //     int dataa[2];
-  //     int datab[2];
-  //     } BreakElement;
+  }
 
   return may_break;
 }
@@ -2797,7 +2701,7 @@ int get_number(char* ptr) {
 /*----------------------------------------------------------------------------*/
 /* As the compiler can't manage it ...                                        */
 
-int lsl(int value, int distance, int* cf) /* cf is -internal- Boolean */
+int lsl(int value, int distance, int* cf) /* cf is -internal- bool */
 {
   int result;
 
@@ -2820,9 +2724,7 @@ int lsl(int value, int distance, int* cf) /* cf is -internal- Boolean */
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-int lsr(unsigned int value,
-        int distance,
-        int* cf) /* cf is -internal- Boolean */
+int lsr(unsigned int value, int distance, int* cf) /* cf is -internal- bool */
 {
   unsigned int result, mask;
 
@@ -2849,7 +2751,7 @@ int lsr(unsigned int value,
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-int asr(int value, int distance, int* cf) /* cf is -internal- Boolean */
+int asr(int value, int distance, int* cf) /* cf is -internal- bool */
 {
   int result;
 
@@ -2875,9 +2777,7 @@ int asr(int value, int distance, int* cf) /* cf is -internal- Boolean */
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-int ror(unsigned int value,
-        int distance,
-        int* cf) /* cf is -internal- Boolean */
+int ror(unsigned int value, int distance, int* cf) /* cf is -internal- bool */
 {
   int result;
 
@@ -2900,7 +2800,8 @@ int ror(unsigned int value,
 
 void data0(unsigned int op_code) {
   unsigned int op2, rn;
-  unsigned int shift, result, cf;
+  unsigned int shift, result;
+  int cf;
 
   rn = get_reg(((op_code >> 3) & 7), reg_current); /* Called "Rm" in shifts */
   shift = ((op_code >> 6) & 0X0000001F);           /* Extracted speculatively */
@@ -2915,6 +2816,7 @@ void data0(unsigned int op_code) {
       case 0X0800: /* LSR (1) */
         if (shift == 0)
           shift = 32;
+
         result = lsr(rn, shift, &cf);
         break;
       case 0X1000: /* ASR (1) */
@@ -3163,7 +3065,7 @@ void data_transfer(unsigned int op_code) {
       rd = ((op_code >> 8) & 7);
       address =
           (((op_code & 0X00FF) << 2)) + (get_reg(15, reg_current) & 0XFFFFFFFC);
-      put_reg(rd, read_mem(address, 4, FALSE, FALSE, mem_data), reg_current);
+      put_reg(rd, read_mem(address, 4, false, false, mem_data), reg_current);
     }
   } else { /* load/store word, halfword, byte, signed byte */
     int rm, rn;
@@ -3175,39 +3077,39 @@ void data_transfer(unsigned int op_code) {
 
     switch (op_code & 0X0E00) {
       case 0X0000: /* STR (2) register */
-        write_mem(rn + rm, get_reg(rd, reg_current), 4, FALSE, mem_data);
+        write_mem(rn + rm, get_reg(rd, reg_current), 4, false, mem_data);
         break;
 
       case 0X0200: /* STRH (2) register */
-        write_mem(rn + rm, get_reg(rd, reg_current), 2, FALSE, mem_data);
+        write_mem(rn + rm, get_reg(rd, reg_current), 2, false, mem_data);
         break;
 
       case 0X0400: /* STRB (2) register */
-        write_mem(rn + rm, get_reg(rd, reg_current), 1, FALSE, mem_data);
+        write_mem(rn + rm, get_reg(rd, reg_current), 1, false, mem_data);
         break;
 
       case 0X0600:                                          /* LDRSB register */
-        data = read_mem(rn + rm, 1, TRUE, FALSE, mem_data); /* Sign ext. */
+        data = read_mem(rn + rm, 1, true, false, mem_data); /* Sign ext. */
         put_reg(rd, data, reg_current);
         break;
 
       case 0X0800: /* LDR (2) register */
-        data = read_mem(rn + rm, 4, FALSE, FALSE, mem_data);
+        data = read_mem(rn + rm, 4, false, false, mem_data);
         put_reg(rd, data, reg_current);
         break;
 
       case 0X0A00: /* LDRH (2) register */
-        data = read_mem(rn + rm, 2, FALSE, FALSE, mem_data); /* Zero ext. */
+        data = read_mem(rn + rm, 2, false, false, mem_data); /* Zero ext. */
         put_reg(rd, data, reg_current);
         break;
 
       case 0X0C00:                                           /* LDRB (2) */
-        data = read_mem(rn + rm, 1, FALSE, FALSE, mem_data); /* Zero ext. */
+        data = read_mem(rn + rm, 1, false, false, mem_data); /* Zero ext. */
         put_reg(rd, data, reg_current);
         break;
 
       case 0X0E00:                                          /* LDRSH (2) */
-        data = read_mem(rn + rm, 2, TRUE, FALSE, mem_data); /* Sign ext. */
+        data = read_mem(rn + rm, 2, true, false, mem_data); /* Sign ext. */
         put_reg(rd, data, reg_current);
         break;
     }
@@ -3229,22 +3131,22 @@ void transfer0(unsigned int op_code) {
     if ((op_code & 0X1000) == 0) /* STR (1) 5-bit imm */
     {
       location = rn + ((op_code >> 4) & 0X07C); /* shift twice = *4 */
-      write_mem(location, rd, 4, FALSE, mem_data);
+      write_mem(location, rd, 4, false, mem_data);
     } else /* STRB (1) */
     {
       location = rn + ((op_code >> 6) & 0X1F);
-      write_mem(location, rd, 1, FALSE, mem_data);
+      write_mem(location, rd, 1, false, mem_data);
     }
   } else /* LDR (1) */
   {
     rd = op_code & 7;
     if ((op_code & 0X1000) == 0) {
       location = (rn + ((op_code >> 4) & 0X07C)); /* shift twice = *4 */
-      data = read_mem(location, 4, FALSE, FALSE, mem_data);
+      data = read_mem(location, 4, false, false, mem_data);
     } else /* LDRB (1) */
     {
       location = (rn + ((op_code >> 6) & 0X1F));
-      data = read_mem(location, 1, FALSE, FALSE, mem_data); /* Zero extended */
+      data = read_mem(location, 1, false, false, mem_data); /* Zero extended */
     }
     put_reg(rd, data, reg_current);
   }
@@ -3264,14 +3166,14 @@ void transfer1(unsigned int op_code) {
       rd = op_code & 7;
       data = get_reg(rd, reg_current);
       location = rn + ((op_code >> 5) & 0X3E); /* x2 in shift */
-      write_mem(location, data, 2, FALSE, mem_data);
+      write_mem(location, data, 2, false, mem_data);
       break;
 
     case 0X0800: /* LDRH (1) */
       rd = op_code & 7;
       rn = get_reg((op_code >> 3) & 7, reg_current);
       location = rn + ((op_code >> 5) & 0X3E);              /* x2 in shift */
-      data = read_mem(location, 2, FALSE, FALSE, mem_data); /* Zero extended */
+      data = read_mem(location, 2, false, false, mem_data); /* Zero extended */
       put_reg(rd, data, reg_current);
       break;
 
@@ -3279,14 +3181,14 @@ void transfer1(unsigned int op_code) {
       data = get_reg(((op_code >> 8) & 7), reg_current);
       rn = get_reg(13, reg_current); /* SP */
       location = rn + ((op_code & 0X00FF) * 4);
-      write_mem(location, data, 4, FALSE, mem_data);
+      write_mem(location, data, 4, false, mem_data);
       break;
 
     case 0X1800: /* LDR (4) -SP */
       rd = (op_code >> 8) & 7;
       rn = get_reg(13, reg_current);            /* SP */
       location = rn + ((op_code & 0X00FF) * 4); /* x2 in shift */
-      data = read_mem(location, 4, FALSE, FALSE, mem_data);
+      data = read_mem(location, 4, false, false, mem_data);
       put_reg(rd, data, reg_current);
       break;
   }
@@ -3379,7 +3281,7 @@ void lsm_b(unsigned int op_code) {
   {
     if ((op_code & 0X0F00) != 0X0F00) /* Branch, not a SWI */
     {
-      if (check_cc(op_code >> 8) == TRUE) {
+      if (check_cc(op_code >> 8) == true) {
         offset = (op_code & 0X00FF) << 1; /* sign extend */
         if ((op_code & 0X0080) != 0)
           offset = offset | 0XFFFFFE00;
@@ -3407,7 +3309,7 @@ void thumb_branch1(unsigned int op_code, int exchange) {
 
   lr = get_reg(15, reg_current) - 2 + 1; /* + 1 to indicate Thumb mode */
 
-  if (exchange == TRUE) {
+  if (exchange == true) {
     cpsr = cpsr & ~tf_mask; /* Change to ARM mode */
     offset = offset & 0XFFFFFFFC;
   }
@@ -3433,7 +3335,7 @@ void thumb_branch(unsigned int op_code) {
 
     case 0X0800: /* BLX */
       if ((op_code & 0X0001) == 0)
-        thumb_branch1(op_code, TRUE);
+        thumb_branch1(op_code, true);
       else
         fprintf(stderr, "Undefined\n");
       break;
@@ -3449,7 +3351,7 @@ void thumb_branch(unsigned int op_code) {
       break;
 
     case 0X1800: /* BL */
-      thumb_branch1(op_code, FALSE);
+      thumb_branch1(op_code, false);
       break;
   }
 
