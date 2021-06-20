@@ -10,6 +10,7 @@
 #include <sys/poll.h>
 #include <time.h>
 #include <unistd.h>
+#include <iostream>
 
 #include "definitions.h"
 #include "interface.h"
@@ -464,7 +465,9 @@ void monitor_options_misc(uchar command) {
     case BR_NOP:
       break;
     case BR_PING:
-      write(1, "OK00", 4);
+      if (write(1, "OK00", 4) < 0) {
+        std::cout << "Some error occured!" << std::endl;
+      }
       break;
     case BR_WOT_R_U:
       emul_sendchararray(wotrustring[0], &wotrustring[1]);
@@ -716,7 +719,9 @@ void comm(struct pollfd* pPollfd) {
   uchar c;
 
   if (poll(pPollfd, 1, 0) > 0) {
-    read(0, &c, 1);  // Look at error return - find EOF & exit @@@
+    if (read(0, &c, 1) < 0) {
+      std::cout << "Some error occured!" << std::endl;
+    }  // Look at error return - find EOF & exit @@@
     switch (c & 0xC0) {
       case 0x00:
         monitor_options_misc(c);
@@ -842,7 +847,10 @@ int emul_getchararray(int char_number, unsigned char* data_ptr) {
  * @return int
  */
 int emul_sendchararray(int char_number, unsigned char* data_ptr) {
-  write(1, data_ptr, char_number);
+  if (write(1, data_ptr, char_number) < 0) {
+    std::cout << "Some error occured!" << std::endl;
+  }
+
   return char_number;  // send char array to the board
 }
 
