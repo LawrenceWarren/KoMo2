@@ -99,10 +99,10 @@ int bit_count(unsigned int source, int* first);
 
 bool check_cc(int condition);
 
-int zf(int cpsr);
-int cf(int cpsr);
-int nf(int cpsr);
-int vf(int cpsr);
+constexpr bool zf(const int cpsr);
+constexpr bool cf(const int cpsr);
+constexpr bool nf(const int cpsr);
+constexpr bool vf(const int cpsr);
 
 void set_flags(int operation, int a, int b, int rd, int carry);
 void set_NZ(unsigned int value);
@@ -2093,32 +2093,36 @@ bool check_cc(int condition) {
   }
 }
 
-int zf(int cpsr) {
-  if ((zf_mask & cpsr) != 0)
+constexpr bool zf(const int cpsr) {
+  if ((zf_mask & cpsr) != 0) {
     return true;
-  else
-    return false;
+  }
+
+  return false;
 }
 
-int cf(int cpsr) {
-  if ((cf_mask & cpsr) != 0)
+constexpr bool cf(const int cpsr) {
+  if ((cf_mask & cpsr) != 0) {
     return true;
-  else
-    return false;
+  }
+
+  return false;
 }
 
-int nf(int cpsr) {
-  if ((nf_mask & cpsr) != 0)
+constexpr bool nf(const int cpsr) {
+  if ((nf_mask & cpsr) != 0) {
     return true;
-  else
-    return false;
+  }
+
+  return false;
 }
 
-int vf(int cpsr) {
-  if ((vf_mask & cpsr) != 0)
+constexpr bool vf(const int cpsr) {
+  if ((vf_mask & cpsr) != 0) {
     return true;
-  else
-    return false;
+  }
+
+  return false;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2150,13 +2154,14 @@ int get_reg(int reg_no, int force_mode) {
       break;
   }
 
-  if (reg_no == 16)
-    value = cpsr; /* Trap for status registers */
-  else if (reg_no == 17) {
-    if ((mode == user_mode) || (mode == system_mode))
+  if (reg_no == 16) {
+    value = cpsr;  // Trap for status registers
+  } else if (reg_no == 17) {
+    if ((mode == user_mode) || (mode == system_mode)) {
       value = cpsr;
-    else
+    } else {
       value = spsr[mode];
+    }
   } else if (reg_no != 15) {
     switch (mode) {
       case user_mode:
@@ -2165,43 +2170,52 @@ int get_reg(int reg_no, int force_mode) {
         break;
 
       case fiq_mode:
-        if (reg_no < 8)
+        if (reg_no < 8) {
           value = r[reg_no];
-        else
+
+        } else {
           value = fiq_r[reg_no - 8];
+        }
         break;
 
       case irq_mode:
-        if (reg_no < 13)
+        if (reg_no < 13) {
           value = r[reg_no];
-        else
+        } else {
           value = irq_r[reg_no - 13];
+        }
         break;
 
       case sup_mode:
-        if (reg_no < 13)
+        if (reg_no < 13) {
           value = r[reg_no];
-        else
+
+        } else {
           value = sup_r[reg_no - 13];
+        }
         break;
 
       case abt_mode:
-        if (reg_no < 13)
+        if (reg_no < 13) {
           value = r[reg_no];
-        else
+
+        } else {
           value = abt_r[reg_no - 13];
+        }
         break;
 
       case undef_mode:
-        if (reg_no < 13)
+        if (reg_no < 13) {
           value = r[reg_no];
-        else
+
+        } else {
           value = undef_r[reg_no - 13];
+        }
         break;
     }
-  } else /* PC access */
+  } else {
     value = r[15] + instruction_length();
-  /* PC := PC+4 (or +2 - Thumb) at start of execution */
+  }
 
   return value;
 }
