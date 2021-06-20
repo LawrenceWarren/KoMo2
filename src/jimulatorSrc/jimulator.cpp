@@ -44,83 +44,77 @@
 
 /* NB "int" is assumed to be at least 32-bit */
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-
 #define RING_BUF_SIZE 64
 
 typedef struct {
   uint iHead;
   uint iTail;
   unsigned char buffer[RING_BUF_SIZE];
-} ring_buffer;
+} ringBuffer;
 
 struct pollfd pollfd;
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-
-/* Local prototypes */
+// Local prototypes
 
 void step();
 void comm(struct pollfd*);
 
 void emulsetup();
-void save_state(unsigned char new_status);
+void saveState(unsigned char new_status);
 void initialise(uint start_address, int initial_mode);
 void execute(uint op_code);
 
-/* ARM execute */
+// ARM execute
 
-void data_op(uint op_code);
+void dataOp(uint op_code);
 void clz(uint op_code);
 void transfer(uint op_code);
 void transfer_sbhw(uint op_code);
 void multiple(uint op_code);
 void branch(uint op_code);
-void my_system(uint op_code);
+void mySystem(uint op_code);
 void undefined();
 void breakpoint();
 
 void mrs(uint op_code);
 void msr(uint op_code);
 void bx(uint Rm, int link);
-void my_multi(uint op_code);
+void myMulti(uint op_code);
 void swap(uint op_code);
-void normal_data_op(uint op_code, int operation);
-void ldm(int mode, int Rn, int reg_list, int write_back, int hat);
-void stm(int mode, int Rn, int reg_list, int write_back, int hat);
+void normalDataOp(uint op_code, int operation);
+void ldm(int mode, int Rn, int reg_list, bool write_back, bool hat);
+void stm(int mode, int Rn, int reg_list, bool write_back, bool hat);
 
-int check_watchpoints(uint address, int data, int size, int direction);
+int checkWatchpoints(uint address, int data, int size, int direction);
+int transferOffset(int op2, int add, int imm, bool sbhw);
 
-int transfer_offset(int op2, int add, int imm, bool sbhw);
+int bReg(int op2, int* cf);
+int bImmediate(int op2, int* cf);
 
-int b_reg(int op2, int* cf);
-int b_immediate(int op2, int* cf);
-
-int bit_count(uint source, int* first);
-
-bool check_cc(int condition);
+int bitCount(uint source, int* first);
+bool checkCC(int condition);
 
 constexpr const bool zf(const int cpsr);
 constexpr const bool cf(const int cpsr);
 constexpr const bool nf(const int cpsr);
 constexpr const bool vf(const int cpsr);
 
-void set_flags(int operation, int a, int b, int rd, int carry);
-void set_NZ(uint value);
-void set_CF(uint a, uint rd, int carry);
-void set_VF_ADD(int a, int b, int rd);
-void set_VF_SUB(int a, int b, int rd);
-int get_reg(int reg_no, int force_mode);
+void setFlags(int operation, int a, int b, int rd, int carry);
+void setNZ(uint value);
+void setCF(uint a, uint rd, int carry);
+void setVF_ADD(int a, int b, int rd);
+void setVF_SUB(int a, int b, int rd);
+int getRegister(int reg_no, int force_mode);
 /* Returns PC+4 for ARM & PC+2 for Thumb */
-int get_reg_monitor(int reg_no, int force_mode);
-void put_reg(int reg_no, int value, int force_mode);
+int getRegisterMonitor(int reg_no, int force_mode);
+void putRegister(int reg_no, int value, int force_mode);
 constexpr const int instructionLength(const int cpsr, const int tf_mask);
 
 uint fetch();
-void inc_pc();
-void endian_swap(uint start, uint end);
-int read_mem(uint address, int size, bool sign, bool T, int source);
-void write_mem(uint address, int data, int size, bool T, int source);
+void incPC();
+void endianSwap(uint start, uint end);
+int readMemory(uint address, int size, bool sign, bool T, int source);
+void writeMemory(uint address, int data, int size, bool T, int source);
 
 /* THUMB execute */
 void data0(uint op_code);
@@ -132,10 +126,10 @@ void sp_pc(uint op_code);
 void lsm_b(uint op_code);
 void thumb_branch(uint op_code);
 
-int load_fpe();
-void fpe_install();
+int loadFPE();
+void FPEInstall();
 
-int get_number(char* ptr);
+int getNumber(char* ptr);
 int lsl(int value, int distance, int* cf);
 int lsr(uint value, int distance, int* cf);
 int asr(int value, int distance, int* cf);
@@ -143,37 +137,31 @@ int ror(uint value, int distance, int* cf);
 
 uint getmem32(int number);
 void setmem32(int number, uint reg);
-void execute_instruction();
+void executeInstruction();
 
-int emul_getchar(unsigned char* to_get);
-int emul_sendchar(unsigned char to_send);
-int emul_sendbN(int value, int N);
-int emul_getbN(int* val_ptr, int N);
-int emul_getchararray(int char_number, unsigned char* data_ptr);
-int emul_sendchararray(int char_number, unsigned char* data_ptr);
+int getChar(unsigned char* to_get);
+int sendChar(unsigned char to_send);
+int sendNBytes(int value, int N);
+int getNBytes(int* val_ptr, int N);
+int getCharArray(int char_number, unsigned char* data_ptr);
+int sendCharArray(int char_number, unsigned char* data_ptr);
 
 void boardreset();
 
-void init_buffer(ring_buffer*);
-int count_buffer(ring_buffer*);
-int put_buffer(ring_buffer*, unsigned char);
-int get_buffer(ring_buffer*, unsigned char*);
+void initBuffer(ringBuffer*);
+int countBuffer(ringBuffer*);
+int putBuffer(ringBuffer*, unsigned char);
+int getBuffer(ringBuffer*, unsigned char*);
 
-/*----------------------------------------------------------------------------*/
-
-#define mem_size 0X100000 /* 4Mbytes */
-#define RAMSIZE 0X100000  /* 4Mbytes */
 // Why add "RAMSIZE", and then get it wrong?!?!
 // Memory is modulo this to the monitor; excise and use the proper routines
-
-#define reserved_mem 0X002000 /* 32Kbytes */
+#define mem_size 0X100000      // 4Mbytes
+#define RAMSIZE 0X100000       // 4Mbytes
+#define reserved_mem 0X002000  // 32Kbytes
 #define user_stack (mem_size - reserved_mem) << 2
-#define start_string_addr 0X00007000 /*ARM address */
+#define start_string_addr 0X00007000  // ARM address
 
 #define max_instructions 10000000
-
-//  const int   false = 0;
-//  const int   true = -1;
 
 const uint nf_mask = 0X80000000;
 const uint zf_mask = 0X40000000;
@@ -182,16 +170,16 @@ const uint vf_mask = 0X10000000;
 const uint if_mask = 0X00000080;
 const uint ff_mask = 0X00000040;
 const uint mode_mask = 0X0000001F;
-const uint tf_mask = 0X00000020; /* THUMB bit */
+const uint tf_mask = 0X00000020;  // THUMB bit
 
 const uint bit_31 = 0X80000000;
 const uint bit_0 = 0X00000001;
 
-const uint imm_mask = 0X02000000;      /* orginal word versions */
-const uint imm_hw_mask = 0X00400000;   /* half word versions */
-const uint data_op_mask = 0X01E00000;  /* ALU function code */
-const uint data_ext_mask = 0X01900000; /* To sort out CMP from MRS */
-const uint arith_ext = 0X01000000;     /* Poss. arithmetic extension */
+const uint imm_mask = 0X02000000;       // orginal word versions
+const uint imm_hw_mask = 0X00400000;    // half word versions
+const uint data_op_mask = 0X01E00000;   // ALU function code
+const uint data_ext_mask = 0X01900000;  // To sort out CMP from MRS
+const uint arith_ext = 0X01000000;      // Poss. arithmetic extension
 const uint s_mask = 0X00100000;
 const uint rn_mask = 0X000F0000;
 const uint rd_mask = 0X0000F000;
@@ -224,39 +212,35 @@ const uint hw_sign = 0X00008000;
 
 const uint user_mask = 0X00400000;
 
-const uint link_mask = 0X01000000;
-const uint branch_field = 0X00FFFFFF;
-const uint branch_sign = 0X00800000;
+constexpr const uint link_mask = 0X01000000;
+constexpr const uint branch_field = 0X00FFFFFF;
+constexpr const uint branch_sign = 0X00800000;
 
-const uint undef_mask = 0X0E000010;
-const uint undef_code = 0X06000010;
+constexpr const uint undef_mask = 0X0E000010;
+constexpr const uint undef_code = 0X06000010;
 
-const int mem_system = 0; /* sources for memory read */
-const int mem_instruction = 1;
-const int mem_data = 2;
+constexpr const int memSystem = 0;  // sources for memory read
+constexpr const int memInstruction = 1;
+constexpr const int memData = 2;
 
-const int flag_add = 1;
-const int flag_sub = 2;
+constexpr const int flagAdd = 1;
+constexpr const int flagSub = 2;
 
-#define user_mode 0X00000010
-#define fiq_mode 0X00000011
-#define irq_mode 0X00000012
-#define sup_mode 0X00000013
-#define abt_mode 0X00000017
-#define undef_mode 0X0000001B
-#define system_mode 0X0000001F
+#define userMode 0X00000010
+#define fiqMode 0X00000011
+#define irqMode 0X00000012
+#define supMode 0X00000013
+#define abtMode 0X00000017
+#define undefMode 0X0000001B
+#define systemMode 0X0000001F
 
-#define reg_current                                                       \
-  0                /* Values to force register accesses to specified bank \
-                    */
-#define reg_user 1 /* ... or system */
-#define reg_svc 2
-#define reg_fiq 3
-#define reg_irq 4
-#define reg_abt 5
+#define reg_current 0  //  Values to force register accesses to specified bank
+#define reg_user 1     // or system
+#define regSvc 2
+#define regFiq 3
+#define regIrq 4
+#define regAbt 5
 #define reg_undef 6
-
-/*----------------------------------------------------------------------------*/
 
 #define REGSIZE 65536
 #define uchar unsigned char
@@ -271,33 +255,33 @@ typedef struct {
   int datab[2];
 } BreakElement;
 
-/*----------------------------------------------------------------------------*/
-/* Global data */
-
 #define WOTLEN_FEATURES 1
 #define WOTLEN_MEM_SEGS 1
 #define WOTLEN (8 + 3 * WOTLEN_FEATURES + 8 * WOTLEN_MEM_SEGS)
 
+/**
+ * @brief
+ */
 uchar wotrustring[] = {
-    WOTLEN - 1, /* Length of rest of record HERE */
+    WOTLEN - 1,  // Length of rest of record HERE
     (WOTLEN - 3) & 0xFF,
-    ((WOTLEN - 3) >> 8) & 0xFF, /* Length of rest of message (H) */
+    ((WOTLEN - 3) >> 8) & 0xFF,  // Length of rest of message (H)
     1,
     0,
-    0,               /* Processor type (B, H) */
-    WOTLEN_FEATURES, /* Feature count (B) */
+    0,                // Processor type (B, H)
+    WOTLEN_FEATURES,  // Feature count (B)
     0,
     9,
-    0,               /* Feature ID (B, H) */
-    WOTLEN_MEM_SEGS, /* Memory segment count (B) */
+    0,                // Feature ID (B, H)
+    WOTLEN_MEM_SEGS,  // Memory segment count (B)
     0x00,
     0x00,
     0x00,
-    0x00, /* Memory segment address (W) */
+    0x00,  // Memory segment address (W)
     mem_size & 0xFF,
-    (mem_size >> 8) & 0xFF, /* Memory segment      */
+    (mem_size >> 8) & 0xFF,  // Memory segment
     (mem_size >> 16) & 0xFF,
-    (mem_size >> 24) & 0xFF}; /*  length (W) */
+    (mem_size >> 24) & 0xFF};  //  length (W)
 
 BreakElement breakpoints[NO_OF_BREAKPOINTS];
 BreakElement watchpoints[NO_OF_WATCHPOINTS];
@@ -308,14 +292,14 @@ uint emul_wp_flag[2];
 uchar memory[RAMSIZE];
 
 uchar status, old_status;
-int steps_togo;   /*Number of left steps before halting (0 is infinite) */
-uint steps_reset; /* Number of steps since last reset */
+int steps_togo;    // Number of left steps before halting (0 is infinite)
+uint steps_reset;  // Number of steps since last reset
 char runflags;
 uchar rtf;
-bool breakpoint_enable;  /* Breakpoints will be checked */
-bool breakpoint_enabled; /* Breakpoints will be checked now */
-bool run_through_BL;     /* Treat BL as a single step */
-bool run_through_SWI;    /* Treat SWI as a single step */
+bool breakpoint_enable;   // Breakpoints will be checked
+bool breakpoint_enabled;  // Breakpoints will be checked now
+bool run_through_BL;      // Treat BL as a single step
+bool run_through_SWI;     // Treat SWI as a single step
 
 uint tube_address;
 
@@ -326,11 +310,11 @@ int sup_r[2];
 int abt_r[2];
 int undef_r[2];
 uint cpsr;
-uint spsr[32]; /* Lots of wasted space - safe for any "mode" */
+uint spsr[32];  // Lots of wasted space - safe for any "mode"
 
 bool print_out;
-int run_until_PC, run_until_SP, run_until_mode; /* Used to determine when */
-uchar run_until_status; /*   to finish a `stepped' subroutine, SWI, etc. */
+int run_until_PC, run_until_SP, run_until_mode;  // Used to determine when
+uchar run_until_status;  //  to finish a `stepped' subroutine, SWI, etc.
 
 uint exception_para[9];
 
@@ -343,30 +327,22 @@ uint last_addr;
 
 int glob1, glob2;
 
-int past_opc_addr[32]; /* History buffer of fetched op. code addresses */
-int past_size;         /* Used size of buffer */
-int past_opc_ptr;      /* Pointer into same */
-int past_count;        /* Count of hits in instruction history */
+int past_opc_addr[32];  // History buffer of fetched op. code addresses
+int past_size;          // Used size of buffer
+int past_opc_ptr;       // Pointer into same
+int past_count;         // Count of hits in instruction history
 
-/* Thumb stuff */
+// Thumb stuff
 int PC;
 int BL_prefix, BL_address;
 int next_char;
 int ARM_flag;
 
-struct pollfd* SWI_poll; /* Pointer to allow SWIs to scan input - YUK! */
+struct pollfd* SWI_poll;  // Pointer to allow SWIs to scan input - YUK!
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-
-//  int emul_bp_flag[2];
-//  int emul_wp_flag[2];
-
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-/* terminal data structures                                                   */
-
-ring_buffer terminal0_Tx, terminal0_Rx;
-ring_buffer terminal1_Tx, terminal1_Rx;
-ring_buffer* terminal_table[16][2];
+ringBuffer terminal0_Tx, terminal0_Rx;
+ringBuffer terminal1_Tx, terminal1_Rx;
+ringBuffer* terminal_table[16][2];
 
 /**
  * @brief Program entry point.
@@ -379,19 +355,19 @@ int main(int argc, char** argv) {
       terminal_table[i][1] = NULL;
     }
 
-    init_buffer(&terminal0_Tx);  // Initialise terminal
-    init_buffer(&terminal0_Rx);
+    initBuffer(&terminal0_Tx);  // Initialise terminal
+    initBuffer(&terminal0_Rx);
     terminal_table[0][0] = &terminal0_Tx;
     terminal_table[0][1] = &terminal0_Rx;
-    init_buffer(&terminal1_Tx);  // Initialise terminal
-    init_buffer(&terminal1_Rx);
+    initBuffer(&terminal1_Tx);  // Initialise terminal
+    initBuffer(&terminal1_Rx);
     terminal_table[1][0] = &terminal1_Tx;
     terminal_table[1][1] = &terminal1_Rx;
   }
 
   pollfd.fd = 0;
   pollfd.events = POLLIN;
-  SWI_poll = &pollfd;  // Grubby pass to "my_system"
+  SWI_poll = &pollfd;  // Grubby pass to "mySystem"
 
   emulsetup();
 
@@ -425,16 +401,16 @@ int main(int argc, char** argv) {
 
 void step() {
   old_status = status;
-  execute_instruction();
+  executeInstruction();
 
   if ((status & CLIENT_STATE_CLASS_MASK) == CLIENT_STATE_CLASS_RUNNING) {
     /* Still running - i.e. no breakpoint (etc.) found */
 
     if (status == CLIENT_STATE_RUNNING_SWI)  // OR _BL
     { /* Don't count the instructions from now */
-      if ((get_reg_monitor(15, reg_current) == run_until_PC) &&
-          (get_reg_monitor(13, reg_current) == run_until_SP) &&
-          ((get_reg_monitor(16, reg_current) & 0x3F) == run_until_mode)) {
+      if ((getRegisterMonitor(15, reg_current) == run_until_PC) &&
+          (getRegisterMonitor(13, reg_current) == run_until_SP) &&
+          ((getRegisterMonitor(16, reg_current) & 0x3F) == run_until_mode)) {
         status = run_until_status;
       }
     } /* This can have changed status - hence no "else" below */
@@ -470,7 +446,7 @@ void monitor_options_misc(uchar command) {
       }
       break;
     case BR_WOT_R_U:
-      emul_sendchararray(wotrustring[0], &wotrustring[1]);
+      sendCharArray(wotrustring[0], &wotrustring[1]);
       /* wotrustring[0] holds length, followed by message */
       break;
 
@@ -479,17 +455,17 @@ void monitor_options_misc(uchar command) {
       break;
 
     case BR_RTF_GET:
-      emul_sendchar(rtf);
+      sendChar(rtf);
       break;
 
     case BR_RTF_SET:
-      emul_getchar(&rtf);
+      getChar(&rtf);
       break;
 
     case BR_WOT_U_DO:
-      emul_sendchar(status);
-      emul_sendbN(steps_togo, 4);
-      emul_sendbN(steps_reset, 4);
+      sendChar(status);
+      sendNBytes(steps_togo, 4);
+      sendNBytes(steps_reset, 4);
       break;
 
     case BR_PAUSE:
@@ -508,14 +484,14 @@ void monitor_options_misc(uchar command) {
       break;
 
     case BR_BP_GET:
-      emul_sendbN(emul_bp_flag[0], 4);
-      emul_sendbN(emul_bp_flag[1], 4);
+      sendNBytes(emul_bp_flag[0], 4);
+      sendNBytes(emul_bp_flag[1], 4);
       break;
 
     case BR_BP_SET: {
       int data[2];
-      emul_getbN(&data[0], 4);
-      emul_getbN(&data[1], 4);
+      getNBytes(&data[0], 4);
+      getNBytes(&data[1], 4);
       /* Note ordering to avoid temporary variable */
       emul_bp_flag[1] =
           (~emul_bp_flag[0] & emul_bp_flag[1]) |
@@ -524,29 +500,29 @@ void monitor_options_misc(uchar command) {
     } break;
 
     case BR_BP_READ:
-      emul_getchar(&tempchar);
+      getChar(&tempchar);
       temp = tempchar;
-      emul_sendchar(breakpoints[temp].cond);
-      emul_sendchar(breakpoints[temp].size);
-      emul_sendbN(breakpoints[temp].addra, 4);
-      emul_sendbN(breakpoints[temp].addrb, 4);
-      emul_sendbN(breakpoints[temp].dataa[0], 4);
-      emul_sendbN(breakpoints[temp].dataa[1], 4);
-      emul_sendbN(breakpoints[temp].datab[0], 4);
-      emul_sendbN(breakpoints[temp].datab[1], 4);
+      sendChar(breakpoints[temp].cond);
+      sendChar(breakpoints[temp].size);
+      sendNBytes(breakpoints[temp].addra, 4);
+      sendNBytes(breakpoints[temp].addrb, 4);
+      sendNBytes(breakpoints[temp].dataa[0], 4);
+      sendNBytes(breakpoints[temp].dataa[1], 4);
+      sendNBytes(breakpoints[temp].datab[0], 4);
+      sendNBytes(breakpoints[temp].datab[1], 4);
       break;
 
     case BR_BP_WRITE:
-      emul_getchar(&tempchar);
+      getChar(&tempchar);
       temp = tempchar;
-      emul_getchar(&breakpoints[temp].cond);
-      emul_getchar(&breakpoints[temp].size);
-      emul_getbN(&breakpoints[temp].addra, 4);
-      emul_getbN(&breakpoints[temp].addrb, 4);
-      emul_getbN(&breakpoints[temp].dataa[0], 4);
-      emul_getbN(&breakpoints[temp].dataa[1], 4);
-      emul_getbN(&breakpoints[temp].datab[0], 4);
-      emul_getbN(&breakpoints[temp].datab[1], 4);
+      getChar(&breakpoints[temp].cond);
+      getChar(&breakpoints[temp].size);
+      getNBytes(&breakpoints[temp].addra, 4);
+      getNBytes(&breakpoints[temp].addrb, 4);
+      getNBytes(&breakpoints[temp].dataa[0], 4);
+      getNBytes(&breakpoints[temp].dataa[1], 4);
+      getNBytes(&breakpoints[temp].datab[0], 4);
+      getNBytes(&breakpoints[temp].datab[1], 4);
       /* add breakpoint */
       temp = (1 << temp) & ~emul_bp_flag[0];
       emul_bp_flag[0] |= temp;
@@ -554,14 +530,14 @@ void monitor_options_misc(uchar command) {
       break;
 
     case BR_WP_GET:
-      emul_sendbN(emul_wp_flag[0], 4);
-      emul_sendbN(emul_wp_flag[1], 4);
+      sendNBytes(emul_wp_flag[0], 4);
+      sendNBytes(emul_wp_flag[1], 4);
       break;
 
     case BR_WP_SET: {
       int data[2];
-      emul_getbN(&data[0], 4);
-      emul_getbN(&data[1], 4);
+      getNBytes(&data[0], 4);
+      getNBytes(&data[1], 4);
       temp = data[1] & ~data[0];
       emul_wp_flag[0] &= ~temp;
       emul_wp_flag[1] |= temp;
@@ -570,29 +546,29 @@ void monitor_options_misc(uchar command) {
     } break;
 
     case BR_WP_READ:
-      emul_getchar(&tempchar);
+      getChar(&tempchar);
       temp = tempchar;
-      emul_sendchar(watchpoints[temp].cond);
-      emul_sendchar(watchpoints[temp].size);
-      emul_sendbN(watchpoints[temp].addra, 4);
-      emul_sendbN(watchpoints[temp].addrb, 4);
-      emul_sendbN(watchpoints[temp].dataa[0], 4);
-      emul_sendbN(watchpoints[temp].dataa[1], 4);
-      emul_sendbN(watchpoints[temp].datab[0], 4);
-      emul_sendbN(watchpoints[temp].datab[1], 4);
+      sendChar(watchpoints[temp].cond);
+      sendChar(watchpoints[temp].size);
+      sendNBytes(watchpoints[temp].addra, 4);
+      sendNBytes(watchpoints[temp].addrb, 4);
+      sendNBytes(watchpoints[temp].dataa[0], 4);
+      sendNBytes(watchpoints[temp].dataa[1], 4);
+      sendNBytes(watchpoints[temp].datab[0], 4);
+      sendNBytes(watchpoints[temp].datab[1], 4);
       break;
 
     case BR_WP_WRITE:
-      emul_getchar(&tempchar);
+      getChar(&tempchar);
       temp = tempchar;
-      emul_getchar(&watchpoints[temp].cond);
-      emul_getchar(&watchpoints[temp].size);
-      emul_getbN(&watchpoints[temp].addra, 4);
-      emul_getbN(&watchpoints[temp].addrb, 4);
-      emul_getbN(&watchpoints[temp].dataa[0], 4);
-      emul_getbN(&watchpoints[temp].dataa[1], 4);
-      emul_getbN(&watchpoints[temp].datab[0], 4);
-      emul_getbN(&watchpoints[temp].datab[1], 4);
+      getChar(&watchpoints[temp].cond);
+      getChar(&watchpoints[temp].size);
+      getNBytes(&watchpoints[temp].addra, 4);
+      getNBytes(&watchpoints[temp].addrb, 4);
+      getNBytes(&watchpoints[temp].dataa[0], 4);
+      getNBytes(&watchpoints[temp].dataa[1], 4);
+      getNBytes(&watchpoints[temp].datab[0], 4);
+      getNBytes(&watchpoints[temp].datab[1], 4);
       temp = 1 << temp & ~emul_wp_flag[0];
       emul_wp_flag[0] |= temp;
       emul_wp_flag[1] |= temp;
@@ -600,39 +576,39 @@ void monitor_options_misc(uchar command) {
 
     case BR_FR_WRITE: {
       uchar device, length;
-      ring_buffer* pBuff;
+      ringBuffer* pBuff;
 
-      emul_getchar(&device);
+      getChar(&device);
       pBuff = terminal_table[device][1];
-      emul_getchar(&length);
+      getChar(&length);
       temp = tempchar;
       while (length-- > 0) {
-        emul_getchar(&tempchar); /* Read character */
+        getChar(&tempchar); /* Read character */
         if (pBuff != NULL)
-          put_buffer(pBuff, tempchar); /*  and put in buffer */
+          putBuffer(pBuff, tempchar); /*  and put in buffer */
       }
-      emul_sendchar(0);
+      sendChar(0);
     } break;
 
     case BR_FR_READ: {
       unsigned char device, max_length;
       uint i, length, available;
-      ring_buffer* pBuff;
+      ringBuffer* pBuff;
 
-      emul_getchar(&device);
+      getChar(&device);
       pBuff = terminal_table[device][0];
-      emul_getchar(&max_length);
-      available = count_buffer(&terminal0_Tx); /* See how many chars we have */
+      getChar(&max_length);
+      available = countBuffer(&terminal0_Tx); /* See how many chars we have */
       if (pBuff == NULL)
         length = 0; /* Kill if no corresponding buffer */
       else
         length = MIN(available, max_length); /* else clip to message max. */
-      emul_sendchar(length);
+      sendChar(length);
       for (i = 0; i < length; i++) /* Send zero or more characters */
       {
         unsigned char c;
-        get_buffer(pBuff, &c);
-        emul_sendchar(c);
+        getBuffer(pBuff, &c);
+        sendChar(c);
       }
     } break;
 
@@ -646,7 +622,7 @@ void monitor_memory(uchar c) {
   unsigned char* pointer;
   int size;
 
-  emul_getbN(&addr, 4);  // Start address really
+  getNBytes(&addr, 4);  // Start address really
   if ((c & 0x30) == 0x10) {
     int temp;
     int reg_bank, reg_number;
@@ -659,19 +635,19 @@ void monitor_memory(uchar c) {
         reg_bank = reg_user;
         break;
       case 0x40:
-        reg_bank = reg_svc;
+        reg_bank = regSvc;
         break;
       case 0x60:
-        reg_bank = reg_abt;
+        reg_bank = regAbt;
         break;
       case 0x80:
         reg_bank = reg_undef;
         break;
       case 0xA0:
-        reg_bank = reg_irq;
+        reg_bank = regIrq;
         break;
       case 0xC0:
-        reg_bank = reg_fiq;
+        reg_bank = regFiq;
         break;
       default:
         reg_bank = reg_current;
@@ -679,25 +655,25 @@ void monitor_memory(uchar c) {
     }
     reg_number = addr & 0x1F;
 
-    emul_getbN(&size, 2); /* Length of transfer */
+    getNBytes(&size, 2); /* Length of transfer */
 
     while (size--)
       if ((c & 8) != 0)
-        emul_sendbN(get_reg_monitor(reg_number++, reg_bank), 4);
+        sendNBytes(getRegisterMonitor(reg_number++, reg_bank), 4);
       else {
-        emul_getbN(&temp, 4);
-        put_reg(reg_number++, temp, reg_bank);
+        getNBytes(&temp, 4);
+        putRegister(reg_number++, temp, reg_bank);
       }
   } else {
     pointer = memory + (addr & (RAMSIZE - 1));
-    emul_getbN(&size, 2);
+    getNBytes(&size, 2);
     size *= 1 << (c & 7);
     if (((uchar*)pointer + size) > ((uchar*)memory + RAMSIZE))
       pointer -= RAMSIZE;
     if (c & 8)
-      emul_sendchararray(size, pointer);
+      sendCharArray(size, pointer);
     else
-      emul_getchararray(size, pointer);
+      getCharArray(size, pointer);
   }
 }
 
@@ -707,7 +683,7 @@ void monitor_breakpoints(uchar c) {
   breakpoint_enabled = (runflags & 0x01) != 0; /* Break straight away */
   run_through_BL = (runflags & 0x02) != 0;
   run_through_SWI = (runflags & 0x04) != 0;
-  emul_getbN(&steps_togo, 4);
+  getNBytes(&steps_togo, 4);
   if (steps_togo == 0)
     status = CLIENT_STATE_RUNNING;
   else
@@ -742,8 +718,8 @@ void comm(struct pollfd* pPollfd) {
  * @param to_get
  * @return int
  */
-int emul_getchar(unsigned char* to_get) {
-  return emul_getchararray(1, to_get);
+int getChar(unsigned char* to_get) {
+  return getCharArray(1, to_get);
 }
 
 /**
@@ -751,8 +727,8 @@ int emul_getchar(unsigned char* to_get) {
  * @param to_send
  * @return int
  */
-int emul_sendchar(unsigned char to_send) {
-  return emul_sendchararray(1, &to_send);
+int sendChar(unsigned char to_send) {
+  return sendCharArray(1, &to_send);
 }
 
 /**
@@ -761,7 +737,7 @@ int emul_sendchar(unsigned char to_send) {
  * @param N
  * @return int The number of bytes believed received successfully (i.e. N=>"Ok")
  */
-int emul_sendbN(int value, int N) {
+int sendNBytes(int value, int N) {
   unsigned char buffer[MAX_SERIAL_WORD];
   int i;
 
@@ -773,7 +749,7 @@ int emul_sendbN(int value, int N) {
     value = value >> 8;       /* Get next byte */
   }
 
-  return emul_sendchararray(N, buffer);
+  return sendCharArray(N, buffer);
 }
 
 /**
@@ -783,7 +759,7 @@ int emul_sendbN(int value, int N) {
  * @param N
  * @return int The number of bytes received successfully (i.e. N=>"Ok")
  */
-int emul_getbN(int* val_ptr, int N) {
+int getNBytes(int* val_ptr, int N) {
   unsigned char buffer[MAX_SERIAL_WORD];
   int i, No_received;
 
@@ -791,7 +767,7 @@ int emul_getbN(int* val_ptr, int N) {
     N = MAX_SERIAL_WORD;  // Clip, just in case ...
   }
 
-  No_received = emul_getchararray(N, buffer);
+  No_received = getCharArray(N, buffer);
 
   *val_ptr = 0;
 
@@ -814,7 +790,7 @@ int emul_getbN(int* val_ptr, int N) {
  * @param data_ptr
  * @return int Number of bytes received.
  */
-int emul_getchararray(int char_number, unsigned char* data_ptr) {
+int getCharArray(int char_number, unsigned char* data_ptr) {
   int ret = char_number;
   int replycount = 0;
   struct pollfd pollfd;
@@ -845,7 +821,7 @@ int emul_getchararray(int char_number, unsigned char* data_ptr) {
  * @param data_ptr points to the beginning of the sequence to be sent
  * @return int
  */
-int emul_sendchararray(int char_number, unsigned char* data_ptr) {
+int sendCharArray(int char_number, unsigned char* data_ptr) {
   if (write(1, data_ptr, char_number) < 0) {
     std::cout << "Some error occured!" << std::endl;
   }
@@ -873,7 +849,7 @@ void emulsetup() {
     past_size = 4;
   }
 
-  initial_mode = 0xC0 | sup_mode;
+  initial_mode = 0xC0 | supMode;
   print_out = false;
 
   next_file_handle = 1;
@@ -948,11 +924,12 @@ bool check_breakpoint(uint instr_addr, uint instr) {
   return may_break;
 }
 
-void execute_instruction() {
+void executeInstruction() {
   int i;
 
-  uint instr_addr = get_reg(15, reg_current) - instructionLength(cpsr, tf_mask);
-  last_addr = get_reg(15, reg_current) - instructionLength(cpsr, tf_mask);
+  uint instr_addr =
+      getRegister(15, reg_current) - instructionLength(cpsr, tf_mask);
+  last_addr = getRegister(15, reg_current) - instructionLength(cpsr, tf_mask);
 
   /* FETCH */
   auto instr = fetch();
@@ -967,10 +944,10 @@ void execute_instruction() {
 
   /* BL instruction */
   if (((instr & 0x0F000000) == 0x0B000000) && run_through_BL) {
-    save_state(CLIENT_STATE_RUNNING_BL);
+    saveState(CLIENT_STATE_RUNNING_BL);
   } else {
     if (((instr & 0x0F000000) == 0x0F000000) && run_through_SWI) {
-      save_state(CLIENT_STATE_RUNNING_SWI);
+      saveState(CLIENT_STATE_RUNNING_SWI);
     }
   }
 
@@ -982,28 +959,29 @@ void execute_instruction() {
  * @brief Save state for leaving "procedure" {PC, SP, Mode, current state}
  * @param new_status
  */
-void save_state(uchar new_status) {
-  run_until_PC = get_reg(15, reg_current);  // Incremented once: correct here
-  run_until_SP = get_reg(13, reg_current);
-  run_until_mode = get_reg(16, reg_current) & 0x3F;  // Just the mode bits
+void saveState(uchar new_status) {
+  run_until_PC =
+      getRegister(15, reg_current);  // Incremented once: correct here
+  run_until_SP = getRegister(13, reg_current);
+  run_until_mode = getRegister(16, reg_current) & 0x3F;  // Just the mode bits
   run_until_status = status;
   status = new_status;
 }
 
 void boardreset() {
   steps_reset = 0;
-  initialise(0, sup_mode);
+  initialise(0, supMode);
 }
 
 void initialise(uint start_address, int initial_mode) {
-  cpsr = 0X000000C0 | initial_mode; /* Disable interrupts */
+  cpsr = 0X000000C0 | initial_mode;  // Disable interrupts
   r[15] = start_address;
   old_status = CLIENT_STATE_RESET;
   status = CLIENT_STATE_RESET;
 }
 
 void execute(uint op_code) {
-  inc_pc(); /* Easier here than later */
+  incPC(); /* Easier here than later */
 
   /* ARM or THUMB ? */
   if ((cpsr & tf_mask) != 0) /* Thumb */
@@ -1037,15 +1015,15 @@ void execute(uint op_code) {
     }
   } else {
     /* Check condition */
-    if ((check_cc(op_code >> 28) == true) ||
+    if ((checkCC(op_code >> 28) == true) ||
         ((op_code & 0XFE000000) == 0XFA000000)) /* Nasty non-orthogonal BLX */
     {
       switch ((op_code >> 25) & 0X00000007) {
         case 0X0:
-          data_op(op_code);
+          dataOp(op_code);
           break; /* includes load/store hw & sb */
         case 0X1:
-          data_op(op_code);
+          dataOp(op_code);
           break; /* data processing & MSR # */
         case 0X2:
           transfer(op_code);
@@ -1063,7 +1041,7 @@ void execute(uint op_code) {
           undefined();
           break;
         case 0X7:
-          my_system(op_code);
+          mySystem(op_code);
           break;
       }
     }
@@ -1087,12 +1065,12 @@ int is_it_sbhw(uint op_code) {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-void data_op(uint op_code) {
+void dataOp(uint op_code) {
   int operation;
 
   if (((op_code & mul_mask) == mul_op) ||
       ((op_code & long_mul_mask) == long_mul_op)) {
-    my_multi(op_code);
+    myMulti(op_code);
   } else if (is_it_sbhw(op_code) == true) {
     transfer_sbhw(op_code);
   } else if ((op_code & swp_mask) == swp_op) {
@@ -1119,7 +1097,7 @@ void data_op(uint op_code) {
         undefined();
       }
     } else {
-      normal_data_op(op_code, operation); /* All data processing operations */
+      normalDataOp(op_code, operation); /* All data processing operations */
     }
   }
 }
@@ -1152,33 +1130,34 @@ void transfer_sbhw(uint op_code) {
 
   rd = ((op_code & rd_mask) >> 12);
 
-  address = get_reg(((op_code & rn_mask) >> 16), reg_current);
+  address = getRegister(((op_code & rn_mask) >> 16), reg_current);
 
-  offset = transfer_offset(op_code & op2_mask, op_code & up_mask,
-                           op_code & imm_hw_mask, true);
+  offset = transferOffset(op_code & op2_mask, op_code & up_mask,
+                          op_code & imm_hw_mask, true);
 
   if ((op_code & pre_mask) != 0)
     address = address + offset; /* pre-index */
 
   if ((op_code & load_mask) == 0) /* store */
-    write_mem(address, get_reg(rd, reg_current), size, false, mem_data);
+    writeMemory(address, getRegister(rd, reg_current), size, false, memData);
   else /* load */
-    put_reg(rd, read_mem(address, size, sign, false, mem_data), reg_current);
+    putRegister(rd, readMemory(address, size, sign, false, memData),
+                reg_current);
   /* post index */
 
   if ((op_code & pre_mask) == 0) /* post index with writeback */
-    put_reg((op_code & rn_mask) >> 16, address + offset, reg_current);
+    putRegister((op_code & rn_mask) >> 16, address + offset, reg_current);
   else if ((op_code & write_back_mask) != 0)
-    put_reg((op_code & rn_mask) >> 16, address, reg_current);
+    putRegister((op_code & rn_mask) >> 16, address, reg_current);
 }
 
 /*----------------------------------------------------------------------------*/
 
 void mrs(uint op_code) {
   if ((op_code & 0X00400000) == 0)
-    put_reg((op_code & rd_mask) >> 12, cpsr, reg_current);
+    putRegister((op_code & rd_mask) >> 12, cpsr, reg_current);
   else
-    put_reg((op_code & rd_mask) >> 12, spsr[cpsr & mode_mask], reg_current);
+    putRegister((op_code & rd_mask) >> 12, spsr[cpsr & mode_mask], reg_current);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1204,7 +1183,7 @@ void msr(uint op_code) {
     mask = mask & 0XF0000000; /* User mode */
 
   if ((op_code & imm_mask) == 0) /* Test applies for both cases */
-    source = get_reg(op_code & rm_mask, reg_current) & mask;
+    source = getRegister(op_code & rm_mask, reg_current) & mask;
   else {
     uint x, y;
     int dummy;
@@ -1227,7 +1206,7 @@ void bx(uint Rm, int link) /* Link is performed if "link" is NON-ZERO */
   int PC, offset;
   int t_bit;
 
-  PC = get_reg(15, reg_current);
+  PC = getRegister(15, reg_current);
 
   if ((cpsr & tf_mask) != 0) {
     PC = PC - 2;
@@ -1237,45 +1216,45 @@ void bx(uint Rm, int link) /* Link is performed if "link" is NON-ZERO */
     PC = PC - 4;
   }
 
-  offset = get_reg(Rm, reg_current) & 0XFFFFFFFE;
-  t_bit = get_reg(Rm, reg_current) & 0X00000001;
+  offset = getRegister(Rm, reg_current) & 0XFFFFFFFE;
+  t_bit = getRegister(Rm, reg_current) & 0X00000001;
 
   if (t_bit == 1)
     cpsr = cpsr | tf_mask;
   else
     cpsr = cpsr & ~tf_mask;
 
-  put_reg(15, offset, reg_current); /* Update PC */
+  putRegister(15, offset, reg_current); /* Update PC */
 
   if (link != 0) {
-    put_reg(14, PC, reg_current); /* Link if BLX */
+    putRegister(14, PC, reg_current); /* Link if BLX */
   }
 }
 
 /*----------------------------------------------------------------------------*/
 
-void my_multi(uint op_code) {
+void myMulti(uint op_code) {
   int acc;
 
   if ((op_code & mul_long_bit) == 0) /* Normal */
   {
-    acc = get_reg(op_code & rm_mask, reg_current) *
-          get_reg((op_code & rs_mask) >> 8, reg_current);
+    acc = getRegister(op_code & rm_mask, reg_current) *
+          getRegister((op_code & rs_mask) >> 8, reg_current);
 
     if ((op_code & mul_acc_bit) != 0)
-      acc = acc + get_reg((op_code & rd_mask) >> 12, reg_current);
+      acc = acc + getRegister((op_code & rd_mask) >> 12, reg_current);
 
-    put_reg((op_code & rn_mask) >> 16, acc, reg_current);
+    putRegister((op_code & rn_mask) >> 16, acc, reg_current);
 
     if ((op_code & s_mask) != 0)
-      set_NZ(acc); /* Flags */
-  } else           /* Long */
+      setNZ(acc); /* Flags */
+  } else          /* Long */
   {
     uint Rm, Rs, th, tm, tl;
     int sign;
 
-    Rm = get_reg(op_code & rm_mask, reg_current);
-    Rs = get_reg((op_code & rs_mask) >> 8, reg_current);
+    Rm = getRegister(op_code & rm_mask, reg_current);
+    Rs = getRegister((op_code & rs_mask) >> 8, reg_current);
 
     sign = 0;
     if ((op_code & mul_sign_bit) != 0) /* Signed */
@@ -1312,18 +1291,18 @@ void my_multi(uint op_code) {
     }
 
     if ((op_code & mul_acc_bit) != 0) {
-      tm = tl + get_reg((op_code & rd_mask) >> 12, reg_current);
+      tm = tl + getRegister((op_code & rd_mask) >> 12, reg_current);
       if (tm < tl)
         th = th + 1; /* Propagate carry */
       tl = tm;
-      th = th + get_reg((op_code & rn_mask) >> 16, reg_current);
+      th = th + getRegister((op_code & rn_mask) >> 16, reg_current);
     }
 
-    put_reg((op_code & rd_mask) >> 12, tl, reg_current);
-    put_reg((op_code & rn_mask) >> 16, th, reg_current);
+    putRegister((op_code & rd_mask) >> 12, tl, reg_current);
+    putRegister((op_code & rn_mask) >> 16, th, reg_current);
 
     if ((op_code & s_mask) != 0)
-      set_NZ(th | (((tl >> 16) | tl) & 0X0000FFFF)); /* Flags */
+      setNZ(th | (((tl >> 16) | tl) & 0X0000FFFF)); /* Flags */
   }
 }
 
@@ -1332,22 +1311,22 @@ void my_multi(uint op_code) {
 void swap(uint op_code) {
   uint address, data, size;
 
-  address = get_reg((op_code & rn_mask) >> 16, reg_current);
+  address = getRegister((op_code & rn_mask) >> 16, reg_current);
 
   if ((op_code & byte_mask) != 0)
     size = 1;
   else
     size = 4;
 
-  data = read_mem(address, size, false, false, mem_data);
-  write_mem(address, get_reg(op_code & rm_mask, reg_current), size, false,
-            mem_data);
-  put_reg((op_code & rd_mask) >> 12, data, reg_current);
+  data = readMemory(address, size, false, false, memData);
+  writeMemory(address, getRegister(op_code & rm_mask, reg_current), size, false,
+              memData);
+  putRegister((op_code & rd_mask) >> 12, data, reg_current);
 }
 
 /*----------------------------------------------------------------------------*/
 
-void normal_data_op(uint op_code, int operation) {
+void normalDataOp(uint op_code, int operation) {
   int rd, a, b, mode;
   int shift_carry;
   int CPSR_special;
@@ -1355,12 +1334,13 @@ void normal_data_op(uint op_code, int operation) {
   mode = cpsr & mode_mask;
   CPSR_special = false;
   shift_carry = 0;
-  a = get_reg((op_code & rn_mask) >> 16, reg_current); /* force_user = false */
+  a = getRegister((op_code & rn_mask) >> 16,
+                  reg_current); /* force_user = false */
 
   if ((op_code & imm_mask) == 0)
-    b = b_reg(op_code & op2_mask, &shift_carry);
+    b = bReg(op_code & op2_mask, &shift_carry);
   else
-    b = b_immediate(op_code & op2_mask, &shift_carry);
+    b = bImmediate(op_code & op2_mask, &shift_carry);
 
   switch (operation) /* R15s @@?! */
   {
@@ -1402,7 +1382,7 @@ void normal_data_op(uint op_code, int operation) {
       if ((op_code & rd_mask) == 0XF000) /* TEQP */
       {
         CPSR_special = true;
-        if (mode != user_mode)
+        if (mode != userMode)
           cpsr = spsr[mode];
       }
       break;
@@ -1427,13 +1407,13 @@ void normal_data_op(uint op_code, int operation) {
   }
 
   if ((operation & 0XC) != 0X8) /* Return result unless a compare */
-    put_reg((op_code & rd_mask) >> 12, rd, reg_current);
+    putRegister((op_code & rd_mask) >> 12, rd, reg_current);
 
   if (((op_code & s_mask) != 0) && (CPSR_special != true)) /* S-bit */
   {                                         /* Want to change CPSR */
     if (((op_code & rd_mask) >> 12) == 0XF) /* PC and S-bit */
     {
-      if (mode != user_mode)
+      if (mode != userMode)
         cpsr = spsr[mode]; /* restore saved CPSR */
       else
         fprintf(stderr, "SPSR_user read attempted\n");
@@ -1448,7 +1428,7 @@ void normal_data_op(uint op_code, int operation) {
         case 0XD:          /* MOV */
         case 0XE:          /* BIC */
         case 0XF:          /* MVN */
-          set_NZ(rd);
+          setNZ(rd);
           if (shift_carry == true)
             cpsr = cpsr | cf_mask; /* CF := output */
           else
@@ -1457,28 +1437,28 @@ void normal_data_op(uint op_code, int operation) {
 
         case 0X2: /* SUB */
         case 0XA: /* CMP */
-          set_flags(flag_sub, a, b, rd, 1);
+          setFlags(flagSub, a, b, rd, 1);
           break;
 
         case 0X6: /* SBC - Needs testing more !!!   @@@@ */
-          set_flags(flag_sub, a, b, rd, cpsr & cf_mask);
+          setFlags(flagSub, a, b, rd, cpsr & cf_mask);
           break;
 
         case 0X3: /* RSB */
-          set_flags(flag_sub, b, a, rd, 1);
+          setFlags(flagSub, b, a, rd, 1);
           break;
 
         case 0X7: /* RSC */
-          set_flags(flag_sub, b, a, rd, cpsr & cf_mask);
+          setFlags(flagSub, b, a, rd, cpsr & cf_mask);
           break;
 
         case 0X4: /* ADD */
         case 0XB: /* CMN */
-          set_flags(flag_add, a, b, rd, 0);
+          setFlags(flagAdd, a, b, rd, 0);
           break;
 
         case 0X5: /* ADC */
-          set_flags(flag_add, a, b, rd, cpsr & cf_mask);
+          setFlags(flagAdd, a, b, rd, cpsr & cf_mask);
           break;
       }
     }
@@ -1488,11 +1468,11 @@ void normal_data_op(uint op_code, int operation) {
 /*----------------------------------------------------------------------------*/
 /* shift type: 00 = LSL, 01 = LSR, 10 = ASR, 11 = ROR                         */
 
-int b_reg(int op2, int* cf) {
+int bReg(int op2, int* cf) {
   uint shift_type, reg, distance, result;
-  reg = get_reg(op2 & 0X00F, reg_current); /* Register */
-  shift_type = (op2 & 0X060) >> 5;         /* Type of shift */
-  if ((op2 & 0X010) == 0) {                /* Immediate value */
+  reg = getRegister(op2 & 0X00F, reg_current); /* Register */
+  shift_type = (op2 & 0X060) >> 5;             /* Type of shift */
+  if ((op2 & 0X010) == 0) {                    /* Immediate value */
     distance = (op2 & 0XF80) >> 7;
     if (distance == 0) /* Special cases */
     {
@@ -1503,7 +1483,7 @@ int b_reg(int op2, int* cf) {
         distance = 32; /* LSL excluded */
     }
   } else
-    distance = (get_reg((op2 & 0XF00) >> 8, reg_current) & 0XFF);
+    distance = (getRegister((op2 & 0XF00) >> 8, reg_current) & 0XFF);
   /* Register value */
 
   *cf = ((cpsr & cf_mask) != 0); /* Previous carry */
@@ -1539,7 +1519,7 @@ int b_reg(int op2, int* cf) {
 
 /*----------------------------------------------------------------------------*/
 
-int b_immediate(int op2, int* cf) {
+int bImmediate(int op2, int* cf) {
   uint x, y;
   int dummy;
 
@@ -1561,7 +1541,7 @@ int b_immediate(int op2, int* cf) {
 void clz(uint op_code) {
   int i, j;
 
-  j = get_reg(op_code & rm_mask, reg_current);
+  j = getRegister(op_code & rm_mask, reg_current);
 
   if (j == 0)
     i = 32;
@@ -1573,7 +1553,7 @@ void clz(uint op_code) {
     }
   }
 
-  put_reg((op_code & rd_mask) >> 12, i, reg_current);
+  putRegister((op_code & rd_mask) >> 12, i, reg_current);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1586,69 +1566,65 @@ void transfer(uint op_code) {
   if ((op_code & undef_mask) == undef_code) {
     undefined();
   } else {
-    if ((op_code & byte_mask) == 0)
+    if ((op_code & byte_mask) == 0) {
       size = 4;
-    else
+    } else {
       size = 1;
-
-    //  if (((op_code & pre_mask) == 0) && ((op_code & write_back_mask) != 0))
-    //    T = true;
-    //  else
-    //    T = false;
+    }
 
     T = (((op_code & pre_mask) == 0) && ((op_code & write_back_mask) != 0));
-
     rd = (op_code & rd_mask) >> 12;
-
-    address = get_reg((op_code & rn_mask) >> 16, reg_current);
-
-    offset =
-        transfer_offset(op_code & op2_mask, op_code & up_mask,
-                        op_code & imm_mask, false); /* bit(25) = 1 -> reg */
+    address = getRegister((op_code & rn_mask) >> 16, reg_current);
+    offset = transferOffset(op_code & op2_mask, op_code & up_mask,
+                            op_code & imm_mask, false);
 
     if ((op_code & pre_mask) != 0) {
-      address = address + offset; /* Pre-index */
+      address = address + offset;  // Pre-index
     }
 
     if ((op_code & load_mask) == 0) {
-      write_mem(address, get_reg(rd, reg_current), size, T, mem_data);
+      writeMemory(address, getRegister(rd, reg_current), size, T, memData);
     } else {
-      put_reg(rd, read_mem(address, size, false, T, mem_data), reg_current);
+      putRegister(rd, readMemory(address, size, false, T, memData),
+                  reg_current);
     }
 
-    if ((op_code & pre_mask) == 0) /* Post-index */
-    {
-      put_reg((op_code & rn_mask) >> 16, address + offset, reg_current);
-      /* Post index write-back */
+    // Post-index
+    if ((op_code & pre_mask) == 0) {
+      putRegister((op_code & rn_mask) >> 16, address + offset, reg_current);
     } else if ((op_code & write_back_mask) != 0) {
-      put_reg((op_code & rn_mask) >> 16, address, reg_current);
-      /* Pre index write-back */
+      putRegister((op_code & rn_mask) >> 16, address, reg_current);
     }
   }
 }
 
-/*----------------------------------------------------------------------------*/
-
-int transfer_offset(int op2,
-                    int add,
-                    int imm,
-                    bool sbhw) { /* add and imm are zero/non-zero bools */
+/**
+ * @brief Add and imm are zero/non-zero Booleans.
+ * @param op2
+ * @param add
+ * @param imm
+ * @param sbhw
+ * @return int
+ */
+int transferOffset(int op2, int add, int imm, bool sbhw) {
   int offset;
-  int cf; /* Dummy parameter */
+  int cf;  // Dummy parameter
 
-  if (!sbhw) /* Addressing mode 2 */
-  {
+  // Addressing mode 2
+  if (!sbhw) {
     if (imm != 0) {
-      offset = b_reg(op2, &cf); /* bit(25) = 1 -> reg */
+      offset = bReg(op2, &cf);  // bit(25) = 1 -> reg
     } else {
       offset = op2 & 0XFFF;
     }
-  } else /* Addressing mode 3 */
-  {
+  }
+
+  // Addressing mode 3
+  else {
     if (imm != 0) {
       offset = ((op2 & 0XF00) >> 4) | (op2 & 0X00F);
     } else {
-      offset = b_reg(op2 & 0xF, &cf);
+      offset = bReg(op2 & 0xF, &cf);
     }
   }
 
@@ -1659,32 +1635,39 @@ int transfer_offset(int op2,
   return offset;
 }
 
-/*----------------------------------------------------------------------------*/
-
+/**
+ * @brief
+ * @param op_code
+ */
 void multiple(uint op_code) {
-  if ((op_code & load_mask) == 0)
+  if ((op_code & load_mask) == 0) {
     stm((op_code & 0X01800000) >> 23, (op_code & rn_mask) >> 16,
         op_code & 0X0000FFFF, op_code & write_back_mask, op_code & user_mask);
-  else
+  } else {
     ldm((op_code & 0X01800000) >> 23, (op_code & rn_mask) >> 16,
         op_code & 0X0000FFFF, op_code & write_back_mask, op_code & user_mask);
+  }
 }
 
-/*----------------------------------------------------------------------------*/
-
-int bit_count(uint source, int* first) {
-  int count, reg;
-
-  count = 0;
-  reg = 0;
+/**
+ * @brief
+ * @param source
+ * @param first
+ * @return int
+ */
+int bitCount(uint source, int* first) {
+  int count = 0;
+  int reg = 0;
   *first = -1;
 
   while (source != 0) {
     if ((source & bit_0) != 0) {
       count = count + 1;
-      if (*first < 0)
+      if (*first < 0) {
         *first = reg;
+      }
     }
+
     source = source >> 1;
     reg = reg + 1;
   }
@@ -1692,21 +1675,23 @@ int bit_count(uint source, int* first) {
   return count;
 }
 
-/*----------------------------------------------------------------------------*/
-
-void ldm(int mode,
-         int Rn,
-         int reg_list,
-         int write_back,
-         int hat) { /* Last two parameters are zero/non-zero bools */
-
+/**
+ * @brief
+ *
+ * @param mode
+ * @param Rn
+ * @param reg_list
+ * @param write_back
+ * @param hat
+ */
+void ldm(int mode, int Rn, int reg_list, bool write_back, bool hat) {
   int address, new_base, count, first_reg, reg, data;
   int force_user;
-  int r15_inc; /* internal `bool' */
+  bool r15_inc;  // internal `bool'
 
-  address = get_reg(Rn, reg_current);
-  count = bit_count(reg_list, &first_reg);
-  r15_inc = (reg_list & 0X00008000) != 0; /* R15 in list */
+  address = getRegister(Rn, reg_current);
+  count = bitCount(reg_list, &first_reg);
+  r15_inc = (reg_list & 0X00008000) != 0;  // R15 in list
 
   switch (mode) {
     case 0:
@@ -1726,53 +1711,61 @@ void ldm(int mode,
       break;
   }
 
-  address = address & 0XFFFFFFFC; /* Bottom 2 bits ignored in address */
+  address = address & 0XFFFFFFFC;  // Bottom 2 bits ignored in address
 
-  if (write_back != 0)
-    put_reg(Rn, new_base, reg_current);
+  if (write_back) {
+    putRegister(Rn, new_base, reg_current);
+  }
 
-  if ((hat != 0) && !r15_inc)
+  // Force user unless R15 in list
+  if (hat && !r15_inc) {
     force_user = reg_user;
-  else
+  } else {
     force_user = reg_current;
-  /* Force user unless R15 in list */
+  }
+
   reg = 0;
 
   while (reg_list != 0) {
     if ((reg_list & bit_0) != 0) {
-      data = read_mem(address, 4, false, false, mem_data); /* Keep for later */
-      put_reg(reg, data, force_user);
+      data = readMemory(address, 4, false, false, memData);  // Keep for later
+      putRegister(reg, data, force_user);
       address = address + 4;
     }
+
     reg_list = reg_list >> 1;
     reg = reg + 1;
   }
 
-  if (r15_inc) /* R15 in list */
-  {
-    if ((data & 1) != 0)
-      cpsr = cpsr | tf_mask; /* data left over from last load */
-    else
-      cpsr = cpsr & ~tf_mask; /* used to set instruction set */
-    if (hat != 0)
-      cpsr = spsr[cpsr & mode_mask]; /* ... and if S bit set */
+  // R15 in list
+  if (r15_inc) {
+    if ((data & 1) != 0) {
+      cpsr = cpsr | tf_mask;  // data left over from last load
+    } else {
+      cpsr = cpsr & ~tf_mask;  // used to set instruction set
+    }
+
+    if (hat) {
+      cpsr = spsr[cpsr & mode_mask];  // and if S bit set
+    }
   }
 }
 
-/*----------------------------------------------------------------------------*/
-
-void stm(int mode,
-         int Rn,
-         int reg_list,
-         int write_back,
-         int hat) { /* Last two parameters are zero/non-zero bools */
-
+/**
+ * @brief
+ * @param mode
+ * @param Rn
+ * @param reg_list
+ * @param write_back
+ * @param hat
+ */
+void stm(int mode, int Rn, int reg_list, bool write_back, bool hat) {
   int address, new_base, count, first_reg, reg;
   int force_user;
   bool special;
 
-  address = get_reg(Rn, reg_current);
-  count = bit_count(reg_list, &first_reg);
+  address = getRegister(Rn, reg_current);
+  count = bitCount(reg_list, &first_reg);
 
   switch (mode) {
     case 0:
@@ -1792,86 +1785,103 @@ void stm(int mode,
       break;
   }
 
-  address = address & 0XFFFFFFFC; /* Bottom 2 bits ignored in address */
+  address = address & 0XFFFFFFFC;  // Bottom 2 bits ignored in address
 
   special = false;
   if (write_back != 0) {
-    if (Rn == first_reg)
+    if (Rn == first_reg) {
       special = true;
-    else
-      put_reg(Rn, new_base, reg_current);
+    } else {
+      putRegister(Rn, new_base, reg_current);
+    }
   }
 
-  if (hat != 0)
+  if (hat != 0) {
     force_user = reg_user;
-  else
+  } else {
     force_user = reg_current;
+  }
 
   reg = 0;
 
   while (reg_list != 0) {
     if ((reg_list & bit_0) != 0) {
-      write_mem(address, get_reg(reg, force_user), 4, false, mem_data);
+      writeMemory(address, getRegister(reg, force_user), 4, false, memData);
       address = address + 4;
     }
+
     reg_list = reg_list >> 1;
     reg = reg + 1;
   }
 
   if (special)
-    put_reg(Rn, new_base, reg_current);
+    putRegister(Rn, new_base, reg_current);
 }
 
-/*----------------------------------------------------------------------------*/
+/**
+ * @brief
+ * @param opCode
+ */
+void branch(uint opCode) {
+  int PC = getRegister(15, reg_current);  // Get this now in case mode changes
 
-void branch(uint op_code) {
-  int offset, PC;
+  if (((opCode & link_mask) != 0) || ((opCode & 0XF0000000) == 0XF0000000)) {
+    putRegister(14, getRegister(15, reg_current) - 4, reg_current);
+  }
 
-  PC = get_reg(15, reg_current); /* Get this now in case mode changes */
+  int offset = (opCode & branch_field) << 2;
 
-  if (((op_code & link_mask) != 0) || ((op_code & 0XF0000000) == 0XF0000000))
-    put_reg(14, get_reg(15, reg_current) - 4, reg_current);
+  if ((opCode & branch_sign) != 0) {
+    offset = offset | (~(branch_field << 2) & 0XFFFFFFFC);  // sign extend
+  }
 
-  offset = (op_code & branch_field) << 2;
-  if ((op_code & branch_sign) != 0)
-    offset = offset | (~(branch_field << 2) & 0XFFFFFFFC); /* sign extend */
-
-  if ((op_code & 0XF0000000) == 0XF0000000) /* Other BLX fix-up */
-  {
-    offset = offset | ((op_code >> 23) & 2);
+  // Other BLX fix-up
+  if ((opCode & 0XF0000000) == 0XF0000000) {
+    offset = offset | ((opCode >> 23) & 2);
     cpsr = cpsr | tf_mask;
   }
 
-  put_reg(15, PC + offset, reg_current);
+  putRegister(15, PC + offset, reg_current);
 }
 
-/*----------------------------------------------------------------------------*/
-
-bool swi_char_out(char c) {
-  while (!put_buffer(&terminal0_Tx, c)) {
+/**
+ * @brief
+ * @param c
+ * @return true
+ * @return false
+ */
+bool swiCharacterPrint(char c) {
+  while (!putBuffer(&terminal0_Tx, c)) {
     if (status == CLIENT_STATE_RESET) {
       return false;
-    } else
-      comm(SWI_poll); /* If stalled, retain monitor communications */
+    } else {
+      comm(SWI_poll);  // If stalled, retain monitor communications
+    }
   }
 
   return true;
 }
 
-/* Recursive zero suppression */
-int swi_dec_print(uint number) {
+/**
+ * @brief Recursive zero suppression
+ * @param number
+ * @return int
+ */
+int swiDecimalPrint(uint number) {
   int okay;
 
   okay = true;
   if (number > 0) {
-    okay = swi_dec_print(number / 10); /* Recursive call */
-    if (okay)
-      swi_char_out((number % 10) | '0'); /* Returns if reset */
+    okay = swiDecimalPrint(number / 10);  // Recursive call
+
+    if (okay) {
+      swiCharacterPrint((number % 10) | '0');  // Returns if reset
+    }
   }
   return okay;
 }
 
-void my_system(uint op_code) {
+void mySystem(uint op_code) {
   int temp;
 
   if (((op_code & 0X0F000000) == 0X0E000000)
@@ -1886,118 +1896,122 @@ void my_system(uint op_code) {
     }
 
     switch (op_code & 0X00FFFFFF) {
-      case 0: /* Output character R0 (to terminal) */
-        put_reg(15, get_reg(15, reg_current) - 8, reg_current);
-        /* Bodge PC so that stall looks `correct' */
-        swi_char_out(get_reg(0, reg_current) & 0XFF);
-
-        if (status != CLIENT_STATE_RESET)
-          put_reg(15, get_reg(15, reg_current), reg_current); /* Correct PC */
-        break;
-
-      case 1: /* Input character R0 (from terminal) */
-      {
-        unsigned char c;
-        put_reg(15, get_reg(15, reg_current) - 8, reg_current);
-        /* Bodge PC so that stall looks `correct' */
-        while ((!get_buffer(&terminal0_Rx, &c)) &&
-               (status != CLIENT_STATE_RESET))
-          comm(SWI_poll);
+      // Output character R0 (to terminal)
+      case 0:
+        putRegister(15, getRegister(15, reg_current) - 8, reg_current);
+        swiCharacterPrint(getRegister(0, reg_current) & 0XFF);
 
         if (status != CLIENT_STATE_RESET) {
-          put_reg(0, c & 0XFF, reg_current);
-          put_reg(15, get_reg(15, reg_current), reg_current); /* Correct PC */
+          putRegister(15, getRegister(15, reg_current),
+                      reg_current);  // Correct PC
+        }
+        break;
+
+      // Input character R0 (from terminal)
+      case 1: {
+        unsigned char c;
+        putRegister(15, getRegister(15, reg_current) - 8, reg_current);
+        // Bodge PC so that stall looks `correct'
+        while ((!getBuffer(&terminal0_Rx, &c)) &&
+               (status != CLIENT_STATE_RESET)) {
+          comm(SWI_poll);
+        }
+
+        if (status != CLIENT_STATE_RESET) {
+          putRegister(0, c & 0XFF, reg_current);
+          putRegister(15, getRegister(15, reg_current),
+                      reg_current);  // Correct PC
         }
       } break;
 
-      case 2: /* Halt */
+      // Halt
+      case 2:
         status = CLIENT_STATE_BYPROG;
         break;
 
-      case 3: /* Print string @R0 (to terminal) */
-      {
-        uint str_ptr;
+      // Print string @R0 (to terminal)
+      case 3: {
+        putRegister(15, getRegister(15, reg_current) - 8, reg_current);
+        uint str_ptr = getRegister(0, reg_current);
+
         char c;
-
-        put_reg(15, get_reg(15, reg_current) - 8, reg_current);
-        /* Bodge PC so that stall looks `correct' */
-
-        str_ptr = get_reg(0, reg_current);
-        while (((c = read_mem(str_ptr, 1, false, false, mem_system)) != '\0') &&
-               (status != CLIENT_STATE_RESET)) {
-          swi_char_out(c); /* Returns if reset */
+        while (
+            ((c = readMemory(str_ptr, 1, false, false, memSystem)) != '\0') &&
+            (status != CLIENT_STATE_RESET)) {
+          swiCharacterPrint(c);  // Returns if reset
           str_ptr++;
         }
 
-        if (status != CLIENT_STATE_RESET)
-          put_reg(15, get_reg(15, reg_current), reg_current); /* Correct PC */
+        if (status != CLIENT_STATE_RESET) {
+          putRegister(15, getRegister(15, reg_current),
+                      reg_current);  // Correct PC
+        }
       } break;
 
-      case 4: /* Decimal print R0 */
-      {
-        uint number;
-        int okay;
+      // Decimal print R0
+      case 4: {
+        putRegister(15, getRegister(15, reg_current) - 8, reg_current);
+        const uint number = getRegister(0, reg_current);
+        number == 0 ? swiCharacterPrint('0') : swiDecimalPrint(number);
 
-        put_reg(15, get_reg(15, reg_current) - 8, reg_current);
-        /* Bodge PC so that stall looks `correct' */
-
-        number = get_reg(0, reg_current);
-        if (number == 0) {
-          okay = swi_char_out('0'); /* Don't suppress last zero */
-
-        } else {
-          okay = swi_dec_print(number); /* Returns if reset */
+        if (status != CLIENT_STATE_RESET) {
+          putRegister(15, getRegister(15, reg_current),
+                      reg_current);  // Correct PC
         }
-
-        if (status != CLIENT_STATE_RESET)
-          put_reg(15, get_reg(15, reg_current), reg_current); /* Correct PC */
       } break;
 
       default:
-        if (print_out)
+        if (print_out) {
           fprintf(stderr, "Untrapped SWI call %06X\n", op_code & 0X00FFFFFF);
-        spsr[sup_mode] = cpsr;
-        cpsr = (cpsr & ~mode_mask) | sup_mode;
-        cpsr = cpsr & ~tf_mask; /* Always in ARM mode */
-        put_reg(14, get_reg(15, reg_current) - 4, reg_current);
-        put_reg(15, 8, reg_current);
+        }
+
+        spsr[supMode] = cpsr;
+        cpsr = (cpsr & ~mode_mask) | supMode;
+        cpsr = cpsr & ~tf_mask;  // Always in ARM mode
+        putRegister(14, getRegister(15, reg_current) - 4, reg_current);
+        putRegister(15, 8, reg_current);
         break;
     }
   }
 }
 
-/*----------------------------------------------------------------------------*/
-/* This is the breakpoint *instruction*                                       */
-
-void breakpoint() /* Looks like a prefetch abort */
-{
-  spsr[abt_mode] = cpsr;
-  cpsr = (cpsr & ~mode_mask & ~tf_mask) | abt_mode;
-  put_reg(14, get_reg(15, reg_current) - 4, reg_current);
-  put_reg(15, 12, reg_current);
+/**
+ * @brief This is the breakpoint instruction.
+ */
+void breakpoint() {
+  spsr[abtMode] = cpsr;
+  cpsr = (cpsr & ~mode_mask & ~tf_mask) | abtMode;
+  putRegister(14, getRegister(15, reg_current) - 4, reg_current);
+  putRegister(15, 12, reg_current);
 }
 
-/*----------------------------------------------------------------------------*/
-
+/**
+ * @brief
+ */
 void undefined() {
-  spsr[undef_mode] = cpsr;
-  cpsr = (cpsr & ~mode_mask & ~tf_mask) | undef_mode;
-  put_reg(14, get_reg(15, reg_current) - 4, reg_current);
-  put_reg(15, 4, reg_current);
+  spsr[undefMode] = cpsr;
+  cpsr = (cpsr & ~mode_mask & ~tf_mask) | undefMode;
+  putRegister(14, getRegister(15, reg_current) - 4, reg_current);
+  putRegister(15, 4, reg_current);
 }
 
-/*----------------------------------------------------------------------------*/
-/*----------------------------------------------------------------------------*/
-
-void set_flags(int operation, int a, int b, int rd, int carry) {
-  set_NZ(rd);
-  set_CF(a, rd, carry);
+/**
+ * @brief
+ * @param operation
+ * @param a
+ * @param b
+ * @param rd
+ * @param carry
+ */
+void setFlags(int operation, int a, int b, int rd, int carry) {
+  setNZ(rd);
+  setCF(a, rd, carry);
   switch (operation) {
     case 1:
-      set_VF_ADD(a, b, rd);
+      setVF_ADD(a, b, rd);
       break;
     case 2:
-      set_VF_SUB(a, b, rd);
+      setVF_SUB(a, b, rd);
       break;
     default:
       fprintf(stderr, "Flag setting error\n");
@@ -2005,56 +2019,70 @@ void set_flags(int operation, int a, int b, int rd, int carry) {
   }
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-
-void set_NZ(uint value) {
-  if (value == 0)
+/**
+ * @brief
+ * @param value
+ */
+void setNZ(uint value) {
+  if (value == 0) {
     cpsr = cpsr | zf_mask;
-  else
+  } else {
     cpsr = cpsr & ~zf_mask;
-  if ((value & bit_31) != 0)
+  }
+
+  if ((value & bit_31) != 0) {
     cpsr = cpsr | nf_mask;
-  else
+  } else {
     cpsr = cpsr & ~nf_mask;
+  }
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-
-void set_CF(uint a,
-            uint rd,
-            int carry) { /* Two ways result can equal an operand */
+/**
+ * @brief Two ways result can equal an operand.
+ * @param a
+ * @param rd
+ * @param carry
+ */
+void setCF(uint a, uint rd, int carry) {
   if ((rd > a) || ((rd == a) && (carry == 0)))
     cpsr = cpsr & ~cf_mask;
   else
     cpsr = cpsr | cf_mask;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-
-void set_VF_ADD(int a, int b, int rd) {
-  cpsr = cpsr & ~vf_mask; /* Clear VF */
-  if (((~(a ^ b) & (a ^ rd)) & bit_31) != 0)
+/**
+ * @brief
+ * @param a
+ * @param b
+ * @param rd
+ */
+void setVF_ADD(int a, int b, int rd) {
+  cpsr = cpsr & ~vf_mask;  // Clear VF
+  if (((~(a ^ b) & (a ^ rd)) & bit_31) != 0) {
     cpsr = cpsr | vf_mask;
+  }
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-
-void set_VF_SUB(int a, int b, int rd) {
-  cpsr = cpsr & ~vf_mask; /* Clear VF */
-  if ((((a ^ b) & (a ^ rd)) & bit_31) != 0)
+/**
+ * @brief
+ * @param a
+ * @param b
+ * @param rd
+ */
+void setVF_SUB(int a, int b, int rd) {
+  cpsr = cpsr & ~vf_mask;  // Clear VF
+  if ((((a ^ b) & (a ^ rd)) & bit_31) != 0) {
     cpsr = cpsr | vf_mask;
+  }
 }
-
-/*----------------------------------------------------------------------------*/
 
 /**
  * @brief checks CC against flag status
- *
  * @param condition
  * @return true
  * @return false
  */
-bool check_cc(int condition) {
+bool checkCC(int condition) {
   switch (condition & 0XF) {
     case 0X0:
       return zf(cpsr);
@@ -2127,7 +2155,7 @@ constexpr const bool vf(const int cpsr) {
 
 /*----------------------------------------------------------------------------*/
 
-int get_reg(int reg_no, int force_mode) {
+int getRegister(int reg_no, int force_mode) {
   int mode, value;
 
   switch (force_mode) {
@@ -2135,41 +2163,41 @@ int get_reg(int reg_no, int force_mode) {
       mode = cpsr & mode_mask;
       break;
     case reg_user:
-      mode = user_mode;
+      mode = userMode;
       break;
-    case reg_svc:
-      mode = sup_mode;
+    case regSvc:
+      mode = supMode;
       break;
-    case reg_fiq:
-      mode = fiq_mode;
+    case regFiq:
+      mode = fiqMode;
       break;
-    case reg_irq:
-      mode = irq_mode;
+    case regIrq:
+      mode = irqMode;
       break;
-    case reg_abt:
-      mode = abt_mode;
+    case regAbt:
+      mode = abtMode;
       break;
     case reg_undef:
-      mode = undef_mode;
+      mode = undefMode;
       break;
   }
 
   if (reg_no == 16) {
     value = cpsr;  // Trap for status registers
   } else if (reg_no == 17) {
-    if ((mode == user_mode) || (mode == system_mode)) {
+    if ((mode == userMode) || (mode == systemMode)) {
       value = cpsr;
     } else {
       value = spsr[mode];
     }
   } else if (reg_no != 15) {
     switch (mode) {
-      case user_mode:
-      case system_mode:
+      case userMode:
+      case systemMode:
         value = r[reg_no];
         break;
 
-      case fiq_mode:
+      case fiqMode:
         if (reg_no < 8) {
           value = r[reg_no];
 
@@ -2178,7 +2206,7 @@ int get_reg(int reg_no, int force_mode) {
         }
         break;
 
-      case irq_mode:
+      case irqMode:
         if (reg_no < 13) {
           value = r[reg_no];
         } else {
@@ -2186,7 +2214,7 @@ int get_reg(int reg_no, int force_mode) {
         }
         break;
 
-      case sup_mode:
+      case supMode:
         if (reg_no < 13) {
           value = r[reg_no];
 
@@ -2195,7 +2223,7 @@ int get_reg(int reg_no, int force_mode) {
         }
         break;
 
-      case abt_mode:
+      case abtMode:
         if (reg_no < 13) {
           value = r[reg_no];
 
@@ -2204,7 +2232,7 @@ int get_reg(int reg_no, int force_mode) {
         }
         break;
 
-      case undef_mode:
+      case undefMode:
         if (reg_no < 13) {
           value = r[reg_no];
 
@@ -2221,11 +2249,11 @@ int get_reg(int reg_no, int force_mode) {
 }
 
 /*----------------------------------------------------------------------------*/
-/* Modified "get_reg" to give unadulterated copy of PC                        */
+/* Modified "getRegister" to give unadulterated copy of PC */
 
-int get_reg_monitor(int reg_no, int force_mode) {
+int getRegisterMonitor(int reg_no, int force_mode) {
   if (reg_no != 15)
-    return get_reg(reg_no, force_mode);
+    return getRegister(reg_no, force_mode);
   else
     return r[15]; /* PC access */
 }
@@ -2233,7 +2261,7 @@ int get_reg_monitor(int reg_no, int force_mode) {
 /*----------------------------------------------------------------------------*/
 /* Write to a specified processor register                                    */
 
-void put_reg(int reg_no, int value, int force_mode) {
+void putRegister(int reg_no, int value, int force_mode) {
   int mode;
 
   switch (force_mode) {
@@ -2241,68 +2269,68 @@ void put_reg(int reg_no, int value, int force_mode) {
       mode = cpsr & mode_mask;
       break;
     case reg_user:
-      mode = user_mode;
+      mode = userMode;
       break;
-    case reg_svc:
-      mode = sup_mode;
+    case regSvc:
+      mode = supMode;
       break;
-    case reg_fiq:
-      mode = fiq_mode;
+    case regFiq:
+      mode = fiqMode;
       break;
-    case reg_irq:
-      mode = irq_mode;
+    case regIrq:
+      mode = irqMode;
       break;
-    case reg_abt:
-      mode = abt_mode;
+    case regAbt:
+      mode = abtMode;
       break;
     case reg_undef:
-      mode = undef_mode;
+      mode = undefMode;
       break;
   }
 
   if (reg_no == 16)
     cpsr = value; /* Trap for status registers */
   else if (reg_no == 17) {
-    if ((mode == user_mode) || (mode == system_mode))
+    if ((mode == userMode) || (mode == systemMode))
       cpsr = value;
     else
       spsr[mode] = value;
   } else if (reg_no != 15) {
     switch (mode) {
-      case user_mode:
-      case system_mode:
+      case userMode:
+      case systemMode:
         r[reg_no] = value;
         break;
 
-      case fiq_mode:
+      case fiqMode:
         if (reg_no < 8)
           r[reg_no] = value;
         else
           fiq_r[reg_no - 8] = value;
         break;
 
-      case irq_mode:
+      case irqMode:
         if (reg_no < 13)
           r[reg_no] = value;
         else
           irq_r[reg_no - 13] = value;
         break;
 
-      case sup_mode:
+      case supMode:
         if (reg_no < 13)
           r[reg_no] = value;
         else
           sup_r[reg_no - 13] = value;
         break;
 
-      case abt_mode:
+      case abtMode:
         if (reg_no < 13)
           r[reg_no] = value;
         else
           abt_r[reg_no - 13] = value;
         break;
 
-      case undef_mode:
+      case undefMode:
         if (reg_no < 13)
           r[reg_no] = value;
         else
@@ -2331,33 +2359,33 @@ constexpr const int instructionLength(const int cpsr, const int tf_mask) {
  * @return uint
  */
 uint fetch() {
-  uint op_code =
-      read_mem((get_reg(15, reg_current) - instructionLength(cpsr, tf_mask)),
-               instructionLength(cpsr, tf_mask), false, false, mem_instruction);
+  uint op_code = readMemory(
+      (getRegister(15, reg_current) - instructionLength(cpsr, tf_mask)),
+      instructionLength(cpsr, tf_mask), false, false, memInstruction);
 
   for (int i = 0; i < 32; i++) {
     if (past_opc_addr[i] ==
-        get_reg(15, reg_current) - instructionLength(cpsr, tf_mask)) {
+        getRegister(15, reg_current) - instructionLength(cpsr, tf_mask)) {
       past_count++;
       i = 32;  // bodged escape from loop
     }
   }
 
   past_opc_addr[past_opc_ptr++] =
-      get_reg(15, reg_current) - instructionLength(cpsr, tf_mask);
+      getRegister(15, reg_current) - instructionLength(cpsr, tf_mask);
   past_opc_ptr = past_opc_ptr % past_size;
 
   return op_code;
 }
 
 /**
- * @brief get_reg returns PC+4 for ARM & PC+2 for THUMB.
+ * @brief getRegister returns PC+4 for ARM & PC+2 for THUMB.
  */
-void inc_pc() {
-  put_reg(15, get_reg(15, reg_current), reg_current);
+void incPC() {
+  putRegister(15, getRegister(15, reg_current), reg_current);
 }
 
-void endian_swap(const uint start, const uint end) {
+void endianSwap(const uint start, const uint end) {
   for (uint i = start; i < end; i++) {
     uint j = getmem32(i);
     setmem32(i, ((j >> 24) & 0X000000FF) | ((j >> 8) & 0X0000FF00) |
@@ -2372,10 +2400,10 @@ void endian_swap(const uint start, const uint end) {
  * @param size
  * @param sign
  * @param T
- * @param source indicates type of read {mem_system, mem_instruction, mem_data}
+ * @param source indicates type of read {memSystem, memInstruction, memData}
  * @return int
  */
-int read_mem(uint address, int size, bool sign, bool T, int source) {
+int readMemory(uint address, int size, bool sign, bool T, int source) {
   int data, alignment;
 
   if (address < mem_size) {
@@ -2424,8 +2452,8 @@ int read_mem(uint address, int size, bool sign, bool T, int source) {
     }
 
     /* check watchpoints enabled */
-    if ((runflags & 0x20) && (source == mem_data)) {
-      if (check_watchpoints(address, data, size, 1)) {
+    if ((runflags & 0x20) && (source == memData)) {
+      if (checkWatchpoints(address, data, size, 1)) {
         status = CLIENT_STATE_WATCHPOINT;
       }
     }
@@ -2439,7 +2467,7 @@ int read_mem(uint address, int size, bool sign, bool T, int source) {
 
 /*----------------------------------------------------------------------------*/
 
-void write_mem(uint address, int data, int size, bool T, int source) {
+void writeMemory(uint address, int data, int size, bool T, int source) {
   uint mask;
 
   if ((address == tube_address) &&
@@ -2496,9 +2524,9 @@ void write_mem(uint address, int data, int size, bool T, int source) {
     }
 
     if ((runflags & 0x20) &&
-        (source == mem_data)) /* check watchpoints enabled */
+        (source == memData)) /* check watchpoints enabled */
     {
-      if (check_watchpoints(address, data, size, 0)) {
+      if (checkWatchpoints(address, data, size, 0)) {
         status = CLIENT_STATE_WATCHPOINT;
       }
     }
@@ -2510,7 +2538,7 @@ void write_mem(uint address, int data, int size, bool T, int source) {
 /*- - - - - - - - - - - - watchpoints - - - - - - - - - - - - - - - - - - - */
 /*                      to be completed                                     */
 
-int check_watchpoints(uint address, int data, int size, int direction) {
+int checkWatchpoints(uint address, int data, int size, int direction) {
   bool may_break = false;
 
   for (int i = 0; (i < NO_OF_WATCHPOINTS) && !may_break; i++) {
@@ -2575,7 +2603,7 @@ int check_watchpoints(uint address, int data, int size, int direction) {
 /*----------------------------------------------------------------------------*/
 
 /* This is filthy :-( */
-int get_number(char* ptr) {
+int getNumber(char* ptr) {
   int a;
 
   a = 0;
@@ -2696,8 +2724,9 @@ void data0(uint op_code) {
   uint shift, result;
   int cf;
 
-  rn = get_reg(((op_code >> 3) & 7), reg_current); /* Called "Rm" in shifts */
-  shift = ((op_code >> 6) & 0X0000001F);           /* Extracted speculatively */
+  rn = getRegister(((op_code >> 3) & 7),
+                   reg_current);         /* Called "Rm" in shifts */
+  shift = ((op_code >> 6) & 0X0000001F); /* Extracted speculatively */
 
   if ((op_code & 0X1800) != 0X1800) /* Shifts */
   {
@@ -2726,12 +2755,12 @@ void data0(uint op_code) {
       cpsr = cpsr | cf_mask;
     else
       cpsr = cpsr & ~cf_mask;
-    set_NZ(result);
-    put_reg((op_code & 7), result, reg_current);
+    setNZ(result);
+    putRegister((op_code & 7), result, reg_current);
   } else {
     if ((op_code & 0X0400) == 0) /* ADD(3)/SUB(3) */
     {
-      op2 = get_reg((op_code >> 6) & 7, reg_current);
+      op2 = getRegister((op_code >> 6) & 7, reg_current);
     } else /* ADD(1)/SUB(1) */
     {
       op2 = (op_code >> 6) & 7;
@@ -2739,13 +2768,13 @@ void data0(uint op_code) {
 
     if ((op_code & 0X0200) == 0) {
       result = rn + op2;
-      set_flags(flag_add, rn, op2, result, 0);
+      setFlags(flagAdd, rn, op2, result, 0);
     } else {
       result = rn - op2;
-      set_flags(flag_sub, rn, op2, result, 1);
+      setFlags(flagSub, rn, op2, result, 1);
     }
 
-    put_reg(op_code & 7, result, reg_current);
+    putRegister(op_code & 7, result, reg_current);
   }
 }
 
@@ -2761,25 +2790,25 @@ void data1(uint op_code) {
   switch (op_code & 0X1800) {
     case 0X0000: /* MOV (1) */
       result = imm;
-      set_NZ(result);
-      put_reg(rd, result, reg_current);
+      setNZ(result);
+      putRegister(rd, result, reg_current);
       break;
 
     case 0X0800: /* CMP (1) */
-      result = (get_reg(rd, reg_current) - imm);
-      set_flags(flag_sub, get_reg(rd, reg_current), imm, result, 1);
+      result = (getRegister(rd, reg_current) - imm);
+      setFlags(flagSub, getRegister(rd, reg_current), imm, result, 1);
       break;
 
     case 0X1000: /* ADD (2) */
-      result = (get_reg(rd, reg_current) + imm);
-      set_flags(flag_add, get_reg(rd, reg_current), imm, result, 0);
-      put_reg(rd, result, reg_current);
+      result = (getRegister(rd, reg_current) + imm);
+      setFlags(flagAdd, getRegister(rd, reg_current), imm, result, 0);
+      putRegister(rd, result, reg_current);
       break;
 
     case 0X1800: /* SUB (2) */
-      result = (get_reg(rd, reg_current) - imm);
-      set_flags(flag_sub, get_reg(rd, reg_current), imm, result, 1);
-      put_reg(rd, result, reg_current);
+      result = (getRegister(rd, reg_current) - imm);
+      setFlags(flagSub, getRegister(rd, reg_current), imm, result, 1);
+      putRegister(rd, result, reg_current);
       break;
   }
 }
@@ -2800,21 +2829,21 @@ void data_transfer(uint op_code) {
     {
       if ((op_code & 0X0400) == 0) /* Data processing */
       {
-        rd = get_reg((op_code & 7), reg_current);
-        rm = get_reg(((op_code >> 3) & 7), reg_current);
+        rd = getRegister((op_code & 7), reg_current);
+        rm = getRegister(((op_code >> 3) & 7), reg_current);
 
         switch (op_code & 0X03C0) /* data processing opcode */
         {
           case 0X0000: /* AND */
             result = rd & rm;
-            put_reg(op_code & 7, result, reg_current);
-            set_NZ(result);
+            putRegister(op_code & 7, result, reg_current);
+            setNZ(result);
             break;
 
           case 0X0040: /* EOR */
             result = rd ^ rm;
-            put_reg(op_code & 7, result, reg_current);
-            set_NZ(result);
+            putRegister(op_code & 7, result, reg_current);
+            setNZ(result);
             break;
 
           case 0X0080:                    /* LSL (2) */
@@ -2824,8 +2853,8 @@ void data_transfer(uint op_code) {
               cpsr = cpsr | cf_mask;
             else
               cpsr = cpsr & ~cf_mask;
-            set_NZ(result);
-            put_reg(op_code & 7, result, reg_current);
+            setNZ(result);
+            putRegister(op_code & 7, result, reg_current);
             break;
 
           case 0X00C0:                    /* LSR (2) */
@@ -2835,8 +2864,8 @@ void data_transfer(uint op_code) {
               cpsr = cpsr | cf_mask;
             else
               cpsr = cpsr & ~cf_mask;
-            set_NZ(result);
-            put_reg(op_code & 7, result, reg_current);
+            setNZ(result);
+            putRegister(op_code & 7, result, reg_current);
             break;
 
           case 0X0100:                    /* ASR (2) */
@@ -2846,24 +2875,24 @@ void data_transfer(uint op_code) {
               cpsr = cpsr | cf_mask;
             else
               cpsr = cpsr & ~cf_mask;
-            set_NZ(result);
-            put_reg(op_code & 7, result, reg_current);
+            setNZ(result);
+            putRegister(op_code & 7, result, reg_current);
             break;
 
           case 0X0140: /* ADC */
             result = rd + rm;
             if ((cpsr & cf_mask) != 0)
               result = result + 1; /* Add CF */
-            set_flags(flag_add, rd, rm, result, cpsr & cf_mask);
-            put_reg(op_code & 7, result, reg_current);
+            setFlags(flagAdd, rd, rm, result, cpsr & cf_mask);
+            putRegister(op_code & 7, result, reg_current);
             break;
 
           case 0X0180: /* SBC */
             result = rd - rm - 1;
             if ((cpsr & cf_mask) != 0)
               result = result + 1;
-            set_flags(flag_sub, rd, rm, result, cpsr & cf_mask);
-            put_reg(op_code & 7, result, reg_current);
+            setFlags(flagSub, rd, rm, result, cpsr & cf_mask);
+            putRegister(op_code & 7, result, reg_current);
             break;
 
           case 0X01C0:                    /* ROR */
@@ -2873,50 +2902,50 @@ void data_transfer(uint op_code) {
               cpsr = cpsr | cf_mask;
             else
               cpsr = cpsr & ~cf_mask;
-            set_NZ(result);
-            put_reg(op_code & 7, result, reg_current);
+            setNZ(result);
+            putRegister(op_code & 7, result, reg_current);
             break;
 
           case 0X0200: /* TST */
-            set_NZ(rd & rm);
+            setNZ(rd & rm);
             break;
 
           case 0X0240: /* NEG */
             result = -rm;
-            put_reg(op_code & 7, result, reg_current);
-            set_flags(flag_sub, 0, rm, result, 1);
+            putRegister(op_code & 7, result, reg_current);
+            setFlags(flagSub, 0, rm, result, 1);
             break;
 
           case 0X0280: /* CMP (2) */
-            set_flags(flag_sub, rd, rm, rd - rm, 1);
+            setFlags(flagSub, rd, rm, rd - rm, 1);
             break;
 
           case 0X02C0: /* CMN */
-            set_flags(flag_add, rd, rm, rd + rm, 0);
+            setFlags(flagAdd, rd, rm, rd + rm, 0);
             break;
 
           case 0X0300: /* ORR */
             result = rd | rm;
-            set_NZ(result);
-            put_reg(op_code & 7, result, reg_current);
+            setNZ(result);
+            putRegister(op_code & 7, result, reg_current);
             break;
 
           case 0X00340: /* MUL */
             result = rm * rd;
-            set_NZ(result);
-            put_reg(op_code & 7, result, reg_current);
+            setNZ(result);
+            putRegister(op_code & 7, result, reg_current);
             break;
 
           case 0X0380: /* BIC */
             result = rd & ~rm;
-            set_NZ(result);
-            put_reg(op_code & 7, result, reg_current);
+            setNZ(result);
+            putRegister(op_code & 7, result, reg_current);
             break;
 
           case 0X03C0: /* MVN */
             result = ~rm;
-            set_NZ(result);
-            put_reg(op_code & 7, result, reg_current);
+            setNZ(result);
+            putRegister(op_code & 7, result, reg_current);
             break;
         }    /* End of switch */
       } else /* special data processing */
@@ -2924,24 +2953,24 @@ void data_transfer(uint op_code) {
         switch (op_code & 0X0300) {
           case 0X0000: /* ADD (4) high registers */
             rd = ((op_code & 0X0080) >> 4) | (op_code & 7);
-            rm = get_reg(((op_code >> 3) & 15), reg_current);
-            put_reg(rd, get_reg(rd, reg_current) + rm, reg_current);
+            rm = getRegister(((op_code >> 3) & 15), reg_current);
+            putRegister(rd, getRegister(rd, reg_current) + rm, reg_current);
             break;
 
           case 0X0100: /* CMP (3) high registers */
-            rd = get_reg((((op_code & 0X0080) >> 4) | (op_code & 7)),
-                         reg_current);
-            rm = get_reg(((op_code >> 3) & 15), reg_current);
-            set_flags(flag_sub, rd, rm, rd - rm, 1);
+            rd = getRegister((((op_code & 0X0080) >> 4) | (op_code & 7)),
+                             reg_current);
+            rm = getRegister(((op_code >> 3) & 15), reg_current);
+            setFlags(flagSub, rd, rm, rd - rm, 1);
             break;
 
           case 0X0200: /* MOV (2) high registers */
             rd = ((op_code & 0X0080) >> 4) | (op_code & 7);
-            rm = get_reg(((op_code >> 3) & 15), reg_current);
+            rm = getRegister(((op_code >> 3) & 15), reg_current);
 
             if (rd == 15)
               rm = rm & 0XFFFFFFFE; /* Tweak mov to PC */
-            put_reg(rd, rm, reg_current);
+            putRegister(rd, rm, reg_current);
             break;
 
           case 0X0300: /* BX/BLX Rm */
@@ -2952,54 +2981,55 @@ void data_transfer(uint op_code) {
     } else /* load from literal pool */
     {      /* LDR PC */
       rd = ((op_code >> 8) & 7);
-      address =
-          (((op_code & 0X00FF) << 2)) + (get_reg(15, reg_current) & 0XFFFFFFFC);
-      put_reg(rd, read_mem(address, 4, false, false, mem_data), reg_current);
+      address = (((op_code & 0X00FF) << 2)) +
+                (getRegister(15, reg_current) & 0XFFFFFFFC);
+      putRegister(rd, readMemory(address, 4, false, false, memData),
+                  reg_current);
     }
   } else { /* load/store word, halfword, byte, signed byte */
     int rm, rn;
     int data;
 
     rd = (op_code & 7);
-    rn = get_reg(((op_code >> 3) & 7), reg_current);
-    rm = get_reg(((op_code >> 6) & 7), reg_current);
+    rn = getRegister(((op_code >> 3) & 7), reg_current);
+    rm = getRegister(((op_code >> 6) & 7), reg_current);
 
     switch (op_code & 0X0E00) {
       case 0X0000: /* STR (2) register */
-        write_mem(rn + rm, get_reg(rd, reg_current), 4, false, mem_data);
+        writeMemory(rn + rm, getRegister(rd, reg_current), 4, false, memData);
         break;
 
       case 0X0200: /* STRH (2) register */
-        write_mem(rn + rm, get_reg(rd, reg_current), 2, false, mem_data);
+        writeMemory(rn + rm, getRegister(rd, reg_current), 2, false, memData);
         break;
 
       case 0X0400: /* STRB (2) register */
-        write_mem(rn + rm, get_reg(rd, reg_current), 1, false, mem_data);
+        writeMemory(rn + rm, getRegister(rd, reg_current), 1, false, memData);
         break;
 
-      case 0X0600:                                          /* LDRSB register */
-        data = read_mem(rn + rm, 1, true, false, mem_data); /* Sign ext. */
-        put_reg(rd, data, reg_current);
+      case 0X0600: /* LDRSB register */
+        data = readMemory(rn + rm, 1, true, false, memData); /* Sign ext. */
+        putRegister(rd, data, reg_current);
         break;
 
       case 0X0800: /* LDR (2) register */
-        data = read_mem(rn + rm, 4, false, false, mem_data);
-        put_reg(rd, data, reg_current);
+        data = readMemory(rn + rm, 4, false, false, memData);
+        putRegister(rd, data, reg_current);
         break;
 
       case 0X0A00: /* LDRH (2) register */
-        data = read_mem(rn + rm, 2, false, false, mem_data); /* Zero ext. */
-        put_reg(rd, data, reg_current);
+        data = readMemory(rn + rm, 2, false, false, memData); /* Zero ext. */
+        putRegister(rd, data, reg_current);
         break;
 
-      case 0X0C00:                                           /* LDRB (2) */
-        data = read_mem(rn + rm, 1, false, false, mem_data); /* Zero ext. */
-        put_reg(rd, data, reg_current);
+      case 0X0C00:                                            /* LDRB (2) */
+        data = readMemory(rn + rm, 1, false, false, memData); /* Zero ext. */
+        putRegister(rd, data, reg_current);
         break;
 
-      case 0X0E00:                                          /* LDRSH (2) */
-        data = read_mem(rn + rm, 2, true, false, mem_data); /* Sign ext. */
-        put_reg(rd, data, reg_current);
+      case 0X0E00:                                           /* LDRSH (2) */
+        data = readMemory(rn + rm, 2, true, false, memData); /* Sign ext. */
+        putRegister(rd, data, reg_current);
         break;
     }
   }
@@ -3011,32 +3041,32 @@ void transfer0(uint op_code) {
   int rd, rn;
   int location, data;
 
-  rn = get_reg(((op_code >> 3) & 7), reg_current);
+  rn = getRegister(((op_code >> 3) & 7), reg_current);
 
   if ((op_code & 0X0800) == 0) /* STR */
   {
-    rd = get_reg((op_code & 7), reg_current);
+    rd = getRegister((op_code & 7), reg_current);
     if ((op_code & 0X1000) == 0) /* STR (1) 5-bit imm */
     {
       location = rn + ((op_code >> 4) & 0X07C); /* shift twice = *4 */
-      write_mem(location, rd, 4, false, mem_data);
+      writeMemory(location, rd, 4, false, memData);
     } else /* STRB (1) */
     {
       location = rn + ((op_code >> 6) & 0X1F);
-      write_mem(location, rd, 1, false, mem_data);
+      writeMemory(location, rd, 1, false, memData);
     }
   } else /* LDR (1) */
   {
     rd = op_code & 7;
     if ((op_code & 0X1000) == 0) {
       location = (rn + ((op_code >> 4) & 0X07C)); /* shift twice = *4 */
-      data = read_mem(location, 4, false, false, mem_data);
+      data = readMemory(location, 4, false, false, memData);
     } else /* LDRB (1) */
     {
       location = (rn + ((op_code >> 6) & 0X1F));
-      data = read_mem(location, 1, false, false, mem_data); /* Zero extended */
+      data = readMemory(location, 1, false, false, memData); /* Zero extended */
     }
-    put_reg(rd, data, reg_current);
+    putRegister(rd, data, reg_current);
   }
 }
 
@@ -3048,34 +3078,34 @@ void transfer1(uint op_code) {
 
   switch (op_code & 0X1800) {
     case 0X0000: /* STRH (1) */
-      rn = get_reg((op_code >> 3) & 7, reg_current);
+      rn = getRegister((op_code >> 3) & 7, reg_current);
       rd = op_code & 7;
-      data = get_reg(rd, reg_current);
+      data = getRegister(rd, reg_current);
       location = rn + ((op_code >> 5) & 0X3E); /* x2 in shift */
-      write_mem(location, data, 2, false, mem_data);
+      writeMemory(location, data, 2, false, memData);
       break;
 
     case 0X0800: /* LDRH (1) */
       rd = op_code & 7;
-      rn = get_reg((op_code >> 3) & 7, reg_current);
-      location = rn + ((op_code >> 5) & 0X3E);              /* x2 in shift */
-      data = read_mem(location, 2, false, false, mem_data); /* Zero extended */
-      put_reg(rd, data, reg_current);
+      rn = getRegister((op_code >> 3) & 7, reg_current);
+      location = rn + ((op_code >> 5) & 0X3E);               /* x2 in shift */
+      data = readMemory(location, 2, false, false, memData); /* Zero extended */
+      putRegister(rd, data, reg_current);
       break;
 
     case 0X1000: /* STR (3) -SP */
-      data = get_reg(((op_code >> 8) & 7), reg_current);
-      rn = get_reg(13, reg_current); /* SP */
+      data = getRegister(((op_code >> 8) & 7), reg_current);
+      rn = getRegister(13, reg_current); /* SP */
       location = rn + ((op_code & 0X00FF) * 4);
-      write_mem(location, data, 4, false, mem_data);
+      writeMemory(location, data, 4, false, memData);
       break;
 
     case 0X1800: /* LDR (4) -SP */
       rd = (op_code >> 8) & 7;
-      rn = get_reg(13, reg_current);            /* SP */
+      rn = getRegister(13, reg_current);        /* SP */
       location = rn + ((op_code & 0X00FF) * 4); /* x2 in shift */
-      data = read_mem(location, 4, false, false, mem_data);
-      put_reg(rd, data, reg_current);
+      data = readMemory(location, 4, false, false, memData);
+      putRegister(rd, data, reg_current);
       break;
   }
 }
@@ -3090,21 +3120,21 @@ void sp_pc(uint op_code) {
     rd = (op_code >> 8) & 7;
 
     if ((op_code & 0X0800) == 0) /* ADD(5) -PC */
-      data =
-          (get_reg(15, reg_current) & 0XFFFFFFFC) + ((op_code & 0X00FF) << 2);
-    /* get_reg supplies PC + 2 */
+      data = (getRegister(15, reg_current) & 0XFFFFFFFC) +
+             ((op_code & 0X00FF) << 2);
+    /* getRegister supplies PC + 2 */
     else /* ADD(6) -SP */
-      data = (get_reg(13, reg_current)) + ((op_code & 0X00FF) << 2);
-    put_reg(rd, data, reg_current);
+      data = (getRegister(13, reg_current)) + ((op_code & 0X00FF) << 2);
+    putRegister(rd, data, reg_current);
   } else /* Adjust SP */
   {
     switch (op_code & 0X0F00) {
       case 0X0000:
         if ((op_code & 0X0080) == 0) /* ADD(7) -SP */
-          sp = get_reg(13, reg_current) + ((op_code & 0X7F) << 2);
+          sp = getRegister(13, reg_current) + ((op_code & 0X7F) << 2);
         else /* SUB(4) -SP */
-          sp = get_reg(13, reg_current) - ((op_code & 0X7F) << 2);
-        put_reg(13, sp, reg_current);
+          sp = getRegister(13, reg_current) - ((op_code & 0X7F) << 2);
+        putRegister(13, sp, reg_current);
         break;
 
       case 0X0400:
@@ -3164,20 +3194,20 @@ void lsm_b(uint op_code) {
   {
     if ((op_code & 0X0F00) != 0X0F00) /* Branch, not a SWI */
     {
-      if (check_cc(op_code >> 8) == true) {
+      if (checkCC(op_code >> 8) == true) {
         offset = (op_code & 0X00FF) << 1; /* sign extend */
         if ((op_code & 0X0080) != 0)
           offset = offset | 0XFFFFFE00;
 
-        put_reg(15, get_reg(15, reg_current) + offset, reg_current);
-        /* get_reg supplies pc + 2 */
+        putRegister(15, getRegister(15, reg_current) + offset, reg_current);
+        /* getRegister supplies pc + 2 */
         /*    fprintf(stderr, "%08X", address + 4 + offset); */
       }
     } else /* SWI */
     {
       offset = op_code & 0X00FF;
       /* bodge op_code to pass only SWI No. N.B. no copro in Thumb */
-      my_system(offset);
+      mySystem(offset);
     }
   }
 }
@@ -3187,18 +3217,18 @@ void lsm_b(uint op_code) {
 void thumb_branch1(uint op_code, int exchange) {
   int offset, lr;
 
-  lr = get_reg(14, reg_current); /* Retrieve first part of offset */
+  lr = getRegister(14, reg_current); /* Retrieve first part of offset */
   offset = lr + ((op_code & 0X07FF) << 1);
 
-  lr = get_reg(15, reg_current) - 2 + 1; /* + 1 to indicate Thumb mode */
+  lr = getRegister(15, reg_current) - 2 + 1; /* + 1 to indicate Thumb mode */
 
   if (exchange == true) {
     cpsr = cpsr & ~tf_mask; /* Change to ARM mode */
     offset = offset & 0XFFFFFFFC;
   }
 
-  put_reg(15, offset, reg_current);
-  put_reg(14, lr, reg_current);
+  putRegister(15, offset, reg_current);
+  putRegister(14, lr, reg_current);
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -3211,7 +3241,7 @@ void thumb_branch(uint op_code) {
       offset = (op_code & 0X07FF) << 1;
       if ((op_code & 0X0400) != 0)
         offset = offset | 0XFFFFF000; /* sign extend */
-      put_reg(15, (get_reg(15, reg_current) + offset), reg_current);
+      putRegister(15, (getRegister(15, reg_current) + offset), reg_current);
       break;
 
     case 0X0800: /* BLX */
@@ -3227,8 +3257,8 @@ void thumb_branch(uint op_code) {
 
       if ((BL_prefix & 0X0400) != 0)
         offset = offset | 0XFF800000; /* Sign ext. */
-      offset = get_reg(15, reg_current) + offset;
-      put_reg(14, offset, reg_current);
+      offset = getRegister(15, reg_current) + offset;
+      putRegister(14, offset, reg_current);
       break;
 
     case 0X1800: /* BL */
@@ -3243,7 +3273,7 @@ void thumb_branch(uint op_code) {
 
 /*----------------------------------------------------------------------------*/
 
-// Jesus wept.   What was wrong with "read_mem" and "write_mem"?
+// Jesus wept.   What was wrong with "readMemory" and "writeMemory"?
 // If int < 32 bits the whole lot is broken anyway!
 
 uint getmem32(int number) {
@@ -3263,7 +3293,7 @@ void setmem32(int number, uint reg) {
 /*----------------------------------------------------------------------------*/
 /* terminal support routines                                                  */
 
-void init_buffer(ring_buffer* buffer) {
+void initBuffer(ringBuffer* buffer) {
   buffer->iHead = 0;
   buffer->iTail = 0;
 }
@@ -3271,7 +3301,7 @@ void init_buffer(ring_buffer* buffer) {
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 /* Measure buffer occupancy                                                   */
 
-int count_buffer(ring_buffer* buffer) {
+int countBuffer(ringBuffer* buffer) {
   int i;
   i = buffer->iHead - buffer->iTail;
   if (i < 0)
@@ -3281,7 +3311,7 @@ int count_buffer(ring_buffer* buffer) {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-int put_buffer(ring_buffer* buffer, unsigned char c) {
+int putBuffer(ringBuffer* buffer, unsigned char c) {
   int status;
   uint temp;
 
@@ -3299,7 +3329,7 @@ int put_buffer(ring_buffer* buffer, unsigned char c) {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-int get_buffer(ring_buffer* buffer, unsigned char* c) {
+int getBuffer(ringBuffer* buffer, unsigned char* c) {
   int status;
 
   if (buffer->iTail != buffer->iHead) {

@@ -227,15 +227,15 @@ inline const std::string generateMemoryHex(SourceFileLine** src,
 
 // Low level sending
 
-inline void boardSendNBytes(int, int);
-inline void boardSendChar(unsigned char);
-inline void boardSendCharArray(int, unsigned char*);
+inline void sendNBytes(int, int);
+inline void sendChar(unsigned char);
+inline void sendCharArray(int, unsigned char*);
 
 // Low level receiving
 
-inline const int boardGetNBytes(int*, int);
-inline const int boardGetChar(unsigned char*);
-inline const int boardGetCharArray(int, unsigned char*);
+inline const int getNBytes(int*, int);
+inline const int getChar(unsigned char*);
+inline const int getCharArray(int, unsigned char*);
 
 // Breakpoints
 
@@ -293,8 +293,8 @@ const bool Jimulator::loadJimulator(const char* const pathToKMD) {
 void Jimulator::startJimulator(const int steps) {
   if (checkBoardState() == ClientState::NORMAL ||
       Jimulator::checkBoardState() == ClientState::BREAKPOINT) {
-    boardSendChar(static_cast<unsigned char>(BoardInstruction::START));
-    boardSendNBytes(steps, 4);  // Send step count
+    sendChar(static_cast<unsigned char>(BoardInstruction::START));
+    sendNBytes(steps, 4);  // Send step count
   }
 }
 
@@ -304,7 +304,7 @@ void Jimulator::startJimulator(const int steps) {
 void Jimulator::continueJimulator() {
   if (Jimulator::checkBoardState() == ClientState::NORMAL ||
       Jimulator::checkBoardState() == ClientState::BREAKPOINT) {
-    boardSendChar(static_cast<unsigned char>(BoardInstruction::CONTINUE));
+    sendChar(static_cast<unsigned char>(BoardInstruction::CONTINUE));
   }
 }
 
@@ -312,14 +312,14 @@ void Jimulator::continueJimulator() {
  * @brief Pauses the emulator running.
  */
 void Jimulator::pauseJimulator() {
-  boardSendChar(static_cast<unsigned char>(BoardInstruction::STOP));
+  sendChar(static_cast<unsigned char>(BoardInstruction::STOP));
 }
 
 /**
  * @brief Reset the emulators running.
  */
 void Jimulator::resetJimulator() {
-  boardSendChar(static_cast<unsigned char>(BoardInstruction::RESET));
+  sendChar(static_cast<unsigned char>(BoardInstruction::RESET));
 }
 
 /**
@@ -432,14 +432,14 @@ const std::string Jimulator::getJimulatorTerminalMessages() {
   std::string output("");
 
   while (length > 0) {
-    boardSendChar(static_cast<unsigned char>(BoardInstruction::FR_READ));
-    boardSendChar(0);  // send the terminal number
-    boardSendChar(32);
-    boardGetChar(&length);  // get length of message
+    sendChar(static_cast<unsigned char>(BoardInstruction::FR_READ));
+    sendChar(0);  // send the terminal number
+    sendChar(32);
+    getChar(&length);  // get length of message
 
     // non-zero received from board - not an empty packet
     if (length != 0) {
-      boardGetCharArray(length, string);  // Store the message
+      getCharArray(length, string);  // Store the message
       string[length] = '\0';
       output.append((char*)string);
     }
@@ -508,12 +508,12 @@ const bool Jimulator::sendTerminalInputToJimulator(const unsigned int val) {
   if (((key_pressed >= ' ') && (key_pressed <= 0x7F)) ||
       (key_pressed == '\n') || (key_pressed == '\b') || (key_pressed == '\t') ||
       (key_pressed == '\a')) {
-    boardSendChar(static_cast<unsigned char>(
+    sendChar(static_cast<unsigned char>(
         BoardInstruction::FR_WRITE));  // begins a write
-    boardSendChar(0);                  // tells where to send it
-    boardSendChar(1);                  // send length 1
-    boardSendChar(key_pressed);        // send the message - 1 char currently
-    boardGetChar(&res);                // Read the result
+    sendChar(0);                       // tells where to send it
+    sendChar(1);                       // send length 1
+    sendChar(key_pressed);             // send the message - 1 char currently
+    getChar(&res);                     // Read the result
     return true;
   }
 
@@ -539,10 +539,10 @@ std::array<Jimulator::MemoryValues, 13> Jimulator::getJimulatorMemoryValues(
 
   // Reading data into arrays!
   unsigned char memdata[bytecount];
-  boardSendChar(static_cast<unsigned char>(BoardInstruction::GET_MEM));
-  boardSendCharArray(ADDRESS_BUS_WIDTH, currentAddressS);
-  boardSendNBytes(count, 2);
-  boardGetCharArray(bytecount, memdata);
+  sendChar(static_cast<unsigned char>(BoardInstruction::GET_MEM));
+  sendCharArray(ADDRESS_BUS_WIDTH, currentAddressS);
+  sendNBytes(count, 2);
+  getCharArray(bytecount, memdata);
 
   SourceFileLine* src = NULL;
   bool firstFlag = false;
@@ -689,9 +689,9 @@ constexpr const int rotateLeft1Byte(const int val) {
  */
 inline const bool getBreakpointStatus(unsigned int* wordA,
                                       unsigned int* wordB) {
-  boardSendChar(static_cast<unsigned char>(BoardInstruction::BP_GET));
-  return not((boardGetNBytes((int*)wordA, 4) != 4) ||
-             (boardGetNBytes((int*)wordB, 4) != 4));
+  sendChar(static_cast<unsigned char>(BoardInstruction::BP_GET));
+  return not((getNBytes((int*)wordA, 4) != 4) ||
+             (getNBytes((int*)wordB, 4) != 4));
 }
 
 /**
@@ -776,14 +776,13 @@ inline const std::string generateMemoryHex(SourceFileLine** src,
  */
 inline const bool getBreakpointDefinition(unsigned int breakpointlistIndex,
                                           BreakpointInfo* bp) {
-  boardSendChar(static_cast<unsigned char>(BoardInstruction::BP_READ));
-  boardSendChar(breakpointlistIndex);  // send the number of the definition
+  sendChar(static_cast<unsigned char>(BoardInstruction::BP_READ));
+  sendChar(breakpointlistIndex);  // send the number of the definition
 
-  if ((2 != boardGetNBytes((int*)&(bp->misc), 2)) ||
-      (4 != boardGetCharArray(4, bp->addressA)) ||
-      (4 != boardGetCharArray(4, bp->addressB)) ||
-      (8 != boardGetCharArray(8, bp->dataA)) ||
-      (8 != boardGetCharArray(8, bp->dataB))) {
+  if ((2 != getNBytes((int*)&(bp->misc), 2)) ||
+      (4 != getCharArray(4, bp->addressA)) ||
+      (4 != getCharArray(4, bp->addressB)) ||
+      (8 != getCharArray(8, bp->dataA)) || (8 != getCharArray(8, bp->dataB))) {
     return false;
   } else {
     return true;
@@ -832,9 +831,9 @@ constexpr void copyStringLiterals(int i,
  * @param wordB The index that the breakpoint exists within the list.
  */
 inline void setBreakpointStatus(unsigned int wordA, unsigned int wordB) {
-  boardSendChar(static_cast<unsigned char>(BoardInstruction::BP_SET));
-  boardSendNBytes(wordA, 4);  // send word a
-  boardSendNBytes(wordB, 4);  // send word b
+  sendChar(static_cast<unsigned char>(BoardInstruction::BP_SET));
+  sendNBytes(wordA, 4);  // send word a
+  sendNBytes(wordB, 4);  // send word b
 }
 
 /**
@@ -846,13 +845,13 @@ inline void setBreakpointStatus(unsigned int wordA, unsigned int wordB) {
  */
 inline void setBreakpointDefinition(unsigned int breakpointIndex,
                                     BreakpointInfo* bp) {
-  boardSendChar(static_cast<unsigned char>(BoardInstruction::BP_WRITE));
-  boardSendChar(breakpointIndex);  // send the list index of the breakpoint
-  boardSendNBytes(bp->misc, 2);
-  boardSendCharArray(ADDRESS_BUS_WIDTH, bp->addressA);
-  boardSendCharArray(ADDRESS_BUS_WIDTH, bp->addressB);
-  boardSendCharArray(8, bp->dataA);
-  boardSendCharArray(8, bp->dataB);
+  sendChar(static_cast<unsigned char>(BoardInstruction::BP_WRITE));
+  sendChar(breakpointIndex);  // send the list index of the breakpoint
+  sendNBytes(bp->misc, 2);
+  sendCharArray(ADDRESS_BUS_WIDTH, bp->addressA);
+  sendCharArray(ADDRESS_BUS_WIDTH, bp->addressB);
+  sendCharArray(8, bp->dataA);
+  sendCharArray(8, bp->dataB);
 }
 
 /**
@@ -860,7 +859,7 @@ inline void setBreakpointDefinition(unsigned int breakpointIndex,
  * @param length The number of bytes to send from data.
  * @param data An pointer to the data that should be sent.
  */
-inline void boardSendCharArray(int length, unsigned char* data) {
+inline void sendCharArray(int length, unsigned char* data) {
   struct pollfd pollfd;
   pollfd.fd = writeToJimulator;
   pollfd.events = POLLOUT;
@@ -880,8 +879,8 @@ inline void boardSendCharArray(int length, unsigned char* data) {
  * @brief Sends a singular character to Jimulator.
  * @param data The character to send.
  */
-inline void boardSendChar(unsigned char data) {
-  boardSendCharArray(1, &data);
+inline void sendChar(unsigned char data) {
+  sendCharArray(1, &data);
 }
 
 /**
@@ -889,7 +888,7 @@ inline void boardSendChar(unsigned char data) {
  * @param data The data to be written.
  * @param n The number of bytes to write.
  */
-inline void boardSendNBytes(int data, int n) {
+inline void sendNBytes(int data, int n) {
   if (n > ADDRESS_BUS_WIDTH) {
     n = ADDRESS_BUS_WIDTH;  // Clip n
   }
@@ -902,7 +901,7 @@ inline void boardSendNBytes(int data, int n) {
     data = rotateRight1Byte(data);
   }
 
-  boardSendCharArray(n, buffer);
+  sendCharArray(n, buffer);
 }
 
 /**
@@ -912,7 +911,7 @@ inline void boardSendNBytes(int data, int n) {
  * @return int The number of bytes successfully received, up to `length` number
  * of characters.
  */
-inline const int boardGetCharArray(int length, unsigned char* data) {
+inline const int getCharArray(int length, unsigned char* data) {
   int reply_count;  // Number of chars fetched in latest attempt
   int reply_total = 0;
   struct pollfd pollfd;
@@ -955,8 +954,8 @@ inline const int boardGetCharArray(int length, unsigned char* data) {
  * @param data A pointer to a memory location where the read data can be stored.
  * @return int The number of bytes successfully received - either 1 or 0.
  */
-inline const int boardGetChar(unsigned char* data) {
-  return boardGetCharArray(1, data);
+inline const int getChar(unsigned char* data) {
+  return getCharArray(1, data);
 }
 
 /**
@@ -968,13 +967,13 @@ inline const int boardGetChar(unsigned char* data) {
  * @param n The number of bytes to read.
  * @return int The number of bytes received successfully.
  */
-inline const int boardGetNBytes(int* data, int n) {
+inline const int getNBytes(int* data, int n) {
   if (n > ADDRESS_BUS_WIDTH) {
     n = ADDRESS_BUS_WIDTH;  // Clip, just in case
   }
 
   char unsigned buffer[ADDRESS_BUS_WIDTH];
-  int numberOfReceivedBytes = boardGetCharArray(n, buffer);
+  int numberOfReceivedBytes = getCharArray(n, buffer);
   *data = 0;
 
   for (int i = 0; i < numberOfReceivedBytes; i++) {
@@ -994,11 +993,11 @@ inline const ClientState getBoardStatus() {
   int leftOfWalk;
 
   // If the board sends back the wrong the amount of data
-  boardSendChar(static_cast<unsigned char>(BoardInstruction::WOT_U_DO));
+  sendChar(static_cast<unsigned char>(BoardInstruction::WOT_U_DO));
 
-  if (boardGetChar(&clientStatus) != 1 ||
-      boardGetNBytes(&leftOfWalk, 4) != 4 ||       // Steps remaining
-      boardGetNBytes(&stepsSinceReset, 4) != 4) {  // Steps since reset
+  if (getChar(&clientStatus) != 1 ||
+      getNBytes(&leftOfWalk, 4) != 4 ||       // Steps remaining
+      getNBytes(&stepsSinceReset, 4) != 4) {  // Steps since reset
     std::cout << "board not responding\n";
     return ClientState::BROKEN;
   }
@@ -1018,10 +1017,10 @@ inline const ClientState getBoardStatus() {
 inline const std::array<unsigned char, 64> readRegistersIntoArray() {
   unsigned char data[64];
 
-  boardSendChar(static_cast<unsigned char>(BoardInstruction::GET_REG));
-  boardSendNBytes(0, 4);
-  boardSendNBytes(16, 2);
-  boardGetCharArray(64, data);
+  sendChar(static_cast<unsigned char>(BoardInstruction::GET_REG));
+  sendNBytes(0, 4);
+  sendNBytes(16, 2);
+  getCharArray(64, data);
 
   std::array<unsigned char, 64> ret;
   std::copy(std::begin(data), std::end(data), std::begin(ret));
@@ -1278,10 +1277,10 @@ constexpr const unsigned int boardTranslateMemsize(const int size) {
 inline void boardSetMemory(unsigned char* const address,
                            unsigned char* const value,
                            const int size) {
-  boardSendChar(BoardInstruction::SET_MEM | boardTranslateMemsize(size));
-  boardSendCharArray(ADDRESS_BUS_WIDTH, address);  // send address
-  boardSendNBytes(1, 2);                           // send width
-  boardSendCharArray(size, value);
+  sendChar(BoardInstruction::SET_MEM | boardTranslateMemsize(size));
+  sendCharArray(ADDRESS_BUS_WIDTH, address);  // send address
+  sendNBytes(1, 2);                           // send width
+  sendCharArray(size, value);
 }
 
 /**
