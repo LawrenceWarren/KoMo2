@@ -49,8 +49,8 @@
 #define RING_BUF_SIZE 64
 
 typedef struct {
-  unsigned int iHead;
-  unsigned int iTail;
+  uint iHead;
+  uint iTail;
   unsigned char buffer[RING_BUF_SIZE];
 } ring_buffer;
 
@@ -65,84 +65,84 @@ void comm(struct pollfd*);
 
 void emulsetup();
 void save_state(unsigned char new_status);
-void initialise(unsigned int start_address, int initial_mode);
-void execute(unsigned int op_code);
+void initialise(uint start_address, int initial_mode);
+void execute(uint op_code);
 
 /* ARM execute */
 
-void data_op(unsigned int op_code);
-void clz(unsigned int op_code);
-void transfer(unsigned int op_code);
-void transfer_sbhw(unsigned int op_code);
-void multiple(unsigned int op_code);
-void branch(unsigned int op_code);
-void my_system(unsigned int op_code);
+void data_op(uint op_code);
+void clz(uint op_code);
+void transfer(uint op_code);
+void transfer_sbhw(uint op_code);
+void multiple(uint op_code);
+void branch(uint op_code);
+void my_system(uint op_code);
 void undefined();
 void breakpoint();
 
-void mrs(unsigned int op_code);
-void msr(unsigned int op_code);
-void bx(unsigned int Rm, int link);
-void my_multi(unsigned int op_code);
-void swap(unsigned int op_code);
-void normal_data_op(unsigned int op_code, int operation);
+void mrs(uint op_code);
+void msr(uint op_code);
+void bx(uint Rm, int link);
+void my_multi(uint op_code);
+void swap(uint op_code);
+void normal_data_op(uint op_code, int operation);
 void ldm(int mode, int Rn, int reg_list, int write_back, int hat);
 void stm(int mode, int Rn, int reg_list, int write_back, int hat);
 
-int check_watchpoints(unsigned int address, int data, int size, int direction);
+int check_watchpoints(uint address, int data, int size, int direction);
 
 int transfer_offset(int op2, int add, int imm, bool sbhw);
 
 int b_reg(int op2, int* cf);
 int b_immediate(int op2, int* cf);
 
-int bit_count(unsigned int source, int* first);
+int bit_count(uint source, int* first);
 
 bool check_cc(int condition);
 
-constexpr bool zf(const int cpsr);
-constexpr bool cf(const int cpsr);
-constexpr bool nf(const int cpsr);
-constexpr bool vf(const int cpsr);
+constexpr const bool zf(const int cpsr);
+constexpr const bool cf(const int cpsr);
+constexpr const bool nf(const int cpsr);
+constexpr const bool vf(const int cpsr);
 
 void set_flags(int operation, int a, int b, int rd, int carry);
-void set_NZ(unsigned int value);
-void set_CF(unsigned int a, unsigned int rd, int carry);
+void set_NZ(uint value);
+void set_CF(uint a, uint rd, int carry);
 void set_VF_ADD(int a, int b, int rd);
 void set_VF_SUB(int a, int b, int rd);
 int get_reg(int reg_no, int force_mode);
 /* Returns PC+4 for ARM & PC+2 for Thumb */
 int get_reg_monitor(int reg_no, int force_mode);
 void put_reg(int reg_no, int value, int force_mode);
-int instruction_length();
+constexpr const int instructionLength(const int cpsr, const int tf_mask);
 
-unsigned int fetch();
+uint fetch();
 void inc_pc();
-void endian_swap(unsigned int start, unsigned int end);
-int read_mem(unsigned int address, int size, bool sign, bool T, int source);
-void write_mem(unsigned int address, int data, int size, bool T, int source);
+void endian_swap(uint start, uint end);
+int read_mem(uint address, int size, bool sign, bool T, int source);
+void write_mem(uint address, int data, int size, bool T, int source);
 
 /* THUMB execute */
-void data0(unsigned int op_code);
-void data1(unsigned int op_code);
-void data_transfer(unsigned int op_code);
-void transfer0(unsigned int op_code);
-void transfer1(unsigned int op_code);
-void sp_pc(unsigned int op_code);
-void lsm_b(unsigned int op_code);
-void thumb_branch(unsigned int op_code);
+void data0(uint op_code);
+void data1(uint op_code);
+void data_transfer(uint op_code);
+void transfer0(uint op_code);
+void transfer1(uint op_code);
+void sp_pc(uint op_code);
+void lsm_b(uint op_code);
+void thumb_branch(uint op_code);
 
 int load_fpe();
 void fpe_install();
 
 int get_number(char* ptr);
 int lsl(int value, int distance, int* cf);
-int lsr(unsigned int value, int distance, int* cf);
+int lsr(uint value, int distance, int* cf);
 int asr(int value, int distance, int* cf);
-int ror(unsigned int value, int distance, int* cf);
+int ror(uint value, int distance, int* cf);
 
-unsigned int getmem32(int number);
-void setmem32(int number, unsigned int reg);
+uint getmem32(int number);
+void setmem32(int number, uint reg);
 void execute_instruction();
 
 int emul_getchar(unsigned char* to_get);
@@ -163,8 +163,8 @@ int get_buffer(ring_buffer*, unsigned char*);
 
 #define mem_size 0X100000 /* 4Mbytes */
 #define RAMSIZE 0X100000  /* 4Mbytes */
-// Why add "RAMSIZE", and then get it wrong?!?!  @@@
-// Memory is modulo this to the monitor; excise and use the proper routines @@@
+// Why add "RAMSIZE", and then get it wrong?!?!
+// Memory is modulo this to the monitor; excise and use the proper routines
 
 #define reserved_mem 0X002000 /* 32Kbytes */
 #define user_stack (mem_size - reserved_mem) << 2
@@ -175,61 +175,61 @@ int get_buffer(ring_buffer*, unsigned char*);
 //  const int   false = 0;
 //  const int   true = -1;
 
-const unsigned int nf_mask = 0X80000000;
-const unsigned int zf_mask = 0X40000000;
-const unsigned int cf_mask = 0X20000000;
-const unsigned int vf_mask = 0X10000000;
-const unsigned int if_mask = 0X00000080;
-const unsigned int ff_mask = 0X00000040;
-const unsigned int mode_mask = 0X0000001F;
-const unsigned int tf_mask = 0X00000020; /* THUMB bit */
+const uint nf_mask = 0X80000000;
+const uint zf_mask = 0X40000000;
+const uint cf_mask = 0X20000000;
+const uint vf_mask = 0X10000000;
+const uint if_mask = 0X00000080;
+const uint ff_mask = 0X00000040;
+const uint mode_mask = 0X0000001F;
+const uint tf_mask = 0X00000020; /* THUMB bit */
 
-const unsigned int bit_31 = 0X80000000;
-const unsigned int bit_0 = 0X00000001;
+const uint bit_31 = 0X80000000;
+const uint bit_0 = 0X00000001;
 
-const unsigned int imm_mask = 0X02000000;      /* orginal word versions */
-const unsigned int imm_hw_mask = 0X00400000;   /* half word versions */
-const unsigned int data_op_mask = 0X01E00000;  /* ALU function code */
-const unsigned int data_ext_mask = 0X01900000; /* To sort out CMP from MRS */
-const unsigned int arith_ext = 0X01000000;     /* Poss. arithmetic extension */
-const unsigned int s_mask = 0X00100000;
-const unsigned int rn_mask = 0X000F0000;
-const unsigned int rd_mask = 0X0000F000;
-const unsigned int rs_mask = 0X00000F00;
-const unsigned int rm_mask = 0X0000000F;
-const unsigned int op2_mask = 0X00000FFF;
-const unsigned int hw_mask = 0X00000020;
-const unsigned int sign_mask = 0X00000040;
+const uint imm_mask = 0X02000000;      /* orginal word versions */
+const uint imm_hw_mask = 0X00400000;   /* half word versions */
+const uint data_op_mask = 0X01E00000;  /* ALU function code */
+const uint data_ext_mask = 0X01900000; /* To sort out CMP from MRS */
+const uint arith_ext = 0X01000000;     /* Poss. arithmetic extension */
+const uint s_mask = 0X00100000;
+const uint rn_mask = 0X000F0000;
+const uint rd_mask = 0X0000F000;
+const uint rs_mask = 0X00000F00;
+const uint rm_mask = 0X0000000F;
+const uint op2_mask = 0X00000FFF;
+const uint hw_mask = 0X00000020;
+const uint sign_mask = 0X00000040;
 
-const unsigned int mul_mask = 0X0FC000F0;
-const unsigned int long_mul_mask = 0X0F8000F0;
-const unsigned int mul_op = 0X00000090;
-const unsigned int long_mul_op = 0X00800090;
-const unsigned int mul_acc_bit = 0X00200000;
-const unsigned int mul_sign_bit = 0X00400000;
-const unsigned int mul_long_bit = 0X00800000;
+const uint mul_mask = 0X0FC000F0;
+const uint long_mul_mask = 0X0F8000F0;
+const uint mul_op = 0X00000090;
+const uint long_mul_op = 0X00800090;
+const uint mul_acc_bit = 0X00200000;
+const uint mul_sign_bit = 0X00400000;
+const uint mul_long_bit = 0X00800000;
 
-const unsigned int sbhw_mask = 0X0E000FF0;
+const uint sbhw_mask = 0X0E000FF0;
 
-const unsigned int swp_mask = 0X0FB00FF0;
-const unsigned int swp_op = 0X01000090;
+const uint swp_mask = 0X0FB00FF0;
+const uint swp_op = 0X01000090;
 
-const unsigned int pre_mask = 0X01000000;
-const unsigned int up_mask = 0X00800000;
-const unsigned int byte_mask = 0X00400000;
-const unsigned int write_back_mask = 0X00200000;
-const unsigned int load_mask = 0X00100000;
-const unsigned int byte_sign = 0X00000080;
-const unsigned int hw_sign = 0X00008000;
+const uint pre_mask = 0X01000000;
+const uint up_mask = 0X00800000;
+const uint byte_mask = 0X00400000;
+const uint write_back_mask = 0X00200000;
+const uint load_mask = 0X00100000;
+const uint byte_sign = 0X00000080;
+const uint hw_sign = 0X00008000;
 
-const unsigned int user_mask = 0X00400000;
+const uint user_mask = 0X00400000;
 
-const unsigned int link_mask = 0X01000000;
-const unsigned int branch_field = 0X00FFFFFF;
-const unsigned int branch_sign = 0X00800000;
+const uint link_mask = 0X01000000;
+const uint branch_field = 0X00FFFFFF;
+const uint branch_sign = 0X00800000;
 
-const unsigned int undef_mask = 0X0E000010;
-const unsigned int undef_code = 0X06000010;
+const uint undef_mask = 0X0E000010;
+const uint undef_code = 0X06000010;
 
 const int mem_system = 0; /* sources for memory read */
 const int mem_instruction = 1;
@@ -302,14 +302,14 @@ uchar wotrustring[] = {
 BreakElement breakpoints[NO_OF_BREAKPOINTS];
 BreakElement watchpoints[NO_OF_WATCHPOINTS];
 
-unsigned int emul_bp_flag[2];
-unsigned int emul_wp_flag[2];
+uint emul_bp_flag[2];
+uint emul_wp_flag[2];
 
-uchar memory[RAMSIZE];  // @@@
+uchar memory[RAMSIZE];
 
 uchar status, old_status;
-int steps_togo; /*Number of left steps before halting (0 is infinite) */
-unsigned int steps_reset; /* Number of steps since last reset */
+int steps_togo;   /*Number of left steps before halting (0 is infinite) */
+uint steps_reset; /* Number of steps since last reset */
 char runflags;
 uchar rtf;
 bool breakpoint_enable;  /* Breakpoints will be checked */
@@ -317,7 +317,7 @@ bool breakpoint_enabled; /* Breakpoints will be checked now */
 bool run_through_BL;     /* Treat BL as a single step */
 bool run_through_SWI;    /* Treat SWI as a single step */
 
-unsigned int tube_address;
+uint tube_address;
 
 int r[16];
 int fiq_r[7];
@@ -325,21 +325,21 @@ int irq_r[2];
 int sup_r[2];
 int abt_r[2];
 int undef_r[2];
-unsigned int cpsr;
-unsigned int spsr[32]; /* Lots of wasted space - safe for any "mode" */
+uint cpsr;
+uint spsr[32]; /* Lots of wasted space - safe for any "mode" */
 
 bool print_out;
 int run_until_PC, run_until_SP, run_until_mode; /* Used to determine when */
 uchar run_until_status; /*   to finish a `stepped' subroutine, SWI, etc. */
 
-unsigned int exception_para[9];
+uint exception_para[9];
 
 int next_file_handle;
 FILE*(file_handle[20]);
 
 int count;
 
-unsigned int last_addr;
+uint last_addr;
 
 int glob1, glob2;
 
@@ -354,7 +354,7 @@ int BL_prefix, BL_address;
 int next_char;
 int ARM_flag;
 
-struct pollfd* SWI_poll; /* Pointer to allow SWIs to scan input - YUK! @@@ */
+struct pollfd* SWI_poll; /* Pointer to allow SWIs to scan input - YUK! */
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
@@ -366,7 +366,7 @@ struct pollfd* SWI_poll; /* Pointer to allow SWIs to scan input - YUK! @@@ */
 
 ring_buffer terminal0_Tx, terminal0_Rx;
 ring_buffer terminal1_Tx, terminal1_Rx;
-ring_buffer* terminal_table[16][2];  // @@@
+ring_buffer* terminal_table[16][2];
 
 /**
  * @brief Program entry point.
@@ -391,7 +391,7 @@ int main(int argc, char** argv) {
 
   pollfd.fd = 0;
   pollfd.events = POLLIN;
-  SWI_poll = &pollfd;  // Grubby pass to "my_system" @@@
+  SWI_poll = &pollfd;  // Grubby pass to "my_system"
 
   emulsetup();
 
@@ -430,7 +430,7 @@ void step() {
   if ((status & CLIENT_STATE_CLASS_MASK) == CLIENT_STATE_CLASS_RUNNING) {
     /* Still running - i.e. no breakpoint (etc.) found */
 
-    if (status == CLIENT_STATE_RUNNING_SWI)  // OR _BL  @@@
+    if (status == CLIENT_STATE_RUNNING_SWI)  // OR _BL
     { /* Don't count the instructions from now */
       if ((get_reg_monitor(15, reg_current) == run_until_PC) &&
           (get_reg_monitor(13, reg_current) == run_until_SP) &&
@@ -439,7 +439,7 @@ void step() {
       }
     } /* This can have changed status - hence no "else" below */
 
-    if (status != CLIENT_STATE_RUNNING_SWI)  // OR _BL  @@@
+    if (status != CLIENT_STATE_RUNNING_SWI)  // OR _BL
     {
       /* Count steps unless inside routine */
       steps_reset++;
@@ -502,8 +502,7 @@ void monitor_options_misc(uchar command) {
 
     case BR_CONTINUE:
       if (((status & CLIENT_STATE_CLASS_MASK) == CLIENT_STATE_CLASS_STOPPED) &&
-          (status != CLIENT_STATE_BYPROG))  // Maybe others @@@
-                                            /* Only act if already stopped */
+          (status != CLIENT_STATE_BYPROG))  // Only act if already stopped
         if ((old_status = CLIENT_STATE_STEPPING) || (steps_togo != 0))
           status = old_status;
       break;
@@ -617,7 +616,7 @@ void monitor_options_misc(uchar command) {
 
     case BR_FR_READ: {
       unsigned char device, max_length;
-      unsigned int i, length, available;
+      uint i, length, available;
       ring_buffer* pBuff;
 
       emul_getchar(&device);
@@ -690,7 +689,7 @@ void monitor_memory(uchar c) {
         put_reg(reg_number++, temp, reg_bank);
       }
   } else {
-    pointer = memory + (addr & (RAMSIZE - 1));  // @@@ @@@
+    pointer = memory + (addr & (RAMSIZE - 1));
     emul_getbN(&size, 2);
     size *= 1 << (c & 7);
     if (((uchar*)pointer + size) > ((uchar*)memory + RAMSIZE))
@@ -721,7 +720,7 @@ void comm(struct pollfd* pPollfd) {
   if (poll(pPollfd, 1, 0) > 0) {
     if (read(0, &c, 1) < 0) {
       std::cout << "Some error occured!" << std::endl;
-    }  // Look at error return - find EOF & exit @@@
+    }  // Look at error return - find EOF & exit
     switch (c & 0xC0) {
       case 0x00:
         monitor_options_misc(c);
@@ -802,7 +801,7 @@ int emul_getbN(int* val_ptr, int N) {
   }
 
   if (No_received != N) {
-    board_version = -1; /* Really do this here? @@@ */
+    board_version = -1;
   }
 
   return No_received;
@@ -890,7 +889,7 @@ void emulsetup() {
  * @return true
  * @return false
  */
-bool check_breakpoint(unsigned int instr_addr, unsigned int instr) {
+bool check_breakpoint(uint instr_addr, uint instr) {
   bool may_break = false;
 
   for (int i = 0; (i < NO_OF_BREAKPOINTS) && !may_break; i++) {
@@ -950,23 +949,18 @@ bool check_breakpoint(unsigned int instr_addr, unsigned int instr) {
 }
 
 void execute_instruction() {
-  unsigned int instr_addr, instr;
   int i;
 
-  instr_addr = get_reg(15, reg_current) - instruction_length();
-  last_addr = get_reg(15, reg_current) - instruction_length();
+  uint instr_addr = get_reg(15, reg_current) - instructionLength(cpsr, tf_mask);
+  last_addr = get_reg(15, reg_current) - instructionLength(cpsr, tf_mask);
 
   /* FETCH */
-  instr = fetch();
+  auto instr = fetch();
 
-  /* Check ID breakpoints enabled OR _BL  @@@ */
   if ((breakpoint_enabled) && (status != CLIENT_STATE_RUNNING_SWI)) {
-    /* Don't look for breakpoints inside single stepped call ... correct ????
-     * @@@ */
     if (check_breakpoint(instr_addr, instr)) {
       status = CLIENT_STATE_BREAKPOINT;
-      // YUK @@@
-      return; /* and return the appropriate status */
+      return;
     }
   }
   breakpoint_enabled = breakpoint_enable; /* More likely after first fetch */
@@ -984,33 +978,31 @@ void execute_instruction() {
   execute(instr);
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-/* Save state for leaving "procedure" {PC, SP, Mode, current state} */
-
+/**
+ * @brief Save state for leaving "procedure" {PC, SP, Mode, current state}
+ * @param new_status
+ */
 void save_state(uchar new_status) {
-  run_until_PC = get_reg(15, reg_current); /* Incremented once: correct here */
+  run_until_PC = get_reg(15, reg_current);  // Incremented once: correct here
   run_until_SP = get_reg(13, reg_current);
-  run_until_mode = get_reg(16, reg_current) & 0x3F; /* Just the mode bits */
+  run_until_mode = get_reg(16, reg_current) & 0x3F;  // Just the mode bits
   run_until_status = status;
-
   status = new_status;
 }
-
-/*----------------------------------------------------------------------------*/
 
 void boardreset() {
   steps_reset = 0;
   initialise(0, sup_mode);
 }
 
-void initialise(unsigned int start_address, int initial_mode) {
+void initialise(uint start_address, int initial_mode) {
   cpsr = 0X000000C0 | initial_mode; /* Disable interrupts */
   r[15] = start_address;
   old_status = CLIENT_STATE_RESET;
   status = CLIENT_STATE_RESET;
 }
 
-void execute(unsigned int op_code) {
+void execute(uint op_code) {
   inc_pc(); /* Easier here than later */
 
   /* ARM or THUMB ? */
@@ -1080,7 +1072,7 @@ void execute(unsigned int op_code) {
 
 /*----------------------------------------------------------------------------*/
 
-int is_it_sbhw(unsigned int op_code) {
+int is_it_sbhw(uint op_code) {
   if (((op_code & 0X0E000090) == 0X00000090) &&
       ((op_code & 0X00000060) != 0X00000000)     /* No multiplies */
       && ((op_code & 0X00100040) != 0X00000040)) /* No signed stores */
@@ -1095,7 +1087,7 @@ int is_it_sbhw(unsigned int op_code) {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-void data_op(unsigned int op_code) {
+void data_op(uint op_code) {
   int operation;
 
   if (((op_code & mul_mask) == mul_op) ||
@@ -1134,8 +1126,8 @@ void data_op(unsigned int op_code) {
 
 /*----------------------------------------------------------------------------*/
 
-void transfer_sbhw(unsigned int op_code) {
-  unsigned int address;
+void transfer_sbhw(uint op_code) {
+  uint address;
   int size;
   int offset, rd;
   bool sign;
@@ -1182,7 +1174,7 @@ void transfer_sbhw(unsigned int op_code) {
 
 /*----------------------------------------------------------------------------*/
 
-void mrs(unsigned int op_code) {
+void mrs(uint op_code) {
   if ((op_code & 0X00400000) == 0)
     put_reg((op_code & rd_mask) >> 12, cpsr, reg_current);
   else
@@ -1191,7 +1183,7 @@ void mrs(unsigned int op_code) {
 
 /*----------------------------------------------------------------------------*/
 
-void msr(unsigned int op_code) {
+void msr(uint op_code) {
   int mask, source;
 
   switch (op_code & 0X00090000) {
@@ -1214,7 +1206,7 @@ void msr(unsigned int op_code) {
   if ((op_code & imm_mask) == 0) /* Test applies for both cases */
     source = get_reg(op_code & rm_mask, reg_current) & mask;
   else {
-    unsigned int x, y;
+    uint x, y;
     int dummy;
 
     x = op_code & 0X0FF;        /* Immediate value */
@@ -1230,7 +1222,7 @@ void msr(unsigned int op_code) {
 
 /*----------------------------------------------------------------------------*/
 
-void bx(unsigned int Rm, int link) /* Link is performed if "link" is NON-ZERO */
+void bx(uint Rm, int link) /* Link is performed if "link" is NON-ZERO */
 {
   int PC, offset;
   int t_bit;
@@ -1262,7 +1254,7 @@ void bx(unsigned int Rm, int link) /* Link is performed if "link" is NON-ZERO */
 
 /*----------------------------------------------------------------------------*/
 
-void my_multi(unsigned int op_code) {
+void my_multi(uint op_code) {
   int acc;
 
   if ((op_code & mul_long_bit) == 0) /* Normal */
@@ -1279,7 +1271,7 @@ void my_multi(unsigned int op_code) {
       set_NZ(acc); /* Flags */
   } else           /* Long */
   {
-    unsigned int Rm, Rs, th, tm, tl;
+    uint Rm, Rs, th, tm, tl;
     int sign;
 
     Rm = get_reg(op_code & rm_mask, reg_current);
@@ -1337,8 +1329,8 @@ void my_multi(unsigned int op_code) {
 
 /*----------------------------------------------------------------------------*/
 
-void swap(unsigned int op_code) {
-  unsigned int address, data, size;
+void swap(uint op_code) {
+  uint address, data, size;
 
   address = get_reg((op_code & rn_mask) >> 16, reg_current);
 
@@ -1355,7 +1347,7 @@ void swap(unsigned int op_code) {
 
 /*----------------------------------------------------------------------------*/
 
-void normal_data_op(unsigned int op_code, int operation) {
+void normal_data_op(uint op_code, int operation) {
   int rd, a, b, mode;
   int shift_carry;
   int CPSR_special;
@@ -1497,7 +1489,7 @@ void normal_data_op(unsigned int op_code, int operation) {
 /* shift type: 00 = LSL, 01 = LSR, 10 = ASR, 11 = ROR                         */
 
 int b_reg(int op2, int* cf) {
-  unsigned int shift_type, reg, distance, result;
+  uint shift_type, reg, distance, result;
   reg = get_reg(op2 & 0X00F, reg_current); /* Register */
   shift_type = (op2 & 0X060) >> 5;         /* Type of shift */
   if ((op2 & 0X010) == 0) {                /* Immediate value */
@@ -1548,7 +1540,7 @@ int b_reg(int op2, int* cf) {
 /*----------------------------------------------------------------------------*/
 
 int b_immediate(int op2, int* cf) {
-  unsigned int x, y;
+  uint x, y;
   int dummy;
 
   x = op2 & 0X0FF;        /* Immediate value */
@@ -1566,7 +1558,7 @@ int b_immediate(int op2, int* cf) {
 
 /*----------------------------------------------------------------------------*/
 
-void clz(unsigned int op_code) {
+void clz(uint op_code) {
   int i, j;
 
   j = get_reg(op_code & rm_mask, reg_current);
@@ -1586,8 +1578,8 @@ void clz(unsigned int op_code) {
 
 /*----------------------------------------------------------------------------*/
 
-void transfer(unsigned int op_code) {
-  unsigned int address;
+void transfer(uint op_code) {
+  uint address;
   int offset, rd, size;
   bool T;
 
@@ -1669,7 +1661,7 @@ int transfer_offset(int op2,
 
 /*----------------------------------------------------------------------------*/
 
-void multiple(unsigned int op_code) {
+void multiple(uint op_code) {
   if ((op_code & load_mask) == 0)
     stm((op_code & 0X01800000) >> 23, (op_code & rn_mask) >> 16,
         op_code & 0X0000FFFF, op_code & write_back_mask, op_code & user_mask);
@@ -1680,7 +1672,7 @@ void multiple(unsigned int op_code) {
 
 /*----------------------------------------------------------------------------*/
 
-int bit_count(unsigned int source, int* first) {
+int bit_count(uint source, int* first) {
   int count, reg;
 
   count = 0;
@@ -1832,7 +1824,7 @@ void stm(int mode,
 
 /*----------------------------------------------------------------------------*/
 
-void branch(unsigned int op_code) {
+void branch(uint op_code) {
   int offset, PC;
 
   PC = get_reg(15, reg_current); /* Get this now in case mode changes */
@@ -1867,7 +1859,7 @@ bool swi_char_out(char c) {
 }
 
 /* Recursive zero suppression */
-int swi_dec_print(unsigned int number) {
+int swi_dec_print(uint number) {
   int okay;
 
   okay = true;
@@ -1879,7 +1871,7 @@ int swi_dec_print(unsigned int number) {
   return okay;
 }
 
-void my_system(unsigned int op_code) {
+void my_system(uint op_code) {
   int temp;
 
   if (((op_code & 0X0F000000) == 0X0E000000)
@@ -1924,7 +1916,7 @@ void my_system(unsigned int op_code) {
 
       case 3: /* Print string @R0 (to terminal) */
       {
-        unsigned int str_ptr;
+        uint str_ptr;
         char c;
 
         put_reg(15, get_reg(15, reg_current) - 8, reg_current);
@@ -1943,7 +1935,7 @@ void my_system(unsigned int op_code) {
 
       case 4: /* Decimal print R0 */
       {
-        unsigned int number;
+        uint number;
         int okay;
 
         put_reg(15, get_reg(15, reg_current) - 8, reg_current);
@@ -2015,7 +2007,7 @@ void set_flags(int operation, int a, int b, int rd, int carry) {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-void set_NZ(unsigned int value) {
+void set_NZ(uint value) {
   if (value == 0)
     cpsr = cpsr | zf_mask;
   else
@@ -2028,8 +2020,8 @@ void set_NZ(unsigned int value) {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-void set_CF(unsigned int a,
-            unsigned int rd,
+void set_CF(uint a,
+            uint rd,
             int carry) { /* Two ways result can equal an operand */
   if ((rd > a) || ((rd == a) && (carry == 0)))
     cpsr = cpsr & ~cf_mask;
@@ -2101,7 +2093,7 @@ bool check_cc(int condition) {
   }
 }
 
-constexpr bool zf(const int cpsr) {
+constexpr const bool zf(const int cpsr) {
   if ((zf_mask & cpsr) != 0) {
     return true;
   }
@@ -2109,7 +2101,7 @@ constexpr bool zf(const int cpsr) {
   return false;
 }
 
-constexpr bool cf(const int cpsr) {
+constexpr const bool cf(const int cpsr) {
   if ((cf_mask & cpsr) != 0) {
     return true;
   }
@@ -2117,7 +2109,7 @@ constexpr bool cf(const int cpsr) {
   return false;
 }
 
-constexpr bool nf(const int cpsr) {
+constexpr const bool nf(const int cpsr) {
   if ((nf_mask & cpsr) != 0) {
     return true;
   }
@@ -2125,7 +2117,7 @@ constexpr bool nf(const int cpsr) {
   return false;
 }
 
-constexpr bool vf(const int cpsr) {
+constexpr const bool vf(const int cpsr) {
   if ((vf_mask & cpsr) != 0) {
     return true;
   }
@@ -2222,7 +2214,7 @@ int get_reg(int reg_no, int force_mode) {
         break;
     }
   } else {
-    value = r[15] + instruction_length();
+    value = r[15] + instructionLength(cpsr, tf_mask);
   }
 
   return value;
@@ -2321,66 +2313,69 @@ void put_reg(int reg_no, int value, int force_mode) {
     r[15] = value & 0XFFFFFFFE; /* Lose bottom bit, but NOT mode specific! */
 }
 
-/*----------------------------------------------------------------------------*/
-/* Return the length, in bytes, of the currently expected instruction.        */
-/* (4 for ARM, 2 for Thumb)                                                   */
-
-int instruction_length() {
-  if ((cpsr & tf_mask) == 0)
+/**
+ * @brief Return the length, in bytes, of the currently expected instruction.
+ * @return int 4 for ARM, 2 for Thumb.
+ */
+constexpr const int instructionLength(const int cpsr, const int tf_mask) {
+  if ((cpsr & tf_mask) == 0) {
     return 4;
-  else
+
+  } else {
     return 2;
+  }
 }
 
-/*----------------------------------------------------------------------------*/
-/*----------------------------------------------------------------------------*/
+/**
+ * @brief
+ * @return uint
+ */
+uint fetch() {
+  uint op_code =
+      read_mem((get_reg(15, reg_current) - instructionLength(cpsr, tf_mask)),
+               instructionLength(cpsr, tf_mask), false, false, mem_instruction);
 
-unsigned int fetch() {
-  unsigned int op_code;
-  int i;
-
-  op_code = read_mem((get_reg(15, reg_current) - instruction_length()),
-                     instruction_length(), false, false, mem_instruction);
-
-  for (i = 0; i < 32; i++) {
-    if (past_opc_addr[i] == get_reg(15, reg_current) - instruction_length()) {
+  for (int i = 0; i < 32; i++) {
+    if (past_opc_addr[i] ==
+        get_reg(15, reg_current) - instructionLength(cpsr, tf_mask)) {
       past_count++;
-      i = 32; /* bodged escape from loop */
+      i = 32;  // bodged escape from loop
     }
   }
+
   past_opc_addr[past_opc_ptr++] =
-      get_reg(15, reg_current) - instruction_length();
+      get_reg(15, reg_current) - instructionLength(cpsr, tf_mask);
   past_opc_ptr = past_opc_ptr % past_size;
 
   return op_code;
 }
 
-/*----------------------------------------------------------------------------*/
-
+/**
+ * @brief get_reg returns PC+4 for ARM & PC+2 for THUMB.
+ */
 void inc_pc() {
-  /*fprintf(stderr, "get PC: %08x\n", get_reg(15, reg_current) ); */
-
   put_reg(15, get_reg(15, reg_current), reg_current);
-  /* get_reg returns PC+4 for ARM & PC+2 for THUMB */
 }
 
-/*----------------------------------------------------------------------------*/
-
-void endian_swap(unsigned int start, unsigned int end) {
-  unsigned int i, j;
-
-  for (i = start; i < end; i++) {
-    j = getmem32(i);
+void endian_swap(const uint start, const uint end) {
+  for (uint i = start; i < end; i++) {
+    uint j = getmem32(i);
     setmem32(i, ((j >> 24) & 0X000000FF) | ((j >> 8) & 0X0000FF00) |
                     ((j << 8) & 0X00FF0000) | ((j << 24) & 0XFF000000));
   }
 }
 
-/*----------------------------------------------------------------------------*/
-/*----------------------------------------------------------------------------*/
-/* source indicates type of read {mem_system, mem_instruction, mem_data}      */
-
-int read_mem(unsigned int address, int size, bool sign, bool T, int source) {
+/**
+ * @brief
+ *
+ * @param address
+ * @param size
+ * @param sign
+ * @param T
+ * @param source indicates type of read {mem_system, mem_instruction, mem_data}
+ * @return int
+ */
+int read_mem(uint address, int size, bool sign, bool T, int source) {
   int data, alignment;
 
   if (address < mem_size) {
@@ -2439,24 +2434,13 @@ int read_mem(unsigned int address, int size, bool sign, bool T, int source) {
     print_out = false;
   }
 
-  /*if (T == true) printf("User space forced\n"); */
-
-  /*
-   switch(source)
-   {
-   case 0: break;
-   case 1: printf("Instruction address %08X data %08X\n", address, data); break;
-   case 2: printf("Data read   address %08X data %08X\n", address, data); break;
-   }
-   */
-
   return data;
 }
 
 /*----------------------------------------------------------------------------*/
 
-void write_mem(unsigned int address, int data, int size, bool T, int source) {
-  unsigned int mask;
+void write_mem(uint address, int data, int size, bool T, int source) {
+  uint mask;
 
   if ((address == tube_address) &&
       (tube_address != 0)) /* Deal with Tube output */
@@ -2514,8 +2498,7 @@ void write_mem(unsigned int address, int data, int size, bool T, int source) {
     if ((runflags & 0x20) &&
         (source == mem_data)) /* check watchpoints enabled */
     {
-      if (check_watchpoints(address, data, size, 0))  // @@@
-      {
+      if (check_watchpoints(address, data, size, 0)) {
         status = CLIENT_STATE_WATCHPOINT;
       }
     }
@@ -2527,9 +2510,7 @@ void write_mem(unsigned int address, int data, int size, bool T, int source) {
 /*- - - - - - - - - - - - watchpoints - - - - - - - - - - - - - - - - - - - */
 /*                      to be completed                                     */
 
-/* Needs privilege information @@@*/
-
-int check_watchpoints(unsigned int address, int data, int size, int direction) {
+int check_watchpoints(uint address, int data, int size, int direction) {
   bool may_break = false;
 
   for (int i = 0; (i < NO_OF_WATCHPOINTS) && !may_break; i++) {
@@ -2538,10 +2519,10 @@ int check_watchpoints(unsigned int address, int data, int size, int direction) {
 
     may_break &= ((watchpoints[i].size & size) != 0); /* Size is allowed? */
 
-    if (may_break)        /* Check direction */
-      if (direction == 0) /* Write @@@ */
+    if (may_break)
+      if (direction == 0)
         may_break = (watchpoints[i].cond & 0x10) != 0;
-      else /* Read @@@ */
+      else
         may_break = (watchpoints[i].cond & 0x20) != 0;
 
     if (may_break) /* Try address comparison */
@@ -2583,7 +2564,6 @@ int check_watchpoints(unsigned int address, int data, int size, int direction) {
             may_break = false;
           break;
       }
-    // Expansion space for more comparisons @@@  e.g. privilege
   }
 
   return may_break;
@@ -2637,9 +2617,9 @@ int lsl(int value, int distance, int* cf) /* cf is -internal- bool */
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-int lsr(unsigned int value, int distance, int* cf) /* cf is -internal- bool */
+int lsr(uint value, int distance, int* cf) /* cf is -internal- bool */
 {
-  unsigned int result, mask;
+  uint result, mask;
 
   if (distance != 0) {
     if (distance < 32) {
@@ -2690,7 +2670,7 @@ int asr(int value, int distance, int* cf) /* cf is -internal- bool */
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-int ror(unsigned int value, int distance, int* cf) /* cf is -internal- bool */
+int ror(uint value, int distance, int* cf) /* cf is -internal- bool */
 {
   int result;
 
@@ -2711,9 +2691,9 @@ int ror(unsigned int value, int distance, int* cf) /* cf is -internal- bool */
 
 /*----------------------------------------------------------------------------*/
 
-void data0(unsigned int op_code) {
-  unsigned int op2, rn;
-  unsigned int shift, result;
+void data0(uint op_code) {
+  uint op2, rn;
+  uint shift, result;
   int cf;
 
   rn = get_reg(((op_code >> 3) & 7), reg_current); /* Called "Rm" in shifts */
@@ -2771,7 +2751,7 @@ void data0(unsigned int op_code) {
 
 /*----------------------------------------------------------------------------*/
 
-void data1(unsigned int op_code) {
+void data1(uint op_code) {
   int rd, imm;
   int result;
 
@@ -2806,11 +2786,11 @@ void data1(unsigned int op_code) {
 
 /*----------------------------------------------------------------------------*/
 
-void data_transfer(unsigned int op_code) {
-  unsigned int rd, rm;
+void data_transfer(uint op_code) {
+  uint rd, rm;
   int cf;
 
-  unsigned int address;
+  uint address;
 
   signed int result;
 
@@ -3027,7 +3007,7 @@ void data_transfer(unsigned int op_code) {
 
 /*----------------------------------------------------------------------------*/
 
-void transfer0(unsigned int op_code) {
+void transfer0(uint op_code) {
   int rd, rn;
   int location, data;
 
@@ -3062,7 +3042,7 @@ void transfer0(unsigned int op_code) {
 
 /*----------------------------------------------------------------------------*/
 
-void transfer1(unsigned int op_code) {
+void transfer1(uint op_code) {
   int rd, rn;
   int data, location;
 
@@ -3102,7 +3082,7 @@ void transfer1(unsigned int op_code) {
 
 /*----------------------------------------------------------------------------*/
 
-void sp_pc(unsigned int op_code) {
+void sp_pc(uint op_code) {
   int rd, sp, data;
 
   if ((op_code & 0X1000) == 0) /* ADD SP or PC */
@@ -3172,8 +3152,8 @@ void sp_pc(unsigned int op_code) {
 
 /*----------------------------------------------------------------------------*/
 
-void lsm_b(unsigned int op_code) {
-  unsigned int offset;
+void lsm_b(uint op_code) {
+  uint offset;
 
   if ((op_code & 0X1000) == 0) {
     if ((op_code & 0X0800) == 0) /* STM (IA) */
@@ -3204,7 +3184,7 @@ void lsm_b(unsigned int op_code) {
 
 /*----------------------------------------------------------------------------*/
 
-void thumb_branch1(unsigned int op_code, int exchange) {
+void thumb_branch1(uint op_code, int exchange) {
   int offset, lr;
 
   lr = get_reg(14, reg_current); /* Retrieve first part of offset */
@@ -3223,7 +3203,7 @@ void thumb_branch1(unsigned int op_code, int exchange) {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-void thumb_branch(unsigned int op_code) {
+void thumb_branch(uint op_code) {
   int offset;
 
   switch (op_code & 0X1800) {
@@ -3263,16 +3243,16 @@ void thumb_branch(unsigned int op_code) {
 
 /*----------------------------------------------------------------------------*/
 
-// Jesus wept.   What was wrong with "read_mem" and "write_mem"?  @@@
-// If int < 32 bits the whole lot is broken anyway! @@@
+// Jesus wept.   What was wrong with "read_mem" and "write_mem"?
+// If int < 32 bits the whole lot is broken anyway!
 
-unsigned int getmem32(int number) {
+uint getmem32(int number) {
   number = number % RAMSIZE;
   return memory[(number << 2)] | memory[(number << 2) + 1] << 8 |
          memory[(number << 2) + 2] << 16 | memory[(number << 2) + 3] << 24;
 }
 
-void setmem32(int number, unsigned int reg) {
+void setmem32(int number, uint reg) {
   number = number & (RAMSIZE - 1);
   memory[(number << 2) + 0] = (reg >> 0) & 0xff;
   memory[(number << 2) + 1] = (reg >> 8) & 0xff;
@@ -3303,7 +3283,7 @@ int count_buffer(ring_buffer* buffer) {
 
 int put_buffer(ring_buffer* buffer, unsigned char c) {
   int status;
-  unsigned int temp;
+  uint temp;
 
   temp = (buffer->iHead + 1) % RING_BUF_SIZE;
 
