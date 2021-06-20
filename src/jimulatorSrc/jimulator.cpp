@@ -99,10 +99,6 @@ int bit_count(unsigned int source, int* first);
 
 bool check_cc(int condition);
 
-int jNot(int x);
-int jAnd(int x, int y);
-int jOr(int x, int y);
-int jXor(int x, int y);
 int zf(int cpsr);
 int cf(int cpsr);
 int nf(int cpsr);
@@ -2063,67 +2059,37 @@ bool check_cc(int condition) {
     case 0X0:
       return zf(cpsr);
     case 0X1:
-      return jNot(zf(cpsr));
+      return not zf(cpsr);
     case 0X2:
       return cf(cpsr);
     case 0X3:
-      return jNot(cf(cpsr));
+      return not cf(cpsr);
     case 0X4:
       return nf(cpsr);
     case 0X5:
-      return jNot(nf(cpsr));
+      return not nf(cpsr);
     case 0X6:
       return vf(cpsr);
     case 0X7:
-      return jNot(vf(cpsr));
+      return not vf(cpsr);
     case 0X8:
-      return jAnd(cf(cpsr), jNot(zf(cpsr)));
+      return cf(cpsr) and not zf(cpsr);
     case 0X9:
-      return jOr(jNot(cf(cpsr)), zf(cpsr));
+      return (not cf(cpsr)) or zf(cpsr);
     case 0XA:
-      return jNot(jXor(nf(cpsr), vf(cpsr)));
+      return not(nf(cpsr) xor vf(cpsr));
     case 0XB:
-      return jXor(nf(cpsr), vf(cpsr));
+      return nf(cpsr) xor vf(cpsr);
     case 0XC:
-      return jAnd(jNot(zf(cpsr)), jNot(jXor(nf(cpsr), vf(cpsr))));
+      return (not zf(cpsr)) and (not(nf(cpsr) xor vf(cpsr)));
     case 0XD:
-      return jOr(zf(cpsr), jXor(nf(cpsr), vf(cpsr)));
+      return zf(cpsr) or (nf(cpsr) xor vf(cpsr));
     case 0XE:
       return true;
     case 0XF:
       return false;
     default:
       return true;
-  }
-}
-
-int jNot(int x) {
-  if (x == true)
-    return false;
-  else
-    return true;
-}
-
-int jAnd(int x, int y) {
-  if ((x == true) && (y == true))
-    return true;
-  else
-    return false;
-}
-
-int jOr(int x, int y) {
-  if ((x == true) || (y == true))
-    return true;
-  else
-    return false;
-}
-
-int jXor(int x, int y) {
-  if (((x == true) && (y == false)) || ((x == false) && (y == true))) {
-    return true;
-
-  } else {
-    return false;
   }
 }
 
