@@ -59,10 +59,10 @@ struct pollfd pollfd;
 
 /* Local prototypes */
 
-void step(void);
+void step();
 void comm(struct pollfd*);
 
-void emulsetup(void);
+void emulsetup();
 void save_state(unsigned char new_status);
 void initialise(unsigned int start_address, int initial_mode);
 void execute(unsigned int op_code);
@@ -75,7 +75,6 @@ void transfer(unsigned int op_code);
 void transfer_sbhw(unsigned int op_code);
 void multiple(unsigned int op_code);
 void branch(unsigned int op_code);
-void coprocessor(unsigned int op_code);
 void my_system(unsigned int op_code);
 void undefined();
 void breakpoint();
@@ -147,7 +146,7 @@ int ror(unsigned int value, int distance, int* cf);
 
 unsigned int getmem32(int number);
 void setmem32(int number, unsigned int reg);
-void execute_instruction(void);
+void execute_instruction();
 
 int emul_getchar(unsigned char* to_get);
 int emul_sendchar(unsigned char to_send);
@@ -156,7 +155,7 @@ int emul_getbN(int* val_ptr, int N);
 int emul_getchararray(int char_number, unsigned char* data_ptr);
 int emul_sendchararray(int char_number, unsigned char* data_ptr);
 
-void boardreset(void);
+void boardreset();
 
 void init_buffer(ring_buffer*);
 int count_buffer(ring_buffer*);
@@ -427,7 +426,7 @@ int main(int argc, char** argv) {
 
 /*----------------------------------------------------------------------------*/
 
-void step(void) {
+void step() {
   old_status = status;
   execute_instruction();
 
@@ -460,8 +459,6 @@ void step(void) {
   if ((status & CLIENT_STATE_CLASS_MASK) != CLIENT_STATE_CLASS_RUNNING) {
     breakpoint_enabled = false; /* No longer running - allow "continue" */
   }
-
-  return;
 }
 
 void monitor_options_misc(uchar command) {
@@ -644,7 +641,6 @@ void monitor_options_misc(uchar command) {
     default:
       break;
   }
-  return;
 }
 
 void monitor_memory(uchar c) {
@@ -705,7 +701,6 @@ void monitor_memory(uchar c) {
     else
       emul_getchararray(size, pointer);
   }
-  return;
 }
 
 void monitor_breakpoints(uchar c) {
@@ -719,7 +714,6 @@ void monitor_breakpoints(uchar c) {
     status = CLIENT_STATE_RUNNING;
   else
     status = CLIENT_STATE_STEPPING;
-  return;
 }
 
 void comm(struct pollfd* pPollfd) {
@@ -951,7 +945,7 @@ bool check_breakpoint(unsigned int instr_addr, unsigned int instr) {
   return may_break;
 }
 
-void execute_instruction(void) {
+void execute_instruction() {
   unsigned int instr_addr, instr;
   int i;
 
@@ -984,8 +978,6 @@ void execute_instruction(void) {
 
   /* Execute */
   execute(instr);
-
-  return;
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -998,16 +990,13 @@ void save_state(uchar new_status) {
   run_until_status = status;
 
   status = new_status;
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
 
-void boardreset(void) {
+void boardreset() {
   steps_reset = 0;
   initialise(0, sup_mode);
-  return;
 }
 
 void initialise(unsigned int start_address, int initial_mode) {
@@ -1015,11 +1004,7 @@ void initialise(unsigned int start_address, int initial_mode) {
   r[15] = start_address;
   old_status = CLIENT_STATE_RESET;
   status = CLIENT_STATE_RESET;
-
-  return;
 }
-
-/*----------------------------------------------------------------------------*/
 
 void execute(unsigned int op_code) {
   inc_pc(); /* Easier here than later */
@@ -1079,7 +1064,7 @@ void execute(unsigned int op_code) {
           branch(op_code);
           break;
         case 0X6:
-          coprocessor(op_code);
+          undefined();
           break;
         case 0X7:
           my_system(op_code);
@@ -1087,7 +1072,6 @@ void execute(unsigned int op_code) {
       }
     }
   }
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1142,8 +1126,6 @@ void data_op(unsigned int op_code) {
       normal_data_op(op_code, operation); /* All data processing operations */
     }
   }
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1192,8 +1174,6 @@ void transfer_sbhw(unsigned int op_code) {
     put_reg((op_code & rn_mask) >> 16, address + offset, reg_current);
   else if ((op_code & write_back_mask) != 0)
     put_reg((op_code & rn_mask) >> 16, address, reg_current);
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1203,8 +1183,6 @@ void mrs(unsigned int op_code) {
     put_reg((op_code & rd_mask) >> 12, cpsr, reg_current);
   else
     put_reg((op_code & rd_mask) >> 12, spsr[cpsr & mode_mask], reg_current);
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1244,8 +1222,6 @@ void msr(unsigned int op_code) {
     cpsr = (cpsr & ~mask) | source;
   else
     spsr[cpsr & mode_mask] = (spsr[cpsr & mode_mask] & ~mask) | source;
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1278,7 +1254,6 @@ void bx(unsigned int Rm, int link) /* Link is performed if "link" is NON-ZERO */
   if (link != 0) {
     put_reg(14, PC, reg_current); /* Link if BLX */
   }
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1354,8 +1329,6 @@ void my_multi(unsigned int op_code) {
     if ((op_code & s_mask) != 0)
       set_NZ(th | (((tl >> 16) | tl) & 0X0000FFFF)); /* Flags */
   }
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1374,8 +1347,6 @@ void swap(unsigned int op_code) {
   write_mem(address, get_reg(op_code & rm_mask, reg_current), size, false,
             mem_data);
   put_reg((op_code & rd_mask) >> 12, data, reg_current);
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1516,8 +1487,6 @@ void normal_data_op(unsigned int op_code, int operation) {
       }
     }
   }
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1609,8 +1578,6 @@ void clz(unsigned int op_code) {
   }
 
   put_reg((op_code & rd_mask) >> 12, i, reg_current);
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1662,7 +1629,6 @@ void transfer(unsigned int op_code) {
       /* Pre index write-back */
     }
   }
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1706,8 +1672,6 @@ void multiple(unsigned int op_code) {
   else
     ldm((op_code & 0X01800000) >> 23, (op_code & rn_mask) >> 16,
         op_code & 0X0000FFFF, op_code & write_back_mask, op_code & user_mask);
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1797,8 +1761,6 @@ void ldm(int mode,
     if (hat != 0)
       cpsr = spsr[cpsr & mode_mask]; /* ... and if S bit set */
   }
-  /*  @@@ untested */
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1862,8 +1824,6 @@ void stm(int mode,
 
   if (special)
     put_reg(Rn, new_base, reg_current);
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1887,16 +1847,6 @@ void branch(unsigned int op_code) {
   }
 
   put_reg(15, PC + offset, reg_current);
-
-  return;
-}
-
-/*----------------------------------------------------------------------------*/
-
-void coprocessor(unsigned int op_code) {
-  //    printf("Coprocessor %d data transfer\n", (op_code>>8) & 0XF);
-  undefined();
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2029,7 +1979,6 @@ void breakpoint() /* Looks like a prefetch abort */
   cpsr = (cpsr & ~mode_mask & ~tf_mask) | abt_mode;
   put_reg(14, get_reg(15, reg_current) - 4, reg_current);
   put_reg(15, 12, reg_current);
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2039,7 +1988,6 @@ void undefined() {
   cpsr = (cpsr & ~mode_mask & ~tf_mask) | undef_mode;
   put_reg(14, get_reg(15, reg_current) - 4, reg_current);
   put_reg(15, 4, reg_current);
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2059,7 +2007,6 @@ void set_flags(int operation, int a, int b, int rd, int carry) {
       fprintf(stderr, "Flag setting error\n");
       break;
   }
-  return;
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -2073,7 +2020,6 @@ void set_NZ(unsigned int value) {
     cpsr = cpsr | nf_mask;
   else
     cpsr = cpsr & ~nf_mask;
-  return;
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -2085,7 +2031,6 @@ void set_CF(unsigned int a,
     cpsr = cpsr & ~cf_mask;
   else
     cpsr = cpsr | cf_mask;
-  return;
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -2094,7 +2039,6 @@ void set_VF_ADD(int a, int b, int rd) {
   cpsr = cpsr & ~vf_mask; /* Clear VF */
   if (((~(a ^ b) & (a ^ rd)) & bit_31) != 0)
     cpsr = cpsr | vf_mask;
-  return;
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -2103,7 +2047,6 @@ void set_VF_SUB(int a, int b, int rd) {
   cpsr = cpsr & ~vf_mask; /* Clear VF */
   if ((((a ^ b) & (a ^ rd)) & bit_31) != 0)
     cpsr = cpsr | vf_mask;
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2388,8 +2331,6 @@ void put_reg(int reg_no, int value, int force_mode) {
     }
   } else
     r[15] = value & 0XFFFFFFFE; /* Lose bottom bit, but NOT mode specific! */
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2433,7 +2374,6 @@ void inc_pc() {
 
   put_reg(15, get_reg(15, reg_current), reg_current);
   /* get_reg returns PC+4 for ARM & PC+2 for THUMB */
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2446,7 +2386,6 @@ void endian_swap(unsigned int start, unsigned int end) {
     setmem32(i, ((j >> 24) & 0X000000FF) | ((j >> 8) & 0X0000FF00) |
                     ((j << 8) & 0X00FF0000) | ((j << 24) & 0XFF000000));
   }
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2592,21 +2531,7 @@ void write_mem(unsigned int address, int data, int size, bool T, int source) {
         status = CLIENT_STATE_WATCHPOINT;
       }
     }
-
-    /*if (T == true) printf("User space forced\n");   */
-
-    /*
-     switch(source)
-     {
-     case 0: break;
-     case 1: printf("Shouldn't happen\n"); break;
-     case 2: printf("Data write  address %08X data %08X\n", address, data);
-     break;
-     }
-     */
   }
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2854,8 +2779,6 @@ void data0(unsigned int op_code) {
 
     put_reg(op_code & 7, result, reg_current);
   }
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2891,8 +2814,6 @@ void data1(unsigned int op_code) {
       put_reg(rd, result, reg_current);
       break;
   }
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3114,7 +3035,6 @@ void data_transfer(unsigned int op_code) {
         break;
     }
   }
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3150,8 +3070,6 @@ void transfer0(unsigned int op_code) {
     }
     put_reg(rd, data, reg_current);
   }
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3192,7 +3110,6 @@ void transfer1(unsigned int op_code) {
       put_reg(rd, data, reg_current);
       break;
   }
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3262,8 +3179,6 @@ void sp_pc(unsigned int op_code) {
         undefined();
         break;
     }
-
-    return;
   }
 }
 
@@ -3316,8 +3231,6 @@ void thumb_branch1(unsigned int op_code, int exchange) {
 
   put_reg(15, offset, reg_current);
   put_reg(14, lr, reg_current);
-
-  return;
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -3354,8 +3267,6 @@ void thumb_branch(unsigned int op_code) {
       thumb_branch1(op_code, false);
       break;
   }
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3387,7 +3298,6 @@ void setmem32(int number, unsigned int reg) {
 void init_buffer(ring_buffer* buffer) {
   buffer->iHead = 0;
   buffer->iTail = 0;
-  return;
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
