@@ -1,55 +1,34 @@
-/******************************************************************************/
-/*                Name:           jimulator.c                                 */
-/*                Version:        1.5.1                                       */
-/*                Date:           5/08/2008                                   */
-/*                Emulation library for KMD                                   */
-/*                                                                            */
-/*============================================================================*/
+/**
+ * @file jimulator.cpp
+ * @author Lawrence Warren (lawrencewarren2@gmail.com)
+ * @brief The emulator associated with KoMo2.
+ * @version 1.6
+ * @date 2021-06-27
+ * @todo check long multiplications
+ * @todo Flag checking (immediate ?!)
+ * @todo Validation
+ * @todo interrupt enable behaviour on exceptions (etc.)
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/poll.h>
 #include <time.h>
 #include <unistd.h>
 #include <iostream>
-
 #include "definitions.h"
 #include "interface.h"
 
+#define uchar unsigned char
+
 #define NO_OF_BREAKPOINTS 32  // Max 32
 #define NO_OF_WATCHPOINTS 4   // Max 32
-
-/*  uses JDG's arm_v3
-
- notes:
-
- random changed to rand to allow linking
- N.B. check rand as may not produce 32-bit no.s
-
-
- needs:
-
- 1. long multiply  - drafted BUT NOT TESTED
- 3. more thumb testing
-
- lsl routine added but not fully tested (28/10/98)
- Long multiplication written (27/1/00)
- Architecture V5 added (2/2/00)
-
- To do:
- check long muls
- Flag checking (immediates ?!)
- Validation
- interrupt enable behaviour on exceptions (etc.)
- */
-
-/* NB "int" is assumed to be at least 32-bit */
-
 #define RING_BUF_SIZE 64
 
 typedef struct {
   uint iHead;
   uint iTail;
-  unsigned char buffer[RING_BUF_SIZE];
+  uchar buffer[RING_BUF_SIZE];
 } ringBuffer;
 
 struct pollfd pollfd;
@@ -59,8 +38,8 @@ struct pollfd pollfd;
 void step();
 void comm(struct pollfd*);
 
-void emulsetup();
-void saveState(unsigned char new_status);
+void emulSetup();
+void saveState(uchar new_status);
 void initialise(uint start_address, int initial_mode);
 void execute(uint op_code);
 
@@ -69,7 +48,7 @@ void execute(uint op_code);
 void dataOp(uint op_code);
 void clz(uint op_code);
 void transfer(uint op_code);
-void transfer_sbhw(uint op_code);
+void transferSBHW(uint op_code);
 void multiple(uint op_code);
 void branch(uint op_code);
 void mySystem(uint op_code);
@@ -108,7 +87,7 @@ int getRegister(int reg_no, int force_mode);
 /* Returns PC+4 for ARM & PC+2 for Thumb */
 int getRegisterMonitor(int reg_no, int force_mode);
 void putRegister(int reg_no, int value, int force_mode);
-constexpr const int instructionLength(const int cpsr, const int tf_mask);
+constexpr const int instructionLength(const int cpsr, const int tfMask);
 
 uint fetch();
 void incPC();
@@ -119,12 +98,12 @@ void writeMemory(uint address, int data, int size, bool T, int source);
 /* THUMB execute */
 void data0(uint op_code);
 void data1(uint op_code);
-void data_transfer(uint op_code);
+void dataTransfer(uint op_code);
 void transfer0(uint op_code);
 void transfer1(uint op_code);
-void sp_pc(uint op_code);
-void lsm_b(uint op_code);
-void thumb_branch(uint op_code);
+void spPC(uint op_code);
+void lsmB(uint op_code);
+void thumbBranch(uint op_code);
 
 int loadFPE();
 void FPEInstall();
@@ -139,85 +118,85 @@ uint getmem32(int number);
 void setmem32(int number, uint reg);
 void executeInstruction();
 
-int getChar(unsigned char* to_get);
-int sendChar(unsigned char to_send);
+int getChar(uchar* to_get);
+int sendChar(uchar to_send);
 int sendNBytes(int value, int N);
 int getNBytes(int* val_ptr, int N);
-int getCharArray(int char_number, unsigned char* data_ptr);
-int sendCharArray(int char_number, unsigned char* data_ptr);
+int getCharArray(int char_number, uchar* data_ptr);
+int sendCharArray(int char_number, uchar* data_ptr);
 
 void boardreset();
 
 void initBuffer(ringBuffer*);
 int countBuffer(ringBuffer*);
-int putBuffer(ringBuffer*, unsigned char);
-int getBuffer(ringBuffer*, unsigned char*);
+bool putBuffer(ringBuffer*, const uchar);
+bool getBuffer(ringBuffer*, uchar*);
 
 // Why add "RAMSIZE", and then get it wrong?!?!
 // Memory is modulo this to the monitor; excise and use the proper routines
-#define mem_size 0X100000      // 4Mbytes
-#define RAMSIZE 0X100000       // 4Mbytes
-#define reserved_mem 0X002000  // 32Kbytes
-#define user_stack (mem_size - reserved_mem) << 2
-#define start_string_addr 0X00007000  // ARM address
+constexpr const uint memSize = 0X100000;       // 4 MB
+constexpr const uint RAMSIZE = 0X100000;       // 4 MB
+constexpr const uint reserved_mem = 0X002000;  // 32 KB
+constexpr const uint userStack = (memSize - reserved_mem) << 2;
+constexpr const uint stackStringAddr = 0X00007000;  // ARM address
 
-#define max_instructions 10000000
+constexpr const uint maxInstructions = 10000000;
 
-const uint nf_mask = 0X80000000;
-const uint zf_mask = 0X40000000;
-const uint cf_mask = 0X20000000;
-const uint vf_mask = 0X10000000;
-const uint if_mask = 0X00000080;
-const uint ff_mask = 0X00000040;
-const uint mode_mask = 0X0000001F;
-const uint tf_mask = 0X00000020;  // THUMB bit
+constexpr const uint nfMask = 0X80000000;
+constexpr const uint zfMask = 0X40000000;
+constexpr const uint cfMask = 0X20000000;
+constexpr const uint vfMask = 0X10000000;
+constexpr const uint ifMask = 0X00000080;
+constexpr const uint ffMask = 0X00000040;
+constexpr const uint modeMask = 0X0000001F;
+constexpr const uint tfMask = 0X00000020;  // THUMB bit
 
-const uint bit_31 = 0X80000000;
-const uint bit_0 = 0X00000001;
+constexpr const uint bit31 = 0X80000000;
+constexpr const uint bit0 = 0X00000001;
 
-const uint imm_mask = 0X02000000;       // orginal word versions
-const uint imm_hw_mask = 0X00400000;    // half word versions
-const uint data_op_mask = 0X01E00000;   // ALU function code
-const uint data_ext_mask = 0X01900000;  // To sort out CMP from MRS
-const uint arith_ext = 0X01000000;      // Poss. arithmetic extension
-const uint s_mask = 0X00100000;
-const uint rn_mask = 0X000F0000;
-const uint rd_mask = 0X0000F000;
-const uint rs_mask = 0X00000F00;
-const uint rm_mask = 0X0000000F;
-const uint op2_mask = 0X00000FFF;
-const uint hw_mask = 0X00000020;
-const uint sign_mask = 0X00000040;
+constexpr const uint immMask = 0X02000000;      // original word versions
+constexpr const uint immHwMask = 0X00400000;    // half word versions
+constexpr const uint dataOpMask = 0X01E00000;   // ALU function code
+constexpr const uint dataExtMask = 0X01900000;  // To sort out CMP from MRS
+constexpr const uint arithExt = 0X01000000;     // Poss. arithmetic extension
+constexpr const uint sMask = 0X00100000;
+constexpr const uint rnMask = 0X000F0000;
+constexpr const uint rdMask = 0X0000F000;
+constexpr const uint rsMask = 0X00000F00;
+constexpr const uint rmMask = 0X0000000F;
+constexpr const uint op2Mask = 0X00000FFF;
+constexpr const uint hwMask = 0X00000020;
+constexpr const uint signMask = 0X00000040;
 
-const uint mul_mask = 0X0FC000F0;
-const uint long_mul_mask = 0X0F8000F0;
-const uint mul_op = 0X00000090;
-const uint long_mul_op = 0X00800090;
-const uint mul_acc_bit = 0X00200000;
-const uint mul_sign_bit = 0X00400000;
-const uint mul_long_bit = 0X00800000;
+constexpr const uint mulMask = 0X0FC000F0;
+constexpr const uint longMulMask = 0X0F8000F0;
+constexpr const uint mulOp = 0X00000090;
+constexpr const uint longMulOp = 0X00800090;
+constexpr const uint mulAccBit = 0X00200000;
+constexpr const uint mulSignBit = 0X00400000;
+constexpr const uint mulLongBit = 0X00800000;
 
-const uint sbhw_mask = 0X0E000FF0;
+constexpr const uint sbhwMask = 0X0E000FF0;
 
-const uint swp_mask = 0X0FB00FF0;
-const uint swp_op = 0X01000090;
+constexpr const uint swpMask = 0X0FB00FF0;
+constexpr const uint swpOp = 0X01000090;
 
-const uint pre_mask = 0X01000000;
-const uint up_mask = 0X00800000;
-const uint byte_mask = 0X00400000;
-const uint write_back_mask = 0X00200000;
-const uint load_mask = 0X00100000;
-const uint byte_sign = 0X00000080;
-const uint hw_sign = 0X00008000;
+constexpr const uint preMask = 0X01000000;
+constexpr const uint upMask = 0X00800000;
+constexpr const uint byteMask = 0X00400000;
+constexpr const uint writeBackMask = 0X00200000;
+constexpr const uint loadMask = 0X00100000;
+constexpr const uint byteSign = 0X00000080;
+constexpr const uint hwSign = 0X00008000;
 
-const uint user_mask = 0X00400000;
+constexpr const uint userMask = 0X00400000;
 
-constexpr const uint link_mask = 0X01000000;
-constexpr const uint branch_field = 0X00FFFFFF;
-constexpr const uint branch_sign = 0X00800000;
+constexpr const uint linkMask = 0X01000000;
+constexpr const uint branchField = 0X00FFFFFF;
+constexpr const uint branchSign = 0X00800000;
 
-constexpr const uint undef_mask = 0X0E000010;
-constexpr const uint undef_code = 0X06000010;
+constexpr const uint undefMask = 0X0E000010;
+constexpr const uint undefCode = 0X06000010;
 
 constexpr const int memSystem = 0;  // sources for memory read
 constexpr const int memInstruction = 1;
@@ -226,38 +205,37 @@ constexpr const int memData = 2;
 constexpr const int flagAdd = 1;
 constexpr const int flagSub = 2;
 
-#define userMode 0X00000010
-#define fiqMode 0X00000011
-#define irqMode 0X00000012
-#define supMode 0X00000013
-#define abtMode 0X00000017
-#define undefMode 0X0000001B
-#define systemMode 0X0000001F
+constexpr const uint userMode = 0x00000010;
+constexpr const uint fiqMode = 0x00000011;
+constexpr const uint irqMode = 0x00000012;
+constexpr const uint supMode = 0x00000013;
+constexpr const uint abtMode = 0x00000017;
+constexpr const uint undefMode = 0x0000001B;
+constexpr const uint systemMode = 0x0000001F;
 
-#define reg_current 0  //  Values to force register accesses to specified bank
-#define reg_user 1     // or system
-#define regSvc 2
-#define regFiq 3
-#define regIrq 4
-#define regAbt 5
-#define reg_undef 6
+constexpr const uint regCurrent = 0;  // Value forces accesses to specific bank
+constexpr const uint regUser = 1;     // or system
+constexpr const uint regSvc = 2;
+constexpr const uint regFiq = 3;
+constexpr const uint regIrq = 4;
+constexpr const uint regAbt = 5;
+constexpr const uint regUndef = 6;
 
-#define REGSIZE 65536
-#define uchar unsigned char
+constexpr const uint REGSIZE = 65536;
 
 typedef struct {
   int state;
-  unsigned char cond;
-  unsigned char size;
-  int addra;
-  int addrb;
-  int dataa[2];
-  int datab[2];
+  uchar cond;
+  uchar size;
+  int addrA;
+  int addrB;
+  int dataA[2];
+  int dataB[2];
 } BreakElement;
 
-#define WOTLEN_FEATURES 1
-#define WOTLEN_MEM_SEGS 1
-#define WOTLEN (8 + 3 * WOTLEN_FEATURES + 8 * WOTLEN_MEM_SEGS)
+constexpr const uint WOTLEN_FEATURES = 1;
+constexpr const uint WOTLEN_MEM_SEGS = 1;
+constexpr const uint WOTLEN = (8 + 3 * WOTLEN_FEATURES + 8 * WOTLEN_MEM_SEGS);
 
 /**
  * @brief
@@ -278,71 +256,70 @@ uchar wotrustring[] = {
     0x00,
     0x00,
     0x00,  // Memory segment address (W)
-    mem_size & 0xFF,
-    (mem_size >> 8) & 0xFF,  // Memory segment
-    (mem_size >> 16) & 0xFF,
-    (mem_size >> 24) & 0xFF};  //  length (W)
+    memSize & 0xFF,
+    (memSize >> 8) & 0xFF,  // Memory segment
+    (memSize >> 16) & 0xFF,
+    (memSize >> 24) & 0xFF};  //  length (W)
 
 BreakElement breakpoints[NO_OF_BREAKPOINTS];
 BreakElement watchpoints[NO_OF_WATCHPOINTS];
 
-uint emul_bp_flag[2];
-uint emul_wp_flag[2];
+uint emulBPFlag[2];
+uint emulWPFlag[2];
 
 uchar memory[RAMSIZE];
 
-uchar status, old_status;
-int steps_togo;    // Number of left steps before halting (0 is infinite)
-uint steps_reset;  // Number of steps since last reset
-char runflags;
+uchar status, oldStatus;
+int stepsToGo;    // Number of left steps before halting (0 is infinite)
+uint stepsReset;  // Number of steps since last reset
+char runFlags;
 uchar rtf;
-bool breakpoint_enable;   // Breakpoints will be checked
-bool breakpoint_enabled;  // Breakpoints will be checked now
-bool run_through_BL;      // Treat BL as a single step
-bool run_through_SWI;     // Treat SWI as a single step
+bool breakpointEnable;   // Breakpoints will be checked
+bool breakpointEnabled;  // Breakpoints will be checked now
+bool runThroughBL;       // Treat BL as a single step
+bool runThroughSWI;      // Treat SWI as a single step
 
-uint tube_address;
+uint tubeAddress;
 
 int r[16];
-int fiq_r[7];
-int irq_r[2];
-int sup_r[2];
-int abt_r[2];
-int undef_r[2];
+int fiqR[7];
+int irqR[2];
+int supR[2];
+int abtR[2];
+int underR[2];
 uint cpsr;
 uint spsr[32];  // Lots of wasted space - safe for any "mode"
 
-bool print_out;
-int run_until_PC, run_until_SP, run_until_mode;  // Used to determine when
-uchar run_until_status;  //  to finish a `stepped' subroutine, SWI, etc.
+bool printOut;
+int runUntilPC, runUntilSP, runUntilMode;  // Used to determine when
+uchar runUntilStatus;  //  to finish a `stepped' subroutine, SWI, etc.
 
-uint exception_para[9];
+uint exceptionPara[9];
 
-int next_file_handle;
-FILE*(file_handle[20]);
+int nextFileHandle;
+FILE*(fileHandle[20]);
 
 int count;
 
-uint last_addr;
+uint lastAddr;
 
 int glob1, glob2;
 
-int past_opc_addr[32];  // History buffer of fetched op. code addresses
-int past_size;          // Used size of buffer
-int past_opc_ptr;       // Pointer into same
-int past_count;         // Count of hits in instruction history
+int pastOpcAddr[32];  // History buffer of fetched op. code addresses
+int pastSize;         // Used size of buffer
+int pastOpcPtr;       // Pointer into same
+int pastCount;        // Count of hits in instruction history
 
 // Thumb stuff
 int PC;
-int BL_prefix, BL_address;
-int next_char;
-int ARM_flag;
+int BLPrefix, BLAddress;
+int ARMFlag;
 
-struct pollfd* SWI_poll;  // Pointer to allow SWIs to scan input - YUK!
+struct pollfd* SWIPoll;  // Pointer to allow SWI to scan input - YUK!
 
-ringBuffer terminal0_Tx, terminal0_Rx;
-ringBuffer terminal1_Tx, terminal1_Rx;
-ringBuffer* terminal_table[16][2];
+ringBuffer terminal0Tx, terminal0Rx;
+ringBuffer terminal1Tx, terminal1Rx;
+ringBuffer* terminalTable[16][2];
 
 /**
  * @brief Program entry point.
@@ -351,38 +328,38 @@ ringBuffer* terminal_table[16][2];
 int main(int argc, char** argv) {
   {
     for (int i = 0; i < 16; i++) {
-      terminal_table[i][0] = NULL;
-      terminal_table[i][1] = NULL;
+      terminalTable[i][0] = NULL;
+      terminalTable[i][1] = NULL;
     }
 
-    initBuffer(&terminal0_Tx);  // Initialise terminal
-    initBuffer(&terminal0_Rx);
-    terminal_table[0][0] = &terminal0_Tx;
-    terminal_table[0][1] = &terminal0_Rx;
-    initBuffer(&terminal1_Tx);  // Initialise terminal
-    initBuffer(&terminal1_Rx);
-    terminal_table[1][0] = &terminal1_Tx;
-    terminal_table[1][1] = &terminal1_Rx;
+    initBuffer(&terminal0Tx);  // Initialise terminal
+    initBuffer(&terminal0Rx);
+    terminalTable[0][0] = &terminal0Tx;
+    terminalTable[0][1] = &terminal0Rx;
+    initBuffer(&terminal1Tx);  // Initialise terminal
+    initBuffer(&terminal1Rx);
+    terminalTable[1][0] = &terminal1Tx;
+    terminalTable[1][1] = &terminal1Rx;
   }
 
   pollfd.fd = 0;
   pollfd.events = POLLIN;
-  SWI_poll = &pollfd;  // Grubby pass to "mySystem"
+  SWIPoll = &pollfd;  // Grubby pass to "mySystem"
 
-  emulsetup();
+  emulSetup();
 
-  emul_bp_flag[0] = 0;
+  emulBPFlag[0] = 0;
   if (NO_OF_BREAKPOINTS == 0) {
-    emul_bp_flag[1] = 0x00000000;  // C work around
+    emulBPFlag[1] = 0x00000000;  // C work around
   } else {
-    emul_bp_flag[1] = (1 << NO_OF_WATCHPOINTS) - 1;
+    emulBPFlag[1] = (1 << NO_OF_WATCHPOINTS) - 1;
   }
 
-  emul_wp_flag[0] = 0;
+  emulWPFlag[0] = 0;
   if (NO_OF_WATCHPOINTS == 0) {
-    emul_wp_flag[1] = 0x00000000;  // C work around
+    emulWPFlag[1] = 0x00000000;  // C work around
   } else {
-    emul_wp_flag[1] = (1 << NO_OF_WATCHPOINTS) - 1;
+    emulWPFlag[1] = (1 << NO_OF_WATCHPOINTS) - 1;
   }
 
   while (true) {
@@ -397,44 +374,49 @@ int main(int argc, char** argv) {
   return 0;
 }
 
-/*----------------------------------------------------------------------------*/
-
+/**
+ * @brief
+ */
 void step() {
-  old_status = status;
+  oldStatus = status;
   executeInstruction();
 
+  // Still running - i.e. no breakpoint (etc.) found
   if ((status & CLIENT_STATE_CLASS_MASK) == CLIENT_STATE_CLASS_RUNNING) {
-    /* Still running - i.e. no breakpoint (etc.) found */
-
-    if (status == CLIENT_STATE_RUNNING_SWI)  // OR _BL
-    { /* Don't count the instructions from now */
-      if ((getRegisterMonitor(15, reg_current) == run_until_PC) &&
-          (getRegisterMonitor(13, reg_current) == run_until_SP) &&
-          ((getRegisterMonitor(16, reg_current) & 0x3F) == run_until_mode)) {
-        status = run_until_status;
+    // don't count the instructions from now
+    if (status == CLIENT_STATE_RUNNING_SWI) {
+      if ((getRegisterMonitor(15, regCurrent) == runUntilPC) &&
+          (getRegisterMonitor(13, regCurrent) == runUntilSP) &&
+          ((getRegisterMonitor(16, regCurrent) & 0x3F) == runUntilMode)) {
+        status = runUntilStatus;
       }
-    } /* This can have changed status - hence no "else" below */
+    }  // This can have changed status - hence no "else" below
 
-    if (status != CLIENT_STATE_RUNNING_SWI)  // OR _BL
-    {
-      /* Count steps unless inside routine */
-      steps_reset++;
-      if (steps_togo > 0) /* Stepping */
-      {
-        steps_togo--; /* If -decremented- to reach zero, stop. */
-        if (steps_togo == 0) {
+    // OR _BL
+    if (status != CLIENT_STATE_RUNNING_SWI) {
+      // Count steps unless inside routine
+      stepsReset++;
+
+      // Stepping
+      if (stepsToGo > 0) {
+        stepsToGo--;  // If -decremented- to reach zero, stop
+        if (stepsToGo == 0) {
           status = CLIENT_STATE_STOPPED;
         }
       }
-    } /* Running a whole routine */
+    }
   }
 
   if ((status & CLIENT_STATE_CLASS_MASK) != CLIENT_STATE_CLASS_RUNNING) {
-    breakpoint_enabled = false; /* No longer running - allow "continue" */
+    breakpointEnabled = false;  // No longer running - allow "continue"
   }
 }
 
-void monitor_options_misc(uchar command) {
+/**
+ * @brief
+ * @param command
+ */
+void monitorOptionsMisc(uchar command) {
   uchar tempchar;
   int temp;
   switch (command & 0x3F) {
@@ -442,12 +424,11 @@ void monitor_options_misc(uchar command) {
       break;
     case BR_PING:
       if (write(1, "OK00", 4) < 0) {
-        std::cout << "Some error occured!" << std::endl;
+        std::cout << "Some error occurred!" << std::endl;
       }
       break;
     case BR_WOT_R_U:
       sendCharArray(wotrustring[0], &wotrustring[1]);
-      /* wotrustring[0] holds length, followed by message */
       break;
 
     case BR_RESET:
@@ -464,14 +445,14 @@ void monitor_options_misc(uchar command) {
 
     case BR_WOT_U_DO:
       sendChar(status);
-      sendNBytes(steps_togo, 4);
-      sendNBytes(steps_reset, 4);
+      sendNBytes(stepsToGo, 4);
+      sendNBytes(stepsReset, 4);
       break;
 
     case BR_PAUSE:
     case BR_STOP:
       if ((status & CLIENT_STATE_CLASS_MASK) == CLIENT_STATE_CLASS_RUNNING) {
-        old_status = status;
+        oldStatus = status;
         status = CLIENT_STATE_STOPPED;
       }
       break;
@@ -479,13 +460,13 @@ void monitor_options_misc(uchar command) {
     case BR_CONTINUE:
       if (((status & CLIENT_STATE_CLASS_MASK) == CLIENT_STATE_CLASS_STOPPED) &&
           (status != CLIENT_STATE_BYPROG))  // Only act if already stopped
-        if ((old_status = CLIENT_STATE_STEPPING) || (steps_togo != 0))
-          status = old_status;
+        if ((oldStatus = CLIENT_STATE_STEPPING) || (stepsToGo != 0))
+          status = oldStatus;
       break;
 
     case BR_BP_GET:
-      sendNBytes(emul_bp_flag[0], 4);
-      sendNBytes(emul_bp_flag[1], 4);
+      sendNBytes(emulBPFlag[0], 4);
+      sendNBytes(emulBPFlag[1], 4);
       break;
 
     case BR_BP_SET: {
@@ -493,10 +474,9 @@ void monitor_options_misc(uchar command) {
       getNBytes(&data[0], 4);
       getNBytes(&data[1], 4);
       /* Note ordering to avoid temporary variable */
-      emul_bp_flag[1] =
-          (~emul_bp_flag[0] & emul_bp_flag[1]) |
-          (emul_bp_flag[0] & ((emul_bp_flag[1] & ~data[0]) | data[1]));
-      emul_bp_flag[0] = emul_bp_flag[0] & (data[0] | ~data[1]);
+      emulBPFlag[1] = (~emulBPFlag[0] & emulBPFlag[1]) |
+                      (emulBPFlag[0] & ((emulBPFlag[1] & ~data[0]) | data[1]));
+      emulBPFlag[0] = emulBPFlag[0] & (data[0] | ~data[1]);
     } break;
 
     case BR_BP_READ:
@@ -504,12 +484,12 @@ void monitor_options_misc(uchar command) {
       temp = tempchar;
       sendChar(breakpoints[temp].cond);
       sendChar(breakpoints[temp].size);
-      sendNBytes(breakpoints[temp].addra, 4);
-      sendNBytes(breakpoints[temp].addrb, 4);
-      sendNBytes(breakpoints[temp].dataa[0], 4);
-      sendNBytes(breakpoints[temp].dataa[1], 4);
-      sendNBytes(breakpoints[temp].datab[0], 4);
-      sendNBytes(breakpoints[temp].datab[1], 4);
+      sendNBytes(breakpoints[temp].addrA, 4);
+      sendNBytes(breakpoints[temp].addrB, 4);
+      sendNBytes(breakpoints[temp].dataA[0], 4);
+      sendNBytes(breakpoints[temp].dataA[1], 4);
+      sendNBytes(breakpoints[temp].dataB[0], 4);
+      sendNBytes(breakpoints[temp].dataB[1], 4);
       break;
 
     case BR_BP_WRITE:
@@ -517,21 +497,21 @@ void monitor_options_misc(uchar command) {
       temp = tempchar;
       getChar(&breakpoints[temp].cond);
       getChar(&breakpoints[temp].size);
-      getNBytes(&breakpoints[temp].addra, 4);
-      getNBytes(&breakpoints[temp].addrb, 4);
-      getNBytes(&breakpoints[temp].dataa[0], 4);
-      getNBytes(&breakpoints[temp].dataa[1], 4);
-      getNBytes(&breakpoints[temp].datab[0], 4);
-      getNBytes(&breakpoints[temp].datab[1], 4);
+      getNBytes(&breakpoints[temp].addrA, 4);
+      getNBytes(&breakpoints[temp].addrB, 4);
+      getNBytes(&breakpoints[temp].dataA[0], 4);
+      getNBytes(&breakpoints[temp].dataA[1], 4);
+      getNBytes(&breakpoints[temp].dataB[0], 4);
+      getNBytes(&breakpoints[temp].dataB[1], 4);
       /* add breakpoint */
-      temp = (1 << temp) & ~emul_bp_flag[0];
-      emul_bp_flag[0] |= temp;
-      emul_bp_flag[1] |= temp;
+      temp = (1 << temp) & ~emulBPFlag[0];
+      emulBPFlag[0] |= temp;
+      emulBPFlag[1] |= temp;
       break;
 
     case BR_WP_GET:
-      sendNBytes(emul_wp_flag[0], 4);
-      sendNBytes(emul_wp_flag[1], 4);
+      sendNBytes(emulWPFlag[0], 4);
+      sendNBytes(emulWPFlag[1], 4);
       break;
 
     case BR_WP_SET: {
@@ -539,10 +519,10 @@ void monitor_options_misc(uchar command) {
       getNBytes(&data[0], 4);
       getNBytes(&data[1], 4);
       temp = data[1] & ~data[0];
-      emul_wp_flag[0] &= ~temp;
-      emul_wp_flag[1] |= temp;
-      temp = data[0] & emul_wp_flag[0];
-      emul_wp_flag[1] = (emul_wp_flag[1] & ~temp) | (data[1] & temp);
+      emulWPFlag[0] &= ~temp;
+      emulWPFlag[1] |= temp;
+      temp = data[0] & emulWPFlag[0];
+      emulWPFlag[1] = (emulWPFlag[1] & ~temp) | (data[1] & temp);
     } break;
 
     case BR_WP_READ:
@@ -550,12 +530,12 @@ void monitor_options_misc(uchar command) {
       temp = tempchar;
       sendChar(watchpoints[temp].cond);
       sendChar(watchpoints[temp].size);
-      sendNBytes(watchpoints[temp].addra, 4);
-      sendNBytes(watchpoints[temp].addrb, 4);
-      sendNBytes(watchpoints[temp].dataa[0], 4);
-      sendNBytes(watchpoints[temp].dataa[1], 4);
-      sendNBytes(watchpoints[temp].datab[0], 4);
-      sendNBytes(watchpoints[temp].datab[1], 4);
+      sendNBytes(watchpoints[temp].addrA, 4);
+      sendNBytes(watchpoints[temp].addrB, 4);
+      sendNBytes(watchpoints[temp].dataA[0], 4);
+      sendNBytes(watchpoints[temp].dataA[1], 4);
+      sendNBytes(watchpoints[temp].dataB[0], 4);
+      sendNBytes(watchpoints[temp].dataB[1], 4);
       break;
 
     case BR_WP_WRITE:
@@ -563,15 +543,15 @@ void monitor_options_misc(uchar command) {
       temp = tempchar;
       getChar(&watchpoints[temp].cond);
       getChar(&watchpoints[temp].size);
-      getNBytes(&watchpoints[temp].addra, 4);
-      getNBytes(&watchpoints[temp].addrb, 4);
-      getNBytes(&watchpoints[temp].dataa[0], 4);
-      getNBytes(&watchpoints[temp].dataa[1], 4);
-      getNBytes(&watchpoints[temp].datab[0], 4);
-      getNBytes(&watchpoints[temp].datab[1], 4);
-      temp = 1 << temp & ~emul_wp_flag[0];
-      emul_wp_flag[0] |= temp;
-      emul_wp_flag[1] |= temp;
+      getNBytes(&watchpoints[temp].addrA, 4);
+      getNBytes(&watchpoints[temp].addrB, 4);
+      getNBytes(&watchpoints[temp].dataA[0], 4);
+      getNBytes(&watchpoints[temp].dataA[1], 4);
+      getNBytes(&watchpoints[temp].dataB[0], 4);
+      getNBytes(&watchpoints[temp].dataB[1], 4);
+      temp = 1 << temp & ~emulWPFlag[0];
+      emulWPFlag[0] |= temp;
+      emulWPFlag[1] |= temp;
       break;
 
     case BR_FR_WRITE: {
@@ -579,7 +559,7 @@ void monitor_options_misc(uchar command) {
       ringBuffer* pBuff;
 
       getChar(&device);
-      pBuff = terminal_table[device][1];
+      pBuff = terminalTable[device][1];
       getChar(&length);
       temp = tempchar;
       while (length-- > 0) {
@@ -591,14 +571,14 @@ void monitor_options_misc(uchar command) {
     } break;
 
     case BR_FR_READ: {
-      unsigned char device, max_length;
+      uchar device, max_length;
       uint i, length, available;
       ringBuffer* pBuff;
 
       getChar(&device);
-      pBuff = terminal_table[device][0];
+      pBuff = terminalTable[device][0];
       getChar(&max_length);
-      available = countBuffer(&terminal0_Tx); /* See how many chars we have */
+      available = countBuffer(&terminal0Tx); /* See how many chars we have */
       if (pBuff == NULL)
         length = 0; /* Kill if no corresponding buffer */
       else
@@ -606,7 +586,7 @@ void monitor_options_misc(uchar command) {
       sendChar(length);
       for (i = 0; i < length; i++) /* Send zero or more characters */
       {
-        unsigned char c;
+        uchar c;
         getBuffer(pBuff, &c);
         sendChar(c);
       }
@@ -617,9 +597,13 @@ void monitor_options_misc(uchar command) {
   }
 }
 
-void monitor_memory(uchar c) {
+/**
+ * @brief
+ * @param c
+ */
+void monitorMemory(uchar c) {
   int addr;
-  unsigned char* pointer;
+  uchar* pointer;
   int size;
 
   getNBytes(&addr, 4);  // Start address really
@@ -629,10 +613,10 @@ void monitor_memory(uchar c) {
 
     switch (addr & 0xE0) {
       case 0x00:
-        reg_bank = reg_current;
+        reg_bank = regCurrent;
         break;
       case 0x20:
-        reg_bank = reg_user;
+        reg_bank = regUser;
         break;
       case 0x40:
         reg_bank = regSvc;
@@ -641,7 +625,7 @@ void monitor_memory(uchar c) {
         reg_bank = regAbt;
         break;
       case 0x80:
-        reg_bank = reg_undef;
+        reg_bank = regUndef;
         break;
       case 0xA0:
         reg_bank = regIrq;
@@ -650,7 +634,7 @@ void monitor_memory(uchar c) {
         reg_bank = regFiq;
         break;
       default:
-        reg_bank = reg_current;
+        reg_bank = regCurrent;
         break;
     }
     reg_number = addr & 0x1F;
@@ -677,35 +661,43 @@ void monitor_memory(uchar c) {
   }
 }
 
-void monitor_breakpoints(uchar c) {
-  runflags = c & 0x3F;
-  breakpoint_enable = (runflags & 0x10) != 0;
-  breakpoint_enabled = (runflags & 0x01) != 0; /* Break straight away */
-  run_through_BL = (runflags & 0x02) != 0;
-  run_through_SWI = (runflags & 0x04) != 0;
-  getNBytes(&steps_togo, 4);
-  if (steps_togo == 0)
+/**
+ * @brief
+ * @param c
+ */
+void monitorBreakpoints(uchar c) {
+  runFlags = c & 0x3F;
+  breakpointEnable = (runFlags & 0x10) != 0;
+  breakpointEnabled = (runFlags & 0x01) != 0; /* Break straight away */
+  runThroughBL = (runFlags & 0x02) != 0;
+  runThroughSWI = (runFlags & 0x04) != 0;
+  getNBytes(&stepsToGo, 4);
+  if (stepsToGo == 0)
     status = CLIENT_STATE_RUNNING;
   else
     status = CLIENT_STATE_STEPPING;
 }
 
+/**
+ * @brief
+ * @param pPollfd
+ */
 void comm(struct pollfd* pPollfd) {
   uchar c;
 
   if (poll(pPollfd, 1, 0) > 0) {
     if (read(0, &c, 1) < 0) {
-      std::cout << "Some error occured!" << std::endl;
+      std::cout << "Some error occurred!" << std::endl;
     }  // Look at error return - find EOF & exit
     switch (c & 0xC0) {
       case 0x00:
-        monitor_options_misc(c);
+        monitorOptionsMisc(c);
         break;
       case 0x40:
-        monitor_memory(c);
+        monitorMemory(c);
         break;
       case 0x80:
-        monitor_breakpoints(c);
+        monitorBreakpoints(c);
         break;
       case 0xC0:
         break;
@@ -718,7 +710,7 @@ void comm(struct pollfd* pPollfd) {
  * @param to_get
  * @return int
  */
-int getChar(unsigned char* to_get) {
+int getChar(uchar* to_get) {
   return getCharArray(1, to_get);
 }
 
@@ -727,7 +719,7 @@ int getChar(unsigned char* to_get) {
  * @param to_send
  * @return int
  */
-int sendChar(unsigned char to_send) {
+int sendChar(uchar to_send) {
   return sendCharArray(1, &to_send);
 }
 
@@ -738,7 +730,7 @@ int sendChar(unsigned char to_send) {
  * @return int The number of bytes believed received successfully (i.e. N=>"Ok")
  */
 int sendNBytes(int value, int N) {
-  unsigned char buffer[MAX_SERIAL_WORD];
+  uchar buffer[MAX_SERIAL_WORD];
   int i;
 
   if (N > MAX_SERIAL_WORD)
@@ -760,7 +752,7 @@ int sendNBytes(int value, int N) {
  * @return int The number of bytes received successfully (i.e. N=>"Ok")
  */
 int getNBytes(int* val_ptr, int N) {
-  unsigned char buffer[MAX_SERIAL_WORD];
+  uchar buffer[MAX_SERIAL_WORD];
   int i, No_received;
 
   if (N > MAX_SERIAL_WORD) {
@@ -790,7 +782,7 @@ int getNBytes(int* val_ptr, int N) {
  * @param data_ptr
  * @return int Number of bytes received.
  */
-int getCharArray(int char_number, unsigned char* data_ptr) {
+int getCharArray(int char_number, uchar* data_ptr) {
   int ret = char_number;
   int replycount = 0;
   struct pollfd pollfd;
@@ -821,9 +813,9 @@ int getCharArray(int char_number, unsigned char* data_ptr) {
  * @param data_ptr points to the beginning of the sequence to be sent
  * @return int
  */
-int sendCharArray(int char_number, unsigned char* data_ptr) {
+int sendCharArray(int char_number, uchar* data_ptr) {
   if (write(1, data_ptr, char_number) < 0) {
-    std::cout << "Some error occured!" << std::endl;
+    std::cout << "Some error occurred!" << std::endl;
   }
 
   return char_number;  // send char array to the board
@@ -832,29 +824,23 @@ int sendCharArray(int char_number, unsigned char* data_ptr) {
 /**
  * @brief
  */
-void emulsetup() {
-  int initial_mode;
-
+void emulSetup() {
   glob1 = 0;
   glob2 = 0;
 
-  {
-    int i;
-
-    for (i = 0; i < 32; i++) {
-      past_opc_addr[i] = 1; /* Illegal op. code address */
-    }
-    past_opc_ptr = 0;
-    past_count = 0;
-    past_size = 4;
+  for (int i = 0; i < 32; i++) {
+    pastOpcAddr[i] = 1;  // Illegal op. code address
   }
+  pastOpcPtr = 0;
+  pastCount = 0;
+  pastSize = 4;
 
-  initial_mode = 0xC0 | supMode;
-  print_out = false;
+  int initialMode = 0xC0 | supMode;
+  printOut = false;
 
-  next_file_handle = 1;
+  nextFileHandle = 1;
 
-  initialise(0, initial_mode);
+  initialise(0, initialMode);
 }
 
 /**
@@ -865,88 +851,91 @@ void emulsetup() {
  * @return true
  * @return false
  */
-bool check_breakpoint(uint instr_addr, uint instr) {
-  bool may_break = false;
+bool checkBreakpoint(uint instr_addr, uint instr) {
+  bool mayBreak = false;
 
-  for (int i = 0; (i < NO_OF_BREAKPOINTS) && !may_break; i++) {
-    may_break = ((emul_bp_flag[0] & emul_bp_flag[1] & (1 << i)) !=
-                 0);  // Breakpoint is active
+  for (int i = 0; (i < NO_OF_BREAKPOINTS) && !mayBreak; i++) {
+    mayBreak = ((emulBPFlag[0] & emulBPFlag[1] & (1 << i)) !=
+                0);  // Breakpoint is active
 
     // Try address comparison
-    if (may_break) {
+    if (mayBreak) {
       switch (breakpoints[i].cond & 0x0C) {
         case 0x00:
         case 0x04:
-          may_break = false;
+          mayBreak = false;
           break;
         // Case of between address A and address B
         case 0x08:
-          if ((instr_addr < breakpoints[i].addra) ||
-              (instr_addr > breakpoints[i].addrb)) {
-            may_break = false;
+          if ((instr_addr < breakpoints[i].addrA) ||
+              (instr_addr > breakpoints[i].addrB)) {
+            mayBreak = false;
           }
           break;
         // case of mask
         case 0x0C:
-          if ((instr_addr & breakpoints[i].addrb) != breakpoints[i].addra) {
-            may_break = false;
+          if ((instr_addr & breakpoints[i].addrB) != breakpoints[i].addrA) {
+            mayBreak = false;
           }
           break;
       }
     }
 
     // Try data comparison
-    if (may_break) {
+    if (mayBreak) {
       switch (breakpoints[i].cond & 0x03) {
         case 0x00:
-          may_break = false;
+          mayBreak = false;
           break;
 
         case 0x01:
-          may_break = false;
+          mayBreak = false;
           break;
 
         case 0x02:  // Case of between data A and data B
-          if ((instr < breakpoints[i].dataa[0]) ||
-              (instr > breakpoints[i].datab[0])) {
-            may_break = false;
+          if ((instr < breakpoints[i].dataA[0]) ||
+              (instr > breakpoints[i].dataB[0])) {
+            mayBreak = false;
           }
           break;
 
         case 0x03:  // Case of mask
-          if ((instr & breakpoints[i].datab[0]) != breakpoints[i].dataa[0]) {
-            may_break = false;
+          if ((instr & breakpoints[i].dataB[0]) != breakpoints[i].dataA[0]) {
+            mayBreak = false;
           }
           break;
       }
     }
   }
-  return may_break;
+  return mayBreak;
 }
 
+/**
+ * @brief
+ */
 void executeInstruction() {
   int i;
 
   uint instr_addr =
-      getRegister(15, reg_current) - instructionLength(cpsr, tf_mask);
-  last_addr = getRegister(15, reg_current) - instructionLength(cpsr, tf_mask);
+      getRegister(15, regCurrent) - instructionLength(cpsr, tfMask);
+  lastAddr = getRegister(15, regCurrent) - instructionLength(cpsr, tfMask);
 
   /* FETCH */
   auto instr = fetch();
 
-  if ((breakpoint_enabled) && (status != CLIENT_STATE_RUNNING_SWI)) {
-    if (check_breakpoint(instr_addr, instr)) {
+  if ((breakpointEnabled) && (status != CLIENT_STATE_RUNNING_SWI)) {
+    if (checkBreakpoint(instr_addr, instr)) {
       status = CLIENT_STATE_BREAKPOINT;
       return;
     }
   }
-  breakpoint_enabled = breakpoint_enable; /* More likely after first fetch */
+  breakpointEnabled = breakpointEnable; /* More likely after first fetch */
 
   /* BL instruction */
-  if (((instr & 0x0F000000) == 0x0B000000) && run_through_BL) {
+  if (((instr & 0x0F000000) == 0x0B000000) && runThroughBL) {
     saveState(CLIENT_STATE_RUNNING_BL);
   } else {
-    if (((instr & 0x0F000000) == 0x0F000000) && run_through_SWI) {
+    if (((instr & 0x0F000000) == 0x0F000000) && runThroughSWI) {
       saveState(CLIENT_STATE_RUNNING_SWI);
     }
   }
@@ -960,31 +949,42 @@ void executeInstruction() {
  * @param new_status
  */
 void saveState(uchar new_status) {
-  run_until_PC =
-      getRegister(15, reg_current);  // Incremented once: correct here
-  run_until_SP = getRegister(13, reg_current);
-  run_until_mode = getRegister(16, reg_current) & 0x3F;  // Just the mode bits
-  run_until_status = status;
+  runUntilPC = getRegister(15, regCurrent);  // Incremented once: correct here
+  runUntilSP = getRegister(13, regCurrent);
+  runUntilMode = getRegister(16, regCurrent) & 0x3F;  // Just the mode bits
+  runUntilStatus = status;
   status = new_status;
 }
 
+/**
+ * @brief
+ */
 void boardreset() {
-  steps_reset = 0;
+  stepsReset = 0;
   initialise(0, supMode);
 }
 
+/**
+ * @brief
+ * @param start_address
+ * @param initial_mode
+ */
 void initialise(uint start_address, int initial_mode) {
   cpsr = 0X000000C0 | initial_mode;  // Disable interrupts
   r[15] = start_address;
-  old_status = CLIENT_STATE_RESET;
+  oldStatus = CLIENT_STATE_RESET;
   status = CLIENT_STATE_RESET;
 }
 
+/**
+ * @brief
+ * @param op_code
+ */
 void execute(uint op_code) {
   incPC(); /* Easier here than later */
 
   /* ARM or THUMB ? */
-  if ((cpsr & tf_mask) != 0) /* Thumb */
+  if ((cpsr & tfMask) != 0) /* Thumb */
   {
     op_code = op_code & 0XFFFF; /* 16-bit op. code */
     switch (op_code & 0XE000) {
@@ -995,7 +995,7 @@ void execute(uint op_code) {
         data1(op_code);
         break;
       case 0X4000:
-        data_transfer(op_code);
+        dataTransfer(op_code);
         break;
       case 0X6000:
         transfer0(op_code);
@@ -1004,13 +1004,13 @@ void execute(uint op_code) {
         transfer1(op_code);
         break;
       case 0XA000:
-        sp_pc(op_code);
+        spPC(op_code);
         break;
       case 0XC000:
-        lsm_b(op_code);
+        lsmB(op_code);
         break;
       case 0XE000:
-        thumb_branch(op_code);
+        thumbBranch(op_code);
         break;
     }
   } else {
@@ -1048,9 +1048,12 @@ void execute(uint op_code) {
   }
 }
 
-/*----------------------------------------------------------------------------*/
-
-int is_it_sbhw(uint op_code) {
+/**
+ * @brief
+ * @param op_code
+ * @return int
+ */
+int isItSBHW(uint op_code) {
   if (((op_code & 0X0E000090) == 0X00000090) &&
       ((op_code & 0X00000060) != 0X00000000)     /* No multiplies */
       && ((op_code & 0X00100040) != 0X00000040)) /* No signed stores */
@@ -1063,23 +1066,25 @@ int is_it_sbhw(uint op_code) {
     return false;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-
+/**
+ * @brief
+ * @param op_code
+ */
 void dataOp(uint op_code) {
   int operation;
 
-  if (((op_code & mul_mask) == mul_op) ||
-      ((op_code & long_mul_mask) == long_mul_op)) {
+  if (((op_code & mulMask) == mulOp) ||
+      ((op_code & longMulMask) == longMulOp)) {
     myMulti(op_code);
-  } else if (is_it_sbhw(op_code) == true) {
-    transfer_sbhw(op_code);
-  } else if ((op_code & swp_mask) == swp_op) {
+  } else if (isItSBHW(op_code) == true) {
+    transferSBHW(op_code);
+  } else if ((op_code & swpMask) == swpOp) {
     swap(op_code);
   } else {
-    operation = (op_code & data_op_mask) >> 21;
+    operation = (op_code & dataOpMask) >> 21;
 
     /* TST, TEQ, CMP, CMN - all lie in following range, but have S set */
-    if ((op_code & data_ext_mask) == arith_ext) /* PSR transfers OR BX */
+    if ((op_code & dataExtMask) == arithExt) /* PSR transfers OR BX */
     {
       if ((op_code & 0X0FBF0FFF) == 0X010F0000) {
         mrs(op_code); /* MRS */
@@ -1088,7 +1093,7 @@ void dataOp(uint op_code) {
         msr(op_code);                                  /* MSR */
       } else if ((op_code & 0X0FFFFFD0) == 0X012FFF10) /* BX/BLX */
       {
-        bx(op_code & rm_mask, op_code & 0X00000020);
+        bx(op_code & rmMask, op_code & 0X00000020);
       } else if ((op_code & 0XFFF000F0) == 0XE1200070) {
         breakpoint(); /* Breakpoint */
       } else if ((op_code & 0X0FFF0FF0) == 0X016F0F10) {
@@ -1102,9 +1107,11 @@ void dataOp(uint op_code) {
   }
 }
 
-/*----------------------------------------------------------------------------*/
-
-void transfer_sbhw(uint op_code) {
+/**
+ * @brief
+ * @param op_code
+ */
+void transferSBHW(uint op_code) {
   uint address;
   int size;
   int offset, rd;
@@ -1128,40 +1135,45 @@ void transfer_sbhw(uint op_code) {
       break; /* SH */
   }
 
-  rd = ((op_code & rd_mask) >> 12);
+  rd = ((op_code & rdMask) >> 12);
 
-  address = getRegister(((op_code & rn_mask) >> 16), reg_current);
+  address = getRegister(((op_code & rnMask) >> 16), regCurrent);
 
-  offset = transferOffset(op_code & op2_mask, op_code & up_mask,
-                          op_code & imm_hw_mask, true);
+  offset = transferOffset(op_code & op2Mask, op_code & upMask,
+                          op_code & immHwMask, true);
 
-  if ((op_code & pre_mask) != 0)
+  if ((op_code & preMask) != 0)
     address = address + offset; /* pre-index */
 
-  if ((op_code & load_mask) == 0) /* store */
-    writeMemory(address, getRegister(rd, reg_current), size, false, memData);
+  if ((op_code & loadMask) == 0) /* store */
+    writeMemory(address, getRegister(rd, regCurrent), size, false, memData);
   else /* load */
     putRegister(rd, readMemory(address, size, sign, false, memData),
-                reg_current);
+                regCurrent);
   /* post index */
 
-  if ((op_code & pre_mask) == 0) /* post index with writeback */
-    putRegister((op_code & rn_mask) >> 16, address + offset, reg_current);
-  else if ((op_code & write_back_mask) != 0)
-    putRegister((op_code & rn_mask) >> 16, address, reg_current);
+  if ((op_code & preMask) == 0) /* post index with writeback */
+    putRegister((op_code & rnMask) >> 16, address + offset, regCurrent);
+  else if ((op_code & writeBackMask) != 0)
+    putRegister((op_code & rnMask) >> 16, address, regCurrent);
 }
 
-/*----------------------------------------------------------------------------*/
-
+/**
+ * @brief
+ * @param op_code
+ */
 void mrs(uint op_code) {
-  if ((op_code & 0X00400000) == 0)
-    putRegister((op_code & rd_mask) >> 12, cpsr, reg_current);
-  else
-    putRegister((op_code & rd_mask) >> 12, spsr[cpsr & mode_mask], reg_current);
+  if ((op_code & 0X00400000) == 0) {
+    putRegister((op_code & rdMask) >> 12, cpsr, regCurrent);
+  } else {
+    putRegister((op_code & rdMask) >> 12, spsr[cpsr & modeMask], regCurrent);
+  }
 }
 
-/*----------------------------------------------------------------------------*/
-
+/**
+ * @brief
+ * @param op_code
+ */
 void msr(uint op_code) {
   int mask, source;
 
@@ -1179,11 +1191,11 @@ void msr(uint op_code) {
       mask = 0XFFFFFFFF;
       break;
   }
-  if ((cpsr & mode_mask) == 0X10)
+  if ((cpsr & modeMask) == 0X10)
     mask = mask & 0XF0000000; /* User mode */
 
-  if ((op_code & imm_mask) == 0) /* Test applies for both cases */
-    source = getRegister(op_code & rm_mask, reg_current) & mask;
+  if ((op_code & immMask) == 0) /* Test applies for both cases */
+    source = getRegister(op_code & rmMask, regCurrent) & mask;
   else {
     uint x, y;
     int dummy;
@@ -1196,19 +1208,20 @@ void msr(uint op_code) {
   if ((op_code & 0X00400000) == 0)
     cpsr = (cpsr & ~mask) | source;
   else
-    spsr[cpsr & mode_mask] = (spsr[cpsr & mode_mask] & ~mask) | source;
+    spsr[cpsr & modeMask] = (spsr[cpsr & modeMask] & ~mask) | source;
 }
 
-/*----------------------------------------------------------------------------*/
+/**
+ * @brief
+ * @param Rm
+ * @param link Link is performed if "link" is NON-ZERO
+ */
+void bx(uint Rm, int link) {
+  int offset, t_bit;
 
-void bx(uint Rm, int link) /* Link is performed if "link" is NON-ZERO */
-{
-  int PC, offset;
-  int t_bit;
+  int PC = getRegister(15, regCurrent);
 
-  PC = getRegister(15, reg_current);
-
-  if ((cpsr & tf_mask) != 0) {
+  if ((cpsr & tfMask) != 0) {
     PC = PC - 2;
     PC = PC | 1;
   } /* Remember Thumb mode */
@@ -1216,54 +1229,56 @@ void bx(uint Rm, int link) /* Link is performed if "link" is NON-ZERO */
     PC = PC - 4;
   }
 
-  offset = getRegister(Rm, reg_current) & 0XFFFFFFFE;
-  t_bit = getRegister(Rm, reg_current) & 0X00000001;
+  offset = getRegister(Rm, regCurrent) & 0XFFFFFFFE;
+  t_bit = getRegister(Rm, regCurrent) & 0X00000001;
 
   if (t_bit == 1)
-    cpsr = cpsr | tf_mask;
+    cpsr = cpsr | tfMask;
   else
-    cpsr = cpsr & ~tf_mask;
+    cpsr = cpsr & ~tfMask;
 
-  putRegister(15, offset, reg_current); /* Update PC */
+  putRegister(15, offset, regCurrent); /* Update PC */
 
   if (link != 0) {
-    putRegister(14, PC, reg_current); /* Link if BLX */
+    putRegister(14, PC, regCurrent); /* Link if BLX */
   }
 }
 
-/*----------------------------------------------------------------------------*/
-
+/**
+ * @brief
+ * @param op_code
+ */
 void myMulti(uint op_code) {
   int acc;
 
-  if ((op_code & mul_long_bit) == 0) /* Normal */
+  if ((op_code & mulLongBit) == 0) /* Normal */
   {
-    acc = getRegister(op_code & rm_mask, reg_current) *
-          getRegister((op_code & rs_mask) >> 8, reg_current);
+    acc = getRegister(op_code & rmMask, regCurrent) *
+          getRegister((op_code & rsMask) >> 8, regCurrent);
 
-    if ((op_code & mul_acc_bit) != 0)
-      acc = acc + getRegister((op_code & rd_mask) >> 12, reg_current);
+    if ((op_code & mulAccBit) != 0)
+      acc = acc + getRegister((op_code & rdMask) >> 12, regCurrent);
 
-    putRegister((op_code & rn_mask) >> 16, acc, reg_current);
+    putRegister((op_code & rnMask) >> 16, acc, regCurrent);
 
-    if ((op_code & s_mask) != 0)
+    if ((op_code & sMask) != 0)
       setNZ(acc); /* Flags */
   } else          /* Long */
   {
     uint Rm, Rs, th, tm, tl;
     int sign;
 
-    Rm = getRegister(op_code & rm_mask, reg_current);
-    Rs = getRegister((op_code & rs_mask) >> 8, reg_current);
+    Rm = getRegister(op_code & rmMask, regCurrent);
+    Rs = getRegister((op_code & rsMask) >> 8, regCurrent);
 
     sign = 0;
-    if ((op_code & mul_sign_bit) != 0) /* Signed */
+    if ((op_code & mulSignBit) != 0) /* Signed */
     {
-      if ((Rm & bit_31) != 0) {
+      if ((Rm & bit31) != 0) {
         Rm = ~Rm + 1;
         sign = 1;
       }
-      if ((Rs & bit_31) != 0) {
+      if ((Rs & bit31) != 0) {
         Rs = ~Rs + 1;
         sign = sign ^ 1;
       }
@@ -1290,97 +1305,104 @@ void myMulti(uint op_code) {
         th = th + 1;
     }
 
-    if ((op_code & mul_acc_bit) != 0) {
-      tm = tl + getRegister((op_code & rd_mask) >> 12, reg_current);
+    if ((op_code & mulAccBit) != 0) {
+      tm = tl + getRegister((op_code & rdMask) >> 12, regCurrent);
       if (tm < tl)
         th = th + 1; /* Propagate carry */
       tl = tm;
-      th = th + getRegister((op_code & rn_mask) >> 16, reg_current);
+      th = th + getRegister((op_code & rnMask) >> 16, regCurrent);
     }
 
-    putRegister((op_code & rd_mask) >> 12, tl, reg_current);
-    putRegister((op_code & rn_mask) >> 16, th, reg_current);
+    putRegister((op_code & rdMask) >> 12, tl, regCurrent);
+    putRegister((op_code & rnMask) >> 16, th, regCurrent);
 
-    if ((op_code & s_mask) != 0)
+    if ((op_code & sMask) != 0)
       setNZ(th | (((tl >> 16) | tl) & 0X0000FFFF)); /* Flags */
   }
 }
 
-/*----------------------------------------------------------------------------*/
-
+/**
+ * @brief
+ * @param op_code
+ */
 void swap(uint op_code) {
   uint address, data, size;
 
-  address = getRegister((op_code & rn_mask) >> 16, reg_current);
+  address = getRegister((op_code & rnMask) >> 16, regCurrent);
 
-  if ((op_code & byte_mask) != 0)
+  if ((op_code & byteMask) != 0)
     size = 1;
   else
     size = 4;
 
   data = readMemory(address, size, false, false, memData);
-  writeMemory(address, getRegister(op_code & rm_mask, reg_current), size, false,
+  writeMemory(address, getRegister(op_code & rmMask, regCurrent), size, false,
               memData);
-  putRegister((op_code & rd_mask) >> 12, data, reg_current);
+  putRegister((op_code & rdMask) >> 12, data, regCurrent);
 }
 
-/*----------------------------------------------------------------------------*/
-
+/**
+ * @brief
+ * @param op_code
+ * @param operation
+ */
 void normalDataOp(uint op_code, int operation) {
   int rd, a, b, mode;
   int shift_carry;
   int CPSR_special;
 
-  mode = cpsr & mode_mask;
+  mode = cpsr & modeMask;
   CPSR_special = false;
   shift_carry = 0;
-  a = getRegister((op_code & rn_mask) >> 16,
-                  reg_current); /* force_user = false */
+  a = getRegister((op_code & rnMask) >> 16,
+                  regCurrent);  // force_user = false
 
-  if ((op_code & imm_mask) == 0)
-    b = bReg(op_code & op2_mask, &shift_carry);
-  else
-    b = bImmediate(op_code & op2_mask, &shift_carry);
+  if ((op_code & immMask) == 0) {
+    b = bReg(op_code & op2Mask, &shift_carry);
+  } else {
+    b = bImmediate(op_code & op2Mask, &shift_carry);
+  }
 
-  switch (operation) /* R15s @@?! */
-  {
+  // R15s
+  switch (operation) {
     case 0X0:
       rd = a & b;
-      break; /* AND */
+      break;  // AND
     case 0X1:
       rd = a ^ b;
-      break; /* EOR */
+      break;  // EOR
     case 0X2:
       rd = a - b;
-      break; /* SUB */
+      break;  // SUB
     case 0X3:
       rd = b - a;
-      break; /* RSB */
+      break;  // RSB
     case 0X4:
       rd = a + b;
-      break; /* ADD */
+      break;  // ADD
     case 0X5:
       rd = a + b;
-      if ((cpsr & cf_mask) != 0)
+      if ((cpsr & cfMask) != 0)
         rd = rd + 1;
-      break; /* ADC */
+      break;  // ADC
     case 0X6:
       rd = a - b - 1;
-      if ((cpsr & cf_mask) != 0)
+      if ((cpsr & cfMask) != 0)
         rd = rd + 1;
-      break; /* SBC */
+      break;  // SBC
     case 0X7:
       rd = b - a - 1;
-      if ((cpsr & cf_mask) != 0)
+      if ((cpsr & cfMask) != 0)
         rd = rd + 1;
-      break; /* RSC */
+      break;  // RSC
     case 0X8:
       rd = a & b;
-      break; /* TST */
+      break;  // TST
     case 0X9:
-      rd = a ^ b;                        /* TEQ */
-      if ((op_code & rd_mask) == 0XF000) /* TEQP */
-      {
+      rd = a ^ b;  // TEQ
+
+      // TEQP
+      if ((op_code & rdMask) == 0XF000) {
         CPSR_special = true;
         if (mode != userMode)
           cpsr = spsr[mode];
@@ -1388,77 +1410,83 @@ void normalDataOp(uint op_code, int operation) {
       break;
     case 0XA:
       rd = a - b;
-      break; /* CMP */
+      break;  // CMP
     case 0XB:
       rd = a + b;
-      break; /* CMN */
+      break;  // CMN
     case 0XC:
       rd = a | b;
-      break; /* ORR */
+      break;  // ORR
     case 0XD:
       rd = b;
-      break; /* MOV */
+      break;  // MOV
     case 0XE:
       rd = a & ~b;
-      break; /* BIC */
+      break;  // BIC
     case 0XF:
       rd = ~b;
-      break; /* MVN */
+      break;  // MVN
   }
 
-  if ((operation & 0XC) != 0X8) /* Return result unless a compare */
-    putRegister((op_code & rd_mask) >> 12, rd, reg_current);
+  // Return result unless a compare
+  if ((operation & 0XC) != 0X8) {
+    putRegister((op_code & rdMask) >> 12, rd, regCurrent);
+  }
 
-  if (((op_code & s_mask) != 0) && (CPSR_special != true)) /* S-bit */
-  {                                         /* Want to change CPSR */
-    if (((op_code & rd_mask) >> 12) == 0XF) /* PC and S-bit */
-    {
-      if (mode != userMode)
-        cpsr = spsr[mode]; /* restore saved CPSR */
-      else
+  // S-bit && Want to change CPSR
+  if (((op_code & sMask) != 0) && (CPSR_special != true)) {
+    // PC and S-bit
+    if (((op_code & rdMask) >> 12) == 0XF) {
+      // restore saved CPSR
+      if (mode != userMode) {
+        cpsr = spsr[mode];
+      } else {
         fprintf(stderr, "SPSR_user read attempted\n");
-    } else /* other dest. registers */
-    {
-      switch (operation) { /* LOGICALs */
-        case 0X0:          /* AND */
-        case 0X1:          /* EOR */
-        case 0X8:          /* TST */
-        case 0X9:          /* TEQ */
-        case 0XC:          /* ORR */
-        case 0XD:          /* MOV */
-        case 0XE:          /* BIC */
-        case 0XF:          /* MVN */
+      }
+    }
+    // other dest. registers
+    else {
+      switch (operation) {  // LOGICALs
+        case 0X0:           // AND
+        case 0X1:           // EOR
+        case 0X8:           // TST
+        case 0X9:           // TEQ
+        case 0XC:           // ORR
+        case 0XD:           // MOV
+        case 0XE:           // BIC
+        case 0XF:           // MVN
           setNZ(rd);
-          if (shift_carry == true)
-            cpsr = cpsr | cf_mask; /* CF := output */
-          else
-            cpsr = cpsr & ~cf_mask; /* from shifter */
+          if (shift_carry == true) {
+            cpsr = cpsr | cfMask;  // CF := output
+          } else {
+            cpsr = cpsr & ~cfMask;  // from shifter
+          }
           break;
 
-        case 0X2: /* SUB */
-        case 0XA: /* CMP */
+        case 0X2:  // SUB
+        case 0XA:  // CMP
           setFlags(flagSub, a, b, rd, 1);
           break;
 
-        case 0X6: /* SBC - Needs testing more !!!   @@@@ */
-          setFlags(flagSub, a, b, rd, cpsr & cf_mask);
+        case 0X6:  // SBC - Needs more testing
+          setFlags(flagSub, a, b, rd, cpsr & cfMask);
           break;
 
-        case 0X3: /* RSB */
+        case 0X3:  // RSB
           setFlags(flagSub, b, a, rd, 1);
           break;
 
-        case 0X7: /* RSC */
-          setFlags(flagSub, b, a, rd, cpsr & cf_mask);
+        case 0X7:  // RSC
+          setFlags(flagSub, b, a, rd, cpsr & cfMask);
           break;
 
-        case 0X4: /* ADD */
-        case 0XB: /* CMN */
+        case 0X4:  // ADD
+        case 0XB:  // CMN
           setFlags(flagAdd, a, b, rd, 0);
           break;
 
-        case 0X5: /* ADC */
-          setFlags(flagAdd, a, b, rd, cpsr & cf_mask);
+        case 0X5:  // ADC
+          setFlags(flagAdd, a, b, rd, cpsr & cfMask);
           break;
       }
     }
@@ -1470,9 +1498,9 @@ void normalDataOp(uint op_code, int operation) {
 
 int bReg(int op2, int* cf) {
   uint shift_type, reg, distance, result;
-  reg = getRegister(op2 & 0X00F, reg_current); /* Register */
-  shift_type = (op2 & 0X060) >> 5;             /* Type of shift */
-  if ((op2 & 0X010) == 0) {                    /* Immediate value */
+  reg = getRegister(op2 & 0X00F, regCurrent); /* Register */
+  shift_type = (op2 & 0X060) >> 5;            /* Type of shift */
+  if ((op2 & 0X010) == 0) {                   /* Immediate value */
     distance = (op2 & 0XF80) >> 7;
     if (distance == 0) /* Special cases */
     {
@@ -1483,10 +1511,10 @@ int bReg(int op2, int* cf) {
         distance = 32; /* LSL excluded */
     }
   } else
-    distance = (getRegister((op2 & 0XF00) >> 8, reg_current) & 0XFF);
+    distance = (getRegister((op2 & 0XF00) >> 8, regCurrent) & 0XFF);
   /* Register value */
 
-  *cf = ((cpsr & cf_mask) != 0); /* Previous carry */
+  *cf = ((cpsr & cfMask) != 0); /* Previous carry */
   switch (shift_type) {
     case 0X0:
       result = lsl(reg, distance, cf);
@@ -1502,11 +1530,11 @@ int bReg(int op2, int* cf) {
       break;  /* ROR */
     case 0X4: /* RRX #1 */
       result = reg >> 1;
-      if ((cpsr & cf_mask) == 0)
-        result = result & ~bit_31;
+      if ((cpsr & cfMask) == 0)
+        result = result & ~bit31;
       else
-        result = result | bit_31;
-      *cf = ((reg & bit_0) != 0);
+        result = result | bit31;
+      *cf = ((reg & bit0) != 0);
       break;
   }
 
@@ -1526,9 +1554,9 @@ int bImmediate(int op2, int* cf) {
   x = op2 & 0X0FF;        /* Immediate value */
   y = (op2 & 0XF00) >> 7; /* Number of rotates */
   if (y == 0)
-    *cf = ((cpsr & cf_mask) != 0); /* Previous carry */
+    *cf = ((cpsr & cfMask) != 0); /* Previous carry */
   else
-    *cf = (((x >> (y - 1)) & bit_0) != 0);
+    *cf = (((x >> (y - 1)) & bit0) != 0);
   if (*cf)
     *cf = true;
   else
@@ -1541,7 +1569,7 @@ int bImmediate(int op2, int* cf) {
 void clz(uint op_code) {
   int i, j;
 
-  j = getRegister(op_code & rm_mask, reg_current);
+  j = getRegister(op_code & rmMask, regCurrent);
 
   if (j == 0)
     i = 32;
@@ -1553,7 +1581,7 @@ void clz(uint op_code) {
     }
   }
 
-  putRegister((op_code & rd_mask) >> 12, i, reg_current);
+  putRegister((op_code & rdMask) >> 12, i, regCurrent);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1563,37 +1591,36 @@ void transfer(uint op_code) {
   int offset, rd, size;
   bool T;
 
-  if ((op_code & undef_mask) == undef_code) {
+  if ((op_code & undefMask) == undefCode) {
     undefined();
   } else {
-    if ((op_code & byte_mask) == 0) {
+    if ((op_code & byteMask) == 0) {
       size = 4;
     } else {
       size = 1;
     }
 
-    T = (((op_code & pre_mask) == 0) && ((op_code & write_back_mask) != 0));
-    rd = (op_code & rd_mask) >> 12;
-    address = getRegister((op_code & rn_mask) >> 16, reg_current);
-    offset = transferOffset(op_code & op2_mask, op_code & up_mask,
-                            op_code & imm_mask, false);
+    T = (((op_code & preMask) == 0) && ((op_code & writeBackMask) != 0));
+    rd = (op_code & rdMask) >> 12;
+    address = getRegister((op_code & rnMask) >> 16, regCurrent);
+    offset = transferOffset(op_code & op2Mask, op_code & upMask,
+                            op_code & immMask, false);
 
-    if ((op_code & pre_mask) != 0) {
+    if ((op_code & preMask) != 0) {
       address = address + offset;  // Pre-index
     }
 
-    if ((op_code & load_mask) == 0) {
-      writeMemory(address, getRegister(rd, reg_current), size, T, memData);
+    if ((op_code & loadMask) == 0) {
+      writeMemory(address, getRegister(rd, regCurrent), size, T, memData);
     } else {
-      putRegister(rd, readMemory(address, size, false, T, memData),
-                  reg_current);
+      putRegister(rd, readMemory(address, size, false, T, memData), regCurrent);
     }
 
     // Post-index
-    if ((op_code & pre_mask) == 0) {
-      putRegister((op_code & rn_mask) >> 16, address + offset, reg_current);
-    } else if ((op_code & write_back_mask) != 0) {
-      putRegister((op_code & rn_mask) >> 16, address, reg_current);
+    if ((op_code & preMask) == 0) {
+      putRegister((op_code & rnMask) >> 16, address + offset, regCurrent);
+    } else if ((op_code & writeBackMask) != 0) {
+      putRegister((op_code & rnMask) >> 16, address, regCurrent);
     }
   }
 }
@@ -1640,12 +1667,12 @@ int transferOffset(int op2, int add, int imm, bool sbhw) {
  * @param op_code
  */
 void multiple(uint op_code) {
-  if ((op_code & load_mask) == 0) {
-    stm((op_code & 0X01800000) >> 23, (op_code & rn_mask) >> 16,
-        op_code & 0X0000FFFF, op_code & write_back_mask, op_code & user_mask);
+  if ((op_code & loadMask) == 0) {
+    stm((op_code & 0X01800000) >> 23, (op_code & rnMask) >> 16,
+        op_code & 0X0000FFFF, op_code & writeBackMask, op_code & userMask);
   } else {
-    ldm((op_code & 0X01800000) >> 23, (op_code & rn_mask) >> 16,
-        op_code & 0X0000FFFF, op_code & write_back_mask, op_code & user_mask);
+    ldm((op_code & 0X01800000) >> 23, (op_code & rnMask) >> 16,
+        op_code & 0X0000FFFF, op_code & writeBackMask, op_code & userMask);
   }
 }
 
@@ -1661,7 +1688,7 @@ int bitCount(uint source, int* first) {
   *first = -1;
 
   while (source != 0) {
-    if ((source & bit_0) != 0) {
+    if ((source & bit0) != 0) {
       count = count + 1;
       if (*first < 0) {
         *first = reg;
@@ -1677,7 +1704,6 @@ int bitCount(uint source, int* first) {
 
 /**
  * @brief
- *
  * @param mode
  * @param Rn
  * @param reg_list
@@ -1689,7 +1715,7 @@ void ldm(int mode, int Rn, int reg_list, bool write_back, bool hat) {
   int force_user;
   bool r15_inc;  // internal `bool'
 
-  address = getRegister(Rn, reg_current);
+  address = getRegister(Rn, regCurrent);
   count = bitCount(reg_list, &first_reg);
   r15_inc = (reg_list & 0X00008000) != 0;  // R15 in list
 
@@ -1714,20 +1740,20 @@ void ldm(int mode, int Rn, int reg_list, bool write_back, bool hat) {
   address = address & 0XFFFFFFFC;  // Bottom 2 bits ignored in address
 
   if (write_back) {
-    putRegister(Rn, new_base, reg_current);
+    putRegister(Rn, new_base, regCurrent);
   }
 
   // Force user unless R15 in list
   if (hat && !r15_inc) {
-    force_user = reg_user;
+    force_user = regUser;
   } else {
-    force_user = reg_current;
+    force_user = regCurrent;
   }
 
   reg = 0;
 
   while (reg_list != 0) {
-    if ((reg_list & bit_0) != 0) {
+    if ((reg_list & bit0) != 0) {
       data = readMemory(address, 4, false, false, memData);  // Keep for later
       putRegister(reg, data, force_user);
       address = address + 4;
@@ -1740,13 +1766,13 @@ void ldm(int mode, int Rn, int reg_list, bool write_back, bool hat) {
   // R15 in list
   if (r15_inc) {
     if ((data & 1) != 0) {
-      cpsr = cpsr | tf_mask;  // data left over from last load
+      cpsr = cpsr | tfMask;  // data left over from last load
     } else {
-      cpsr = cpsr & ~tf_mask;  // used to set instruction set
+      cpsr = cpsr & ~tfMask;  // used to set instruction set
     }
 
     if (hat) {
-      cpsr = spsr[cpsr & mode_mask];  // and if S bit set
+      cpsr = spsr[cpsr & modeMask];  // and if S bit set
     }
   }
 }
@@ -1764,7 +1790,7 @@ void stm(int mode, int Rn, int reg_list, bool write_back, bool hat) {
   int force_user;
   bool special;
 
-  address = getRegister(Rn, reg_current);
+  address = getRegister(Rn, regCurrent);
   count = bitCount(reg_list, &first_reg);
 
   switch (mode) {
@@ -1792,20 +1818,20 @@ void stm(int mode, int Rn, int reg_list, bool write_back, bool hat) {
     if (Rn == first_reg) {
       special = true;
     } else {
-      putRegister(Rn, new_base, reg_current);
+      putRegister(Rn, new_base, regCurrent);
     }
   }
 
   if (hat != 0) {
-    force_user = reg_user;
+    force_user = regUser;
   } else {
-    force_user = reg_current;
+    force_user = regCurrent;
   }
 
   reg = 0;
 
   while (reg_list != 0) {
-    if ((reg_list & bit_0) != 0) {
+    if ((reg_list & bit0) != 0) {
       writeMemory(address, getRegister(reg, force_user), 4, false, memData);
       address = address + 4;
     }
@@ -1815,7 +1841,7 @@ void stm(int mode, int Rn, int reg_list, bool write_back, bool hat) {
   }
 
   if (special)
-    putRegister(Rn, new_base, reg_current);
+    putRegister(Rn, new_base, regCurrent);
 }
 
 /**
@@ -1823,25 +1849,25 @@ void stm(int mode, int Rn, int reg_list, bool write_back, bool hat) {
  * @param opCode
  */
 void branch(uint opCode) {
-  int PC = getRegister(15, reg_current);  // Get this now in case mode changes
+  int PC = getRegister(15, regCurrent);  // Get this now in case mode changes
 
-  if (((opCode & link_mask) != 0) || ((opCode & 0XF0000000) == 0XF0000000)) {
-    putRegister(14, getRegister(15, reg_current) - 4, reg_current);
+  if (((opCode & linkMask) != 0) || ((opCode & 0XF0000000) == 0XF0000000)) {
+    putRegister(14, getRegister(15, regCurrent) - 4, regCurrent);
   }
 
-  int offset = (opCode & branch_field) << 2;
+  int offset = (opCode & branchField) << 2;
 
-  if ((opCode & branch_sign) != 0) {
-    offset = offset | (~(branch_field << 2) & 0XFFFFFFFC);  // sign extend
+  if ((opCode & branchSign) != 0) {
+    offset = offset | (~(branchField << 2) & 0XFFFFFFFC);  // sign extend
   }
 
   // Other BLX fix-up
   if ((opCode & 0XF0000000) == 0XF0000000) {
     offset = offset | ((opCode >> 23) & 2);
-    cpsr = cpsr | tf_mask;
+    cpsr = cpsr | tfMask;
   }
 
-  putRegister(15, PC + offset, reg_current);
+  putRegister(15, PC + offset, regCurrent);
 }
 
 /**
@@ -1851,11 +1877,11 @@ void branch(uint opCode) {
  * @return false
  */
 bool swiCharacterPrint(char c) {
-  while (!putBuffer(&terminal0_Tx, c)) {
+  while (!putBuffer(&terminal0Tx, c)) {
     if (status == CLIENT_STATE_RESET) {
       return false;
     } else {
-      comm(SWI_poll);  // If stalled, retain monitor communications
+      comm(SWIPoll);  // If stalled, retain monitor communications
     }
   }
 
@@ -1881,6 +1907,10 @@ int swiDecimalPrint(uint number) {
   return okay;
 }
 
+/**
+ * @brief
+ * @param op_code
+ */
 void mySystem(uint op_code) {
   int temp;
 
@@ -1891,36 +1921,36 @@ void mySystem(uint op_code) {
     fprintf(stderr, "whoops -undefined \n");
     undefined();
   } else {
-    if (print_out) {
+    if (printOut) {
       fprintf(stderr, "\n*** SWI CALL %06X ***\n\n", op_code & 0X00FFFFFF);
     }
 
     switch (op_code & 0X00FFFFFF) {
       // Output character R0 (to terminal)
       case 0:
-        putRegister(15, getRegister(15, reg_current) - 8, reg_current);
-        swiCharacterPrint(getRegister(0, reg_current) & 0XFF);
+        putRegister(15, getRegister(15, regCurrent) - 8, regCurrent);
+        swiCharacterPrint(getRegister(0, regCurrent) & 0XFF);
 
         if (status != CLIENT_STATE_RESET) {
-          putRegister(15, getRegister(15, reg_current),
-                      reg_current);  // Correct PC
+          putRegister(15, getRegister(15, regCurrent),
+                      regCurrent);  // Correct PC
         }
         break;
 
       // Input character R0 (from terminal)
       case 1: {
-        unsigned char c;
-        putRegister(15, getRegister(15, reg_current) - 8, reg_current);
+        uchar c;
+        putRegister(15, getRegister(15, regCurrent) - 8, regCurrent);
         // Bodge PC so that stall looks `correct'
-        while ((!getBuffer(&terminal0_Rx, &c)) &&
+        while ((!getBuffer(&terminal0Rx, &c)) &&
                (status != CLIENT_STATE_RESET)) {
-          comm(SWI_poll);
+          comm(SWIPoll);
         }
 
         if (status != CLIENT_STATE_RESET) {
-          putRegister(0, c & 0XFF, reg_current);
-          putRegister(15, getRegister(15, reg_current),
-                      reg_current);  // Correct PC
+          putRegister(0, c & 0XFF, regCurrent);
+          putRegister(15, getRegister(15, regCurrent),
+                      regCurrent);  // Correct PC
         }
       } break;
 
@@ -1931,8 +1961,8 @@ void mySystem(uint op_code) {
 
       // Print string @R0 (to terminal)
       case 3: {
-        putRegister(15, getRegister(15, reg_current) - 8, reg_current);
-        uint str_ptr = getRegister(0, reg_current);
+        putRegister(15, getRegister(15, regCurrent) - 8, regCurrent);
+        uint str_ptr = getRegister(0, regCurrent);
 
         char c;
         while (
@@ -1943,33 +1973,33 @@ void mySystem(uint op_code) {
         }
 
         if (status != CLIENT_STATE_RESET) {
-          putRegister(15, getRegister(15, reg_current),
-                      reg_current);  // Correct PC
+          putRegister(15, getRegister(15, regCurrent),
+                      regCurrent);  // Correct PC
         }
       } break;
 
       // Decimal print R0
       case 4: {
-        putRegister(15, getRegister(15, reg_current) - 8, reg_current);
-        const uint number = getRegister(0, reg_current);
+        putRegister(15, getRegister(15, regCurrent) - 8, regCurrent);
+        const uint number = getRegister(0, regCurrent);
         number == 0 ? swiCharacterPrint('0') : swiDecimalPrint(number);
 
         if (status != CLIENT_STATE_RESET) {
-          putRegister(15, getRegister(15, reg_current),
-                      reg_current);  // Correct PC
+          putRegister(15, getRegister(15, regCurrent),
+                      regCurrent);  // Correct PC
         }
       } break;
 
       default:
-        if (print_out) {
-          fprintf(stderr, "Untrapped SWI call %06X\n", op_code & 0X00FFFFFF);
+        if (printOut) {
+          fprintf(stderr, "Un-trapped SWI call %06X\n", op_code & 0X00FFFFFF);
         }
 
         spsr[supMode] = cpsr;
-        cpsr = (cpsr & ~mode_mask) | supMode;
-        cpsr = cpsr & ~tf_mask;  // Always in ARM mode
-        putRegister(14, getRegister(15, reg_current) - 4, reg_current);
-        putRegister(15, 8, reg_current);
+        cpsr = (cpsr & ~modeMask) | supMode;
+        cpsr = cpsr & ~tfMask;  // Always in ARM mode
+        putRegister(14, getRegister(15, regCurrent) - 4, regCurrent);
+        putRegister(15, 8, regCurrent);
         break;
     }
   }
@@ -1980,9 +2010,9 @@ void mySystem(uint op_code) {
  */
 void breakpoint() {
   spsr[abtMode] = cpsr;
-  cpsr = (cpsr & ~mode_mask & ~tf_mask) | abtMode;
-  putRegister(14, getRegister(15, reg_current) - 4, reg_current);
-  putRegister(15, 12, reg_current);
+  cpsr = (cpsr & ~modeMask & ~tfMask) | abtMode;
+  putRegister(14, getRegister(15, regCurrent) - 4, regCurrent);
+  putRegister(15, 12, regCurrent);
 }
 
 /**
@@ -1990,9 +2020,9 @@ void breakpoint() {
  */
 void undefined() {
   spsr[undefMode] = cpsr;
-  cpsr = (cpsr & ~mode_mask & ~tf_mask) | undefMode;
-  putRegister(14, getRegister(15, reg_current) - 4, reg_current);
-  putRegister(15, 4, reg_current);
+  cpsr = (cpsr & ~modeMask & ~tfMask) | undefMode;
+  putRegister(14, getRegister(15, regCurrent) - 4, regCurrent);
+  putRegister(15, 4, regCurrent);
 }
 
 /**
@@ -2025,15 +2055,15 @@ void setFlags(int operation, int a, int b, int rd, int carry) {
  */
 void setNZ(uint value) {
   if (value == 0) {
-    cpsr = cpsr | zf_mask;
+    cpsr = cpsr | zfMask;
   } else {
-    cpsr = cpsr & ~zf_mask;
+    cpsr = cpsr & ~zfMask;
   }
 
-  if ((value & bit_31) != 0) {
-    cpsr = cpsr | nf_mask;
+  if ((value & bit31) != 0) {
+    cpsr = cpsr | nfMask;
   } else {
-    cpsr = cpsr & ~nf_mask;
+    cpsr = cpsr & ~nfMask;
   }
 }
 
@@ -2045,9 +2075,9 @@ void setNZ(uint value) {
  */
 void setCF(uint a, uint rd, int carry) {
   if ((rd > a) || ((rd == a) && (carry == 0)))
-    cpsr = cpsr & ~cf_mask;
+    cpsr = cpsr & ~cfMask;
   else
-    cpsr = cpsr | cf_mask;
+    cpsr = cpsr | cfMask;
 }
 
 /**
@@ -2057,9 +2087,9 @@ void setCF(uint a, uint rd, int carry) {
  * @param rd
  */
 void setVF_ADD(int a, int b, int rd) {
-  cpsr = cpsr & ~vf_mask;  // Clear VF
-  if (((~(a ^ b) & (a ^ rd)) & bit_31) != 0) {
-    cpsr = cpsr | vf_mask;
+  cpsr = cpsr & ~vfMask;  // Clear VF
+  if (((~(a ^ b) & (a ^ rd)) & bit31) != 0) {
+    cpsr = cpsr | vfMask;
   }
 }
 
@@ -2070,9 +2100,9 @@ void setVF_ADD(int a, int b, int rd) {
  * @param rd
  */
 void setVF_SUB(int a, int b, int rd) {
-  cpsr = cpsr & ~vf_mask;  // Clear VF
-  if ((((a ^ b) & (a ^ rd)) & bit_31) != 0) {
-    cpsr = cpsr | vf_mask;
+  cpsr = cpsr & ~vfMask;  // Clear VF
+  if ((((a ^ b) & (a ^ rd)) & bit31) != 0) {
+    cpsr = cpsr | vfMask;
   }
 }
 
@@ -2121,48 +2151,76 @@ bool checkCC(int condition) {
   }
 }
 
+/**
+ * @brief
+ * @param cpsr
+ * @return true
+ * @return false
+ */
 constexpr const bool zf(const int cpsr) {
-  if ((zf_mask & cpsr) != 0) {
+  if ((zfMask & cpsr) != 0) {
     return true;
   }
 
   return false;
 }
 
+/**
+ * @brief
+ * @param cpsr
+ * @return true
+ * @return false
+ */
 constexpr const bool cf(const int cpsr) {
-  if ((cf_mask & cpsr) != 0) {
+  if ((cfMask & cpsr) != 0) {
     return true;
   }
 
   return false;
 }
 
+/**
+ * @brief
+ * @param cpsr
+ * @return true
+ * @return false
+ */
 constexpr const bool nf(const int cpsr) {
-  if ((nf_mask & cpsr) != 0) {
+  if ((nfMask & cpsr) != 0) {
     return true;
   }
 
   return false;
 }
 
+/**
+ * @brief
+ * @param cpsr
+ * @return true
+ * @return false
+ */
 constexpr const bool vf(const int cpsr) {
-  if ((vf_mask & cpsr) != 0) {
+  if ((vfMask & cpsr) != 0) {
     return true;
   }
 
   return false;
 }
 
-/*----------------------------------------------------------------------------*/
-
+/**
+ * @brief Get the Register object
+ * @param reg_no
+ * @param force_mode
+ * @return int
+ */
 int getRegister(int reg_no, int force_mode) {
   int mode, value;
 
   switch (force_mode) {
-    case reg_current:
-      mode = cpsr & mode_mask;
+    case regCurrent:
+      mode = cpsr & modeMask;
       break;
-    case reg_user:
+    case regUser:
       mode = userMode;
       break;
     case regSvc:
@@ -2177,7 +2235,7 @@ int getRegister(int reg_no, int force_mode) {
     case regAbt:
       mode = abtMode;
       break;
-    case reg_undef:
+    case regUndef:
       mode = undefMode;
       break;
   }
@@ -2202,7 +2260,7 @@ int getRegister(int reg_no, int force_mode) {
           value = r[reg_no];
 
         } else {
-          value = fiq_r[reg_no - 8];
+          value = fiqR[reg_no - 8];
         }
         break;
 
@@ -2210,7 +2268,7 @@ int getRegister(int reg_no, int force_mode) {
         if (reg_no < 13) {
           value = r[reg_no];
         } else {
-          value = irq_r[reg_no - 13];
+          value = irqR[reg_no - 13];
         }
         break;
 
@@ -2219,7 +2277,7 @@ int getRegister(int reg_no, int force_mode) {
           value = r[reg_no];
 
         } else {
-          value = sup_r[reg_no - 13];
+          value = supR[reg_no - 13];
         }
         break;
 
@@ -2228,7 +2286,7 @@ int getRegister(int reg_no, int force_mode) {
           value = r[reg_no];
 
         } else {
-          value = abt_r[reg_no - 13];
+          value = abtR[reg_no - 13];
         }
         break;
 
@@ -2237,38 +2295,45 @@ int getRegister(int reg_no, int force_mode) {
           value = r[reg_no];
 
         } else {
-          value = undef_r[reg_no - 13];
+          value = underR[reg_no - 13];
         }
         break;
     }
   } else {
-    value = r[15] + instructionLength(cpsr, tf_mask);
+    value = r[15] + instructionLength(cpsr, tfMask);
   }
 
   return value;
 }
 
-/*----------------------------------------------------------------------------*/
-/* Modified "getRegister" to give unadulterated copy of PC */
-
+/**
+ * @brief Modified "getRegister" to give unadulterated copy of PC
+ * @param reg_no
+ * @param force_mode
+ * @return int
+ */
 int getRegisterMonitor(int reg_no, int force_mode) {
-  if (reg_no != 15)
+  if (reg_no != 15) {
     return getRegister(reg_no, force_mode);
-  else
-    return r[15]; /* PC access */
+  } else {
+    return r[15];  // PC access
+  }
 }
 
-/*----------------------------------------------------------------------------*/
-/* Write to a specified processor register                                    */
-
+/**
+ * @brief Write to a specified processor register
+ * @param reg_no
+ * @param value
+ * @param force_mode
+ */
 void putRegister(int reg_no, int value, int force_mode) {
   int mode;
 
   switch (force_mode) {
-    case reg_current:
-      mode = cpsr & mode_mask;
+    case regCurrent:
+      mode = cpsr & modeMask;
       break;
-    case reg_user:
+    case regUser:
       mode = userMode;
       break;
     case regSvc:
@@ -2283,7 +2348,7 @@ void putRegister(int reg_no, int value, int force_mode) {
     case regAbt:
       mode = abtMode;
       break;
-    case reg_undef:
+    case regUndef:
       mode = undefMode;
       break;
   }
@@ -2306,35 +2371,35 @@ void putRegister(int reg_no, int value, int force_mode) {
         if (reg_no < 8)
           r[reg_no] = value;
         else
-          fiq_r[reg_no - 8] = value;
+          fiqR[reg_no - 8] = value;
         break;
 
       case irqMode:
         if (reg_no < 13)
           r[reg_no] = value;
         else
-          irq_r[reg_no - 13] = value;
+          irqR[reg_no - 13] = value;
         break;
 
       case supMode:
         if (reg_no < 13)
           r[reg_no] = value;
         else
-          sup_r[reg_no - 13] = value;
+          supR[reg_no - 13] = value;
         break;
 
       case abtMode:
         if (reg_no < 13)
           r[reg_no] = value;
         else
-          abt_r[reg_no - 13] = value;
+          abtR[reg_no - 13] = value;
         break;
 
       case undefMode:
         if (reg_no < 13)
           r[reg_no] = value;
         else
-          undef_r[reg_no - 13] = value;
+          underR[reg_no - 13] = value;
         break;
     }
   } else
@@ -2345,8 +2410,8 @@ void putRegister(int reg_no, int value, int force_mode) {
  * @brief Return the length, in bytes, of the currently expected instruction.
  * @return int 4 for ARM, 2 for Thumb.
  */
-constexpr const int instructionLength(const int cpsr, const int tf_mask) {
-  if ((cpsr & tf_mask) == 0) {
+constexpr const int instructionLength(const int cpsr, const int tfMask) {
+  if ((cpsr & tfMask) == 0) {
     return 4;
 
   } else {
@@ -2360,20 +2425,20 @@ constexpr const int instructionLength(const int cpsr, const int tf_mask) {
  */
 uint fetch() {
   uint op_code = readMemory(
-      (getRegister(15, reg_current) - instructionLength(cpsr, tf_mask)),
-      instructionLength(cpsr, tf_mask), false, false, memInstruction);
+      (getRegister(15, regCurrent) - instructionLength(cpsr, tfMask)),
+      instructionLength(cpsr, tfMask), false, false, memInstruction);
 
   for (int i = 0; i < 32; i++) {
-    if (past_opc_addr[i] ==
-        getRegister(15, reg_current) - instructionLength(cpsr, tf_mask)) {
-      past_count++;
+    if (pastOpcAddr[i] ==
+        getRegister(15, regCurrent) - instructionLength(cpsr, tfMask)) {
+      pastCount++;
       i = 32;  // bodged escape from loop
     }
   }
 
-  past_opc_addr[past_opc_ptr++] =
-      getRegister(15, reg_current) - instructionLength(cpsr, tf_mask);
-  past_opc_ptr = past_opc_ptr % past_size;
+  pastOpcAddr[pastOpcPtr++] =
+      getRegister(15, regCurrent) - instructionLength(cpsr, tfMask);
+  pastOpcPtr = pastOpcPtr % pastSize;
 
   return op_code;
 }
@@ -2382,9 +2447,14 @@ uint fetch() {
  * @brief getRegister returns PC+4 for ARM & PC+2 for THUMB.
  */
 void incPC() {
-  putRegister(15, getRegister(15, reg_current), reg_current);
+  putRegister(15, getRegister(15, regCurrent), regCurrent);
 }
 
+/**
+ * @brief
+ * @param start
+ * @param end
+ */
 void endianSwap(const uint start, const uint end) {
   for (uint i = start; i < end; i++) {
     uint j = getmem32(i);
@@ -2395,7 +2465,6 @@ void endianSwap(const uint start, const uint end) {
 
 /**
  * @brief
- *
  * @param address
  * @param size
  * @param sign
@@ -2406,7 +2475,7 @@ void endianSwap(const uint start, const uint end) {
 int readMemory(uint address, int size, bool sign, bool T, int source) {
   int data, alignment;
 
-  if (address < mem_size) {
+  if (address < memSize) {
     alignment = address & 0X00000003;
     data = getmem32(address >> 2);
 
@@ -2452,32 +2521,38 @@ int readMemory(uint address, int size, bool sign, bool T, int source) {
     }
 
     /* check watchpoints enabled */
-    if ((runflags & 0x20) && (source == memData)) {
+    if ((runFlags & 0x20) && (source == memData)) {
       if (checkWatchpoints(address, data, size, 1)) {
         status = CLIENT_STATE_WATCHPOINT;
       }
     }
   } else {
     data = 0X12345678;
-    print_out = false;
+    printOut = false;
   }
 
   return data;
 }
 
-/*----------------------------------------------------------------------------*/
-
+/**
+ * @brief
+ * @param address
+ * @param data
+ * @param size
+ * @param T
+ * @param source
+ */
 void writeMemory(uint address, int data, int size, bool T, int source) {
   uint mask;
 
-  if ((address == tube_address) &&
-      (tube_address != 0)) /* Deal with Tube output */
+  if ((address == tubeAddress) &&
+      (tubeAddress != 0)) /* Deal with Tube output */
   {
-    unsigned char c;
+    uchar c;
 
     c = data & 0XFF;
 
-    if (!print_out) {
+    if (!printOut) {
       if ((c == 0X0A) || (c == 0X0D))
         fprintf(stderr, "\n");
       else if ((c < 0X20) || (c >= 0X7F))
@@ -2492,7 +2567,7 @@ void writeMemory(uint address, int data, int size, bool T, int source) {
         fprintf(stderr, "%c)\n", c);
     }
   } else {
-    if ((address >> 2) < mem_size) {
+    if ((address >> 2) < memSize) {
       switch (size) {
         case 0:
           break; /* A bit silly really */
@@ -2520,10 +2595,10 @@ void writeMemory(uint address, int data, int size, bool T, int source) {
       }
     } else {
       // fprintf(stderr, "Writing %08X  data = %08X\n", address, data);
-      print_out = false;
+      printOut = false;
     }
 
-    if ((runflags & 0x20) &&
+    if ((runFlags & 0x20) &&
         (source == memData)) /* check watchpoints enabled */
     {
       if (checkWatchpoints(address, data, size, 0)) {
@@ -2533,16 +2608,19 @@ void writeMemory(uint address, int data, int size, bool T, int source) {
   }
 }
 
-/*----------------------------------------------------------------------------*/
-
-/*- - - - - - - - - - - - watchpoints - - - - - - - - - - - - - - - - - - - */
-/*                      to be completed                                     */
-
+/**
+ * @brief
+ * @param address
+ * @param data
+ * @param size
+ * @param direction
+ * @return int
+ */
 int checkWatchpoints(uint address, int data, int size, int direction) {
   bool may_break = false;
 
   for (int i = 0; (i < NO_OF_WATCHPOINTS) && !may_break; i++) {
-    may_break = ((emul_wp_flag[0] & emul_wp_flag[1] & (1 << i)) != 0);
+    may_break = ((emulWPFlag[0] & emulWPFlag[1] & (1 << i)) != 0);
     /* Watchpoint is active */
 
     may_break &= ((watchpoints[i].size & size) != 0); /* Size is allowed? */
@@ -2562,13 +2640,13 @@ int checkWatchpoints(uint address, int data, int size, int direction) {
           may_break = false;
           break;
         case 0x08: /* Case of between address A and address B */
-          if ((address < watchpoints[i].addra) ||
-              (address > watchpoints[i].addrb))
+          if ((address < watchpoints[i].addrA) ||
+              (address > watchpoints[i].addrB))
             may_break = false;
           break;
 
         case 0x0C: /* Case of mask */
-          if ((address & watchpoints[i].addrb) != watchpoints[i].addra)
+          if ((address & watchpoints[i].addrB) != watchpoints[i].addrA)
             may_break = false;
           break;
       }
@@ -2582,13 +2660,13 @@ int checkWatchpoints(uint address, int data, int size, int direction) {
           may_break = false;
           break;
         case 0x02: /* Case of between data A and data B */
-          if ((data < watchpoints[i].dataa[0]) ||
-              (data > watchpoints[i].datab[0]))
+          if ((data < watchpoints[i].dataA[0]) ||
+              (data > watchpoints[i].dataB[0]))
             may_break = false;
           break;
 
         case 0x03: /* Case of mask */
-          if ((data & watchpoints[i].datab[0]) != watchpoints[i].dataa[0])
+          if ((data & watchpoints[i].dataB[0]) != watchpoints[i].dataA[0])
             may_break = false;
           break;
       }
@@ -2597,43 +2675,46 @@ int checkWatchpoints(uint address, int data, int size, int direction) {
   return may_break;
 }
 
-/*- - - - - - - - - - - - end watchpoints - - - - - - - - - - - - - - - - - */
-
-/*----------------------------------------------------------------------------*/
-/*----------------------------------------------------------------------------*/
-
-/* This is filthy :-( */
+/**
+ * @brief Get the Number object
+ * @param ptr
+ * @return int
+ */
 int getNumber(char* ptr) {
-  int a;
+  int a = 0;
 
-  a = 0;
-  while (*ptr == ' ')
-    ptr++; /* Strip any leading spaces */
+  while (*ptr == ' ') {
+    ptr++;  // Strip any leading spaces
+  }
 
   while (((*ptr >= '0') && (*ptr <= '9')) || ((*ptr >= 'A') && (*ptr <= 'F'))) {
-    if ((*ptr >= '0') && (*ptr <= '9'))
+    if ((*ptr >= '0') && (*ptr <= '9')) {
       a = 16 * a + *(ptr++) - '0';
-    else
+    } else {
       a = 16 * a + *(ptr++) - 'A' + 10;
+    }
   }
   return a;
 }
 
-/*----------------------------------------------------------------------------*/
-/* As the compiler can't manage it ...                                        */
-
-int lsl(int value, int distance, int* cf) /* cf is -internal- bool */
-{
+/**
+ * @brief
+ * @param value
+ * @param distance
+ * @param cf is -internal- bool
+ * @return int
+ */
+int lsl(int value, int distance, int* cf) {
   int result;
 
   if (distance != 0) {
     if (distance < 32) {
       result = value << distance;
-      *cf = (((value << (distance - 1)) & bit_31) != 0);
+      *cf = (((value << (distance - 1)) & bit31) != 0);
     } else {
       result = 0X00000000;
       if (distance == 32)
-        *cf = ((value & bit_0) != 0);
+        *cf = ((value & bit0) != 0);
       else
         *cf = (0 != 0); /* internal "false" value */
     }
@@ -2643,10 +2724,14 @@ int lsl(int value, int distance, int* cf) /* cf is -internal- bool */
   return result;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-
-int lsr(uint value, int distance, int* cf) /* cf is -internal- bool */
-{
+/**
+ * @brief
+ * @param value
+ * @param distance
+ * @param cf is -internal- bool
+ * @return int
+ */
+int lsr(uint value, int distance, int* cf) {
   uint result, mask;
 
   if (distance != 0) {
@@ -2656,11 +2741,11 @@ int lsr(uint value, int distance, int* cf) /* cf is -internal- bool */
       else
         mask = 0XFFFFFFFF;
       result = (value >> distance) & mask; /* Enforce logical shift */
-      *cf = (((value >> (distance - 1)) & bit_0) != 0);
+      *cf = (((value >> (distance - 1)) & bit0) != 0);
     } else { /* Make a special case because C is so crap */
       result = 0X00000000;
       if (distance == 32)
-        *cf = ((value & bit_31) != 0);
+        *cf = ((value & bit31) != 0);
       else
         *cf = (0 != 0); /* internal "false" value */
     }
@@ -2670,22 +2755,26 @@ int lsr(uint value, int distance, int* cf) /* cf is -internal- bool */
   return result;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-
-int asr(int value, int distance, int* cf) /* cf is -internal- bool */
-{
+/**
+ * @brief
+ * @param value
+ * @param distance
+ * @param cf is -internal- bool
+ * @return int
+ */
+int asr(int value, int distance, int* cf) {
   int result;
 
   if (distance != 0) {
     if (distance < 32) {
       result = value >> distance;
-      if (((value & bit_31) != 0) && (distance != 0))
+      if (((value & bit31) != 0) && (distance != 0))
         result = result | (0XFFFFFFFF << (32 - distance));
       /* Sign extend - I don't trust the compiler */
-      *cf = (((value >> (distance - 1)) & bit_0) != 0);
+      *cf = (((value >> (distance - 1)) & bit0) != 0);
     } else { /* Make a special case because C is so crap */
-      *cf = ((value & bit_31) != 0);
-      if ((value & bit_31) == 0)
+      *cf = ((value & bit31) != 0);
+      if ((value & bit31) == 0)
         result = 0X00000000;
       else
         result = 0XFFFFFFFF;
@@ -2696,41 +2785,43 @@ int asr(int value, int distance, int* cf) /* cf is -internal- bool */
   return result;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-
-int ror(uint value, int distance, int* cf) /* cf is -internal- bool */
-{
+/**
+ * @brief
+ * @param value
+ * @param distance
+ * @param cf is -internal- bool
+ * @return int
+ */
+int ror(uint value, int distance, int* cf) {
   int result;
 
   if (distance != 0) {
     distance = distance & 0X1F;
     result = lsr(value, distance, cf) | lsl(value, 32 - distance, cf);
     /* cf acts as dummy here */
-    *cf = (((value >> (distance - 1)) & bit_0) != 0);
+    *cf = (((value >> (distance - 1)) & bit0) != 0);
   } else
     result = value;
 
   return result;
 }
 
-/*----------------------------------------------------------------------------*/
-
-/*------------------------------ THUMB EXECUTE -------------------------------*/
-
-/*----------------------------------------------------------------------------*/
-
+/**
+ * @brief
+ * @param op_code
+ */
 void data0(uint op_code) {
   uint op2, rn;
   uint shift, result;
   int cf;
 
-  rn = getRegister(((op_code >> 3) & 7),
-                   reg_current);         /* Called "Rm" in shifts */
+  rn =
+      getRegister(((op_code >> 3) & 7), regCurrent); /* Called "Rm" in shifts */
   shift = ((op_code >> 6) & 0X0000001F); /* Extracted speculatively */
 
   if ((op_code & 0X1800) != 0X1800) /* Shifts */
   {
-    cf = ((cpsr & cf_mask) != 0); /* default */
+    cf = ((cpsr & cfMask) != 0); /* default */
     switch (op_code & 0X1800) {
       case 0X0000:
         result = lsl(rn, shift, &cf);
@@ -2752,15 +2843,15 @@ void data0(uint op_code) {
     }
 
     if (cf)
-      cpsr = cpsr | cf_mask;
+      cpsr = cpsr | cfMask;
     else
-      cpsr = cpsr & ~cf_mask;
+      cpsr = cpsr & ~cfMask;
     setNZ(result);
-    putRegister((op_code & 7), result, reg_current);
+    putRegister((op_code & 7), result, regCurrent);
   } else {
     if ((op_code & 0X0400) == 0) /* ADD(3)/SUB(3) */
     {
-      op2 = getRegister((op_code >> 6) & 7, reg_current);
+      op2 = getRegister((op_code >> 6) & 7, regCurrent);
     } else /* ADD(1)/SUB(1) */
     {
       op2 = (op_code >> 6) & 7;
@@ -2774,12 +2865,14 @@ void data0(uint op_code) {
       setFlags(flagSub, rn, op2, result, 1);
     }
 
-    putRegister(op_code & 7, result, reg_current);
+    putRegister(op_code & 7, result, regCurrent);
   }
 }
 
-/*----------------------------------------------------------------------------*/
-
+/**
+ * @brief
+ * @param op_code
+ */
 void data1(uint op_code) {
   int rd, imm;
   int result;
@@ -2791,31 +2884,33 @@ void data1(uint op_code) {
     case 0X0000: /* MOV (1) */
       result = imm;
       setNZ(result);
-      putRegister(rd, result, reg_current);
+      putRegister(rd, result, regCurrent);
       break;
 
     case 0X0800: /* CMP (1) */
-      result = (getRegister(rd, reg_current) - imm);
-      setFlags(flagSub, getRegister(rd, reg_current), imm, result, 1);
+      result = (getRegister(rd, regCurrent) - imm);
+      setFlags(flagSub, getRegister(rd, regCurrent), imm, result, 1);
       break;
 
     case 0X1000: /* ADD (2) */
-      result = (getRegister(rd, reg_current) + imm);
-      setFlags(flagAdd, getRegister(rd, reg_current), imm, result, 0);
-      putRegister(rd, result, reg_current);
+      result = (getRegister(rd, regCurrent) + imm);
+      setFlags(flagAdd, getRegister(rd, regCurrent), imm, result, 0);
+      putRegister(rd, result, regCurrent);
       break;
 
     case 0X1800: /* SUB (2) */
-      result = (getRegister(rd, reg_current) - imm);
-      setFlags(flagSub, getRegister(rd, reg_current), imm, result, 1);
-      putRegister(rd, result, reg_current);
+      result = (getRegister(rd, regCurrent) - imm);
+      setFlags(flagSub, getRegister(rd, regCurrent), imm, result, 1);
+      putRegister(rd, result, regCurrent);
       break;
   }
 }
 
-/*----------------------------------------------------------------------------*/
-
-void data_transfer(uint op_code) {
+/**
+ * @brief
+ * @param op_code
+ */
+void dataTransfer(uint op_code) {
   uint rd, rm;
   int cf;
 
@@ -2829,81 +2924,81 @@ void data_transfer(uint op_code) {
     {
       if ((op_code & 0X0400) == 0) /* Data processing */
       {
-        rd = getRegister((op_code & 7), reg_current);
-        rm = getRegister(((op_code >> 3) & 7), reg_current);
+        rd = getRegister((op_code & 7), regCurrent);
+        rm = getRegister(((op_code >> 3) & 7), regCurrent);
 
         switch (op_code & 0X03C0) /* data processing opcode */
         {
           case 0X0000: /* AND */
             result = rd & rm;
-            putRegister(op_code & 7, result, reg_current);
+            putRegister(op_code & 7, result, regCurrent);
             setNZ(result);
             break;
 
           case 0X0040: /* EOR */
             result = rd ^ rm;
-            putRegister(op_code & 7, result, reg_current);
+            putRegister(op_code & 7, result, regCurrent);
             setNZ(result);
             break;
 
-          case 0X0080:                    /* LSL (2) */
-            cf = ((cpsr & cf_mask) != 0); /* default */
+          case 0X0080:                   /* LSL (2) */
+            cf = ((cpsr & cfMask) != 0); /* default */
             result = lsl(rd, rm & 0X000000FF, &cf);
             if (cf)
-              cpsr = cpsr | cf_mask;
+              cpsr = cpsr | cfMask;
             else
-              cpsr = cpsr & ~cf_mask;
+              cpsr = cpsr & ~cfMask;
             setNZ(result);
-            putRegister(op_code & 7, result, reg_current);
+            putRegister(op_code & 7, result, regCurrent);
             break;
 
-          case 0X00C0:                    /* LSR (2) */
-            cf = ((cpsr & cf_mask) != 0); /* default */
+          case 0X00C0:                   /* LSR (2) */
+            cf = ((cpsr & cfMask) != 0); /* default */
             result = lsr(rd, rm & 0X000000FF, &cf);
             if (cf)
-              cpsr = cpsr | cf_mask;
+              cpsr = cpsr | cfMask;
             else
-              cpsr = cpsr & ~cf_mask;
+              cpsr = cpsr & ~cfMask;
             setNZ(result);
-            putRegister(op_code & 7, result, reg_current);
+            putRegister(op_code & 7, result, regCurrent);
             break;
 
-          case 0X0100:                    /* ASR (2) */
-            cf = ((cpsr & cf_mask) != 0); /* default */
+          case 0X0100:                   /* ASR (2) */
+            cf = ((cpsr & cfMask) != 0); /* default */
             result = asr(rd, rm & 0X000000FF, &cf);
             if (cf)
-              cpsr = cpsr | cf_mask;
+              cpsr = cpsr | cfMask;
             else
-              cpsr = cpsr & ~cf_mask;
+              cpsr = cpsr & ~cfMask;
             setNZ(result);
-            putRegister(op_code & 7, result, reg_current);
+            putRegister(op_code & 7, result, regCurrent);
             break;
 
           case 0X0140: /* ADC */
             result = rd + rm;
-            if ((cpsr & cf_mask) != 0)
+            if ((cpsr & cfMask) != 0)
               result = result + 1; /* Add CF */
-            setFlags(flagAdd, rd, rm, result, cpsr & cf_mask);
-            putRegister(op_code & 7, result, reg_current);
+            setFlags(flagAdd, rd, rm, result, cpsr & cfMask);
+            putRegister(op_code & 7, result, regCurrent);
             break;
 
           case 0X0180: /* SBC */
             result = rd - rm - 1;
-            if ((cpsr & cf_mask) != 0)
+            if ((cpsr & cfMask) != 0)
               result = result + 1;
-            setFlags(flagSub, rd, rm, result, cpsr & cf_mask);
-            putRegister(op_code & 7, result, reg_current);
+            setFlags(flagSub, rd, rm, result, cpsr & cfMask);
+            putRegister(op_code & 7, result, regCurrent);
             break;
 
-          case 0X01C0:                    /* ROR */
-            cf = ((cpsr & cf_mask) != 0); /* default */
+          case 0X01C0:                   /* ROR */
+            cf = ((cpsr & cfMask) != 0); /* default */
             result = ror(rd, rm & 0X000000FF, &cf);
             if (cf)
-              cpsr = cpsr | cf_mask;
+              cpsr = cpsr | cfMask;
             else
-              cpsr = cpsr & ~cf_mask;
+              cpsr = cpsr & ~cfMask;
             setNZ(result);
-            putRegister(op_code & 7, result, reg_current);
+            putRegister(op_code & 7, result, regCurrent);
             break;
 
           case 0X0200: /* TST */
@@ -2912,7 +3007,7 @@ void data_transfer(uint op_code) {
 
           case 0X0240: /* NEG */
             result = -rm;
-            putRegister(op_code & 7, result, reg_current);
+            putRegister(op_code & 7, result, regCurrent);
             setFlags(flagSub, 0, rm, result, 1);
             break;
 
@@ -2927,25 +3022,25 @@ void data_transfer(uint op_code) {
           case 0X0300: /* ORR */
             result = rd | rm;
             setNZ(result);
-            putRegister(op_code & 7, result, reg_current);
+            putRegister(op_code & 7, result, regCurrent);
             break;
 
           case 0X00340: /* MUL */
             result = rm * rd;
             setNZ(result);
-            putRegister(op_code & 7, result, reg_current);
+            putRegister(op_code & 7, result, regCurrent);
             break;
 
           case 0X0380: /* BIC */
             result = rd & ~rm;
             setNZ(result);
-            putRegister(op_code & 7, result, reg_current);
+            putRegister(op_code & 7, result, regCurrent);
             break;
 
           case 0X03C0: /* MVN */
             result = ~rm;
             setNZ(result);
-            putRegister(op_code & 7, result, reg_current);
+            putRegister(op_code & 7, result, regCurrent);
             break;
         }    /* End of switch */
       } else /* special data processing */
@@ -2953,24 +3048,24 @@ void data_transfer(uint op_code) {
         switch (op_code & 0X0300) {
           case 0X0000: /* ADD (4) high registers */
             rd = ((op_code & 0X0080) >> 4) | (op_code & 7);
-            rm = getRegister(((op_code >> 3) & 15), reg_current);
-            putRegister(rd, getRegister(rd, reg_current) + rm, reg_current);
+            rm = getRegister(((op_code >> 3) & 15), regCurrent);
+            putRegister(rd, getRegister(rd, regCurrent) + rm, regCurrent);
             break;
 
           case 0X0100: /* CMP (3) high registers */
             rd = getRegister((((op_code & 0X0080) >> 4) | (op_code & 7)),
-                             reg_current);
-            rm = getRegister(((op_code >> 3) & 15), reg_current);
+                             regCurrent);
+            rm = getRegister(((op_code >> 3) & 15), regCurrent);
             setFlags(flagSub, rd, rm, rd - rm, 1);
             break;
 
           case 0X0200: /* MOV (2) high registers */
             rd = ((op_code & 0X0080) >> 4) | (op_code & 7);
-            rm = getRegister(((op_code >> 3) & 15), reg_current);
+            rm = getRegister(((op_code >> 3) & 15), regCurrent);
 
             if (rd == 15)
               rm = rm & 0XFFFFFFFE; /* Tweak mov to PC */
-            putRegister(rd, rm, reg_current);
+            putRegister(rd, rm, regCurrent);
             break;
 
           case 0X0300: /* BX/BLX Rm */
@@ -2982,70 +3077,72 @@ void data_transfer(uint op_code) {
     {      /* LDR PC */
       rd = ((op_code >> 8) & 7);
       address = (((op_code & 0X00FF) << 2)) +
-                (getRegister(15, reg_current) & 0XFFFFFFFC);
+                (getRegister(15, regCurrent) & 0XFFFFFFFC);
       putRegister(rd, readMemory(address, 4, false, false, memData),
-                  reg_current);
+                  regCurrent);
     }
   } else { /* load/store word, halfword, byte, signed byte */
     int rm, rn;
     int data;
 
     rd = (op_code & 7);
-    rn = getRegister(((op_code >> 3) & 7), reg_current);
-    rm = getRegister(((op_code >> 6) & 7), reg_current);
+    rn = getRegister(((op_code >> 3) & 7), regCurrent);
+    rm = getRegister(((op_code >> 6) & 7), regCurrent);
 
     switch (op_code & 0X0E00) {
       case 0X0000: /* STR (2) register */
-        writeMemory(rn + rm, getRegister(rd, reg_current), 4, false, memData);
+        writeMemory(rn + rm, getRegister(rd, regCurrent), 4, false, memData);
         break;
 
       case 0X0200: /* STRH (2) register */
-        writeMemory(rn + rm, getRegister(rd, reg_current), 2, false, memData);
+        writeMemory(rn + rm, getRegister(rd, regCurrent), 2, false, memData);
         break;
 
       case 0X0400: /* STRB (2) register */
-        writeMemory(rn + rm, getRegister(rd, reg_current), 1, false, memData);
+        writeMemory(rn + rm, getRegister(rd, regCurrent), 1, false, memData);
         break;
 
       case 0X0600: /* LDRSB register */
         data = readMemory(rn + rm, 1, true, false, memData); /* Sign ext. */
-        putRegister(rd, data, reg_current);
+        putRegister(rd, data, regCurrent);
         break;
 
       case 0X0800: /* LDR (2) register */
         data = readMemory(rn + rm, 4, false, false, memData);
-        putRegister(rd, data, reg_current);
+        putRegister(rd, data, regCurrent);
         break;
 
       case 0X0A00: /* LDRH (2) register */
         data = readMemory(rn + rm, 2, false, false, memData); /* Zero ext. */
-        putRegister(rd, data, reg_current);
+        putRegister(rd, data, regCurrent);
         break;
 
       case 0X0C00:                                            /* LDRB (2) */
         data = readMemory(rn + rm, 1, false, false, memData); /* Zero ext. */
-        putRegister(rd, data, reg_current);
+        putRegister(rd, data, regCurrent);
         break;
 
       case 0X0E00:                                           /* LDRSH (2) */
         data = readMemory(rn + rm, 2, true, false, memData); /* Sign ext. */
-        putRegister(rd, data, reg_current);
+        putRegister(rd, data, regCurrent);
         break;
     }
   }
 }
 
-/*----------------------------------------------------------------------------*/
-
+/**
+ * @brief
+ * @param op_code
+ */
 void transfer0(uint op_code) {
   int rd, rn;
   int location, data;
 
-  rn = getRegister(((op_code >> 3) & 7), reg_current);
+  rn = getRegister(((op_code >> 3) & 7), regCurrent);
 
   if ((op_code & 0X0800) == 0) /* STR */
   {
-    rd = getRegister((op_code & 7), reg_current);
+    rd = getRegister((op_code & 7), regCurrent);
     if ((op_code & 0X1000) == 0) /* STR (1) 5-bit imm */
     {
       location = rn + ((op_code >> 4) & 0X07C); /* shift twice = *4 */
@@ -3066,53 +3163,57 @@ void transfer0(uint op_code) {
       location = (rn + ((op_code >> 6) & 0X1F));
       data = readMemory(location, 1, false, false, memData); /* Zero extended */
     }
-    putRegister(rd, data, reg_current);
+    putRegister(rd, data, regCurrent);
   }
 }
 
-/*----------------------------------------------------------------------------*/
-
+/**
+ * @brief
+ * @param op_code
+ */
 void transfer1(uint op_code) {
   int rd, rn;
   int data, location;
 
   switch (op_code & 0X1800) {
     case 0X0000: /* STRH (1) */
-      rn = getRegister((op_code >> 3) & 7, reg_current);
+      rn = getRegister((op_code >> 3) & 7, regCurrent);
       rd = op_code & 7;
-      data = getRegister(rd, reg_current);
+      data = getRegister(rd, regCurrent);
       location = rn + ((op_code >> 5) & 0X3E); /* x2 in shift */
       writeMemory(location, data, 2, false, memData);
       break;
 
     case 0X0800: /* LDRH (1) */
       rd = op_code & 7;
-      rn = getRegister((op_code >> 3) & 7, reg_current);
+      rn = getRegister((op_code >> 3) & 7, regCurrent);
       location = rn + ((op_code >> 5) & 0X3E);               /* x2 in shift */
       data = readMemory(location, 2, false, false, memData); /* Zero extended */
-      putRegister(rd, data, reg_current);
+      putRegister(rd, data, regCurrent);
       break;
 
     case 0X1000: /* STR (3) -SP */
-      data = getRegister(((op_code >> 8) & 7), reg_current);
-      rn = getRegister(13, reg_current); /* SP */
+      data = getRegister(((op_code >> 8) & 7), regCurrent);
+      rn = getRegister(13, regCurrent); /* SP */
       location = rn + ((op_code & 0X00FF) * 4);
       writeMemory(location, data, 4, false, memData);
       break;
 
     case 0X1800: /* LDR (4) -SP */
       rd = (op_code >> 8) & 7;
-      rn = getRegister(13, reg_current);        /* SP */
+      rn = getRegister(13, regCurrent);         /* SP */
       location = rn + ((op_code & 0X00FF) * 4); /* x2 in shift */
       data = readMemory(location, 4, false, false, memData);
-      putRegister(rd, data, reg_current);
+      putRegister(rd, data, regCurrent);
       break;
   }
 }
 
-/*----------------------------------------------------------------------------*/
-
-void sp_pc(uint op_code) {
+/**
+ * @brief
+ * @param op_code
+ */
+void spPC(uint op_code) {
   int rd, sp, data;
 
   if ((op_code & 0X1000) == 0) /* ADD SP or PC */
@@ -3120,21 +3221,21 @@ void sp_pc(uint op_code) {
     rd = (op_code >> 8) & 7;
 
     if ((op_code & 0X0800) == 0) /* ADD(5) -PC */
-      data = (getRegister(15, reg_current) & 0XFFFFFFFC) +
+      data = (getRegister(15, regCurrent) & 0XFFFFFFFC) +
              ((op_code & 0X00FF) << 2);
     /* getRegister supplies PC + 2 */
     else /* ADD(6) -SP */
-      data = (getRegister(13, reg_current)) + ((op_code & 0X00FF) << 2);
-    putRegister(rd, data, reg_current);
+      data = (getRegister(13, regCurrent)) + ((op_code & 0X00FF) << 2);
+    putRegister(rd, data, regCurrent);
   } else /* Adjust SP */
   {
     switch (op_code & 0X0F00) {
       case 0X0000:
         if ((op_code & 0X0080) == 0) /* ADD(7) -SP */
-          sp = getRegister(13, reg_current) + ((op_code & 0X7F) << 2);
+          sp = getRegister(13, regCurrent) + ((op_code & 0X7F) << 2);
         else /* SUB(4) -SP */
-          sp = getRegister(13, reg_current) - ((op_code & 0X7F) << 2);
-        putRegister(13, sp, reg_current);
+          sp = getRegister(13, regCurrent) - ((op_code & 0X7F) << 2);
+        putRegister(13, sp, regCurrent);
         break;
 
       case 0X0400:
@@ -3180,9 +3281,11 @@ void sp_pc(uint op_code) {
   }
 }
 
-/*----------------------------------------------------------------------------*/
-
-void lsm_b(uint op_code) {
+/**
+ * @brief
+ * @param op_code
+ */
+void lsmB(uint op_code) {
   uint offset;
 
   if ((op_code & 0X1000) == 0) {
@@ -3199,7 +3302,7 @@ void lsm_b(uint op_code) {
         if ((op_code & 0X0080) != 0)
           offset = offset | 0XFFFFFE00;
 
-        putRegister(15, getRegister(15, reg_current) + offset, reg_current);
+        putRegister(15, getRegister(15, regCurrent) + offset, regCurrent);
         /* getRegister supplies pc + 2 */
         /*    fprintf(stderr, "%08X", address + 4 + offset); */
       }
@@ -3212,28 +3315,33 @@ void lsm_b(uint op_code) {
   }
 }
 
-/*----------------------------------------------------------------------------*/
-
-void thumb_branch1(uint op_code, int exchange) {
+/**
+ * @brief
+ * @param op_code
+ * @param exchange
+ */
+void thumbBranch1(uint op_code, int exchange) {
   int offset, lr;
 
-  lr = getRegister(14, reg_current); /* Retrieve first part of offset */
+  lr = getRegister(14, regCurrent); /* Retrieve first part of offset */
   offset = lr + ((op_code & 0X07FF) << 1);
 
-  lr = getRegister(15, reg_current) - 2 + 1; /* + 1 to indicate Thumb mode */
+  lr = getRegister(15, regCurrent) - 2 + 1; /* + 1 to indicate Thumb mode */
 
   if (exchange == true) {
-    cpsr = cpsr & ~tf_mask; /* Change to ARM mode */
+    cpsr = cpsr & ~tfMask; /* Change to ARM mode */
     offset = offset & 0XFFFFFFFC;
   }
 
-  putRegister(15, offset, reg_current);
-  putRegister(14, lr, reg_current);
+  putRegister(15, offset, regCurrent);
+  putRegister(14, lr, regCurrent);
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-
-void thumb_branch(uint op_code) {
+/**
+ * @brief
+ * @param op_code
+ */
+void thumbBranch(uint op_code) {
   int offset;
 
   switch (op_code & 0X1800) {
@@ -3241,47 +3349,48 @@ void thumb_branch(uint op_code) {
       offset = (op_code & 0X07FF) << 1;
       if ((op_code & 0X0400) != 0)
         offset = offset | 0XFFFFF000; /* sign extend */
-      putRegister(15, (getRegister(15, reg_current) + offset), reg_current);
+      putRegister(15, (getRegister(15, regCurrent) + offset), regCurrent);
       break;
 
     case 0X0800: /* BLX */
       if ((op_code & 0X0001) == 0)
-        thumb_branch1(op_code, true);
+        thumbBranch1(op_code, true);
       else
         fprintf(stderr, "Undefined\n");
       break;
 
     case 0X1000: /* BL prefix */
-      BL_prefix = op_code & 0X07FF;
-      offset = BL_prefix << 12;
+      BLPrefix = op_code & 0X07FF;
+      offset = BLPrefix << 12;
 
-      if ((BL_prefix & 0X0400) != 0)
+      if ((BLPrefix & 0X0400) != 0)
         offset = offset | 0XFF800000; /* Sign ext. */
-      offset = getRegister(15, reg_current) + offset;
-      putRegister(14, offset, reg_current);
+      offset = getRegister(15, regCurrent) + offset;
+      putRegister(14, offset, regCurrent);
       break;
 
-    case 0X1800: /* BL */
-      thumb_branch1(op_code, false);
+    case 0X1800:
+      thumbBranch1(op_code, false);
       break;
   }
 }
 
-/*----------------------------------------------------------------------------*/
-
-/*------------------------------ Charlie's functions--------------------------*/
-
-/*----------------------------------------------------------------------------*/
-
-// Jesus wept.   What was wrong with "readMemory" and "writeMemory"?
-// If int < 32 bits the whole lot is broken anyway!
-
+/**
+ * @brief
+ * @param number
+ * @return uint
+ */
 uint getmem32(int number) {
   number = number % RAMSIZE;
   return memory[(number << 2)] | memory[(number << 2) + 1] << 8 |
          memory[(number << 2) + 2] << 16 | memory[(number << 2) + 3] << 24;
 }
 
+/**
+ * @brief
+ * @param number
+ * @param reg
+ */
 void setmem32(int number, uint reg) {
   number = number & (RAMSIZE - 1);
   memory[(number << 2) + 0] = (reg >> 0) & 0xff;
@@ -3290,58 +3399,59 @@ void setmem32(int number, uint reg) {
   memory[(number << 2) + 3] = (reg >> 24) & 0xff;
 }
 
-/*----------------------------------------------------------------------------*/
-/* terminal support routines                                                  */
-
+/**
+ * @brief
+ * @param buffer
+ */
 void initBuffer(ringBuffer* buffer) {
   buffer->iHead = 0;
   buffer->iTail = 0;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-/* Measure buffer occupancy                                                   */
-
+/**
+ * @brief Measure buffer occupancy.
+ * @param buffer
+ * @return int
+ */
 int countBuffer(ringBuffer* buffer) {
-  int i;
-  i = buffer->iHead - buffer->iTail;
-  if (i < 0)
+  int i = buffer->iHead - buffer->iTail;
+
+  if (i < 0) {
     i = i + RING_BUF_SIZE;
+  }
   return i;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-
-int putBuffer(ringBuffer* buffer, unsigned char c) {
-  int status;
-  uint temp;
-
-  temp = (buffer->iHead + 1) % RING_BUF_SIZE;
+/**
+ * @brief
+ * @param buffer
+ * @param c
+ * @return int
+ */
+bool putBuffer(ringBuffer* buffer, const uchar c) {
+  uint temp = (buffer->iHead + 1) % RING_BUF_SIZE;
 
   if (temp != buffer->iTail) {
     buffer->buffer[temp] = c;
     buffer->iHead = temp;
-    status = (0 == 0); /* Okay */
-  } else
-    status = (0 == 1); /* Buffer full */
+    return true;
+  }
 
-  return status;
+  return false;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-
-int getBuffer(ringBuffer* buffer, unsigned char* c) {
-  int status;
-
+/**
+ * @brief Get the Buffer object
+ * @param buffer
+ * @param c
+ * @return int
+ */
+bool getBuffer(ringBuffer* buffer, uchar* c) {
   if (buffer->iTail != buffer->iHead) {
-    buffer->iTail =
-        (buffer->iTail + 1) % RING_BUF_SIZE; /* Preincrement pointer */
+    buffer->iTail = (buffer->iTail + 1) % RING_BUF_SIZE;
     *c = buffer->buffer[buffer->iTail];
-    status = (0 == 0); /* Okay */
-  } else
-    status = (0 == 1); /* Nothing read */
+    return true;
+  }
 
-  return status;
+  return false;
 }
-
-/*                                end of jimulator.c                          */
-/*============================================================================*/
