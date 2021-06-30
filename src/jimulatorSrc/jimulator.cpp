@@ -39,91 +39,91 @@ void step();
 void comm(struct pollfd*);
 
 void emulSetup();
-void saveState(uchar new_status);
-void initialise(uint start_address, int initial_mode);
-void execute(uint op_code);
+void saveState(uchar);
+void initialise(uint, int);
+void execute(uint);
 
 // ARM execute
 
-void dataOp(uint op_code);
-void clz(uint op_code);
-void transfer(uint op_code);
-void transferSBHW(uint op_code);
-void multiple(uint op_code);
-void branch(uint op_code);
-void mySystem(uint op_code);
+void dataOp(uint);
+void clz(uint);
+void transfer(uint);
+void transferSBHW(uint);
+void multiple(uint);
+void branch(uint);
+void mySystem(uint);
 void undefined();
 void breakpoint();
 
-void mrs(uint op_code);
-void msr(uint op_code);
-void bx(uint Rm, int link);
-void myMulti(uint op_code);
-void swap(uint op_code);
-void normalDataOp(uint op_code, int operation);
-void ldm(int mode, int Rn, int reg_list, bool write_back, bool hat);
-void stm(int mode, int Rn, int reg_list, bool write_back, bool hat);
+void mrs(uint);
+void msr(uint);
+void bx(uint, int);
+void myMulti(uint);
+void swap(uint);
+void normalDataOp(uint, int);
+void ldm(int, int, int, bool, bool);
+void stm(int, int, int, bool, bool);
 
-int checkWatchpoints(uint address, int data, int size, int direction);
-int transferOffset(int op2, int add, int imm, bool sbhw);
+int checkWatchpoints(uint, int, int, int);
+int transferOffset(int, int, int, bool);
 
-int bReg(int op2, int* cf);
-int bImmediate(int op2, int* cf);
+int bReg(int, int*);
+int bImmediate(int, int*);
 
-int bitCount(uint source, int* first);
-bool checkCC(int condition);
+int bitCount(uint, int*);
+bool checkCC(int);
 
-constexpr const bool zf(const int cpsr);
-constexpr const bool cf(const int cpsr);
-constexpr const bool nf(const int cpsr);
-constexpr const bool vf(const int cpsr);
+constexpr const bool zf(const int);
+constexpr const bool cf(const int);
+constexpr const bool nf(const int);
+constexpr const bool vf(const int);
 
-void setFlags(int operation, int a, int b, int rd, int carry);
-void setNZ(uint value);
-void setCF(uint a, uint rd, int carry);
-void setVF_ADD(int a, int b, int rd);
-void setVF_SUB(int a, int b, int rd);
-int getRegister(int reg_no, int force_mode);
+void setFlags(int, int, int, int, int);
+void setNZ(uint);
+void setCF(uint, uint, int);
+void setVF_ADD(int, int, int);
+void setVF_SUB(int, int, int);
+int getRegister(int, int);
 /* Returns PC+4 for ARM & PC+2 for Thumb */
-int getRegisterMonitor(int reg_no, int force_mode);
-void putRegister(int reg_no, int value, int force_mode);
-constexpr const int instructionLength(const int cpsr, const int tfMask);
+int getRegisterMonitor(int, int);
+void putRegister(int, int, int);
+constexpr const int instructionLength(const int, const int);
 
 uint fetch();
 void incPC();
-void endianSwap(uint start, uint end);
-int readMemory(uint address, int size, bool sign, bool T, int source);
-void writeMemory(uint address, int data, int size, bool T, int source);
+void endianSwap(uint, uint);
+int readMemory(uint, int, bool, bool, int);
+void writeMemory(uint, int, int, bool, int);
 
 /* THUMB execute */
-void data0(uint op_code);
-void data1(uint op_code);
-void dataTransfer(uint op_code);
-void transfer0(uint op_code);
-void transfer1(uint op_code);
-void spPC(uint op_code);
-void lsmB(uint op_code);
-void thumbBranch(uint op_code);
+void data0(uint);
+void data1(uint);
+void dataTransfer(uint);
+void transfer0(uint);
+void transfer1(uint);
+void spPC(uint);
+void lsmB(uint);
+void thumbBranch(uint);
 
 int loadFPE();
 void FPEInstall();
 
-int getNumber(char* ptr);
-int lsl(int value, int distance, int* cf);
-int lsr(uint value, int distance, int* cf);
-int asr(int value, int distance, int* cf);
-int ror(uint value, int distance, int* cf);
+int getNumber(char*);
+int lsl(int, int, int*);
+int lsr(uint, int, int*);
+int asr(int, int, int*);
+int ror(uint, int, int*);
 
-uint getmem32(int number);
-void setmem32(int number, uint reg);
+uint getmem32(int);
+void setmem32(int, uint);
 void executeInstruction();
 
-int getChar(uchar* to_get);
-int sendChar(uchar to_send);
-int sendNBytes(int value, int N);
-int getNBytes(int* val_ptr, int N);
-int getCharArray(int char_number, uchar* data_ptr);
-int sendCharArray(int char_number, uchar* data_ptr);
+int getChar(uchar*);
+int sendChar(uchar);
+int sendNBytes(int, int);
+int getNBytes(int*, int);
+int getCharArray(int, uchar*);
+int sendCharArray(int, uchar*);
 
 void boardreset();
 
@@ -240,7 +240,7 @@ constexpr const uint WOTLEN = (8 + 3 * WOTLEN_FEATURES + 8 * WOTLEN_MEM_SEGS);
 /**
  * @brief
  */
-uchar wotrustring[] = {
+uchar whatAreYou[] = {
     WOTLEN - 1,  // Length of rest of record HERE
     (WOTLEN - 3) & 0xFF,
     ((WOTLEN - 3) >> 8) & 0xFF,  // Length of rest of message (H)
@@ -326,21 +326,19 @@ ringBuffer* terminalTable[16][2];
  * @return int Exit code.
  */
 int main(int argc, char** argv) {
-  {
-    for (int i = 0; i < 16; i++) {
-      terminalTable[i][0] = NULL;
-      terminalTable[i][1] = NULL;
-    }
-
-    initBuffer(&terminal0Tx);  // Initialise terminal
-    initBuffer(&terminal0Rx);
-    terminalTable[0][0] = &terminal0Tx;
-    terminalTable[0][1] = &terminal0Rx;
-    initBuffer(&terminal1Tx);  // Initialise terminal
-    initBuffer(&terminal1Rx);
-    terminalTable[1][0] = &terminal1Tx;
-    terminalTable[1][1] = &terminal1Rx;
+  for (int i = 0; i < 16; i++) {
+    terminalTable[i][0] = NULL;
+    terminalTable[i][1] = NULL;
   }
+
+  initBuffer(&terminal0Tx);  // Initialise terminal
+  initBuffer(&terminal0Rx);
+  terminalTable[0][0] = &terminal0Tx;
+  terminalTable[0][1] = &terminal0Rx;
+  initBuffer(&terminal1Tx);  // Initialise terminal
+  initBuffer(&terminal1Rx);
+  terminalTable[1][0] = &terminal1Tx;
+  terminalTable[1][1] = &terminal1Rx;
 
   pollfd.fd = 0;
   pollfd.events = POLLIN;
@@ -390,7 +388,7 @@ void step() {
           ((getRegisterMonitor(16, regCurrent) & 0x3F) == runUntilMode)) {
         status = runUntilStatus;
       }
-    }  // This can have changed status - hence no "else" below
+    }  // This can have changed status - hence no "else" below`
 
     // OR _BL
     if (status != CLIENT_STATE_RUNNING_SWI) {
@@ -428,7 +426,7 @@ void monitorOptionsMisc(uchar command) {
       }
       break;
     case BR_WOT_R_U:
-      sendCharArray(wotrustring[0], &wotrustring[1]);
+      sendCharArray(whatAreYou[0], &whatAreYou[1]);
       break;
 
     case BR_RESET:
@@ -707,20 +705,20 @@ void comm(struct pollfd* pPollfd) {
 
 /**
  * @brief Get 1 character from host.
- * @param to_get
+ * @param toGet
  * @return int
  */
-int getChar(uchar* to_get) {
-  return getCharArray(1, to_get);
+int getChar(uchar* toGet) {
+  return getCharArray(1, toGet);
 }
 
 /**
  * @brief Send 1 character to host
- * @param to_send
+ * @param toSend
  * @return int
  */
-int sendChar(uchar to_send) {
-  return sendCharArray(1, &to_send);
+int sendChar(uchar toSend) {
+  return sendCharArray(1, &toSend);
 }
 
 /**
@@ -747,11 +745,11 @@ int sendNBytes(int value, int N) {
 /**
  * @brief Gets N bytes from the host (??) into the indicated val_ptr, LSB first.
  * If error suspected sets `board_version' to not present
- * @param val_ptr
+ * @param valPtr
  * @param N
  * @return int The number of bytes received successfully (i.e. N=>"Ok")
  */
-int getNBytes(int* val_ptr, int N) {
+int getNBytes(int* valPtr, int N) {
   uchar buffer[MAX_SERIAL_WORD];
   int i, No_received;
 
@@ -761,11 +759,10 @@ int getNBytes(int* val_ptr, int N) {
 
   No_received = getCharArray(N, buffer);
 
-  *val_ptr = 0;
+  *valPtr = 0;
 
   for (i = 0; i < No_received; i++) {
-    *val_ptr =
-        *val_ptr | ((buffer[i] & 0xFF) << (i * 8)); /* Assemble integer */
+    *valPtr = *valPtr | ((buffer[i] & 0xFF) << (i * 8)); /* Assemble integer */
   }
 
   if (No_received != N) {
@@ -776,32 +773,32 @@ int getNBytes(int* val_ptr, int N) {
 }
 
 /**
- * @brief Reads a character array from buffer. Sends char_number number of
- * characters given by data_ptr.
- * @param char_number
- * @param data_ptr
+ * @brief Reads a character array from buffer. Sends charNumber number of
+ * characters given by dataPtr.
+ * @param charNumber
+ * @param dataPtr
  * @return int Number of bytes received.
  */
-int getCharArray(int char_number, uchar* data_ptr) {
-  int ret = char_number;
+int getCharArray(int charNumber, uchar* dataPtr) {
+  int ret = charNumber;
   int replycount = 0;
   struct pollfd pollfd;
 
   pollfd.fd = 0;
   pollfd.events = POLLIN;
 
-  while (char_number) {
+  while (charNumber) {
     if (!poll(&pollfd, 1, -1)) {
-      return ret - char_number;
+      return ret - charNumber;
     }
 
-    replycount = read(0, data_ptr, char_number);
+    replycount = read(0, dataPtr, charNumber);
     if (replycount < 0) {
       replycount = 0;
     }
 
-    char_number -= replycount;
-    data_ptr += replycount;
+    charNumber -= replycount;
+    dataPtr += replycount;
   }
 
   return ret;
@@ -809,16 +806,16 @@ int getCharArray(int char_number, uchar* data_ptr) {
 
 /**
  * @brief writes an array of bytes in the buffer.
- * @param char_number number of bytes given by data_ptr
- * @param data_ptr points to the beginning of the sequence to be sent
+ * @param charNumber number of bytes given by dataPtr
+ * @param dataPtr points to the beginning of the sequence to be sent
  * @return int
  */
-int sendCharArray(int char_number, uchar* data_ptr) {
-  if (write(1, data_ptr, char_number) < 0) {
+int sendCharArray(int charNumber, uchar* dataPtr) {
+  if (write(1, dataPtr, charNumber) < 0) {
     std::cout << "Some error occurred!" << std::endl;
   }
 
-  return char_number;  // send char array to the board
+  return charNumber;  // send char array to the board
 }
 
 /**
@@ -845,13 +842,12 @@ void emulSetup() {
 
 /**
  * @brief
- *
- * @param instr_addr
+ * @param instrAddr
  * @param instr
  * @return true
  * @return false
  */
-bool checkBreakpoint(uint instr_addr, uint instr) {
+bool checkBreakpoint(uint instrAddr, uint instr) {
   bool mayBreak = false;
 
   for (int i = 0; (i < NO_OF_BREAKPOINTS) && !mayBreak; i++) {
@@ -867,14 +863,14 @@ bool checkBreakpoint(uint instr_addr, uint instr) {
           break;
         // Case of between address A and address B
         case 0x08:
-          if ((instr_addr < breakpoints[i].addrA) ||
-              (instr_addr > breakpoints[i].addrB)) {
+          if ((instrAddr < breakpoints[i].addrA) ||
+              (instrAddr > breakpoints[i].addrB)) {
             mayBreak = false;
           }
           break;
         // case of mask
         case 0x0C:
-          if ((instr_addr & breakpoints[i].addrB) != breakpoints[i].addrA) {
+          if ((instrAddr & breakpoints[i].addrB) != breakpoints[i].addrA) {
             mayBreak = false;
           }
           break;
@@ -946,14 +942,14 @@ void executeInstruction() {
 
 /**
  * @brief Save state for leaving "procedure" {PC, SP, Mode, current state}
- * @param new_status
+ * @param newStatus
  */
-void saveState(uchar new_status) {
+void saveState(uchar newStatus) {
   runUntilPC = getRegister(15, regCurrent);  // Incremented once: correct here
   runUntilSP = getRegister(13, regCurrent);
   runUntilMode = getRegister(16, regCurrent) & 0x3F;  // Just the mode bits
   runUntilStatus = status;
-  status = new_status;
+  status = newStatus;
 }
 
 /**
@@ -966,82 +962,82 @@ void boardreset() {
 
 /**
  * @brief
- * @param start_address
- * @param initial_mode
+ * @param startAddr
+ * @param initMode
  */
-void initialise(uint start_address, int initial_mode) {
-  cpsr = 0X000000C0 | initial_mode;  // Disable interrupts
-  r[15] = start_address;
+void initialise(uint startAddr, int initMode) {
+  cpsr = 0X000000C0 | initMode;  // Disable interrupts
+  r[15] = startAddr;
   oldStatus = CLIENT_STATE_RESET;
   status = CLIENT_STATE_RESET;
 }
 
 /**
  * @brief
- * @param op_code
+ * @param opCode
  */
-void execute(uint op_code) {
+void execute(uint opCode) {
   incPC(); /* Easier here than later */
 
   /* ARM or THUMB ? */
   if ((cpsr & tfMask) != 0) /* Thumb */
   {
-    op_code = op_code & 0XFFFF; /* 16-bit op. code */
-    switch (op_code & 0XE000) {
+    opCode = opCode & 0XFFFF; /* 16-bit op. code */
+    switch (opCode & 0XE000) {
       case 0X0000:
-        data0(op_code);
+        data0(opCode);
         break;
       case 0X2000:
-        data1(op_code);
+        data1(opCode);
         break;
       case 0X4000:
-        dataTransfer(op_code);
+        dataTransfer(opCode);
         break;
       case 0X6000:
-        transfer0(op_code);
+        transfer0(opCode);
         break;
       case 0X8000:
-        transfer1(op_code);
+        transfer1(opCode);
         break;
       case 0XA000:
-        spPC(op_code);
+        spPC(opCode);
         break;
       case 0XC000:
-        lsmB(op_code);
+        lsmB(opCode);
         break;
       case 0XE000:
-        thumbBranch(op_code);
+        thumbBranch(opCode);
         break;
     }
   } else {
     /* Check condition */
-    if ((checkCC(op_code >> 28) == true) ||
-        ((op_code & 0XFE000000) == 0XFA000000)) /* Nasty non-orthogonal BLX */
+    if ((checkCC(opCode >> 28) == true) ||
+        ((opCode & 0XFE000000) == 0XFA000000)) /* Nasty non-orthogonal BLX */
     {
-      switch ((op_code >> 25) & 0X00000007) {
+      switch ((opCode >> 25) & 0X00000007) {
         case 0X0:
-          dataOp(op_code);
+          dataOp(opCode);
           break; /* includes load/store hw & sb */
         case 0X1:
-          dataOp(op_code);
+          dataOp(opCode);
           break; /* data processing & MSR # */
         case 0X2:
-          transfer(op_code);
+          transfer(opCode);
           break;
         case 0X3:
-          transfer(op_code);
+          transfer(opCode);
           break;
         case 0X4:
-          multiple(op_code);
+          multiple(opCode);
           break;
         case 0X5:
-          branch(op_code);
+          branch(opCode);
           break;
         case 0X6:
           undefined();
           break;
         case 0X7:
-          mySystem(op_code);
+          mySystem(opCode);
           break;
       }
     }
@@ -1050,15 +1046,15 @@ void execute(uint op_code) {
 
 /**
  * @brief
- * @param op_code
+ * @param opCode
  * @return int
  */
-int isItSBHW(uint op_code) {
-  if (((op_code & 0X0E000090) == 0X00000090) &&
-      ((op_code & 0X00000060) != 0X00000000)     /* No multiplies */
-      && ((op_code & 0X00100040) != 0X00000040)) /* No signed stores */
+int isItSBHW(uint opCode) {
+  if (((opCode & 0X0E000090) == 0X00000090) &&
+      ((opCode & 0X00000060) != 0X00000000)     /* No multiplies */
+      && ((opCode & 0X00100040) != 0X00000040)) /* No signed stores */
   {
-    if (((op_code & 0X00400000) != 0) || ((op_code & 0X00000F00) == 0))
+    if (((opCode & 0X00400000) != 0) || ((opCode & 0X00000F00) == 0))
       return true;
     else
       return false;
@@ -1068,56 +1064,55 @@ int isItSBHW(uint op_code) {
 
 /**
  * @brief
- * @param op_code
+ * @param opCode
  */
-void dataOp(uint op_code) {
+void dataOp(uint opCode) {
   int operation;
 
-  if (((op_code & mulMask) == mulOp) ||
-      ((op_code & longMulMask) == longMulOp)) {
-    myMulti(op_code);
-  } else if (isItSBHW(op_code) == true) {
-    transferSBHW(op_code);
-  } else if ((op_code & swpMask) == swpOp) {
-    swap(op_code);
+  if (((opCode & mulMask) == mulOp) || ((opCode & longMulMask) == longMulOp)) {
+    myMulti(opCode);
+  } else if (isItSBHW(opCode) == true) {
+    transferSBHW(opCode);
+  } else if ((opCode & swpMask) == swpOp) {
+    swap(opCode);
   } else {
-    operation = (op_code & dataOpMask) >> 21;
+    operation = (opCode & dataOpMask) >> 21;
 
     /* TST, TEQ, CMP, CMN - all lie in following range, but have S set */
-    if ((op_code & dataExtMask) == arithExt) /* PSR transfers OR BX */
+    if ((opCode & dataExtMask) == arithExt) /* PSR transfers OR BX */
     {
-      if ((op_code & 0X0FBF0FFF) == 0X010F0000) {
-        mrs(op_code); /* MRS */
-      } else if (((op_code & 0X0DB6F000) == 0X0120F000) &&
-                 ((op_code & 0X02000010) != 0X00000010)) {
-        msr(op_code);                                  /* MSR */
-      } else if ((op_code & 0X0FFFFFD0) == 0X012FFF10) /* BX/BLX */
+      if ((opCode & 0X0FBF0FFF) == 0X010F0000) {
+        mrs(opCode); /* MRS */
+      } else if (((opCode & 0X0DB6F000) == 0X0120F000) &&
+                 ((opCode & 0X02000010) != 0X00000010)) {
+        msr(opCode);                                  /* MSR */
+      } else if ((opCode & 0X0FFFFFD0) == 0X012FFF10) /* BX/BLX */
       {
-        bx(op_code & rmMask, op_code & 0X00000020);
-      } else if ((op_code & 0XFFF000F0) == 0XE1200070) {
+        bx(opCode & rmMask, opCode & 0X00000020);
+      } else if ((opCode & 0XFFF000F0) == 0XE1200070) {
         breakpoint(); /* Breakpoint */
-      } else if ((op_code & 0X0FFF0FF0) == 0X016F0F10) {
-        clz(op_code); /* CLZ */
+      } else if ((opCode & 0X0FFF0FF0) == 0X016F0F10) {
+        clz(opCode); /* CLZ */
       } else {
         undefined();
       }
     } else {
-      normalDataOp(op_code, operation); /* All data processing operations */
+      normalDataOp(opCode, operation); /* All data processing operations */
     }
   }
 }
 
 /**
  * @brief
- * @param op_code
+ * @param opCode
  */
-void transferSBHW(uint op_code) {
+void transferSBHW(uint opCode) {
   uint address;
   int size;
   int offset, rd;
   bool sign;
 
-  switch (op_code & 0X00000060) {
+  switch (opCode & 0X00000060) {
     case 0X00:
       fprintf(stderr, "Multiply shouldn't be here!\n");
       break; /* Error! */
@@ -1135,49 +1130,49 @@ void transferSBHW(uint op_code) {
       break; /* SH */
   }
 
-  rd = ((op_code & rdMask) >> 12);
+  rd = ((opCode & rdMask) >> 12);
 
-  address = getRegister(((op_code & rnMask) >> 16), regCurrent);
+  address = getRegister(((opCode & rnMask) >> 16), regCurrent);
 
-  offset = transferOffset(op_code & op2Mask, op_code & upMask,
-                          op_code & immHwMask, true);
+  offset = transferOffset(opCode & op2Mask, opCode & upMask, opCode & immHwMask,
+                          true);
 
-  if ((op_code & preMask) != 0)
+  if ((opCode & preMask) != 0)
     address = address + offset; /* pre-index */
 
-  if ((op_code & loadMask) == 0) /* store */
+  if ((opCode & loadMask) == 0) /* store */
     writeMemory(address, getRegister(rd, regCurrent), size, false, memData);
   else /* load */
     putRegister(rd, readMemory(address, size, sign, false, memData),
                 regCurrent);
   /* post index */
 
-  if ((op_code & preMask) == 0) /* post index with writeback */
-    putRegister((op_code & rnMask) >> 16, address + offset, regCurrent);
-  else if ((op_code & writeBackMask) != 0)
-    putRegister((op_code & rnMask) >> 16, address, regCurrent);
+  if ((opCode & preMask) == 0) /* post index with writeback */
+    putRegister((opCode & rnMask) >> 16, address + offset, regCurrent);
+  else if ((opCode & writeBackMask) != 0)
+    putRegister((opCode & rnMask) >> 16, address, regCurrent);
 }
 
 /**
  * @brief
- * @param op_code
+ * @param opCode
  */
-void mrs(uint op_code) {
-  if ((op_code & 0X00400000) == 0) {
-    putRegister((op_code & rdMask) >> 12, cpsr, regCurrent);
+void mrs(uint opCode) {
+  if ((opCode & 0X00400000) == 0) {
+    putRegister((opCode & rdMask) >> 12, cpsr, regCurrent);
   } else {
-    putRegister((op_code & rdMask) >> 12, spsr[cpsr & modeMask], regCurrent);
+    putRegister((opCode & rdMask) >> 12, spsr[cpsr & modeMask], regCurrent);
   }
 }
 
 /**
  * @brief
- * @param op_code
+ * @param opCode
  */
-void msr(uint op_code) {
+void msr(uint opCode) {
   int mask, source;
 
-  switch (op_code & 0X00090000) {
+  switch (opCode & 0X00090000) {
     case 0X00000000:
       mask = 0X00000000;
       break;
@@ -1194,18 +1189,18 @@ void msr(uint op_code) {
   if ((cpsr & modeMask) == 0X10)
     mask = mask & 0XF0000000; /* User mode */
 
-  if ((op_code & immMask) == 0) /* Test applies for both cases */
-    source = getRegister(op_code & rmMask, regCurrent) & mask;
+  if ((opCode & immMask) == 0) /* Test applies for both cases */
+    source = getRegister(opCode & rmMask, regCurrent) & mask;
   else {
     uint x, y;
     int dummy;
 
-    x = op_code & 0X0FF;        /* Immediate value */
-    y = (op_code & 0XF00) >> 7; /* Number of rotates */
+    x = opCode & 0X0FF;        /* Immediate value */
+    y = (opCode & 0XF00) >> 7; /* Number of rotates */
     source = ((x >> y) | lsl(x, 32 - y, &dummy)) & mask;
   }
 
-  if ((op_code & 0X00400000) == 0)
+  if ((opCode & 0X00400000) == 0)
     cpsr = (cpsr & ~mask) | source;
   else
     spsr[cpsr & modeMask] = (spsr[cpsr & modeMask] & ~mask) | source;
@@ -1213,10 +1208,10 @@ void msr(uint op_code) {
 
 /**
  * @brief
- * @param Rm
+ * @param rm
  * @param link Link is performed if "link" is NON-ZERO
  */
-void bx(uint Rm, int link) {
+void bx(uint rm, int link) {
   int offset, t_bit;
 
   int PC = getRegister(15, regCurrent);
@@ -1229,8 +1224,8 @@ void bx(uint Rm, int link) {
     PC = PC - 4;
   }
 
-  offset = getRegister(Rm, regCurrent) & 0XFFFFFFFE;
-  t_bit = getRegister(Rm, regCurrent) & 0X00000001;
+  offset = getRegister(rm, regCurrent) & 0XFFFFFFFE;
+  t_bit = getRegister(rm, regCurrent) & 0X00000001;
 
   if (t_bit == 1)
     cpsr = cpsr | tfMask;
@@ -1246,33 +1241,33 @@ void bx(uint Rm, int link) {
 
 /**
  * @brief
- * @param op_code
+ * @param opCode
  */
-void myMulti(uint op_code) {
+void myMulti(uint opCode) {
   int acc;
 
-  if ((op_code & mulLongBit) == 0) /* Normal */
-  {
-    acc = getRegister(op_code & rmMask, regCurrent) *
-          getRegister((op_code & rsMask) >> 8, regCurrent);
+  // Normal
+  if ((opCode & mulLongBit) == 0) {
+    acc = getRegister(opCode & rmMask, regCurrent) *
+          getRegister((opCode & rsMask) >> 8, regCurrent);
 
-    if ((op_code & mulAccBit) != 0)
-      acc = acc + getRegister((op_code & rdMask) >> 12, regCurrent);
+    if ((opCode & mulAccBit) != 0)
+      acc = acc + getRegister((opCode & rdMask) >> 12, regCurrent);
 
-    putRegister((op_code & rnMask) >> 16, acc, regCurrent);
+    putRegister((opCode & rnMask) >> 16, acc, regCurrent);
 
-    if ((op_code & sMask) != 0)
+    if ((opCode & sMask) != 0)
       setNZ(acc); /* Flags */
   } else          /* Long */
   {
     uint Rm, Rs, th, tm, tl;
     int sign;
 
-    Rm = getRegister(op_code & rmMask, regCurrent);
-    Rs = getRegister((op_code & rsMask) >> 8, regCurrent);
+    Rm = getRegister(opCode & rmMask, regCurrent);
+    Rs = getRegister((opCode & rsMask) >> 8, regCurrent);
 
     sign = 0;
-    if ((op_code & mulSignBit) != 0) /* Signed */
+    if ((opCode & mulSignBit) != 0) /* Signed */
     {
       if ((Rm & bit31) != 0) {
         Rm = ~Rm + 1;
@@ -1305,48 +1300,48 @@ void myMulti(uint op_code) {
         th = th + 1;
     }
 
-    if ((op_code & mulAccBit) != 0) {
-      tm = tl + getRegister((op_code & rdMask) >> 12, regCurrent);
+    if ((opCode & mulAccBit) != 0) {
+      tm = tl + getRegister((opCode & rdMask) >> 12, regCurrent);
       if (tm < tl)
         th = th + 1; /* Propagate carry */
       tl = tm;
-      th = th + getRegister((op_code & rnMask) >> 16, regCurrent);
+      th = th + getRegister((opCode & rnMask) >> 16, regCurrent);
     }
 
-    putRegister((op_code & rdMask) >> 12, tl, regCurrent);
-    putRegister((op_code & rnMask) >> 16, th, regCurrent);
+    putRegister((opCode & rdMask) >> 12, tl, regCurrent);
+    putRegister((opCode & rnMask) >> 16, th, regCurrent);
 
-    if ((op_code & sMask) != 0)
+    if ((opCode & sMask) != 0)
       setNZ(th | (((tl >> 16) | tl) & 0X0000FFFF)); /* Flags */
   }
 }
 
 /**
  * @brief
- * @param op_code
+ * @param opCode
  */
-void swap(uint op_code) {
+void swap(uint opCode) {
   uint address, data, size;
 
-  address = getRegister((op_code & rnMask) >> 16, regCurrent);
+  address = getRegister((opCode & rnMask) >> 16, regCurrent);
 
-  if ((op_code & byteMask) != 0)
+  if ((opCode & byteMask) != 0)
     size = 1;
   else
     size = 4;
 
   data = readMemory(address, size, false, false, memData);
-  writeMemory(address, getRegister(op_code & rmMask, regCurrent), size, false,
+  writeMemory(address, getRegister(opCode & rmMask, regCurrent), size, false,
               memData);
-  putRegister((op_code & rdMask) >> 12, data, regCurrent);
+  putRegister((opCode & rdMask) >> 12, data, regCurrent);
 }
 
 /**
  * @brief
- * @param op_code
+ * @param opCode
  * @param operation
  */
-void normalDataOp(uint op_code, int operation) {
+void normalDataOp(uint opCode, int operation) {
   int rd, a, b, mode;
   int shift_carry;
   int CPSR_special;
@@ -1354,13 +1349,13 @@ void normalDataOp(uint op_code, int operation) {
   mode = cpsr & modeMask;
   CPSR_special = false;
   shift_carry = 0;
-  a = getRegister((op_code & rnMask) >> 16,
+  a = getRegister((opCode & rnMask) >> 16,
                   regCurrent);  // force_user = false
 
-  if ((op_code & immMask) == 0) {
-    b = bReg(op_code & op2Mask, &shift_carry);
+  if ((opCode & immMask) == 0) {
+    b = bReg(opCode & op2Mask, &shift_carry);
   } else {
-    b = bImmediate(op_code & op2Mask, &shift_carry);
+    b = bImmediate(opCode & op2Mask, &shift_carry);
   }
 
   // R15s
@@ -1402,7 +1397,7 @@ void normalDataOp(uint op_code, int operation) {
       rd = a ^ b;  // TEQ
 
       // TEQP
-      if ((op_code & rdMask) == 0XF000) {
+      if ((opCode & rdMask) == 0XF000) {
         CPSR_special = true;
         if (mode != userMode)
           cpsr = spsr[mode];
@@ -1430,13 +1425,13 @@ void normalDataOp(uint op_code, int operation) {
 
   // Return result unless a compare
   if ((operation & 0XC) != 0X8) {
-    putRegister((op_code & rdMask) >> 12, rd, regCurrent);
+    putRegister((opCode & rdMask) >> 12, rd, regCurrent);
   }
 
   // S-bit && Want to change CPSR
-  if (((op_code & sMask) != 0) && (CPSR_special != true)) {
+  if (((opCode & sMask) != 0) && (CPSR_special != true)) {
     // PC and S-bit
-    if (((op_code & rdMask) >> 12) == 0XF) {
+    if (((opCode & rdMask) >> 12) == 0XF) {
       // restore saved CPSR
       if (mode != userMode) {
         cpsr = spsr[mode];
@@ -1493,9 +1488,12 @@ void normalDataOp(uint op_code, int operation) {
   }
 }
 
-/*----------------------------------------------------------------------------*/
-/* shift type: 00 = LSL, 01 = LSR, 10 = ASR, 11 = ROR                         */
-
+/**
+ * @brief shift type: 00 = LSL, 01 = LSR, 10 = ASR, 11 = ROR
+ * @param op2
+ * @param cf
+ * @return int
+ */
 int bReg(int op2, int* cf) {
   uint shift_type, reg, distance, result;
   reg = getRegister(op2 & 0X00F, regCurrent); /* Register */
@@ -1545,8 +1543,12 @@ int bReg(int op2, int* cf) {
   return result;
 }
 
-/*----------------------------------------------------------------------------*/
-
+/**
+ * @brief
+ * @param op2
+ * @param cf
+ * @return int
+ */
 int bImmediate(int op2, int* cf) {
   uint x, y;
   int dummy;
@@ -1564,12 +1566,14 @@ int bImmediate(int op2, int* cf) {
   return ror(x, y, &dummy); /* Circular rotation */
 }
 
-/*----------------------------------------------------------------------------*/
-
-void clz(uint op_code) {
+/**
+ * @brief
+ * @param opCode
+ */
+void clz(uint opCode) {
   int i, j;
 
-  j = getRegister(op_code & rmMask, regCurrent);
+  j = getRegister(opCode & rmMask, regCurrent);
 
   if (j == 0)
     i = 32;
@@ -1581,46 +1585,48 @@ void clz(uint op_code) {
     }
   }
 
-  putRegister((op_code & rdMask) >> 12, i, regCurrent);
+  putRegister((opCode & rdMask) >> 12, i, regCurrent);
 }
 
-/*----------------------------------------------------------------------------*/
-
-void transfer(uint op_code) {
+/**
+ * @brief
+ * @param opCode
+ */
+void transfer(uint opCode) {
   uint address;
   int offset, rd, size;
   bool T;
 
-  if ((op_code & undefMask) == undefCode) {
+  if ((opCode & undefMask) == undefCode) {
     undefined();
   } else {
-    if ((op_code & byteMask) == 0) {
+    if ((opCode & byteMask) == 0) {
       size = 4;
     } else {
       size = 1;
     }
 
-    T = (((op_code & preMask) == 0) && ((op_code & writeBackMask) != 0));
-    rd = (op_code & rdMask) >> 12;
-    address = getRegister((op_code & rnMask) >> 16, regCurrent);
-    offset = transferOffset(op_code & op2Mask, op_code & upMask,
-                            op_code & immMask, false);
+    T = (((opCode & preMask) == 0) && ((opCode & writeBackMask) != 0));
+    rd = (opCode & rdMask) >> 12;
+    address = getRegister((opCode & rnMask) >> 16, regCurrent);
+    offset = transferOffset(opCode & op2Mask, opCode & upMask, opCode & immMask,
+                            false);
 
-    if ((op_code & preMask) != 0) {
+    if ((opCode & preMask) != 0) {
       address = address + offset;  // Pre-index
     }
 
-    if ((op_code & loadMask) == 0) {
+    if ((opCode & loadMask) == 0) {
       writeMemory(address, getRegister(rd, regCurrent), size, T, memData);
     } else {
       putRegister(rd, readMemory(address, size, false, T, memData), regCurrent);
     }
 
     // Post-index
-    if ((op_code & preMask) == 0) {
-      putRegister((op_code & rnMask) >> 16, address + offset, regCurrent);
-    } else if ((op_code & writeBackMask) != 0) {
-      putRegister((op_code & rnMask) >> 16, address, regCurrent);
+    if ((opCode & preMask) == 0) {
+      putRegister((opCode & rnMask) >> 16, address + offset, regCurrent);
+    } else if ((opCode & writeBackMask) != 0) {
+      putRegister((opCode & rnMask) >> 16, address, regCurrent);
     }
   }
 }
@@ -1664,15 +1670,15 @@ int transferOffset(int op2, int add, int imm, bool sbhw) {
 
 /**
  * @brief
- * @param op_code
+ * @param opCode
  */
-void multiple(uint op_code) {
-  if ((op_code & loadMask) == 0) {
-    stm((op_code & 0X01800000) >> 23, (op_code & rnMask) >> 16,
-        op_code & 0X0000FFFF, op_code & writeBackMask, op_code & userMask);
+void multiple(uint opCode) {
+  if ((opCode & loadMask) == 0) {
+    stm((opCode & 0X01800000) >> 23, (opCode & rnMask) >> 16,
+        opCode & 0X0000FFFF, opCode & writeBackMask, opCode & userMask);
   } else {
-    ldm((op_code & 0X01800000) >> 23, (op_code & rnMask) >> 16,
-        op_code & 0X0000FFFF, op_code & writeBackMask, op_code & userMask);
+    ldm((opCode & 0X01800000) >> 23, (opCode & rnMask) >> 16,
+        opCode & 0X0000FFFF, opCode & writeBackMask, opCode & userMask);
   }
 }
 
@@ -1705,19 +1711,19 @@ int bitCount(uint source, int* first) {
 /**
  * @brief
  * @param mode
- * @param Rn
- * @param reg_list
- * @param write_back
+ * @param rn
+ * @param regList
+ * @param writeBack
  * @param hat
  */
-void ldm(int mode, int Rn, int reg_list, bool write_back, bool hat) {
+void ldm(int mode, int rn, int regList, bool writeBack, bool hat) {
   int address, new_base, count, first_reg, reg, data;
   int force_user;
   bool r15_inc;  // internal `bool'
 
-  address = getRegister(Rn, regCurrent);
-  count = bitCount(reg_list, &first_reg);
-  r15_inc = (reg_list & 0X00008000) != 0;  // R15 in list
+  address = getRegister(rn, regCurrent);
+  count = bitCount(regList, &first_reg);
+  r15_inc = (regList & 0X00008000) != 0;  // R15 in list
 
   switch (mode) {
     case 0:
@@ -1739,8 +1745,8 @@ void ldm(int mode, int Rn, int reg_list, bool write_back, bool hat) {
 
   address = address & 0XFFFFFFFC;  // Bottom 2 bits ignored in address
 
-  if (write_back) {
-    putRegister(Rn, new_base, regCurrent);
+  if (writeBack) {
+    putRegister(rn, new_base, regCurrent);
   }
 
   // Force user unless R15 in list
@@ -1752,14 +1758,14 @@ void ldm(int mode, int Rn, int reg_list, bool write_back, bool hat) {
 
   reg = 0;
 
-  while (reg_list != 0) {
-    if ((reg_list & bit0) != 0) {
+  while (regList != 0) {
+    if ((regList & bit0) != 0) {
       data = readMemory(address, 4, false, false, memData);  // Keep for later
       putRegister(reg, data, force_user);
       address = address + 4;
     }
 
-    reg_list = reg_list >> 1;
+    regList = regList >> 1;
     reg = reg + 1;
   }
 
@@ -1780,18 +1786,18 @@ void ldm(int mode, int Rn, int reg_list, bool write_back, bool hat) {
 /**
  * @brief
  * @param mode
- * @param Rn
- * @param reg_list
- * @param write_back
+ * @param rn
+ * @param regList
+ * @param writeBack
  * @param hat
  */
-void stm(int mode, int Rn, int reg_list, bool write_back, bool hat) {
+void stm(int mode, int rn, int regList, bool writeBack, bool hat) {
   int address, new_base, count, first_reg, reg;
   int force_user;
   bool special;
 
-  address = getRegister(Rn, regCurrent);
-  count = bitCount(reg_list, &first_reg);
+  address = getRegister(rn, regCurrent);
+  count = bitCount(regList, &first_reg);
 
   switch (mode) {
     case 0:
@@ -1814,11 +1820,11 @@ void stm(int mode, int Rn, int reg_list, bool write_back, bool hat) {
   address = address & 0XFFFFFFFC;  // Bottom 2 bits ignored in address
 
   special = false;
-  if (write_back != 0) {
-    if (Rn == first_reg) {
+  if (writeBack != 0) {
+    if (rn == first_reg) {
       special = true;
     } else {
-      putRegister(Rn, new_base, regCurrent);
+      putRegister(rn, new_base, regCurrent);
     }
   }
 
@@ -1830,18 +1836,18 @@ void stm(int mode, int Rn, int reg_list, bool write_back, bool hat) {
 
   reg = 0;
 
-  while (reg_list != 0) {
-    if ((reg_list & bit0) != 0) {
+  while (regList != 0) {
+    if ((regList & bit0) != 0) {
       writeMemory(address, getRegister(reg, force_user), 4, false, memData);
       address = address + 4;
     }
 
-    reg_list = reg_list >> 1;
+    regList = regList >> 1;
     reg = reg + 1;
   }
 
   if (special)
-    putRegister(Rn, new_base, regCurrent);
+    putRegister(rn, new_base, regCurrent);
 }
 
 /**
@@ -1909,23 +1915,23 @@ int swiDecimalPrint(uint number) {
 
 /**
  * @brief
- * @param op_code
+ * @param opCode
  */
-void mySystem(uint op_code) {
+void mySystem(uint opCode) {
   int temp;
 
-  if (((op_code & 0X0F000000) == 0X0E000000)
+  if (((opCode & 0X0F000000) == 0X0E000000)
       /* bodge to allow Thumb to use this code */
-      || ((op_code & 0X0F000000) == 0X0C000000) ||
-      ((op_code & 0X0F000000) == 0X0D000000)) { /* Coprocessor op.s */
+      || ((opCode & 0X0F000000) == 0X0C000000) ||
+      ((opCode & 0X0F000000) == 0X0D000000)) { /* Coprocessor op.s */
     fprintf(stderr, "whoops -undefined \n");
     undefined();
   } else {
     if (printOut) {
-      fprintf(stderr, "\n*** SWI CALL %06X ***\n\n", op_code & 0X00FFFFFF);
+      fprintf(stderr, "\n*** SWI CALL %06X ***\n\n", opCode & 0X00FFFFFF);
     }
 
-    switch (op_code & 0X00FFFFFF) {
+    switch (opCode & 0X00FFFFFF) {
       // Output character R0 (to terminal)
       case 0:
         putRegister(15, getRegister(15, regCurrent) - 8, regCurrent);
@@ -1992,7 +1998,7 @@ void mySystem(uint op_code) {
 
       default:
         if (printOut) {
-          fprintf(stderr, "Un-trapped SWI call %06X\n", op_code & 0X00FFFFFF);
+          fprintf(stderr, "Un-trapped SWI call %06X\n", opCode & 0X00FFFFFF);
         }
 
         spsr[supMode] = cpsr;
@@ -2158,11 +2164,7 @@ bool checkCC(int condition) {
  * @return false
  */
 constexpr const bool zf(const int cpsr) {
-  if ((zfMask & cpsr) != 0) {
-    return true;
-  }
-
-  return false;
+  return (zfMask & cpsr) != 0;
 }
 
 /**
@@ -2172,11 +2174,7 @@ constexpr const bool zf(const int cpsr) {
  * @return false
  */
 constexpr const bool cf(const int cpsr) {
-  if ((cfMask & cpsr) != 0) {
-    return true;
-  }
-
-  return false;
+  return (cfMask & cpsr) != 0;
 }
 
 /**
@@ -2186,11 +2184,7 @@ constexpr const bool cf(const int cpsr) {
  * @return false
  */
 constexpr const bool nf(const int cpsr) {
-  if ((nfMask & cpsr) != 0) {
-    return true;
-  }
-
-  return false;
+  return (nfMask & cpsr) != 0;
 }
 
 /**
@@ -2200,23 +2194,19 @@ constexpr const bool nf(const int cpsr) {
  * @return false
  */
 constexpr const bool vf(const int cpsr) {
-  if ((vfMask & cpsr) != 0) {
-    return true;
-  }
-
-  return false;
+  return (vfMask & cpsr) != 0;
 }
 
 /**
- * @brief Get the Register object
- * @param reg_no
- * @param force_mode
+ * @brief
+ * @param regNum
+ * @param forceMode
  * @return int
  */
-int getRegister(int reg_no, int force_mode) {
+int getRegister(int regNum, int forceMode) {
   int mode, value;
 
-  switch (force_mode) {
+  switch (forceMode) {
     case regCurrent:
       mode = cpsr & modeMask;
       break;
@@ -2240,62 +2230,62 @@ int getRegister(int reg_no, int force_mode) {
       break;
   }
 
-  if (reg_no == 16) {
+  if (regNum == 16) {
     value = cpsr;  // Trap for status registers
-  } else if (reg_no == 17) {
+  } else if (regNum == 17) {
     if ((mode == userMode) || (mode == systemMode)) {
       value = cpsr;
     } else {
       value = spsr[mode];
     }
-  } else if (reg_no != 15) {
+  } else if (regNum != 15) {
     switch (mode) {
       case userMode:
       case systemMode:
-        value = r[reg_no];
+        value = r[regNum];
         break;
 
       case fiqMode:
-        if (reg_no < 8) {
-          value = r[reg_no];
+        if (regNum < 8) {
+          value = r[regNum];
 
         } else {
-          value = fiqR[reg_no - 8];
+          value = fiqR[regNum - 8];
         }
         break;
 
       case irqMode:
-        if (reg_no < 13) {
-          value = r[reg_no];
+        if (regNum < 13) {
+          value = r[regNum];
         } else {
-          value = irqR[reg_no - 13];
+          value = irqR[regNum - 13];
         }
         break;
 
       case supMode:
-        if (reg_no < 13) {
-          value = r[reg_no];
+        if (regNum < 13) {
+          value = r[regNum];
 
         } else {
-          value = supR[reg_no - 13];
+          value = supR[regNum - 13];
         }
         break;
 
       case abtMode:
-        if (reg_no < 13) {
-          value = r[reg_no];
+        if (regNum < 13) {
+          value = r[regNum];
 
         } else {
-          value = abtR[reg_no - 13];
+          value = abtR[regNum - 13];
         }
         break;
 
       case undefMode:
-        if (reg_no < 13) {
-          value = r[reg_no];
+        if (regNum < 13) {
+          value = r[regNum];
 
         } else {
-          value = underR[reg_no - 13];
+          value = underR[regNum - 13];
         }
         break;
     }
@@ -2308,13 +2298,13 @@ int getRegister(int reg_no, int force_mode) {
 
 /**
  * @brief Modified "getRegister" to give unadulterated copy of PC
- * @param reg_no
- * @param force_mode
+ * @param regNum
+ * @param forceMode
  * @return int
  */
-int getRegisterMonitor(int reg_no, int force_mode) {
-  if (reg_no != 15) {
-    return getRegister(reg_no, force_mode);
+int getRegisterMonitor(int regNum, int forceMode) {
+  if (regNum != 15) {
+    return getRegister(regNum, forceMode);
   } else {
     return r[15];  // PC access
   }
@@ -2322,14 +2312,14 @@ int getRegisterMonitor(int reg_no, int force_mode) {
 
 /**
  * @brief Write to a specified processor register
- * @param reg_no
+ * @param regNum
  * @param value
- * @param force_mode
+ * @param forceMode
  */
-void putRegister(int reg_no, int value, int force_mode) {
+void putRegister(int regNum, int value, int forceMode) {
   int mode;
 
-  switch (force_mode) {
+  switch (forceMode) {
     case regCurrent:
       mode = cpsr & modeMask;
       break;
@@ -2353,53 +2343,53 @@ void putRegister(int reg_no, int value, int force_mode) {
       break;
   }
 
-  if (reg_no == 16)
+  if (regNum == 16)
     cpsr = value; /* Trap for status registers */
-  else if (reg_no == 17) {
+  else if (regNum == 17) {
     if ((mode == userMode) || (mode == systemMode))
       cpsr = value;
     else
       spsr[mode] = value;
-  } else if (reg_no != 15) {
+  } else if (regNum != 15) {
     switch (mode) {
       case userMode:
       case systemMode:
-        r[reg_no] = value;
+        r[regNum] = value;
         break;
 
       case fiqMode:
-        if (reg_no < 8)
-          r[reg_no] = value;
+        if (regNum < 8)
+          r[regNum] = value;
         else
-          fiqR[reg_no - 8] = value;
+          fiqR[regNum - 8] = value;
         break;
 
       case irqMode:
-        if (reg_no < 13)
-          r[reg_no] = value;
+        if (regNum < 13)
+          r[regNum] = value;
         else
-          irqR[reg_no - 13] = value;
+          irqR[regNum - 13] = value;
         break;
 
       case supMode:
-        if (reg_no < 13)
-          r[reg_no] = value;
+        if (regNum < 13)
+          r[regNum] = value;
         else
-          supR[reg_no - 13] = value;
+          supR[regNum - 13] = value;
         break;
 
       case abtMode:
-        if (reg_no < 13)
-          r[reg_no] = value;
+        if (regNum < 13)
+          r[regNum] = value;
         else
-          abtR[reg_no - 13] = value;
+          abtR[regNum - 13] = value;
         break;
 
       case undefMode:
-        if (reg_no < 13)
-          r[reg_no] = value;
+        if (regNum < 13)
+          r[regNum] = value;
         else
-          underR[reg_no - 13] = value;
+          underR[regNum - 13] = value;
         break;
     }
   } else
@@ -2413,10 +2403,9 @@ void putRegister(int reg_no, int value, int force_mode) {
 constexpr const int instructionLength(const int cpsr, const int tfMask) {
   if ((cpsr & tfMask) == 0) {
     return 4;
-
-  } else {
-    return 2;
   }
+
+  return 2;
 }
 
 /**
@@ -2424,7 +2413,7 @@ constexpr const int instructionLength(const int cpsr, const int tfMask) {
  * @return uint
  */
 uint fetch() {
-  uint op_code = readMemory(
+  uint opCode = readMemory(
       (getRegister(15, regCurrent) - instructionLength(cpsr, tfMask)),
       instructionLength(cpsr, tfMask), false, false, memInstruction);
 
@@ -2440,7 +2429,7 @@ uint fetch() {
       getRegister(15, regCurrent) - instructionLength(cpsr, tfMask);
   pastOpcPtr = pastOpcPtr % pastSize;
 
-  return op_code;
+  return opCode;
 }
 
 /**
@@ -2545,26 +2534,25 @@ int readMemory(uint address, int size, bool sign, bool T, int source) {
 void writeMemory(uint address, int data, int size, bool T, int source) {
   uint mask;
 
-  if ((address == tubeAddress) &&
-      (tubeAddress != 0)) /* Deal with Tube output */
-  {
-    uchar c;
-
-    c = data & 0XFF;
+  // Deal with Tube output
+  if ((address == tubeAddress) && (tubeAddress != 0)) {
+    uchar c = data & 0XFF;
 
     if (!printOut) {
-      if ((c == 0X0A) || (c == 0X0D))
+      if ((c == 0X0A) || (c == 0X0D)) {
         fprintf(stderr, "\n");
-      else if ((c < 0X20) || (c >= 0X7F))
+      } else if ((c < 0X20) || (c >= 0X7F)) {
         fprintf(stderr, "%02X", c);
-      else
+      } else {
         fprintf(stderr, "%c", c);
+      }
     } else {
       fprintf(stderr, "Tube output byte = %02X (", c);
-      if ((c < 0X20) || (c >= 0X7F))
+      if ((c < 0X20) || (c >= 0X7F)) {
         fprintf(stderr, ".)\n");
-      else
+      } else {
         fprintf(stderr, "%c)\n", c);
+      }
     }
   } else {
     if ((address >> 2) < memSize) {
@@ -2808,33 +2796,34 @@ int ror(uint value, int distance, int* cf) {
 
 /**
  * @brief
- * @param op_code
+ * @param opCode
  */
-void data0(uint op_code) {
-  uint op2, rn;
-  uint shift, result;
+void data0(uint opCode) {
+  uint op2, result;
   int cf;
 
-  rn =
-      getRegister(((op_code >> 3) & 7), regCurrent); /* Called "Rm" in shifts */
-  shift = ((op_code >> 6) & 0X0000001F); /* Extracted speculatively */
+  uint rn =
+      getRegister(((opCode >> 3) & 7), regCurrent);  // Called Rm in shifts
+  uint shift = ((opCode >> 6) & 0X0000001F);         // Extracted speculatively
 
-  if ((op_code & 0X1800) != 0X1800) /* Shifts */
-  {
-    cf = ((cpsr & cfMask) != 0); /* default */
-    switch (op_code & 0X1800) {
+  // Shifts
+  if ((opCode & 0X1800) != 0X1800) {
+    cf = ((cpsr & cfMask) != 0);  // default
+    switch (opCode & 0X1800) {
       case 0X0000:
         result = lsl(rn, shift, &cf);
-        break;     /* LSL (1) */
-      case 0X0800: /* LSR (1) */
-        if (shift == 0)
+        break;      // LSL (1)
+      case 0X0800:  // LSR (1)
+        if (shift == 0) {
           shift = 32;
+        }
 
         result = lsr(rn, shift, &cf);
         break;
-      case 0X1000: /* ASR (1) */
-        if (shift == 0)
+      case 0X1000:  // ASR (1)
+        if (shift == 0) {
           shift = 32;
+        }
         result = asr(rn, shift, &cf);
         break;
       default:
@@ -2842,22 +2831,24 @@ void data0(uint op_code) {
         break;
     }
 
-    if (cf)
+    if (cf) {
       cpsr = cpsr | cfMask;
-    else
+    } else {
       cpsr = cpsr & ~cfMask;
+    }
     setNZ(result);
-    putRegister((op_code & 7), result, regCurrent);
+    putRegister((opCode & 7), result, regCurrent);
   } else {
-    if ((op_code & 0X0400) == 0) /* ADD(3)/SUB(3) */
-    {
-      op2 = getRegister((op_code >> 6) & 7, regCurrent);
-    } else /* ADD(1)/SUB(1) */
-    {
-      op2 = (op_code >> 6) & 7;
+    // ADD(3)/SUB(3)
+    if ((opCode & 0X0400) == 0) {
+      op2 = getRegister((opCode >> 6) & 7, regCurrent);
+    }
+    // ADD(1)/SUB(1)
+    else {
+      op2 = (opCode >> 6) & 7;
     };
 
-    if ((op_code & 0X0200) == 0) {
+    if ((opCode & 0X0200) == 0) {
       result = rn + op2;
       setFlags(flagAdd, rn, op2, result, 0);
     } else {
@@ -2865,22 +2856,22 @@ void data0(uint op_code) {
       setFlags(flagSub, rn, op2, result, 1);
     }
 
-    putRegister(op_code & 7, result, regCurrent);
+    putRegister(opCode & 7, result, regCurrent);
   }
 }
 
 /**
  * @brief
- * @param op_code
+ * @param opCode
  */
-void data1(uint op_code) {
+void data1(uint opCode) {
   int rd, imm;
   int result;
 
-  rd = (op_code >> 8) & 7;
-  imm = op_code & 0X00FF;
+  rd = (opCode >> 8) & 7;
+  imm = opCode & 0X00FF;
 
-  switch (op_code & 0X1800) {
+  switch (opCode & 0X1800) {
     case 0X0000: /* MOV (1) */
       result = imm;
       setNZ(result);
@@ -2908,9 +2899,9 @@ void data1(uint op_code) {
 
 /**
  * @brief
- * @param op_code
+ * @param opCode
  */
-void dataTransfer(uint op_code) {
+void dataTransfer(uint opCode) {
   uint rd, rm;
   int cf;
 
@@ -2918,26 +2909,26 @@ void dataTransfer(uint op_code) {
 
   signed int result;
 
-  if ((op_code & 0X1000) == 0) /* NOT load/store */
+  if ((opCode & 0X1000) == 0) /* NOT load/store */
   {
-    if ((op_code & 0X0800) == 0) /* NOT load literal pool */
+    if ((opCode & 0X0800) == 0) /* NOT load literal pool */
     {
-      if ((op_code & 0X0400) == 0) /* Data processing */
+      if ((opCode & 0X0400) == 0) /* Data processing */
       {
-        rd = getRegister((op_code & 7), regCurrent);
-        rm = getRegister(((op_code >> 3) & 7), regCurrent);
+        rd = getRegister((opCode & 7), regCurrent);
+        rm = getRegister(((opCode >> 3) & 7), regCurrent);
 
-        switch (op_code & 0X03C0) /* data processing opcode */
+        switch (opCode & 0X03C0) /* data processing opcode */
         {
-          case 0X0000: /* AND */
+          case 0X0000:  // AND
             result = rd & rm;
-            putRegister(op_code & 7, result, regCurrent);
+            putRegister(opCode & 7, result, regCurrent);
             setNZ(result);
             break;
 
           case 0X0040: /* EOR */
             result = rd ^ rm;
-            putRegister(op_code & 7, result, regCurrent);
+            putRegister(opCode & 7, result, regCurrent);
             setNZ(result);
             break;
 
@@ -2949,65 +2940,70 @@ void dataTransfer(uint op_code) {
             else
               cpsr = cpsr & ~cfMask;
             setNZ(result);
-            putRegister(op_code & 7, result, regCurrent);
+            putRegister(opCode & 7, result, regCurrent);
             break;
 
-          case 0X00C0:                   /* LSR (2) */
-            cf = ((cpsr & cfMask) != 0); /* default */
+          case 0X00C0:                    // LSR (2)
+            cf = ((cpsr & cfMask) != 0);  // default
             result = lsr(rd, rm & 0X000000FF, &cf);
-            if (cf)
+            if (cf) {
               cpsr = cpsr | cfMask;
-            else
+            } else {
               cpsr = cpsr & ~cfMask;
+            }
             setNZ(result);
-            putRegister(op_code & 7, result, regCurrent);
+            putRegister(opCode & 7, result, regCurrent);
             break;
 
-          case 0X0100:                   /* ASR (2) */
-            cf = ((cpsr & cfMask) != 0); /* default */
+          case 0X0100:                    // ASR (2)
+            cf = ((cpsr & cfMask) != 0);  // default
             result = asr(rd, rm & 0X000000FF, &cf);
-            if (cf)
+            if (cf) {
               cpsr = cpsr | cfMask;
-            else
+            } else {
               cpsr = cpsr & ~cfMask;
+            }
             setNZ(result);
-            putRegister(op_code & 7, result, regCurrent);
+            putRegister(opCode & 7, result, regCurrent);
             break;
 
-          case 0X0140: /* ADC */
+          case 0X0140:  // ADC
             result = rd + rm;
-            if ((cpsr & cfMask) != 0)
-              result = result + 1; /* Add CF */
+            if ((cpsr & cfMask) != 0) {
+              result = result + 1;  // Add CF
+            }
             setFlags(flagAdd, rd, rm, result, cpsr & cfMask);
-            putRegister(op_code & 7, result, regCurrent);
+            putRegister(opCode & 7, result, regCurrent);
             break;
 
-          case 0X0180: /* SBC */
+          case 0X0180:  // SBC
             result = rd - rm - 1;
-            if ((cpsr & cfMask) != 0)
+            if ((cpsr & cfMask) != 0) {
               result = result + 1;
+            }
             setFlags(flagSub, rd, rm, result, cpsr & cfMask);
-            putRegister(op_code & 7, result, regCurrent);
+            putRegister(opCode & 7, result, regCurrent);
             break;
 
-          case 0X01C0:                   /* ROR */
-            cf = ((cpsr & cfMask) != 0); /* default */
+          case 0X01C0:                    // ROR
+            cf = ((cpsr & cfMask) != 0);  // default
             result = ror(rd, rm & 0X000000FF, &cf);
-            if (cf)
+            if (cf) {
               cpsr = cpsr | cfMask;
-            else
+            } else {
               cpsr = cpsr & ~cfMask;
+            }
             setNZ(result);
-            putRegister(op_code & 7, result, regCurrent);
+            putRegister(opCode & 7, result, regCurrent);
             break;
 
-          case 0X0200: /* TST */
+          case 0X0200:  // TST
             setNZ(rd & rm);
             break;
 
-          case 0X0240: /* NEG */
+          case 0X0240:  // NEG
             result = -rm;
-            putRegister(op_code & 7, result, regCurrent);
+            putRegister(opCode & 7, result, regCurrent);
             setFlags(flagSub, 0, rm, result, 1);
             break;
 
@@ -3022,46 +3018,46 @@ void dataTransfer(uint op_code) {
           case 0X0300: /* ORR */
             result = rd | rm;
             setNZ(result);
-            putRegister(op_code & 7, result, regCurrent);
+            putRegister(opCode & 7, result, regCurrent);
             break;
 
           case 0X00340: /* MUL */
             result = rm * rd;
             setNZ(result);
-            putRegister(op_code & 7, result, regCurrent);
+            putRegister(opCode & 7, result, regCurrent);
             break;
 
           case 0X0380: /* BIC */
             result = rd & ~rm;
             setNZ(result);
-            putRegister(op_code & 7, result, regCurrent);
+            putRegister(opCode & 7, result, regCurrent);
             break;
 
           case 0X03C0: /* MVN */
             result = ~rm;
             setNZ(result);
-            putRegister(op_code & 7, result, regCurrent);
+            putRegister(opCode & 7, result, regCurrent);
             break;
         }    /* End of switch */
       } else /* special data processing */
       {      /* NO FLAG UPDATE */
-        switch (op_code & 0X0300) {
+        switch (opCode & 0X0300) {
           case 0X0000: /* ADD (4) high registers */
-            rd = ((op_code & 0X0080) >> 4) | (op_code & 7);
-            rm = getRegister(((op_code >> 3) & 15), regCurrent);
+            rd = ((opCode & 0X0080) >> 4) | (opCode & 7);
+            rm = getRegister(((opCode >> 3) & 15), regCurrent);
             putRegister(rd, getRegister(rd, regCurrent) + rm, regCurrent);
             break;
 
           case 0X0100: /* CMP (3) high registers */
-            rd = getRegister((((op_code & 0X0080) >> 4) | (op_code & 7)),
+            rd = getRegister((((opCode & 0X0080) >> 4) | (opCode & 7)),
                              regCurrent);
-            rm = getRegister(((op_code >> 3) & 15), regCurrent);
+            rm = getRegister(((opCode >> 3) & 15), regCurrent);
             setFlags(flagSub, rd, rm, rd - rm, 1);
             break;
 
           case 0X0200: /* MOV (2) high registers */
-            rd = ((op_code & 0X0080) >> 4) | (op_code & 7);
-            rm = getRegister(((op_code >> 3) & 15), regCurrent);
+            rd = ((opCode & 0X0080) >> 4) | (opCode & 7);
+            rm = getRegister(((opCode >> 3) & 15), regCurrent);
 
             if (rd == 15)
               rm = rm & 0XFFFFFFFE; /* Tweak mov to PC */
@@ -3069,14 +3065,14 @@ void dataTransfer(uint op_code) {
             break;
 
           case 0X0300: /* BX/BLX Rm */
-            bx((op_code >> 3) & 0XF, op_code & 0X0080);
+            bx((opCode >> 3) & 0XF, opCode & 0X0080);
             break;
         } /* End of switch */
       }
     } else /* load from literal pool */
     {      /* LDR PC */
-      rd = ((op_code >> 8) & 7);
-      address = (((op_code & 0X00FF) << 2)) +
+      rd = ((opCode >> 8) & 7);
+      address = (((opCode & 0X00FF) << 2)) +
                 (getRegister(15, regCurrent) & 0XFFFFFFFC);
       putRegister(rd, readMemory(address, 4, false, false, memData),
                   regCurrent);
@@ -3085,11 +3081,11 @@ void dataTransfer(uint op_code) {
     int rm, rn;
     int data;
 
-    rd = (op_code & 7);
-    rn = getRegister(((op_code >> 3) & 7), regCurrent);
-    rm = getRegister(((op_code >> 6) & 7), regCurrent);
+    rd = (opCode & 7);
+    rn = getRegister(((opCode >> 3) & 7), regCurrent);
+    rm = getRegister(((opCode >> 6) & 7), regCurrent);
 
-    switch (op_code & 0X0E00) {
+    switch (opCode & 0X0E00) {
       case 0X0000: /* STR (2) register */
         writeMemory(rn + rm, getRegister(rd, regCurrent), 4, false, memData);
         break;
@@ -3132,35 +3128,35 @@ void dataTransfer(uint op_code) {
 
 /**
  * @brief
- * @param op_code
+ * @param opCode
  */
-void transfer0(uint op_code) {
+void transfer0(uint opCode) {
   int rd, rn;
   int location, data;
 
-  rn = getRegister(((op_code >> 3) & 7), regCurrent);
+  rn = getRegister(((opCode >> 3) & 7), regCurrent);
 
-  if ((op_code & 0X0800) == 0) /* STR */
+  if ((opCode & 0X0800) == 0) /* STR */
   {
-    rd = getRegister((op_code & 7), regCurrent);
-    if ((op_code & 0X1000) == 0) /* STR (1) 5-bit imm */
+    rd = getRegister((opCode & 7), regCurrent);
+    if ((opCode & 0X1000) == 0) /* STR (1) 5-bit imm */
     {
-      location = rn + ((op_code >> 4) & 0X07C); /* shift twice = *4 */
+      location = rn + ((opCode >> 4) & 0X07C); /* shift twice = *4 */
       writeMemory(location, rd, 4, false, memData);
     } else /* STRB (1) */
     {
-      location = rn + ((op_code >> 6) & 0X1F);
+      location = rn + ((opCode >> 6) & 0X1F);
       writeMemory(location, rd, 1, false, memData);
     }
   } else /* LDR (1) */
   {
-    rd = op_code & 7;
-    if ((op_code & 0X1000) == 0) {
-      location = (rn + ((op_code >> 4) & 0X07C)); /* shift twice = *4 */
+    rd = opCode & 7;
+    if ((opCode & 0X1000) == 0) {
+      location = (rn + ((opCode >> 4) & 0X07C)); /* shift twice = *4 */
       data = readMemory(location, 4, false, false, memData);
     } else /* LDRB (1) */
     {
-      location = (rn + ((op_code >> 6) & 0X1F));
+      location = (rn + ((opCode >> 6) & 0X1F));
       data = readMemory(location, 1, false, false, memData); /* Zero extended */
     }
     putRegister(rd, data, regCurrent);
@@ -3169,40 +3165,40 @@ void transfer0(uint op_code) {
 
 /**
  * @brief
- * @param op_code
+ * @param opCode
  */
-void transfer1(uint op_code) {
+void transfer1(uint opCode) {
   int rd, rn;
   int data, location;
 
-  switch (op_code & 0X1800) {
+  switch (opCode & 0X1800) {
     case 0X0000: /* STRH (1) */
-      rn = getRegister((op_code >> 3) & 7, regCurrent);
-      rd = op_code & 7;
+      rn = getRegister((opCode >> 3) & 7, regCurrent);
+      rd = opCode & 7;
       data = getRegister(rd, regCurrent);
-      location = rn + ((op_code >> 5) & 0X3E); /* x2 in shift */
+      location = rn + ((opCode >> 5) & 0X3E); /* x2 in shift */
       writeMemory(location, data, 2, false, memData);
       break;
 
     case 0X0800: /* LDRH (1) */
-      rd = op_code & 7;
-      rn = getRegister((op_code >> 3) & 7, regCurrent);
-      location = rn + ((op_code >> 5) & 0X3E);               /* x2 in shift */
+      rd = opCode & 7;
+      rn = getRegister((opCode >> 3) & 7, regCurrent);
+      location = rn + ((opCode >> 5) & 0X3E);                /* x2 in shift */
       data = readMemory(location, 2, false, false, memData); /* Zero extended */
       putRegister(rd, data, regCurrent);
       break;
 
     case 0X1000: /* STR (3) -SP */
-      data = getRegister(((op_code >> 8) & 7), regCurrent);
+      data = getRegister(((opCode >> 8) & 7), regCurrent);
       rn = getRegister(13, regCurrent); /* SP */
-      location = rn + ((op_code & 0X00FF) * 4);
+      location = rn + ((opCode & 0X00FF) * 4);
       writeMemory(location, data, 4, false, memData);
       break;
 
     case 0X1800: /* LDR (4) -SP */
-      rd = (op_code >> 8) & 7;
-      rn = getRegister(13, regCurrent);         /* SP */
-      location = rn + ((op_code & 0X00FF) * 4); /* x2 in shift */
+      rd = (opCode >> 8) & 7;
+      rn = getRegister(13, regCurrent);        /* SP */
+      location = rn + ((opCode & 0X00FF) * 4); /* x2 in shift */
       data = readMemory(location, 4, false, false, memData);
       putRegister(rd, data, regCurrent);
       break;
@@ -3211,30 +3207,30 @@ void transfer1(uint op_code) {
 
 /**
  * @brief
- * @param op_code
+ * @param opCode
  */
-void spPC(uint op_code) {
+void spPC(uint opCode) {
   int rd, sp, data;
 
-  if ((op_code & 0X1000) == 0) /* ADD SP or PC */
+  if ((opCode & 0X1000) == 0) /* ADD SP or PC */
   {
-    rd = (op_code >> 8) & 7;
+    rd = (opCode >> 8) & 7;
 
-    if ((op_code & 0X0800) == 0) /* ADD(5) -PC */
-      data = (getRegister(15, regCurrent) & 0XFFFFFFFC) +
-             ((op_code & 0X00FF) << 2);
+    if ((opCode & 0X0800) == 0) /* ADD(5) -PC */
+      data =
+          (getRegister(15, regCurrent) & 0XFFFFFFFC) + ((opCode & 0X00FF) << 2);
     /* getRegister supplies PC + 2 */
     else /* ADD(6) -SP */
-      data = (getRegister(13, regCurrent)) + ((op_code & 0X00FF) << 2);
+      data = (getRegister(13, regCurrent)) + ((opCode & 0X00FF) << 2);
     putRegister(rd, data, regCurrent);
   } else /* Adjust SP */
   {
-    switch (op_code & 0X0F00) {
+    switch (opCode & 0X0F00) {
       case 0X0000:
-        if ((op_code & 0X0080) == 0) /* ADD(7) -SP */
-          sp = getRegister(13, regCurrent) + ((op_code & 0X7F) << 2);
+        if ((opCode & 0X0080) == 0) /* ADD(7) -SP */
+          sp = getRegister(13, regCurrent) + ((opCode & 0X7F) << 2);
         else /* SUB(4) -SP */
-          sp = getRegister(13, regCurrent) - ((op_code & 0X7F) << 2);
+          sp = getRegister(13, regCurrent) - ((opCode & 0X7F) << 2);
         putRegister(13, sp, regCurrent);
         break;
 
@@ -3244,16 +3240,16 @@ void spPC(uint op_code) {
       case 0X0D00: {
         int reg_list;
 
-        reg_list = op_code & 0X000000FF;
+        reg_list = opCode & 0X000000FF;
 
-        if ((op_code & 0X0800) == 0) /* PUSH */
+        if ((opCode & 0X0800) == 0) /* PUSH */
         {
-          if ((op_code & 0X0100) != 0)
+          if ((opCode & 0X0100) != 0)
             reg_list = reg_list | 0X4000;
           stm(2, 13, reg_list, 1, 0);
         } else /* POP */
         {
-          if ((op_code & 0X0100) != 0)
+          if ((opCode & 0X0100) != 0)
             reg_list = reg_list | 0X8000;
           ldm(1, 13, reg_list, 1, 0);
         }
@@ -3283,23 +3279,23 @@ void spPC(uint op_code) {
 
 /**
  * @brief
- * @param op_code
+ * @param opCode
  */
-void lsmB(uint op_code) {
+void lsmB(uint opCode) {
   uint offset;
 
-  if ((op_code & 0X1000) == 0) {
-    if ((op_code & 0X0800) == 0) /* STM (IA) */
-      stm(1, (op_code >> 8) & 7, op_code & 0X000000FF, 1, 0);
+  if ((opCode & 0X1000) == 0) {
+    if ((opCode & 0X0800) == 0) /* STM (IA) */
+      stm(1, (opCode >> 8) & 7, opCode & 0X000000FF, 1, 0);
     else /* LDM (IA) */
-      ldm(1, (op_code >> 8) & 7, op_code & 0X000000FF, 1, 0);
+      ldm(1, (opCode >> 8) & 7, opCode & 0X000000FF, 1, 0);
   } else /* conditional BRANCH B(1) */
   {
-    if ((op_code & 0X0F00) != 0X0F00) /* Branch, not a SWI */
+    if ((opCode & 0X0F00) != 0X0F00) /* Branch, not a SWI */
     {
-      if (checkCC(op_code >> 8) == true) {
-        offset = (op_code & 0X00FF) << 1; /* sign extend */
-        if ((op_code & 0X0080) != 0)
+      if (checkCC(opCode >> 8) == true) {
+        offset = (opCode & 0X00FF) << 1; /* sign extend */
+        if ((opCode & 0X0080) != 0)
           offset = offset | 0XFFFFFE00;
 
         putRegister(15, getRegister(15, regCurrent) + offset, regCurrent);
@@ -3308,8 +3304,8 @@ void lsmB(uint op_code) {
       }
     } else /* SWI */
     {
-      offset = op_code & 0X00FF;
-      /* bodge op_code to pass only SWI No. N.B. no copro in Thumb */
+      offset = opCode & 0X00FF;
+      /* bodge opCode to pass only SWI No. N.B. no copro in Thumb */
       mySystem(offset);
     }
   }
@@ -3317,14 +3313,14 @@ void lsmB(uint op_code) {
 
 /**
  * @brief
- * @param op_code
+ * @param opCode
  * @param exchange
  */
-void thumbBranch1(uint op_code, int exchange) {
+void thumbBranch1(uint opCode, int exchange) {
   int offset, lr;
 
   lr = getRegister(14, regCurrent); /* Retrieve first part of offset */
-  offset = lr + ((op_code & 0X07FF) << 1);
+  offset = lr + ((opCode & 0X07FF) << 1);
 
   lr = getRegister(15, regCurrent) - 2 + 1; /* + 1 to indicate Thumb mode */
 
@@ -3339,28 +3335,28 @@ void thumbBranch1(uint op_code, int exchange) {
 
 /**
  * @brief
- * @param op_code
+ * @param opCode
  */
-void thumbBranch(uint op_code) {
+void thumbBranch(uint opCode) {
   int offset;
 
-  switch (op_code & 0X1800) {
+  switch (opCode & 0X1800) {
     case 0X0000: /* B -uncond. B(2)  */
-      offset = (op_code & 0X07FF) << 1;
-      if ((op_code & 0X0400) != 0)
+      offset = (opCode & 0X07FF) << 1;
+      if ((opCode & 0X0400) != 0)
         offset = offset | 0XFFFFF000; /* sign extend */
       putRegister(15, (getRegister(15, regCurrent) + offset), regCurrent);
       break;
 
     case 0X0800: /* BLX */
-      if ((op_code & 0X0001) == 0)
-        thumbBranch1(op_code, true);
+      if ((opCode & 0X0001) == 0)
+        thumbBranch1(opCode, true);
       else
         fprintf(stderr, "Undefined\n");
       break;
 
     case 0X1000: /* BL prefix */
-      BLPrefix = op_code & 0X07FF;
+      BLPrefix = opCode & 0X07FF;
       offset = BLPrefix << 12;
 
       if ((BLPrefix & 0X0400) != 0)
@@ -3370,7 +3366,7 @@ void thumbBranch(uint op_code) {
       break;
 
     case 0X1800:
-      thumbBranch1(op_code, false);
+      thumbBranch1(opCode, false);
       break;
   }
 }
