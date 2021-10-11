@@ -1,5 +1,5 @@
 # Do all
-all: aasm jimulator # kmd
+all: aasm jimulator kmd
 
 # Compile the KoMo2 binary.
 # ! WARNING ! Compiling with -O3 (highest level optimisations) is considered
