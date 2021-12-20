@@ -1,7 +1,6 @@
-/*  *** Check mnemonics file; had to regress version due to ftp cock-up ***   */
+//  *** Check mnemonics file; had to regress version due to ftp cock-up ***
 
-/* AASM - ARM assembler  Alpha+ version  J. Garside  UofM 16/8/12             */
-/*
+// AASM - ARM assembler  Alpha+ version  J. Garside  UofM 16/8/12
 //  To do								@@@@@@@@
 //  Symbol table lists
 //  Can't do ORG top - (end - start) ... difficult (!!), but should be possible
@@ -24,7 +23,6 @@
 // Okay/error return value added 16/8/12
 // Explicit mnemonic alternatives for shifts added 23/3/15
 
-*/
 // To do:	ADRL fixed, "MOVX" etc added - some more shakedown tests (?)  @@
 //              ADRL still causing problems :-(  'Length cycle' too great (4)
 //              found
@@ -44,23 +42,16 @@
 //		'record'/'structure' directive for creating offsets
 
 #include <stdio.h>
-#include <stdlib.h>  /* For {malloc, exit} */
-#include <string.h>  /* For {strcat, strlen, strcpy} */
-#include <unistd.h>  // for readlink
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <array>
 #include <string>
 
-#define TRUE (0 == 0)
-#define FALSE (0 != 0)
-
-#define MAX_PASSES 30 /* No of reiterations before giving up */
-#define SHRINK_STOP                                         \
-  (MAX_PASSES - 10) /* First pass where shrinkage forbidden \
-                     */
-
-#define VERILOG_MAX 0x10000 /* Maximum size of Verilog ROM output */
-
-#define IF_STACK_SIZE 10 /* Maximum nesting of IF clauses */
+#define MAX_PASSES 30                  // No of reiterations before giving up
+#define SHRINK_STOP (MAX_PASSES - 10)  // First pass where shrinkage forbidden
+#define VERILOG_MAX 0x10000            // Maximum size of Verilog ROM output
+#define IF_STACK_SIZE 10               // Maximum nesting of IF clauses
 
 #define SYM_TAB_HASH_BITS 4
 #define SYM_TAB_LIST_COUNT (1 << SYM_TAB_HASH_BITS)
@@ -69,22 +60,22 @@
 #define SYM_NAME_MAX 32
 #define LINE_LENGTH 256
 
-#define SYM_TAB_CASE_FLAG 1   /* Bit mask for case insensitive flag */
-#define SYM_TAB_EXPORT_FLAG 2 /* Keep whole table */
+#define SYM_TAB_CASE_FLAG 1    // Bit mask for case insensitive flag
+#define SYM_TAB_EXPORT_FLAG 2  // Keep whole table
 
-#define SYM_REC_DEF_FLAG 0x0100    /* Bit mask for `symbol defined' flag */
-#define SYM_REC_EXPORT_FLAG 0x0200 /* Bit mask for `export' flag */
-#define SYM_REC_EQU_FLAG 0x0400    /* Indicate `type' as EQU (abs) */
-#define SYM_REC_USR_FLAG 0x0800    /* Indicate `type' as DEF (abs) */
-#define SYM_REC_EQUATED (SYM_REC_EQU_FLAG | SYM_REC_USR_FLAG) /* Either */
-#define SYM_REC_USR_FLAG 0x0800 /* Indicate `type' as DEF (abs) */
+#define SYM_REC_DEF_FLAG 0x0100     // Bit mask for `symbol defined' flag
+#define SYM_REC_EXPORT_FLAG 0x0200  // Bit mask for `export' flag
+#define SYM_REC_EQU_FLAG 0x0400     // Indicate `type' as EQU (abs)
+#define SYM_REC_USR_FLAG 0x0800     // Indicate `type' as DEF (abs)
+#define SYM_REC_EQUATED (SYM_REC_EQU_FLAG | SYM_REC_USR_FLAG)  // Either
+#define SYM_REC_USR_FLAG 0x0800  // Indicate `type' as DEF (abs)
 
-#define SYM_REC_THUMB_FLAG 0x1000 /* Indicate label in `Thumb' area */
-                                  /* Lowest 8 bits used for pass count */
-#define SYM_REC_DATA_FLAG 0x2000  /* Data space offset */
+// Indicate label in `Thumb' area Lowest 8 bits used for pass count
+#define SYM_REC_THUMB_FLAG 0x1000
+#define SYM_REC_DATA_FLAG 0x2000  // Data space offset
 
-#define ALLOW_ON_FIRST_PASS 0x00010000 /* Bit masks to prevent errors */
-#define ALLOW_ON_INTER_PASS 0x00020000 /*  occurring when not wanted. */
+#define ALLOW_ON_FIRST_PASS 0x00010000  // Bit masks to prevent errors
+#define ALLOW_ON_INTER_PASS 0x00020000  // occurring when not wanted.
 #define WARNING_ONLY 0x00040000
 #define ALL_EXCEPT_LAST_PASS (ALLOW_ON_FIRST_PASS | ALLOW_ON_INTER_PASS)
 
@@ -132,12 +123,11 @@
 #define SYM_ADRL_PC 0x2900
 #define SYM_ERR_NO_SHFT 0x2A00
 #define SYM_NO_REG_HASH 0x2B00
-#define SYM_ERR_BROKEN 0xFF00 /* TEMP uncommitted @@@ */
+#define SYM_ERR_BROKEN 0xFF00  // TEMP uncommitted @@@
 
-/* evaluate return error states */
-/*
-#define EVAL_OKAY             0x0000		// Rationalise @@@
-*/
+// evaluate return error states
+// #define EVAL_OKAY             0x0000		// Rationalise @@@
+
 #define EVAL_OKAY SYM_NO_ERROR
 #define EVAL_NO_OPERAND 0x3000
 #define EVAL_NO_OPERATOR 0x3100
@@ -150,20 +140,20 @@
 #define EVAL_DIV_BY_ZERO (0x3800 | ALL_EXCEPT_LAST_PASS)
 #define EVAL_OPERAND_ERROR 0x3900
 #define EVAL_BAD_LOC_LAB 0x3A00
-#define EVAL_NO_LABEL_YET 0x3B00 /* Label not defined `above' (for `IF's)*/
+#define EVAL_NO_LABEL_YET 0x3B00  // Label not defined `above' (for `IF's)
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 /* Literal pool flags                                                         */
 
-#define LIT_DEFINED 0x01 /* Set when a literal pool entry has a value */
-#define LIT_NO_DUMP 0x02 /* Set when record needn't be planted */
-#define LIT_HALF 0x04    /* Set when value is halfword */
+#define LIT_DEFINED 0x01  // Set when a literal pool entry has a value
+#define LIT_NO_DUMP 0x02  // Set when record needn't be planted
+#define LIT_HALF 0x04     // Set when value is halfword
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 /* Expression evaluator                                                       */
 
 #define MATHSTACK_SIZE 20
-/* Enumerations used for both unary and binary operators */
+// Enumerations used for both unary and binary operators
 #define PLUS 0
 #define MINUS 1
 #define NOT 2
@@ -178,11 +168,11 @@
 #define XOR 11
 #define EQUALS 12
 #define NOT_EQUAL 13
-#define LOWER_THAN 14 /* Unsigned comparisons */
+#define LOWER_THAN 14  // Unsigned comparisons
 #define LOWER_EQUAL 15
 #define HIGHER_THAN 16
 #define HIGHER_EQUAL 17
-#define LESS_THAN 18 /* Signed comparisons */
+#define LESS_THAN 18  // Signed comparisons
 #define LESS_EQUAL 19
 #define GREATER_THAN 20
 #define GREATER_EQUAL 21
@@ -191,9 +181,9 @@
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 /* List file formatting constants                                             */
-#define LIST_LINE_LENGTH 120 /* Total line length */
-#define LIST_LINE_ADDRESS 10 /* Address field width */
-#define LIST_BYTE_COUNT 4    /* Number of bytes per line */
+#define LIST_LINE_LENGTH 120  // Total line length
+#define LIST_LINE_ADDRESS 10  // Address field width
+#define LIST_BYTE_COUNT 4     // Number of bytes per line
 #define LIST_BYTE_FIELD (LIST_LINE_ADDRESS + 3 * LIST_BYTE_COUNT + 2)
 #define LIST_LINE_LIST (LIST_LINE_LENGTH - 1 - LIST_BYTE_FIELD)
 
@@ -203,12 +193,12 @@
 
 #define ELF_TEMP_LENGTH 20
 
-#define ELF_MACHINE 40         /* ARM (?) */
-#define ELF_EHSIZE 52          /* Defined in standard */
-#define ELF_PHENTSIZE (4 * 8)  /* Defined in standard */
-#define ELF_SHENTSIZE (4 * 10) /* Defined in standard */
+#define ELF_MACHINE 40          // ARM (?)
+#define ELF_EHSIZE 52           // Defined in standard
+#define ELF_PHENTSIZE (4 * 8)   // Defined in standard
+#define ELF_SHENTSIZE (4 * 10)  // Defined in standard
 
-#define ELF_SHN_ABS 0xFFF1 /* Defined in standard */
+#define ELF_SHN_ABS 0xFFF1  // Defined in standard
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
@@ -246,19 +236,19 @@ typedef enum {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-typedef struct sym_record_name /* Symbol record definition */
+typedef struct sym_record_name  // Symbol record definition
 {
-  struct sym_record_name* pNext; /* Pointer to next record */
-  unsigned int count;            /* Number of characters in name */
+  struct sym_record_name* pNext;  // Pointer to next record
+  unsigned int count;             // Number of characters in name
   unsigned int hash;
   unsigned int flags;
-  unsigned int identifier;  /* Record identifier, also definition order */
-  unsigned int elf_section; /* Section number - purely for ELF driver */
+  unsigned int identifier;   // Record identifier, also definition order
+  unsigned int elf_section;  // Section number - purely for ELF driver
   int value;
-  char name[SYM_NAME_MAX]; /* Fixed field for name (quick) */
+  char name[SYM_NAME_MAX];  // Fixed field for name (quick)
 } sym_record;
 
-typedef struct /* Symbol table header definition */
+typedef struct  // Symbol table header definition
 {
   char* name;
   unsigned int symbol_number;
@@ -266,33 +256,33 @@ typedef struct /* Symbol table header definition */
   sym_record* pList[SYM_TAB_LIST_COUNT];
 } sym_table;
 
-typedef struct sym_table_item_name /* So we can make lists of symbol tables */
+typedef struct sym_table_item_name  // So we can make lists of symbol tables
 {
-  sym_table* pTable;                 /* Pointer to symbol table (or NULL) */
-  struct sym_table_item_name* pNext; /* Pointer to next record  (or NULL) */
+  sym_table* pTable;                  // Pointer to symbol table (or NULL)
+  struct sym_table_item_name* pNext;  // Pointer to next record  (or NULL)
 } sym_table_item;
 
-typedef struct local_label_name /* Local label element definition */
+typedef struct local_label_name  // Local label element definition
 {
-  struct local_label_name* pNext; /* Pointer to next record */
-  struct local_label_name* pPrev; /* Pointer to previous record */
-  unsigned int label;             /* The value of the label (number) */
-  unsigned int value;             /* The label word value */
+  struct local_label_name* pNext;  // Pointer to next record
+  struct local_label_name* pPrev;  // Pointer to previous record
+  unsigned int label;              // The value of the label (number)
+  unsigned int value;              // The label word value
   unsigned int flags;
 } local_label;
 
-typedef struct own_label_name /* Definition of label on current line */
+typedef struct own_label_name  // Definition of label on current line
 {
-  label_type sort;                /* What `sort' of label, if any */
-  struct sym_record_name* symbol; /* Pointer to symbol record, if present */
-  struct local_label_name* local; /* Pointer to local label, if present */
+  label_type sort;                 // What `sort' of label, if any
+  struct sym_record_name* symbol;  // Pointer to symbol record, if present
+  struct local_label_name* local;  // Pointer to local label, if present
 } own_label;
 
-typedef struct literal_record_name /* Literal pool element holder definition */
+typedef struct literal_record_name  // Literal pool element holder definition
 {
-  struct literal_record_name* pNext; /* Pointer to next record */
-  unsigned int address;              /* The address of the literal word */
-  unsigned int value;                /* The literal word value */
+  struct literal_record_name* pNext;  // Pointer to next record
+  unsigned int address;               // The address of the literal word
+  unsigned int value;                 // The literal word value
   unsigned int flags;
 } literal_record;
 
@@ -305,8 +295,8 @@ typedef struct elf_temp_name {
   char data[ELF_TEMP_LENGTH];
 } elf_temp;
 
-typedef struct elf_info_name /* Section info collecting point */
-{                            /* Just the bits I think need collecting */
+typedef struct elf_info_name  // Section info collecting point
+{                             // Just the bits I think need collecting
   struct elf_info_name* pNext;
   unsigned int name;
   unsigned int address;
@@ -314,13 +304,13 @@ typedef struct elf_info_name /* Section info collecting point */
   unsigned int size;
 } elf_info;
 
-typedef struct size_record_name /* Size of variable length operation */
-{                               /*  (form an ordered list) */
+typedef struct size_record_name  // Size of variable length operation
+{                                // (form an ordered list)
   struct size_record_name* pNext;
   unsigned int size;
 } size_record;
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+/*----------------------------------------------------------------------------*/
 
 const int SYM_RECORD_SIZE = sizeof(sym_record);
 const int SYM_TABLE_SIZE = sizeof(sym_table);
@@ -335,11 +325,16 @@ const int SIZE_RECORD_SIZE = sizeof(size_record);
 
 bool set_options(int argc, char* argv[]);
 
-bool input_line(FILE*, char*, unsigned int);
-bool parse_mnemonic_line(char*, sym_table*, sym_table*, sym_table*);
-unsigned int
-parse_source_line(char*, sym_table_item*, sym_table*, int, int, char**, char*);
-void print_error(char*, unsigned int, unsigned int, char*, int);
+bool input_line(FILE*, std::string&, unsigned int);
+bool parse_mnemonic_line(std::string&, sym_table*, sym_table*, sym_table*);
+unsigned int parse_source_line(std::string&,
+                               sym_table_item*,
+                               sym_table*,
+                               int,
+                               int,
+                               char**,
+                               char*);
+void print_error(std::string&, unsigned int, unsigned int, char*, int);
 unsigned int assemble_line(char*,
                            unsigned int,
                            unsigned int,
@@ -379,13 +374,13 @@ void assemble_redef_label(unsigned int,
                           int,
                           char*);
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+/*----------------------------------------------------------------------------*/
 
 unsigned int evaluate(std::string, unsigned int*, int*, sym_table*);
 int get_variable(char*, unsigned int*, int*, int*, bool*, sym_table*);
 int get_operator(char*, unsigned int*, int*, int*);
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+/*----------------------------------------------------------------------------*/
 
 sym_table* sym_create_table(char*, unsigned int);
 int sym_delete_table(sym_table*, bool);
@@ -410,7 +405,7 @@ void sym_print_table(sym_table*, label_category, label_sort, int, char*);
 void local_label_dump(local_label*, FILE*);
 void lit_print_table(literal_record*, FILE*);
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+/*----------------------------------------------------------------------------*/
 
 void byte_dump(unsigned int, unsigned int, char*, int);
 
@@ -433,7 +428,7 @@ void list_symbols(FILE*, sym_table*);
 void list_buffer_init(char*, unsigned int, int);
 void list_hex(unsigned int, unsigned int, char*);
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+/*----------------------------------------------------------------------------*/
 
 int skip_spc(char*, int);
 char* file_path(char*);
@@ -450,7 +445,7 @@ int allow_error(unsigned int, bool, bool);
 /*----------------------------------------------------------------------------*/
 /* Global variables                                                           */
 
-instr_set instruction_set; /* ARM or Thumb */
+instr_set instruction_set;  // ARM or Thumb
 char* input_file_name;
 char* symbols_file_name;
 char* list_file_name;
@@ -458,155 +453,170 @@ char* hex_file_name;
 char* elf_file_name;
 char* verilog_file_name;
 FILE *fList, *fHex, *fElf, *fVerilog;
-int symbols_stdout, list_stdout, hex_stdout, elf_stdout; /* Booleans */
+int symbols_stdout, list_stdout, hex_stdout, elf_stdout;  // Booleans
 int verilog_stdout;
 label_sort symbols_order;
 int list_sym, list_kmd;
 
-unsigned char Verilog_array[VERILOG_MAX]; /* Assemble Verilog output in array */
-unsigned int verilog_mem_size;            /* Size of buffer =used= */
+unsigned char Verilog_array[VERILOG_MAX];  // Assemble Verilog output in array
+unsigned int verilog_mem_size;             // Size of buffer =used=
 
-unsigned int sym_print_extras; /* <0> set for locals, <1> for literals */
+unsigned int sym_print_extras;  // <0> set for locals, <1> for literals
 
 unsigned int arm_variant;
 
-unsigned int assembly_pointer; /* Address at which to plant instruction */
-unsigned int def_increment;    /* Offset reached from assembly_pointer */
+unsigned int assembly_pointer;  // Address at which to plant instruction
+unsigned int def_increment;     // Offset reached from assembly_pointer
 bool assembly_pointer_defined;
 unsigned int entry_address;
 bool entry_address_defined;
-unsigned int data_pointer;    /* Used for creating record offsets etc. */
-unsigned int undefined_count; /* Number of references to undefined variables */
-unsigned int defined_count;   /* Number of variables defined this pass */
-unsigned int redefined_count; /* Number of variables redefined this pass */
-unsigned int pass_count;      /* Pass number, starts at 0 */
-unsigned int pass_errors;     /* Errors occurred in this pass */
-bool div_zero_this_pass;      /* Indicates /0 in pass, prevents code dump */
-bool dump_code;               /* Allow output (FALSE on last pass if error) */
+unsigned int data_pointer;     // Used for creating record offsets etc.
+unsigned int undefined_count;  // Number of references to undefined variables
+unsigned int defined_count;    // Number of variables defined this pass
+unsigned int redefined_count;  // Number of variables redefined this pass
+unsigned int pass_count;       // Pass number, starts at 0
+unsigned int pass_errors;      // Errors occurred in this pass
+bool div_zero_this_pass;       // Indicates /0 in pass, prevents code dump
+bool dump_code;                // Allow output (false on last pass if error)
 
-own_label* evaluate_own_label; /* Yuk! @@@@@ */
-/* Because evaluate needs to know if there is a local label on -current- line */
+own_label* evaluate_own_label;  // Yuk! @@@@@
+// Because evaluate needs to know if there is a local label on -current- line
 
-literal_record* literal_list; /* Start of the list of literals from "LDR =" */
-literal_record* literal_head; /* The next literal record `expected' */
-literal_record* literal_tail; /* The last literal record `dumped' */
+literal_record* literal_list;  // Start of the list of literals from "LDR ="
+literal_record* literal_head;  // The next literal record `expected'
+literal_record* literal_tail;  // The last literal record `dumped'
 
-local_label* loc_lab_list;     /* Start of the list of local labels */
-local_label* loc_lab_position; /* The current local label position */
+local_label* loc_lab_list;      // Start of the list of local labels
+local_label* loc_lab_position;  // The current local label position
 
-size_record* size_record_list;    /* Start of list of ADRL (etc.) lengths */
-size_record* size_record_current; /* Current record in above list */
-unsigned int size_changed_count;  /* Number of `instruction' size changes */
+size_record* size_record_list;     // Start of list of ADRL (etc.) lengths
+size_record* size_record_current;  // Current record in above list
+unsigned int size_changed_count;   // Number of `instruction' size changes
 
-bool if_stack[IF_STACK_SIZE + 1]; /* Used for nesting IF clauses */
+bool if_stack[IF_STACK_SIZE + 1];  // Used for nesting IF clauses
 int if_SP;
 
 unsigned int list_address;
 unsigned int list_byte;
-unsigned int list_line_position; /* Pos. in the src line copied to output */
+unsigned int list_line_position;  // Pos. in the src line copied to output
 char list_buffer[LIST_LINE_LENGTH];
 
 unsigned int hex_address;
 bool hex_address_defined;
 char hex_buffer[HEX_LINE_LENGTH];
 
-int elf_section_valid;    /* Flag: true if code dumped in elf_section */
-unsigned int elf_section; /* Current elf section number (for labels) */
+int elf_section_valid;     // Flag: true if code dumped in elf_section
+unsigned int elf_section;  // Current elf section number (for labels)
 unsigned int elf_section_old;
 bool elf_new_block;
 
 elf_temp* elf_record_list;
 elf_temp* current_elf_record;
 
-sym_table* arch_table; /* Table of possible processor architectures */
+sym_table* arch_table;  // Table of possible processor architectures
 sym_table* operator_table;
 sym_table* register_table;
 sym_table* cregister_table;
 sym_table* copro_table;
 sym_table* shift_table;
 
-/*----------------------------------------------------------------------------*/
-/* Entry point */
+// Recursion for INCLUDE files
+void code_pass(FILE*& fHandle,
+               char*& filename,
+               std::string& line,
+               unsigned int& error_code,
+               sym_table_item*& thumb_mnemonic_list,
+               sym_table_item*& arm_mnemonic_list,
+               sym_table*& symbol_table,
+               bool& last_pass,
+               bool& finished) {
+  unsigned int line_number;
+  char* include_file_path;  // Path as far as directory of "filename"
+  char* include_name;
+  FILE* incl_handle;
 
+  include_file_path = file_path(filename);  // Path to directory in use
+  line_number = 1;
+
+  while (!feof(fHandle)) {
+    include_name = NULL;                     // Don't normally return anything
+    input_line(fHandle, line, LINE_LENGTH);  // Errors ignored
+
+    if (instruction_set == THUMB) {
+      error_code =
+          parse_source_line(line, thumb_mnemonic_list, symbol_table, pass_count,
+                            last_pass, &include_name, include_file_path);
+    } else {
+      error_code =
+          parse_source_line(line, arm_mnemonic_list, symbol_table, pass_count,
+                            last_pass, &include_name, include_file_path);
+    }
+
+    if (error_code != EVAL_OKAY) {
+      print_error(line, line_number, error_code, filename, last_pass);
+    } else if (include_name != NULL) {
+      char* pInclude;
+
+      if (include_name[0] == '/') {
+        pInclude = include_name;  // Absolute
+      }
+      // Relative path - create new string
+      else {
+        pInclude = pathname(include_file_path, include_name);  // Add path
+      }
+
+      if ((incl_handle = fopen(pInclude, "r")) == NULL) {
+        print_error(line, line_number, SYM_NO_INCLUDE, filename, last_pass);
+        fprintf(stderr, "Can't open \"%s\"\n", include_name);
+        finished = true;
+      } else {
+        code_pass(incl_handle, pInclude, line, error_code, thumb_mnemonic_list,
+                  arm_mnemonic_list, symbol_table, last_pass, finished);
+        fclose(incl_handle);  // Doesn't leave file locked
+      }
+      if (pInclude != include_name) {
+        free(pInclude);  // If allocated (yuk)
+      }
+      free(include_name);
+    }
+    line_number++;  // Local to file
+  }
+
+  free(include_file_path);
+}
+
+// Create and initialise a symbol table
+sym_table* build_table(char* table_name,
+                       unsigned int flags,
+                       std::string* sym_names,
+                       int* values) {
+  sym_table* table;
+  int i;
+  sym_record* dummy;  // Don't want returned pointer
+
+  table = sym_create_table(table_name, flags);
+
+  for (i = 0; *(sym_names[i]) != '\0'; i++)  // repeat until "" found
+    sym_define_label(sym_names[i], values[i], 0, table, &dummy);
+
+  return table;
+}
+
+/**
+ * @brief Entry point 🎉
+ * @param argc
+ * @param argv
+ * @return int
+ */
 int main(int argc, char* argv[]) {
   FILE *fMnemonics, *fSource;
-  char line[LINE_LENGTH + 1];
+  std::string line(LINE_LENGTH + 1, '\0');
 
   sym_table *arm_mnemonic_table, *thumb_mnemonic_table, *directive_table;
   sym_table* symbol_table;
-  sym_table_item *arm_mnemonic_list, *thumb_mnemonic_list; /* Real lists */
+  sym_table_item *arm_mnemonic_list, *thumb_mnemonic_list;  // Real lists
   bool finished, last_pass;
   unsigned int error_code;
-
-  /* Recursion for INCLUDE files */
-  void code_pass(FILE * fHandle, char* filename) {
-    unsigned int line_number;
-    char* include_file_path; /* Path as far as directory of "filename" */
-    char* include_name;
-    FILE* incl_handle;
-
-    include_file_path = file_path(filename); /* Path to directory in use */
-    line_number = 1;
-
-    while (!feof(fHandle)) {
-      include_name = NULL; /* Don't normally return anything */
-      input_line(fHandle, line, LINE_LENGTH); /* Errors ignored @@@ */
-
-      if (instruction_set == THUMB)
-        error_code = parse_source_line(line, thumb_mnemonic_list, symbol_table,
-                                       pass_count, last_pass, &include_name,
-                                       include_file_path);
-      else
-        error_code =
-            parse_source_line(line, arm_mnemonic_list, symbol_table, pass_count,
-                              last_pass, &include_name, include_file_path);
-
-      /*
-printf("Hello Y %08X %s\n", symbol_table->pList[0], line);
-*/
-
-      if (error_code != EVAL_OKAY)
-        print_error(line, line_number, error_code, filename, last_pass);
-      else if (include_name != NULL) {
-        char* pInclude;
-
-        if (include_name[0] == '/')
-          pInclude = include_name; /* Absolute */
-        else                       /* Relative path - create new string */
-          pInclude = pathname(include_file_path, include_name); /* Add path */
-
-        if ((incl_handle = fopen(pInclude, "r")) == NULL) {
-          print_error(line, line_number, SYM_NO_INCLUDE, filename, last_pass);
-          fprintf(stderr, "Can't open \"%s\"\n", include_name);
-          finished = TRUE;
-        } else {
-          code_pass(incl_handle, pInclude);
-          fclose(incl_handle); /* Doesn't leave file locked @@@ */
-        }
-        if (pInclude != include_name)
-          free(pInclude); /* If allocated (yuk) */
-        free(include_name);
-      }
-      line_number++; /* Local to file */
-    }
-
-    free(include_file_path);
-  }
-
-  /* Create and initialise a symbol table */
-  sym_table* build_table(char* table_name, unsigned int flags, char** sym_names,
-                         int* values) {
-    sym_table* table;
-    int i;
-    sym_record* dummy; /* Don't want returned pointer */
-
-    table = sym_create_table(table_name, flags);
-
-    for (i = 0; *(sym_names[i]) != '\0'; i++) /* repeat until "" found */
-      sym_define_label(sym_names[i], values[i], 0, table, &dummy);
-
-    return table;
-  }
 
   arm_mnemonic_list = NULL;
   thumb_mnemonic_list = NULL;
@@ -615,11 +625,11 @@ printf("Hello Y %08X %s\n", symbol_table->pList[0], line);
   hex_file_name = "";
   elf_file_name = "";
   verilog_file_name = "";
-  symbols_stdout = FALSE;
-  list_stdout = FALSE;
-  hex_stdout = FALSE;
-  elf_stdout = FALSE;
-  verilog_stdout = FALSE;
+  symbols_stdout = false;
+  list_stdout = false;
+  hex_stdout = false;
+  elf_stdout = false;
+  verilog_stdout = false;
   verilog_mem_size = VERILOG_MAX; /* Default to maximum size */
 
   int result = set_options(argc, argv);
@@ -635,9 +645,9 @@ printf("Hello Y %08X %s\n", symbol_table->pList[0], line);
     /* Set up tables of operators, etc. */
 
     { /* Architecture names */
-      char* arch_name[] = {"v3",    "v3m",    "v4",   "v4xm", "v4t",
-                           "v4txm", "v5",     "v5xm", "v5t",  "v5txm",
-                           "v5te",  "v5texp", "all",  "any",  ""};
+      std::string arch_name[] = {"v3",    "v3m",    "v4",   "v4xm", "v4t",
+                                 "v4txm", "v5",     "v5xm", "v5t",  "v5txm",
+                                 "v5te",  "v5texp", "all",  "any",  ""};
 
       int arch_value[] = {v3,  v3M,   v4,   v4xM,   v4T, v4TxM, v5, v5xM,
                           v5T, v5TxM, v5TE, v5TExP, 0,   0,     -1};
@@ -647,9 +657,9 @@ printf("Hello Y %08X %s\n", symbol_table->pList[0], line);
     }
 
     { /* Diadic expression operator definitions */
-      char* op_name[] = {"and", "or",  "xor", "eor", "shl", "lsl", "shr",
-                         "lsr", "div", "mod", "eq",  "ne",  "lo",  "ls",
-                         "hi",  "hs",  "lt",  "le",  "gt",  "ge",  ""};
+      std::string op_name[] = {"and", "or",  "xor", "eor", "shl", "lsl", "shr",
+                               "lsr", "div", "mod", "eq",  "ne",  "lo",  "ls",
+                               "hi",  "hs",  "lt",  "le",  "gt",  "ge",  ""};
       int op_value[] = {AND,        OR,          XOR,          XOR,
                         LEFT_SHIFT, LEFT_SHIFT,  RIGHT_SHIFT,  RIGHT_SHIFT,
                         DIVIDE,     MODULUS,     EQUALS,       NOT_EQUAL,
@@ -662,11 +672,11 @@ printf("Hello Y %08X %s\n", symbol_table->pList[0], line);
     }
 
     { /* Register name definitions */
-      char* reg_name[] = {"r0",  "r1",  "r2", "r3",  "r4",  "r5",  "r6",
-                          "r7",  "r8",  "r9", "r10", "r11", "r12", "r13",
-                          "r14", "r15", "sp", "lr",  "pc",  "a1",  "a2",
-                          "a3",  "a4",  "v1", "v2",  "v3",  "v4",  "v5",
-                          "sb",  "v6",  "sl", "v7",  "fp",  "ip",  ""};
+      std::string reg_name[] = {"r0",  "r1",  "r2", "r3",  "r4",  "r5",  "r6",
+                                "r7",  "r8",  "r9", "r10", "r11", "r12", "r13",
+                                "r14", "r15", "sp", "lr",  "pc",  "a1",  "a2",
+                                "a3",  "a4",  "v1", "v2",  "v3",  "v4",  "v5",
+                                "sb",  "v6",  "sl", "v7",  "fp",  "ip",  ""};
       int reg_value[] = {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
                          12, 13, 14, 15, 13, 14, 15, 0,  1,  2,  3,  4,
                          5,  6,  7,  8,  9,  9,  10, 10, 11, 12, -1};
@@ -676,7 +686,7 @@ printf("Hello Y %08X %s\n", symbol_table->pList[0], line);
     }
 
     { /* Coprocessor register name definitions */
-      char* creg_name[] = {
+      std::string creg_name[] = {
           "cr0", "cr1",  "cr2",  "cr3",  "cr4",  "cr5",  "cr6",  "cr7", "cr8",
           "cr9", "cr10", "cr11", "cr12", "cr13", "cr14", "cr15", "c0",  "c1",
           "c2",  "c3",   "c4",   "c5",   "c6",   "c7",   "c8",   "c9",  "c10",
@@ -690,7 +700,7 @@ printf("Hello Y %08X %s\n", symbol_table->pList[0], line);
     }
 
     { /* Coprocessor name definitions */
-      char* copro_name[] = {
+      std::string copro_name[] = {
           "p0",   "p1",   "p2",   "p3",   "p4",   "p5",  "p6",  "p7",  "p8",
           "p9",   "p10",  "p11",  "p12",  "p13",  "p14", "p15", "cp0", "cp1",
           "cp2",  "cp3",  "cp4",  "cp5",  "cp6",  "cp7", "cp8", "cp9", "cp10",
@@ -704,7 +714,7 @@ printf("Hello Y %08X %s\n", symbol_table->pList[0], line);
     }
 
     { /* Shift definitions */
-      char* shift_name[] = {"lsl", "asl", "lsr", "asr", "ror", "rrx", ""};
+      std::string shift_name[] = {"lsl", "asl", "lsr", "asr", "ror", "rrx", ""};
       int shift_value[] = {0, 0, 1, 2, 3, 7, -1};
       shift_table =
           build_table("Shifts", SYM_TAB_CASE_FLAG, shift_name, shift_value);
@@ -766,15 +776,15 @@ printf("Hello Y %08X %s\n", symbol_table->pList[0], line);
       }
 
       symbol_table =
-          sym_create_table("Labels", 0); /* Labels are case sensitive */
+          sym_create_table("Labels", 0);  // Labels are case sensitive
       literal_list = NULL;
       loc_lab_list = NULL;
       size_record_list = NULL;
 
       pass_count = 0;
-      finished = FALSE;
-      last_pass = FALSE;
-      dump_code = FALSE;
+      finished = false;
+      last_pass = false;
+      dump_code = false;
 
       fHex = open_output_file(hex_stdout, hex_file_name);    /* Open required */
       fList = open_output_file(list_stdout, list_file_name); /*  output files */
@@ -788,9 +798,9 @@ printf("Hello Y %08X %s\n", symbol_table->pList[0], line);
       {
         fprintf(stderr, "Can't open %s\n", input_file_name);
         exit(144);  // Return 144 for can't open input
-        finished = TRUE;
+        finished = true;
       } else
-        finished = FALSE;
+        finished = false;
 
       if (fVerilog != NULL) {
         int i;
@@ -803,19 +813,19 @@ printf("Hello Y %08X %s\n", symbol_table->pList[0], line);
         assembly_pointer = 0;  /* Default */
         data_pointer = 0;
         entry_address = 0;
-        assembly_pointer_defined = TRUE; /* ??? @@@@  Okay for us! */
-        entry_address_defined = FALSE;
+        assembly_pointer_defined = true; /* ??? @@@@  Okay for us! */
+        entry_address_defined = false;
         arm_variant = 0; /* Default to any ARM architecture */
         pass_errors = 0;
-        div_zero_this_pass = FALSE;
-        hex_address_defined = FALSE;
-        elf_new_block = TRUE;
+        div_zero_this_pass = false;
+        hex_address_defined = false;
+        elf_new_block = true;
         undefined_count = 0; /* Reads of undefined variables on this pass */
         defined_count = 0;   /* Labels newly defined on this pass */
         redefined_count = 0; /* Labels with values changed on this pass */
         if_SP = 0;
-        if_stack[0] = TRUE;
-        elf_section_valid = FALSE; /* No bytes dumped yet */
+        if_stack[0] = true;
+        elf_section_valid = false; /* No bytes dumped yet */
         elf_section = 1;
         literal_head = NULL;
         literal_tail = NULL;
@@ -833,7 +843,7 @@ printf("Hello Y %08X %s\n", symbol_table->pList[0], line);
           char* literals = "Remaining literals";
 
           if (fList != NULL)
-            list_start_line(assembly_pointer, FALSE);
+            list_start_line(assembly_pointer, false);
           literal_dump(last_pass, literals, 0); /*  Much like an instruction */
           if (fList != NULL)
             list_end_line(literals);
@@ -841,16 +851,8 @@ printf("Hello Y %08X %s\n", symbol_table->pList[0], line);
 
         hex_dump_flush(); /* Ensure buffer is cleared */
 
-        //      printf("Pass %2d complete.  ", pass_count);
-        //      printf("Label changes: defined %3d; ", defined_count);
-        //      printf("values changed %3d; ", redefined_count);
-        //      printf("read while undefined %3d;\n", undefined_count);
-        // printf("\n");
-        // printf("Pass %2d complete: %d sizes changed.\n", pass_count,
-        // size_changed_count);
-
         if (pass_errors != 0) {
-          finished = TRUE;
+          finished = true;
           printf("Pass %2d: terminating due to %d error", pass_count,
                  pass_errors);
           if (pass_errors == 1)
@@ -859,11 +861,11 @@ printf("Hello Y %08X %s\n", symbol_table->pList[0], line);
             printf("s\n");
         } else {
           if (last_pass || (pass_count > MAX_PASSES))
-            finished = TRUE;
+            finished = true;
           else {
             if ((defined_count == 0) && (redefined_count == 0) &&
                 (undefined_count == 0)) {
-              last_pass = TRUE;                /* One more time ... */
+              last_pass = true;                /* One more time ... */
               dump_code = !div_zero_this_pass; /* If error don't plant code */
             }
             pass_count++;
@@ -872,7 +874,7 @@ printf("Hello Y %08X %s\n", symbol_table->pList[0], line);
 
         if (if_SP != 0) {
           printf("Pass completed with IF clause still open; terminating\n");
-          finished = TRUE;
+          finished = true;
         }
 
       } /* End of WHILE */
@@ -904,7 +906,7 @@ printf("Hello Y %08X %s\n", symbol_table->pList[0], line);
       if (pass_count > MAX_PASSES) {
         printf("Couldn't do it ... fed up!\n\n");
         printf("Undefined labels:\n");
-        sym_print_table(symbol_table, UNDEFINED, ALPHABETIC, TRUE, "");
+        sym_print_table(symbol_table, UNDEFINED, ALPHABETIC, true, "");
       } else {
         if (symbols_stdout || (symbols_file_name[0] != '\0')) {
           sym_print_table(symbol_table, ALL, symbols_order, symbols_stdout,
@@ -978,16 +980,16 @@ printf("Hello Y %08X %s\n", symbol_table->pList[0], line);
         }
       }
 
-      sym_delete_table(symbol_table, FALSE);
-      sym_delete_table(directive_table, FALSE);
-      sym_delete_table(arm_mnemonic_table, FALSE);
-      sym_delete_table(thumb_mnemonic_table, FALSE);
-      sym_delete_table(arch_table, FALSE);
-      sym_delete_table(operator_table, FALSE);
-      sym_delete_table(register_table, FALSE);
-      sym_delete_table(cregister_table, FALSE);
-      sym_delete_table(copro_table, FALSE);
-      sym_delete_table(shift_table, FALSE);
+      sym_delete_table(symbol_table, false);
+      sym_delete_table(directive_table, false);
+      sym_delete_table(arm_mnemonic_table, false);
+      sym_delete_table(thumb_mnemonic_table, false);
+      sym_delete_table(arch_table, false);
+      sym_delete_table(operator_table, false);
+      sym_delete_table(register_table, false);
+      sym_delete_table(cregister_table, false);
+      sym_delete_table(copro_table, false);
+      sym_delete_table(shift_table, false);
     }
   } else
     printf("No input file specified\n");
@@ -1005,7 +1007,7 @@ bool set_options(int argc, char* argv[]) {
   void file_option(int* std_out, char** filename, char* err_mss) {
     if (argc > 2) {
       if ((argv[1])[0] == '-')
-        *std_out = TRUE;
+        *std_out = true;
       else {
         *filename = &(*argv[1]);
         argc--;
@@ -1019,7 +1021,7 @@ bool set_options(int argc, char* argv[]) {
   bool okay;
   char c;
 
-  okay = FALSE;
+  okay = false;
 
   if (argc == 1) {
     printf("ARM assembler v0.28 (23/03/15)\n");
@@ -1141,7 +1143,7 @@ bool set_options(int argc, char* argv[]) {
       }
 
       printf("Input file: %s\n", input_file_name);
-      okay = TRUE;
+      okay = true;
     }
   }
   return okay;
@@ -1149,7 +1151,7 @@ bool set_options(int argc, char* argv[]) {
 
 /*----------------------------------------------------------------------------*/
 
-void print_error(char* line,
+void print_error(std::string& line,
                  unsigned int line_no,
                  unsigned int error_code,
                  char* filename,
@@ -1360,7 +1362,7 @@ void print_error(char* line,
 
 /*----------------------------------------------------------------------------*/
 
-bool input_line(FILE* file, char* buffer, unsigned int max) {
+bool input_line(FILE* file, std::string& buffer, unsigned int max) {
   int i;
   char c;
 
@@ -1372,23 +1374,27 @@ bool input_line(FILE* file, char* buffer, unsigned int max) {
         buffer[i++] = c;
     } while ((c != '\n') && (c != '\r') && !feof(file));
 
-    buffer[i] = '\0'; /* Terminate */
-    if ((i > 0) && ((buffer[i - 1] == '\n') || (buffer[i - 1] == '\r')))
-      buffer[i - 1] = '\0'; /* Strip LF */
+    buffer[i] = '\0';  // Terminate
+    if ((i > 0) && ((buffer[i - 1] == '\n') || (buffer[i - 1] == '\r'))) {
+      buffer[i - 1] = '\0';  // Strip LF
+    }
 
-    if (c == '\r')
-      c = getc(file); /* Strip off any silly DOS-iness */
-    if (c != '\n')
-      ungetc(c, file); /* Yuk! In case there's -just- a CR */
+    if (c == '\r') {
+      c = getc(file);  // Strip off any silly DOS-iness
+    }
+    if (c != '\n') {
+      ungetc(c, file);  // Yuk! In case there's -just- a CR
+    }
 
-    return TRUE;
-  } else
-    return FALSE; /* file not valid */
+    return true;
+  } else {
+    return false;  // file not valid
+  }
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-bool parse_mnemonic_line(char* line,
+bool parse_mnemonic_line(std::string& line,
                          sym_table* a_table,
                          sym_table* t_table,
                          sym_table* d_table) {
@@ -1550,14 +1556,14 @@ bool parse_mnemonic_line(char* line,
       }
     }
   } else
-    okay = TRUE; /* Blank line or comment */
+    okay = true; /* Blank line or comment */
 
   return okay;
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-unsigned int parse_source_line(char* line,
+unsigned int parse_source_line(std::string& line,
                                sym_table_item* mnemonic_list,
                                sym_table* symbols,
                                int pass_count,
@@ -1572,12 +1578,12 @@ unsigned int parse_source_line(char* line,
   bool mnemonic;
 
   error_code = SYM_NO_ERROR; /* @@@@ */
-  mnemonic = FALSE;
+  mnemonic = false;
   label_this_line.sort = NO_LABEL;
   pos = skip_spc(line, 0);
 
   if (last_pass && (fList != NULL))
-    list_start_line(assembly_pointer, FALSE);
+    list_start_line(assembly_pointer, false);
 
   if (!test_eol(line[pos])) /* Something on line - not comment */
   {
@@ -1626,7 +1632,7 @@ unsigned int parse_source_line(char* line,
                   MAYBE_SYMBOL; /* Could be reg. name, etc. */
           }
         } else
-          mnemonic = TRUE; /* Mnemonic first - no label on this line */
+          mnemonic = true; /* Mnemonic first - no label on this line */
       } else
         error_code = pos | SYM_ERR_SYNTAX; /* 1st char. on line is non-alpha. */
     }
@@ -1642,7 +1648,7 @@ unsigned int parse_source_line(char* line,
         if ((ptr = sym_find_label_list(buffer, mnemonic_list)) == NULL)
           error_code = pos | SYM_ERR_NO_MNEM; /*	//### */
         else {                                /* Mnemonic found */
-          mnemonic = TRUE;
+          mnemonic = true;
           pos = pos + j; /* Move position in line */
         }
       } else {                    /* Nothing recognisable found on line */
@@ -1778,7 +1784,7 @@ int do_literal(instr_set instr_type,
           literal_head->flags &= ~LIT_NO_DUMP; /* Long form */
           /* -Needed- here to guarantee termination of loop below */
           pTemp = literal_list; /* Guaranteed not NULL */
-          found = FALSE;
+          found = false;
 
           /* This searches whole assembly, no just currently pending pool */
           while (!found) /* Search for earlier, duplicate value */
@@ -1925,7 +1931,7 @@ unsigned int assemble_line(char* line,
     bool terminate, escape;
     char delimiter, c;
 
-    terminate = FALSE;
+    terminate = false;
 
     while (!terminate) {
       position = skip_spc(line, position);
@@ -1949,7 +1955,7 @@ unsigned int assemble_line(char* line,
             position++;
           } else { /* Line finished before string did */
             error_code = SYM_ENDLESS_STRING;
-            terminate = TRUE;
+            terminate = true;
           }
         }
         if (!terminate)
@@ -1966,14 +1972,14 @@ unsigned int assemble_line(char* line,
             error_code = EVAL_OKAY; /* Pretend it's okay */
           def_increment += size;    /* Continue, even if missing values */
         } else
-          terminate = TRUE;
+          terminate = true;
       }
 
       if (!terminate) {
         if (line[position] == ',')
           position++; /* Another element? */
         else
-          terminate = TRUE;
+          terminate = true;
       }
     } /* End of WHILE */
     //##
@@ -2328,7 +2334,7 @@ unsigned int assemble_line(char* line,
                   {
                     if (size == TYPE_WORD)
                       op_code =
-                          addr_shift(line, &position, op_code | reg, FALSE);
+                          addr_shift(line, &position, op_code | reg, false);
                     else
                       op_code = op_code | reg; /* No shift for LDRH */
                   } else
@@ -2386,7 +2392,7 @@ unsigned int assemble_line(char* line,
                   if (!cmp_next_non_space(line, &position, 0,
                                           ']')) { /* Something else here ... */
                     if (size == TYPE_WORD) {      /* Shift */
-                      op_code = addr_shift(line, &position, op_code, FALSE);
+                      op_code = addr_shift(line, &position, op_code, false);
 
                       if ((error_code == EVAL_OKAY) ||
                           allow_error(error_code, first_pass, last_pass)) {
@@ -2519,10 +2525,10 @@ dump) unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
             if (error_code ==
                 EVAL_OKAY) { /* Rm always present, so check omitted */
               if (cmp_next_non_space(line, &position, 0, '#')) /* Imm. mode */
-                op_code = data_op_immediate(line, &position, op_code, TRUE);
+                op_code = data_op_immediate(line, &position, op_code, true);
               else { /* Register mode */
                 if ((reg = get_reg(line, &position)) >= 0)
-                  op_code = addr_shift(line, &position, op_code | reg, TRUE);
+                  op_code = addr_shift(line, &position, op_code | reg, true);
                 else
                   error_code = SYM_BAD_REG | position;
               }
@@ -2886,7 +2892,7 @@ dump) unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
               op_code = op_code | (reg << 16) | 0x0000F000;
               if (cmp_next_non_space(line, &position, 0, ',')) {
                 if (cmp_next_non_space(line, &position, 0, '#')) /* Skip ',' */
-                  op_code = data_op_immediate(line, &position, op_code, FALSE);
+                  op_code = data_op_immediate(line, &position, op_code, false);
                 else {
                   if ((reg = get_reg(line, &position)) >= 0) /* Register (Rm) */
                     op_code = op_code | reg;
@@ -2909,7 +2915,7 @@ dump) unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
             fixed = count >= 0; /* Flag for loop termination */
 
             while
-              TRUE /* Something to go at? */
+              true /* Something to go at? */
               {
                 i = 0;
                 if (value != 0)
@@ -3644,7 +3650,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
           unsigned int Rd;
           bool imm, no_offset;
 
-          no_offset = FALSE; /* Used to amalgamate different syntaxes */
+          no_offset = false; /* Used to amalgamate different syntaxes */
 
           Rd =
               get_thumb_reg(line, &position, 0x00FF); /* Register to transfer */
@@ -3660,7 +3666,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
                 /* Want `old_pos' in case mode disallowed */
                 if (!cmp_next_non_space(line, &position, 0, ',')) {
                   if (line[position] == ']')
-                    no_offset = TRUE; /* No offset */
+                    no_offset = true; /* No offset */
                   else
                     error_code = SYM_ERR_SYNTAX | position;
                 }
@@ -3953,7 +3959,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
         // literal_dump(last_pass, line, assembly_pointer + operand);
         // printf("Hello?\n");
         if (fList != NULL)
-          list_start_line(assembly_pointer + operand, FALSE);
+          list_start_line(assembly_pointer + operand, false);
         /* Revise list file address */
 
         if (operand != 0)
@@ -4037,7 +4043,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
           char ident[LINE_LENGTH];
           sym_record* symbol;
 
-          terminate = FALSE;
+          terminate = false;
 
           while (!terminate) {
             position = skip_spc(line, position);
@@ -4058,10 +4064,10 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
               position = position + i;
             } else {
               error_code = SYM_ERR_SYNTAX | position;
-              terminate = TRUE;
+              terminate = true;
             }
             if (!cmp_next_non_space(line, &position, 0, ','))
-              terminate = TRUE;
+              terminate = true;
           }
         } break;
 
@@ -4104,7 +4110,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
         case 0xF0080000: /* ENTRY */
           if (!entry_address_defined) {
             entry_address = assembly_pointer;
-            entry_address_defined = TRUE;
+            entry_address_defined = true;
           } else
             error_code = SYM_DOUBLE_ENTRY;
           break;
@@ -4220,11 +4226,11 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
           error_code = evaluate(line, &position, &temp, symbol_table);
           if (my_label->symbol != NULL) {
             if (token == 0xF8000000)
-              assemble_redef_label(temp, TRUE, my_label, &error_code,
+              assemble_redef_label(temp, true, my_label, &error_code,
                                    SYM_REC_EQU_FLAG, pass_count, last_pass,
                                    line);
             else
-              assemble_redef_label(temp, TRUE, my_label, &error_code,
+              assemble_redef_label(temp, true, my_label, &error_code,
                                    SYM_REC_USR_FLAG, pass_count, last_pass,
                                    line);
           } else
@@ -4241,7 +4247,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
             error_code =
                 SYM_NO_ERROR; /* ORG undefined -itself- is not an error */
           if (fList != NULL)
-            list_start_line(assembly_pointer, FALSE);
+            list_start_line(assembly_pointer, false);
           /* Revise list file address */
           assemble_redef_label(assembly_pointer, assembly_pointer_defined,
                                my_label, &error_code, 0, pass_count, last_pass,
@@ -4264,7 +4270,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
 
           if (error_code == EVAL_OKAY) {
             data_pointer = temp;
-            assemble_redef_label(data_pointer, TRUE, my_label, &error_code,
+            assemble_redef_label(data_pointer, true, my_label, &error_code,
                                  SYM_REC_DATA_FLAG, pass_count, last_pass,
                                  line);
           }
@@ -4282,7 +4288,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
             if (temp != 0)
               data_pointer = data_pointer - (data_pointer % temp) + temp;
             /* Any label is after alignment */
-            assemble_redef_label(data_pointer, TRUE, my_label, &error_code,
+            assemble_redef_label(data_pointer, true, my_label, &error_code,
                                  SYM_REC_DATA_FLAG, pass_count, last_pass,
                                  line);
           }
@@ -4305,7 +4311,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
           }
 
           if (error_code == EVAL_OKAY) {
-            assemble_redef_label(data_pointer, TRUE, my_label, &error_code,
+            assemble_redef_label(data_pointer, true, my_label, &error_code,
                                  SYM_REC_DATA_FLAG, pass_count, last_pass,
                                  line);
             data_pointer = data_pointer + (temp * size);
@@ -4471,7 +4477,7 @@ int get_psr(char* line, unsigned int* pPos) {
       {
         bool okay;
 
-        okay = TRUE;
+        okay = true;
         (*pPos)++;
         while (okay)
           switch (line[*pPos]) {
@@ -4496,7 +4502,7 @@ int get_psr(char* line, unsigned int* pPos) {
               (*pPos)++;
               break;
             default:
-              okay = FALSE;
+              okay = false;
               break;
           }
       }
@@ -4541,12 +4547,12 @@ int data_op_imm(unsigned int value) /* Not particularly efficient */
     return (((x & 0xFFFFFFFF) >> (32 - j)) | (x << j)) & 0xFFFFFFFF;
   }
 
-  found = FALSE;
+  found = false;
   i = 0;
 
   while ((i < 16) && !found) {
     if ((rol32(value, 2 * i) & 0xFFFFFF00) == 0)
-      found = TRUE;
+      found = true;
     else
       i++;
   }
@@ -4832,13 +4838,13 @@ void hex_dump(unsigned int address, char value) {
              &hex_buffer[HEX_LINE_ADDRESS + 3 * (address % HEX_BYTE_COUNT)]);
 
     hex_address = address + 1;
-    hex_address_defined = TRUE;
+    hex_address_defined = true;
   }
 
   if ((hex_address % HEX_BYTE_COUNT) == 0) /* If end of line, dump */
   {
     fprintf(fHex, "%s\n", hex_buffer);
-    hex_address_defined = FALSE;
+    hex_address_defined = false;
   }
 
   return;
@@ -4849,7 +4855,7 @@ void hex_dump(unsigned int address, char value) {
 void hex_dump_flush(void) {
   if (hex_address_defined)
     fprintf(fHex, "%s\n", hex_buffer);
-  hex_address_defined = FALSE;
+  hex_address_defined = false;
   return;
 }
 
@@ -4858,7 +4864,7 @@ void hex_dump_flush(void) {
 void elf_dump(unsigned int address, char value) {
   elf_temp* pTemp;
 
-  elf_section_valid = TRUE; /* Note that we've dumped -something- in section */
+  elf_section_valid = true; /* Note that we've dumped -something- in section */
 
   if (elf_new_block ||
       (elf_section != elf_section_old)) {     /* New or unexpected address */
@@ -4871,7 +4877,7 @@ void elf_dump(unsigned int address, char value) {
 
     if (current_elf_record == NULL) { /* First record */
       elf_record_list = pTemp;
-      pTemp->continuation = FALSE;
+      pTemp->continuation = false;
     } else
       current_elf_record->pNext = pTemp;
 
@@ -4893,7 +4899,7 @@ void elf_dump(unsigned int address, char value) {
 void elf_new_section_maybe(void) {
   if (elf_section_valid) {
     elf_section++;
-    elf_section_valid = FALSE;
+    elf_section_valid = false;
   }
   return;
 }
@@ -5078,7 +5084,7 @@ void elf_dump_out(FILE* fElf, sym_table* table) {
     ptr = ptr->pNext;
   }
 
-  sym_delete_record_list(&head, FALSE); /* Destroy temporary list */
+  sym_delete_record_list(&head, false); /* Destroy temporary list */
 
   // printf("SHStrtab start:  %08X\n",
   // ELF_EHSIZE+total+symtab_length+strtab_length);
@@ -5162,13 +5168,13 @@ void list_start_line(unsigned int address, int cont) {
 
 void list_mid_line(unsigned int value, char* line, int size) {
   if (list_byte == 0)                         /* At start of first line */
-    list_buffer_init(line, list_byte, TRUE);  /* Zero output buffer */
+    list_buffer_init(line, list_byte, true);  /* Zero output buffer */
   else if (((list_byte % 4) == 0)             /* Start of another line */
            || (((list_byte % 4) + size) > 4)) /*  or about to overflow */
   {
     if (list_byte != 0)
       list_file_out();                       /* Dump buffer (?) */
-    list_buffer_init(line, list_byte, TRUE); /* Zero output buffer */
+    list_buffer_init(line, list_byte, true); /* Zero output buffer */
   }
 
   list_hex(value, 2 * size, &list_buffer[10 + 3 * (list_byte % 4)]);
@@ -5180,14 +5186,14 @@ void list_mid_line(unsigned int value, char* line, int size) {
 
 void list_end_line(char* line) {
   if (list_byte == 0)
-    list_buffer_init(line, list_byte, TRUE);
+    list_buffer_init(line, list_byte, true);
   /* No bytes were dumped */
   list_file_out();
 
   while (line[list_line_position] !=
          '\0') /* Deal with any continuation lines */
   {
-    list_buffer_init(line, 0, FALSE);
+    list_buffer_init(line, 0, false);
     list_file_out();
   }
 
@@ -5254,7 +5260,7 @@ void list_symbols(FILE* fList, sym_table* table) {
       pSym = pSym->pNext;
     }
 
-    sym_delete_record_list(&sorted_list, FALSE); /* Destroy temporary list */
+    sym_delete_record_list(&sorted_list, false); /* Destroy temporary list */
   }
   return;
 }
@@ -5345,9 +5351,9 @@ sym_table* sym_create_table(char* name, unsigned int flags) {
 /* Delete a symbol table, including all its contents, unless records are both */
 /* wanted and marked for export.                                              */
 /* On input: old_table is the symbol table for destruction                    */
-/*           export is a Boolean - TRUE allows records marked for export to   */
+/*           export is a Boolean - true allows records marked for export to   */
 /*             retained                                                       */
-/* Returns:  Boolean - TRUE if some of the table remains                      */
+/* Returns:  Boolean - true if some of the table remains                      */
 
 int sym_delete_table(sym_table* old_table, bool export) {
   int i;
@@ -5359,7 +5365,7 @@ int sym_delete_table(sym_table* old_table, bool export) {
     for (i = 0; i < SYM_TAB_LIST_COUNT;
          i++) /* Chain down lists, deleting records */
       if (sym_delete_record_list(&(old_table->pList[i]), export))
-        some_kept = TRUE;
+        some_kept = true;
 
   if (!some_kept) {
     free(old_table->name);
@@ -5429,7 +5435,7 @@ defn_return sym_define_label(char* name,
 /*           flags holds the attributes                                       */
 /*           table points to an existing symbol table                         */
 /*           **record defines a pointer for a return value                    */
-/* Returns:  TRUE if the record was found (previously existed)                */
+/* Returns:  true if the record was found (previously existed)                */
 /*           pointer to the appropriate record in var. specified by **record  */
 
 int sym_locate_label(char* name,
@@ -5445,11 +5451,11 @@ int sym_locate_label(char* name,
   if ((ptr2 = sym_find_record(table, ptr1)) == NULL) /* Label already exists? */
   {
     *record = ptr1; /* Point at new record */
-    result = FALSE;
+    result = false;
   } else {
     sym_delete_record(ptr1); /* Trash temporary record */
     *record = ptr2;          /* Point at discovered record */
-    result = TRUE;
+    result = true;
   }
 
   return result;
@@ -5524,14 +5530,14 @@ sym_record* sym_create_record(char* name,
 /* Will retain records marked for export if requested to.                     */
 /* On input: ptr1 is the adddress of the start of list pointer                */
 /*           export is a Boolean indicating that records may be retained      */
-/* Returns:  TRUE if any records have been kept                               */
+/* Returns:  true if any records have been kept                               */
 
 int sym_delete_record_list(sym_record** ptr1, int export) {
   bool some_kept;
   sym_record *ptr2,
       *ptr3; /* Current and next records; ptr1 => current pointer */
 
-  some_kept = FALSE; /* Default to keeping nothing */
+  some_kept = false; /* Default to keeping nothing */
 
   while (*ptr1 != NULL) /* While not end of list ... */
   {
@@ -5544,7 +5550,7 @@ int sym_delete_record_list(sym_record** ptr1, int export) {
       sym_delete_record(ptr2); /* Trash current record */
     } else {
       ptr1 = &ptr2->pNext; /* Move on ... */
-      some_kept = TRUE;    /* Noting that something was retained */
+      some_kept = true;    /* Noting that something was retained */
     }
   }
 
@@ -5591,12 +5597,12 @@ sym_record* sym_find_record(sym_table* table, sym_record* record) {
   if (table != NULL) {
     ptr =
         table->pList[record->hash & SYM_TAB_LIST_MASK]; /* Correct list start */
-    found = FALSE;
+    found = false;
 
     while ((ptr != NULL) && !found) {
       if ((ptr->hash == record->hash) && (ptr->count == record->count)) {
         i = 0;
-        found = TRUE;                     /* Speculation, at present */
+        found = true;                     /* Speculation, at present */
         while ((i < ptr->count) && found) /* Scan string */
         {
           found = (ptr->name[i] == record->name[i]); /* Not found after all? */
@@ -5771,7 +5777,7 @@ sym_record* sym_sort_symbols(sym_table* table,
 
         pptr = &sorted_list; /* Linked list insertion sort */
         ptr2 = sorted_list;
-        found = FALSE;
+        found = false;
         while ((ptr2 != NULL) && !found) {
           switch (how) /* Field used for sorting */
           {
@@ -5812,7 +5818,7 @@ sym_record* sym_sort_symbols(sym_table* table,
             pptr = &(ptr2->pNext);
             ptr2 = ptr2->pNext; /* Lower, keep going */
           } else
-            found = TRUE;
+            found = true;
 
           //        DUPLICATES  ???
         }
@@ -5893,7 +5899,7 @@ void sym_print_table(sym_table* table,
       ptr = ptr->pNext;
     }
 
-    sym_delete_record_list(&sorted_list, FALSE); /* Destroy temporary list */
+    sym_delete_record_list(&sorted_list, false); /* Destroy temporary list */
 
     if ((sym_print_extras & 1) != 0)
       local_label_dump(loc_lab_list, handle);
@@ -5927,13 +5933,13 @@ void local_label_dump(local_label* pTable, FILE* handle) {
 void lit_print_table(literal_record* pTemp, FILE* handle) {
   bool nothing;
 
-  nothing = TRUE;
+  nothing = true;
 
   while (pTemp != NULL) {
     if ((pTemp->flags & LIT_NO_DUMP) == 0) {
       if (nothing) {
         fprintf(handle, "\nLiteral pool:  Address     Value\n");
-        nothing = FALSE;
+        nothing = false;
       }
       fprintf(handle, "              ");
       if ((pTemp->flags & LIT_HALF) == 0)
@@ -5969,7 +5975,7 @@ void Eval_inner(int priority,
   bool done, bracket;
   unsigned int operator, operand, unary;
 
-  done = FALSE;  // Termination indicator
+  done = false;  // Termination indicator
 
   math_stack[math_SP] = priority;
   math_SP = math_SP + 1;  // Stack `start' marker
@@ -6037,7 +6043,7 @@ void Eval_inner(int priority,
                   if ((error == EVAL_OKAY) && (first_error == EVAL_OKAY)) {
                     error = EVAL_DIV_BY_ZERO;
                   }
-                  div_zero_this_pass = TRUE;
+                  div_zero_this_pass = true;
                 }
                 break;
               case MODULUS:
@@ -6164,7 +6170,7 @@ void Eval_inner(int priority,
       }
     }
     if (error != EVAL_OKAY) {
-      done = TRUE;  // Terminate on error whatever else
+      done = true;  // Terminate on error whatever else
 
       // Include position on line (if poss.)
       if (error == EVAL_NO_OPENBR) {
@@ -6252,7 +6258,7 @@ int get_variable(char* input,
   ii = *pos;                     // String pointer within routine
 
   *unary = PLUS;     // Default
-  *bracket = FALSE;  // Default - no brackets
+  *bracket = false;  // Default - no brackets
   *value = 0;
 
   // Deal with unary operators
@@ -6270,7 +6276,7 @@ int get_variable(char* input,
   }
 
   if (input[ii] == '(') {  // Open brackets instead of value
-    *bracket = TRUE;
+    *bracket = true;
     ii++;  // Skip bracket
     status = EVAL_OKAY;
   } else {
@@ -6338,7 +6344,7 @@ int get_variable(char* input,
         } else {
           bool found;
 
-          found = FALSE;
+          found = false;
 
           // Seach backwards
           if ((directions & 1) != 0) {
@@ -6373,7 +6379,7 @@ int get_variable(char* input,
           ii++;
 
           // 'Escaped' character?
-          // ;  if (TRUE)  Insert if escapes
+          // ;  if (true)  Insert if escapes
           // unwanted
           // No ...
           if (input[ii] != '\\') {
@@ -6919,11 +6925,11 @@ int get_num(char* line, int* position, int* value, unsigned int radix) {
 
   i = skip_spc(line, *position);
   *value = 0;
-  found = FALSE;
+  found = false;
 
   while ((new_digit = num_char(line, &i, radix)) >= 0) {
     *value = (*value * radix) + new_digit;
-    found = TRUE;
+    found = true;
     i++;
   }
 
