@@ -10,8 +10,7 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
 #define KNOWN_CPUS 1
-#include <gdk/gdk.h>
-#include <gtk/gtk.h>
+
 #include <stdio.h>
 #include "chump.h"
 #include "global.h"
@@ -20,8 +19,6 @@
 
 #define MAX_SERIAL_WORD 4
 /* Currently the maximum size of a word sent to emulator or board */
-
-#define SPECIAL_REGISTER_COUNT 3 /* "Special registers" are SP, LR, PC */
 
 /* The following define possible states of the board */
 
@@ -50,14 +47,6 @@
 #define RUN_FLAG_BREAK 0x10
 #define RUN_FLAG_WATCH 0x20
 #define RUN_FLAG_INIT (RUN_FLAG_WATCH | RUN_FLAG_BREAK)
-
-typedef enum { GDK_FONT_FONT, GDK_FONT_FONTSET } GdkFontType;
-
-typedef struct _GdkFont {
-  GdkFontType type;
-  gint ascent;
-  gint descent;
-} GdkFont;
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 /* The following defines possible instructions that can be sent to the board  */
@@ -106,24 +95,6 @@ typedef enum {                /* Board instructions unsigned char */
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-/**
- * @brief Feature struct
- *
- */
-typedef struct feature {
-  unsigned char reference_number;
-  int sub_reference_number;
-  char* name;  // its name as recognised from .komodo file
-  feature_type type;
-  /* see above - enumeration with different supported features */
-  union { /* the data within that feature */
-    xilinx_fpga_data xilinx_fpga;
-    terminal_data terminal;
-    counter_data counter;
-  } data;
-  unsigned char dev_number;
-  /* number to communicate by - serial number assigned depending on the order */
-} feature; /*   the board sent it */
 
 /**
  * @brief Memory Segments
@@ -150,20 +121,6 @@ typedef struct reg_bank {
   bool valid;             // Indicates that registers have been fetched
 } reg_bank;
 
-/**
- * @brief
- * special_reg struct
- */
-typedef struct special_reg {
-  char* name;           /* Name of register */
-  unsigned char* value; /* offset of value */
-  GdkColor colour;
-  char** pixmap_data;
-  cairo_surface_t* pixmap;
-  cairo_surface_t* bitmap;
-  bool active; /* if activated or not */
-  int* valid;
-} special_reg; /* flags use 1 char each */
 
 /**
  * @brief A record containing back-end characteristics
@@ -174,7 +131,6 @@ typedef struct target_system {
   int cpu_subref;
   char* cpu_name;  // Points to someone else's space
   unsigned int feature_count;
-  feature* pArray_F;  // Space allocated
   unsigned int memory_count;
   memory_segment* pArray_M;  // Space allocated
   int memory_ptr_width;
@@ -193,18 +149,12 @@ char* rcfile;      /* The name of the file to be opened - .komodo */
 bool use_internal; /* ... config. file */
 bool VERBOSE;      /* Be loud and informative or not */
 
-GtkStyle* fixed_style;
-
 target_type
     interface_type; /* Indicates what board/virtual board we work with */
 int board_version;  /* retains the version of the board */
                     /* -2 = uninitialised, -1 = broken */
 
 target_system* board; /* Pointer to record holding current backend details */
-
-special_reg
-    special_registers[SPECIAL_REGISTER_COUNT];  // #!#!# Should go in `board'
-                                                // record too ???@@@
 
 /***************************/
 /** Locking               **/

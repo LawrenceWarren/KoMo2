@@ -537,9 +537,8 @@ int main(int argc, char* argv[]) {
   boolean finished, last_pass;
   unsigned int error_code;
 
-  void code_pass(FILE * fHandle,
-                 char* filename) /* Recursion for INCLUDE files */
-  {
+  /* Recursion for INCLUDE files */
+  void code_pass(FILE * fHandle, char* filename) {
     unsigned int line_number;
     char* include_file_path; /* Path as far as directory of "filename" */
     char* include_name;
@@ -591,7 +590,6 @@ printf("Hello Y %08X %s\n", symbol_table->pList[0], line);
     }
 
     free(include_file_path);
-    return;
   }
 
   /* Create and initialise a symbol table */
@@ -2181,8 +2179,8 @@ unsigned int assemble_line(char* line,
         }
       }
     } else /* Check for `dangling' end after comma */
-        if (shift < -1)
-      error_code = SYM_ERR_NO_SHFT | *pPosition;
+      if (shift < -1)
+        error_code = SYM_ERR_NO_SHFT | *pPosition;
 
     return op_code;
   }
@@ -2802,23 +2800,22 @@ dump) unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
             case 0x00003000: /* BLX */
               if ((reg = get_reg(line, &position)) >= 0)
                 op_code = op_code | 0x012FFF30 | reg;
-              else /* Rm not found */
-                  if ((token & 0xF0000000) ==
-                      0xE0000000) /* Only unconditional */
-              {
-                error_code = evaluate(line, &position, &value, symbol_table);
-                value = value - (assembly_pointer + 8);
+              else                                      /* Rm not found */
+                if ((token & 0xF0000000) == 0xE0000000) /* Only unconditional */
+                {
+                  error_code = evaluate(line, &position, &value, symbol_table);
+                  value = value - (assembly_pointer + 8);
 
-                if ((value & 1) != 0) /* Not halfword aligned */
-                  error_code = SYM_UNALIGNED_BRANCH;
-                else if (((value & 0xFE000000) == 0x00000000) /* In range? */
-                         || ((value & 0xFE000000) == 0xFE000000))
-                  op_code = 0xFA000000 | ((value & 0x03FFFFFC) >> 2) |
-                            ((value & 2) << 23);
-                else
-                  error_code = SYM_OORANGE_BRANCH;
-              } else
-                error_code = SYM_NO_COND;
+                  if ((value & 1) != 0) /* Not halfword aligned */
+                    error_code = SYM_UNALIGNED_BRANCH;
+                  else if (((value & 0xFE000000) == 0x00000000) /* In range? */
+                           || ((value & 0xFE000000) == 0xFE000000))
+                    op_code = 0xFA000000 | ((value & 0x03FFFFFC) >> 2) |
+                              ((value & 2) << 23);
+                  else
+                    error_code = SYM_OORANGE_BRANCH;
+                } else
+                  error_code = SYM_NO_COND;
               break;
 
             case 0x00004000: /* PLD */
@@ -2975,10 +2972,11 @@ dump) unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
 
                   extras = variable_item_size(first_pass, extras);
                 } else /* Fixed length: ADR(n) */
-                    if (error_code == eval_okay)
-                  adr_loop(x, (token >> 12) & 3); /* Pass length to cruncher */
-                else
-                  extras = (token >> 10) & 0xC; /* Length as specified */
+                  if (error_code == eval_okay)
+                    adr_loop(x,
+                             (token >> 12) & 3); /* Pass length to cruncher */
+                  else
+                    extras = (token >> 10) & 0xC; /* Length as specified */
               } else
                 error_code = SYM_NO_COMMA | position; /* ',' not found */
             }
@@ -3054,8 +3052,8 @@ dump) unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
                                       error_code = SYM_BAD_CP_OP; /*Bad Op. #2*/
                                   }
                                 } else /* Last field optional for MCR/MRC */
-                                    if (parameters[4] == 2) /* CDP only */
-                                  error_code = SYM_NO_COMMA | position;
+                                  if (parameters[4] == 2) /* CDP only */
+                                    error_code = SYM_NO_COMMA | position;
                               }
                             } else
                               error_code = SYM_BAD_REG | position; /*No CRm*/
@@ -4021,8 +4019,8 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
             if (line[position] == ',')
               fill_space(operand); /*Fill with value (?)*/
             else                   /* Reorigin ELF by starting new section */
-                if (operand != 0)
-              elf_new_section_maybe(); /* Reorigin in needed */
+              if (operand != 0)
+                elf_new_section_maybe(); /* Reorigin in needed */
 
             //##
             if (if_stack[if_SP])

@@ -427,28 +427,26 @@ const bool DisassemblyModel::handleKeyPress(const GdkEventKey* const e) {
   else if (e->keyval == GDK_KEY_Return) {
     onBreakpointToggle(&(*rows)[hasFocus]);
     return true;
-
   }
 
   // If escape pressed and in focus, lose focus
   else if (e->keyval == GDK_KEY_Escape) {
-    switch (hasFocus < rows->size() / 2) {
+    if (hasFocus < rows->size() / 2) {
       // Help button grabs focus
-      case true:
-        getParent()
-            ->getMainWindow()
-            ->getControlsView()
-            ->getHelpButton()
-            ->grab_focus();
-        return true;
+      getParent()
+          ->getMainWindow()
+          ->getControlsView()
+          ->getHelpButton()
+          ->grab_focus();
+      return true;
+    } else {
       // output box grabs focus
-      case false:
-        getParent()
-            ->getMainWindow()
-            ->getTerminalView()
-            ->getTextView()
-            ->grab_focus();
-        return true;
+      getParent()
+          ->getMainWindow()
+          ->getTerminalView()
+          ->getTextView()
+          ->grab_focus();
+      return true;
     }
   }
 

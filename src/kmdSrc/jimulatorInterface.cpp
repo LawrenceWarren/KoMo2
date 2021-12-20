@@ -32,6 +32,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <sstream>
 
 /**
  * @brief The maximum number of bytes that can be read from a source file.
