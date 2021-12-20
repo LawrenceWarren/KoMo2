@@ -6169,21 +6169,28 @@ unsigned int evaluate(char* string,
     return error;
 }
 
-/*----------------------------------------------------------------------------*/
-/* Get a quantity from the front of the passed ASCII input string, stripping  */
-/* the value in the process.                                                  */
-/* On entry: *input points to the input string                                */
-/*            *pos points to the offset in this string                        */
-/*            *value points to the location for the result value              */
-/*            *unary points to the location for the result's unary indicator  */
-/*            *bracket points to the location of a Boolean "found '(' signal  */
-/*            *symbol_table points to the symbol table to search [@@ extend]  */
-/* On exit:  the position at *pos is adjusted to the end of the variable      */
-/*           the value at *value contains the result, assuming no error       */
-/*           the value at *unary contains a unary code, assuming no error     */
-/*           the value at *bracket contains a "'(' found instead" indicator   */
-/*           the return value is the error status                             */
-
+/**
+ * @brief Get a quantity from the front of the passed ASCII input string,
+ * stripping the value in the process.
+ * On entry: *input points to the input string
+ *            *pos points to the offset in this string
+ *            *value points to the location for the result value
+ *            *unary points to the location for the result's unary indicator
+ *            *bracket points to the location of a Boolean "found '(' signal
+ *            *symbol_table points to the symbol table to search [@@ extend]
+ * On exit:  the position at *pos is adjusted to the end of the variable
+ *           the value at *value contains the result, assuming no error
+ *           the value at *unary contains a unary code, assuming no error
+ *           the value at *bracket contains a "'(' found instead" indicator
+ *           the return value is the error status
+ * @param input
+ * @param pos
+ * @param value
+ * @param unary
+ * @param bracket
+ * @param symbol_table
+ * @return int
+ */
 int get_variable(char* input,
                  unsigned int* pos,
                  int* value,
@@ -6193,16 +6200,16 @@ int get_variable(char* input,
   int status, radix;
   unsigned int ii;
 
-  status = eval_no_operand;     /* In case nothing found */
-  radix = -1;                   /* Indicates no numeric constant spotted */
-  *pos = skip_spc(input, *pos); /* In case of error want this at next item */
-  ii = *pos;                    /* String pointer within routine */
+  status = eval_no_operand;      // In case nothing found
+  radix = -1;                    // Indicates no numeric constant spotted
+  *pos = skip_spc(input, *pos);  // In case of error want this at next item
+  ii = *pos;                     // String pointer within routine
 
-  *unary = PLUS;    /* Default */
-  *bracket = FALSE; /* Default - no brackets */
+  *unary = PLUS;     // Default
+  *bracket = FALSE;  // Default - no brackets
   *value = 0;
 
-  /* Deal with unary operators */
+  // Deal with unary operators
   if (input[ii] == '+') {
     ii = skip_spc(input, ii + 1);
   } else if (input[ii] == '-') {
@@ -6216,127 +6223,149 @@ int get_variable(char* input,
     ii = skip_spc(input, ii + 1);
   }
 
-  if (input[ii] == '(') { /* Open brackets instead of value */
+  if (input[ii] == '(') {  // Open brackets instead of value
     *bracket = TRUE;
-    ii++;               /* Skip bracket */
-    status = eval_okay; /* Legal syntax */
+    ii++;  // Skip bracket
+    status = eval_okay;
   } else {
     int i;
     char ident[LINE_LENGTH];
     sym_record* symbol;
 
-    if ((i = get_identifier(input, ii, ident, LINE_LENGTH)) >
-        0) { /* Something taken */
+    if ((i = get_identifier(input, ii, ident, LINE_LENGTH)) > 0) {
+      // Something taken
       if ((symbol = sym_find_label(ident, symbol_table)) != NULL) {
-        if ((symbol->flags & SYM_REC_DEF_FLAG) !=
-            0) { /* Label present and with a valid value */
+        // Label present and with a valid value
+        if ((symbol->flags & SYM_REC_DEF_FLAG) != 0) {
           *value = symbol->value;
           status = eval_okay;
-        } else { /* Label found but value invalid */
-          status = eval_label_undef | ii;
-          undefined_count++; /* Increment global variable */
         }
-      } else { /* Label not found */
+        // Label found but value invalid
+        else {
+          status = eval_label_undef | ii;
+          undefined_count++;  // Increment global variable
+        }
+        // Label not found
+      } else {
         status = eval_no_label | ii;
       }
-      ii = ii + i; /* Step pointer on */
-    }              /* End of label gathering */
-    else {
+      ii = ii + i;  // Step pointer on End of label gathering
+    } else {
       if (input[ii] == '\%') {
         local_label *pStart, *pTemp;
         char c;
-        int directions; /* Bit flags for search directions */
+        int directions;  // Bit flags for search directions
         unsigned int label;
 
         c = input[ii + 1] & 0xDF;
+
         if (c == 'B') {
           directions = 1;
           ii = ii + 2;
-        } /* Backwards */
+        }
+        // Backwards
         else if (c == 'F') {
           directions = 2;
           ii = ii + 2;
-        } /* Forwards  */
+        }
+        // Forwards
         else {
           directions = 3;
           ii = ii + 1;
-        } /* Both ways */
+        }  // Both ways
 
+        // If searching forwards only and no local label on this line
         if ((evaluate_own_label->sort != LOCAL_LABEL) &&
-            ((directions & 1) == 0)) { /* If searching forwards only and no
-                                          local label on this line */
-          if (loc_lab_position == NULL)
-            pStart = loc_lab_list; /* Start of list */
-          else
+            ((directions & 1) == 0)) {
+          if (loc_lab_position == NULL) {
+            pStart = loc_lab_list;  // Start of list
+          } else {
             pStart = loc_lab_position->pNext;
-        } else /* If searching backwards, own label will be present already */
-          pStart = loc_lab_position;
-        if (!get_num(input, &ii, &label, 10))
-          status = eval_bad_loc_lab;
+          }
+        }
+        // If searching backwards, own label will be present already
         else {
+          pStart = loc_lab_position;
+        }
+        if (!get_num(input, &ii, &label, 10)) {
+          status = eval_bad_loc_lab;
+        } else {
           boolean found;
 
           found = FALSE;
 
-          if ((directions & 1) != 0) /* Seach backwards */
-          {
+          // Seach backwards
+          if ((directions & 1) != 0) {
             pTemp = pStart;
-            while ((pTemp != NULL) && !found)
-              if (!(found = (label == pTemp->label)))
+            while ((pTemp != NULL) && !found) {
+              if (!(found = (label == pTemp->label))) {
                 pTemp = pTemp->pPrev;
+              }
+            }
           }
 
-          if (!found && ((directions & 2) != 0)) /* Seach forwards */
-          {
+          // Seach forwards
+          if (!found && ((directions & 2) != 0)) {
             pTemp = pStart;
-            while ((pTemp != NULL) && !found)
-              if (!(found = (label == pTemp->label)))
+            while ((pTemp != NULL) && !found) {
+              if (!(found = (label == pTemp->label))) {
                 pTemp = pTemp->pNext;
+              }
+            }
           }
 
           if (found) {
             status = eval_okay;
             *value = pTemp->value;
-          } else
+          } else {
             status = eval_no_label;
+          }
         }
       } else {
-        if (input[ii] == '\'') /* Character constant */
-        {
+        // Character constant
+        if (input[ii] == '\'') {
           ii++;
 
-          if (input[ii] != '\\') /* 'Escaped' character? */
-          //   ;  if (TRUE)                                 /* Insert if escapes
-          //   unwanted */
-          { /* No ... */
+          // 'Escaped' character?
+          // ;  if (TRUE)  Insert if escapes
+          // unwanted
+          // No ...
+          if (input[ii] != '\\') {
             if ((input[ii] != '\0') && (input[ii] != '\n') &&
                 (input[ii + 1] == '\'')) {
               *value = input[ii];
               ii += 2;
               status = eval_okay;
-            } else
+            } else {
               status = eval_operand_error | ii;
-          } else { /* C-style escaped characters */
-            ii++;  /* Skip '\' */
+            }
+          }
+          // C-style escaped characters
+          else {
+            ii++;  // Skip '\'
             if ((input[ii] != '\0') && (input[ii] != '\n') &&
                 (input[ii + 1] == '\'')) {
               *value = c_char_esc(input[ii]);
               ii += 2;
               status = eval_okay;
-            } else
+            } else {
               status = eval_operand_error | ii;
+            }
           }
         } else {
           if (input[ii] == '.') {
             if (assembly_pointer_defined) {
               *value = assembly_pointer + def_increment;
               status = eval_okay;
-            } else
+            } else {
               status = eval_label_undef | ii;
+            }
             ii++;
-          } else {                /* Try for a number */
-            if (input[ii] == '0') /* 'orrible 'ex prefices, etc. */
-            {
+          }
+          // Try for a number
+          else {
+            // 'orrible 'ex prefices, etc.
+            if (input[ii] == '0') {
               if ((input[ii + 1] & 0xDF) == 'X') {
                 ii += 2;
                 radix = 16;
@@ -6345,8 +6374,8 @@ int get_variable(char* input,
                 radix = 2;
               }
             }
-            if (radix < 0) /* Not yet identified */
-            {
+            // Not yet identified
+            if (radix < 0) {
               if ((input[ii] >= '0') && (input[ii] <= '9'))
                 radix = 10;
               else if (input[ii] == '$') {
@@ -6364,10 +6393,11 @@ int get_variable(char* input,
               }
             }
             if (radix > 0) {
-              if (get_num(input, &ii, value, radix))
+              if (get_num(input, &ii, value, radix)) {
                 status = eval_okay;
-              else
+              } else {
                 status = eval_out_of_radix;
+              }
             }
           }
         }
@@ -6375,25 +6405,31 @@ int get_variable(char* input,
     }
   }
 
-  if ((status == eval_okay) || ((status & ALL_EXCEPT_LAST_PASS) != 0))
-    *pos = ii;   /* Move input pointer if successful (in some degree) */
-  return status; /* Return error code */
+  if ((status == eval_okay) || ((status & ALL_EXCEPT_LAST_PASS) != 0)) {
+    *pos = ii;  // Move input pointer if successful (in some degree)
+  }
+
+  return status;  // Return error code
 }
 
-/*----------------------------------------------------------------------------*/
-/* Get an operator from the front of the passed ASCII input string, stripping */
-/* it in the process.  Returns the token and the priority.                    */
-/* On entry: *input points to the input string                                */
-/*            *pos points to the offset in this string                        */
-/*            *operator points to the location for the operator code          */
-/*            *priority points to the location for the priority code          */
-/*                   0 is the lowest priority and is reserved for terminators */
-/*                   priority 1 is reserved for brackets                      */
-/* On exit:  the pointer at *pos is adjusted to the end of the expression     */
-/*           the value at *operator contains the operator code                */
-/*           the value at *priority contains the operator priority            */
-/*           the return value is the error status                             */
-
+/**
+ * @brief Get an operator from the front of the passed ASCII input string,
+ * stripping it in the process.  Returns the token and the priority.
+ * On entry: *input points to the input string
+ *            *pos points to the offset in this string
+ *            *operator points to the location for the operator code
+ *            *priority points to the location for the priority code
+ *                   0 is the lowest priority and is reserved for terminators
+ *                   priority 1 is reserved for brackets
+ * On exit:  the pointer at *pos is adjusted to the end of the expression
+ *           the value at *operator contains the operator code
+ *           the value at *priority contains the operator priority
+ *           the return value is the error status
+ * @param input
+ * @param pos
+ * @param priority
+ * @return int
+ */
 int get_operator(char* input,
                  unsigned int* pos,
                  int*
@@ -6402,13 +6438,14 @@ int get_operator(char* input,
   int status;
   unsigned int ii;
 
-  *pos = skip_spc(input, *pos); /* In case of error want this at next item */
-  ii = *pos;                    /* String pointer within routine */
+  *pos = skip_spc(input, *pos);  // In case of error want this at next item
+  ii = *pos;                     // String pointer within routine
 
   status = eval_no_operator;
-  /* in case no operator was found, this will be the default */
+
+  // in case no operator was found, this will be the default
   switch (input[ii]) {
-    case '\0': /* Terminator cases */
+    case '\0':  // Terminator cases
     case ',':
     case ';':
     case ']':
@@ -6509,15 +6546,16 @@ int get_operator(char* input,
       status = eval_okay;
       break;
 
-    default: { /* Have a go at symbolically defined operators */
+    // Have a go at symbolically defined operators
+    default: {
       int i;
       char buffer[SYM_NAME_MAX];
       sym_record* ptr;
 
-      if ((i = get_identifier(input, ii, buffer, SYM_NAME_MAX)) >
-          0) { /* Something taken */
-        if ((ptr = sym_find_label(buffer, operator_table)) !=
-            NULL) { /* Symbol recognised */
+      // Something taken
+      if ((i = get_identifier(input, ii, buffer, SYM_NAME_MAX)) > 0) {
+        // Symbol recognised
+        if ((ptr = sym_find_label(buffer, operator_table)) != NULL) {
           *operator= ptr->value;
           ii += i;
           status = eval_okay;
@@ -6526,8 +6564,8 @@ int get_operator(char* input,
     }
   }
 
-  switch (*operator) /* Priority "look up" */
-  {                  /* The first two priorities are fixed */
+  // Priority "look up". The first two priorities are fixed
+  switch (*operator) {
     case END:
       *priority = 0;
       break;
@@ -6596,37 +6634,48 @@ int get_operator(char* input,
       break;
   }
 
-  if (status == eval_okay)
-    *pos = ii;   /* Move input pointer if successful */
-  return status; /* Return error code */
+  if (status == eval_okay) {
+    *pos = ii;  // Move input pointer if successful
+  }
+
+  return status;  // Return error code
 }
 
-/*----------------------------------------------------------------------------*/
-
+/**
+ * @brief
+ * @param line
+ * @param position
+ * @return int
+ */
 int skip_spc(char* line, int position) {
-  while ((line[position] == ' ') || (line[position] == '\t'))
+  while ((line[position] == ' ') || (line[position] == '\t')) {
     position++;
+  }
+
   return position;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-/* Makes a copy of "filename" with the last element stripped back to '/'      */
-/* Returns null string if no '/' present.                                     */
-/* Allocates space for new string.                                            */
-
+/**
+ * @brief Makes a copy of "filename" with the last element stripped back to
+ * '/' Allocates space for new string
+ * @param filename
+ * @return char* null string if no '/' present
+ */
 char* file_path(char* filename) {
   char* pPath;
   int position;
 
-  position = strlen(filename); /* Find back-end of original string */
-  while ((position > 0) && (filename[position - 1] != '/'))
+  position = strlen(filename);  //  Find back-end of original string
+  while ((position > 0) && (filename[position - 1] != '/')) {
     position--;
+  }
 
-  pPath = (char*)malloc(position + 1); /* Allocate space for path + '\0' */
+  pPath = (char*)malloc(position + 1);  //  Allocate space for path + '\0'
 
-  pPath[position] = '\0'; /* Insert terminator, step back */
-  while (position > 0)    /* Copy rest of string */
-  {
+  pPath[position] = '\0';  //  Insert terminator, step back
+
+  // Copy rest of string
+  while (position > 0) {
     position = position - 1;
     pPath[position] = filename[position];
   }
@@ -6634,42 +6683,58 @@ char* file_path(char* filename) {
   return pPath;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-/* Concatenates source strings and returns newly allocated string.            */
-
+/**
+ * @brief Concatenates source strings and returns newly allocated string
+ * @param name1
+ * @param name2
+ * @return char*
+ */
 char* pathname(char* name1, char* name2) {
   char* pResult;
 
-  pResult = (char*)malloc(strlen(name1) + strlen(name2) + 1); /* Make room */
-  strcpy(pResult, name1); /* Copy in first string */
-  strcat(pResult, name2); /* Append second string */
+  pResult = (char*)malloc(strlen(name1) + strlen(name2) + 1);  // Make room
+  strcpy(pResult, name1);  // Copy in first string
+  strcat(pResult, name2);  // Append second string
 
   return pResult;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-/* Returns Boolean - true if `character' is found                             */
-/* If character is found it is stripped                                       */
-
+/**
+ * @brief If character is found it is stripped
+ * @param line
+ * @param pPos
+ * @param offset
+ * @param character
+ * @return boolean true if `character' is found
+ */
 boolean cmp_next_non_space(char* line, int* pPos, int offset, char character) {
   boolean result;
 
-  *pPos = skip_spc(line, *pPos + offset); /* Strip, possibly skipping first */
+  *pPos = skip_spc(line, *pPos + offset);  // Strip, possibly skipping first
   result = (line[*pPos] == character);
-  if (result)
-    (*pPos)++; /* Strip test character */
+  if (result) {
+    (*pPos)++;  // Strip test character
+  }
   return result;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-/* Returns Boolean - true if `character' is valid end of statement            */
-
+/**
+ * @brief
+ * @param character
+ * @return boolean true if `character' is valid end of statement
+ */
 boolean test_eol(char character) {
   return (character == '\0') || (character == ';') || (character == '\n');
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-
+/**
+ * @brief Get the identifier object
+ * @param line
+ * @param position
+ * @param buffer
+ * @param max_length
+ * @return unsigned int
+ */
 unsigned int get_identifier(char* line,
                             unsigned int position,
                             char* buffer,
@@ -6677,33 +6742,41 @@ unsigned int get_identifier(char* line,
   unsigned int i;
 
   i = 0;
-  if (alphabetic(line[position]))
-    while ((alpha_numeric(line[position])) && (i < max_length - 1))
-      buffer[i++] = line[position++]; /* Truncates if too long for buffer */
+  if (alphabetic(line[position])) {
+    while ((alpha_numeric(line[position])) && (i < max_length - 1)) {
+      buffer[i++] = line[position++];  // Truncates if too long for buffer
+    }
+  }
 
   buffer[i] = '\0';
-  return i; /* Length of symbol (sans terminator) */
+  return i;  // Length of symbol (sans terminator)
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-
-boolean alpha_numeric(char c) /* Crude! */
-{
+/**
+ * @brief
+ * @param c
+ * @return boolean
+ */
+boolean alpha_numeric(char c) {
   return (((c >= '0') && (c <= '9')) || alphabetic(c));
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-
-boolean alphabetic(char c) /* Crude! */
-{
+/**
+ * @brief
+ * @param c
+ * @return boolean
+ */
+boolean alphabetic(char c) {
   return ((c == '_') || ((c >= 'A') && (c <= 'Z')) ||
           ((c >= 'a') && (c <= 'z')));
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-/* If recognised, translate a C-style 'escaped' character code                */
-/* E.g. 'n' will become '\n'                                                  */
-
+/**
+ * @brief If recognised, translate a C-style 'escaped' character code. E.g.
+ * 'n' will become '\n'
+ * @param c
+ * @return unsigned char
+ */
 unsigned char c_char_esc(unsigned char c) {
   switch (c) {
     case '0':
@@ -6749,38 +6822,52 @@ unsigned char c_char_esc(unsigned char c) {
   return c;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-/* Read number of specified radix into variable indicated by *value           */
-/* Return flag to say number read (value at pointer).                         */
+/**
+ * @brief Return value(c) if in radix else return -1
+ * @param line
+ * @param pos
+ * @param radix
+ * @return int
+ */
+int num_char(char* line, int* pos, unsigned int radix) {
+  char c;
 
-int get_num(char* line, int* position, int* value, unsigned int radix) {
-  int num_char(
-      char* line, int* pos,
-      unsigned int radix) { /* Return value(c) if in radix  else return -1 */
-    char c;
-
-    while ((c = line[*pos]) == '_')
-      (*pos)++; /* Allow & ignore  '_' */
-    if (c < '0')
+  while ((c = line[*pos]) == '_') {
+    (*pos)++;  // Allow & ignore  '_'
+  }
+  if (c < '0') {
+    return -1;
+  }
+  if (c >= 'a') {
+    c = c & 0xDF;  // Upper case convert
+  }
+  if (c <= '9') {
+    if (c < '0' + radix) {
+      return c - '0';  // Number < radix
+    } else {
       return -1;
-    if (c >= 'a')
-      c = c & 0xDF; /* Upper case convert */
-    if (c <= '9') {
-      if (c < '0' + radix)
-        return c - '0'; /* Number < radix */
-      else
-        return -1;
-    } /* Number > radix */
-    else {
-      if (c < 'A')
-        return -1; /* Not letter */
-      else if (c < 'A' + radix - 10)
-        return c - 'A' + 10;
-      else
-        return -1;
+    }
+  }  // Number > radix
+  else {
+    if (c < 'A') {
+      return -1;  // Not letter
+    } else if (c < 'A' + radix - 10) {
+      return c - 'A' + 10;
+    } else {
+      return -1;
     }
   }
+}
 
+/**
+ * @brief Read number of specified radix into variable indicated by *value
+ * @param line
+ * @param position
+ * @param value
+ * @param radix
+ * @return int flag to say number read (value at pointer).
+ */
+int get_num(char* line, int* position, int* value, unsigned int radix) {
   int i, new_digit;
   boolean found;
 
@@ -6794,19 +6881,22 @@ int get_num(char* line, int* position, int* value, unsigned int radix) {
     i++;
   }
 
-  if (found)
-    *position = i; /* Move pointer */
+  if (found) {
+    *position = i;  // Move pointer
+  }
   return found;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-/* Test abstracted for convenience of use                                     */
-
+/**
+ * @brief Test abstracted for convenience of use
+ * @param error_code
+ * @param first_pass
+ * @param last_pass
+ * @return int
+ */
 int allow_error(unsigned int error_code,
                 boolean first_pass,
                 boolean last_pass) {
   return (!last_pass && ((error_code & ALLOW_ON_INTER_PASS) != 0)) ||
          (first_pass && ((error_code & ALLOW_ON_FIRST_PASS) != 0));
 }
-
-/*============================================================================*/
