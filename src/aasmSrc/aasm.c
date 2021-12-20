@@ -5945,17 +5945,21 @@ void lit_print_table(literal_record* pTemp, FILE* handle) {
   return;
 }
 
-/*----------------------------------------------------------------------------*/
-/*----------------------------------------------------------------------------*/
-/* Evaluate - modulo current word length                                      */
-/* On entry: *string points to a pointer to the input string                  */
-/*            *pos points to an offset in the string                          */
-/*            *value points to the location for the result value              */
-/*            *symbol_table points to the symbol table to search [@@ extend]  */
-/* On exit:  the pointer at *pos is adjusted to the end of the expression     */
-/*           the value at *value contains the result, assuming no error       */
-/*           the return value is the error status                             */
-
+/**
+ * @brief Evaluate - modulo current word length
+ * On entry: *string points to a pointer to the input string
+ *            *pos points to an offset in the string
+ *            *value points to the location for the result value
+ *            *symbol_table points to the symbol table to search [@@ extend]
+ * On exit:  the pointer at *pos is adjusted to the end of the expression
+ *           the value at *value contains the result, assuming no error
+ *           the return value is the error status
+ * @param string
+ * @param pos
+ * @param value
+ * @param symbol_table
+ * @return unsigned int
+ */
 unsigned int evaluate(char* string,
                       unsigned int* pos,
                       int* value,
@@ -5963,33 +5967,36 @@ unsigned int evaluate(char* string,
   unsigned int math_stack[MATHSTACK_SIZE];
   unsigned int math_SP, error, first_error;
 
-  void Eval_inner(int priority,
-                  int* value) { /* Main function shares stack etc. */
+  // Main function shares stack etc.
+  void Eval_inner(int priority, int* value) {
     boolean done, bracket;
     unsigned int operator, operand, unary;
 
-    done = FALSE; /* Termination indicator */
+    done = FALSE;  // Termination indicator
 
     math_stack[math_SP] = priority;
-    math_SP = math_SP + 1; /* Stack `start' marker */
+    math_SP = math_SP + 1;  // Stack `start' marker
 
     while (!done) {
       error =
           get_variable(string, pos, &operand, &unary, &bracket, symbol_table);
 
-      if ((error & ALL_EXCEPT_LAST_PASS) != 0) /* Error not instantly fatal */
-      {
-        if (first_error == eval_okay)
-          first_error = error; /* Keep note of error */
-        error = eval_okay;     /*  and pretend everything is still okay */
+      // Error not instantly fatal
+      if ((error & ALL_EXCEPT_LAST_PASS) != 0) {
+        // Keep note of error and pretend everything is still okay
+        if (first_error == eval_okay) {
+          first_error = error;
+        }
+        error = eval_okay;
       }
 
       if (error == eval_okay) {
-        if (bracket)
-          Eval_inner(1, &operand); /* May return error */
+        if (bracket) {
+          Eval_inner(1, &operand);  // May return error
+        }
+        // Can now apply unary to returned value
         if (error == eval_okay) {
-          switch (unary) /* Can now apply unary to returned value */
-          {
+          switch (unary) {
             case PLUS:
               break;
             case MINUS:
@@ -5998,8 +6005,8 @@ unsigned int evaluate(char* string,
             case NOT:
               operand = ~operand;
               break;
-            case LOG: /* Truncated log2 of operand */
-            {
+            // Truncated log2 of operand
+            case LOG: {
               unsigned int i;
               i = operand;
               operand = -1;
@@ -6012,10 +6019,9 @@ unsigned int evaluate(char* string,
 
           if ((error = get_operator(string, pos, &operator, & priority)) ==
               eval_okay) {
+            // If priority decreasing and previous a real operator, OPERATE
             while ((priority <= math_stack[math_SP - 1]) &&
-                   (math_stack[math_SP - 1] >
-                    1)) { /* If priority decreasing and previous a real
-                             operator, OPERATE */
+                   (math_stack[math_SP - 1] > 1)) {
               switch (math_stack[math_SP - 2]) {
                 case PLUS:
                   operand = math_stack[math_SP - 3] + operand;
@@ -6027,18 +6033,21 @@ unsigned int evaluate(char* string,
                   operand = math_stack[math_SP - 3] * operand;
                   break;
                 case DIVIDE:
-                  if (operand != 0)
+                  if (operand != 0) {
                     operand = math_stack[math_SP - 3] / operand;
-                  else {
+                  } else {
                     operand = -1;
-                    if ((error == eval_okay) && (first_error == eval_okay))
+                    if ((error == eval_okay) && (first_error == eval_okay)) {
                       error = eval_div_by_zero;
+                    }
                     div_zero_this_pass = TRUE;
                   }
                   break;
                 case MODULUS:
-                  if (operand != 0) /* else leave it alone */
+                  // else leave it alone
+                  if (operand != 0) {
                     operand = math_stack[math_SP - 3] % operand;
+                  }
                   break;
                 case LEFT_SHIFT:
                   operand = math_stack[math_SP - 3] << operand;
@@ -6056,64 +6065,74 @@ unsigned int evaluate(char* string,
                   operand = math_stack[math_SP - 3] ^ operand;
                   break;
                 case EQUALS:
-                  if (math_stack[math_SP - 3] == operand)
+                  if (math_stack[math_SP - 3] == operand) {
                     operand = -1;
-                  else
+                  } else {
                     operand = 0;
+                  }
                   break;
                 case NOT_EQUAL:
-                  if (math_stack[math_SP - 3] != operand)
+                  if (math_stack[math_SP - 3] != operand) {
                     operand = -1;
-                  else
+                  } else {
                     operand = 0;
+                  }
                   break;
                 case LOWER_THAN:
-                  if (math_stack[math_SP - 3] < operand)
+                  if (math_stack[math_SP - 3] < operand) {
                     operand = -1;
-                  else
+                  } else {
                     operand = 0;
+                  }
                   break;
                 case LOWER_EQUAL:
-                  if (math_stack[math_SP - 3] <= operand)
+                  if (math_stack[math_SP - 3] <= operand) {
                     operand = -1;
-                  else
+                  } else {
                     operand = 0;
+                  }
                   break;
                 case HIGHER_THAN:
-                  if (math_stack[math_SP - 3] > operand)
+                  if (math_stack[math_SP - 3] > operand) {
                     operand = -1;
-                  else
+                  } else {
                     operand = 0;
+                  }
                   break;
                 case HIGHER_EQUAL:
-                  if (math_stack[math_SP - 3] >= operand)
+                  if (math_stack[math_SP - 3] >= operand) {
                     operand = -1;
-                  else
+                  } else {
                     operand = 0;
+                  }
                   break;
                 case LESS_THAN:
-                  if ((int)math_stack[math_SP - 3] < (int)operand)
+                  if ((int)math_stack[math_SP - 3] < (int)operand) {
                     operand = -1;
-                  else
+                  } else {
                     operand = 0;
+                  }
                   break;
                 case LESS_EQUAL:
-                  if ((int)math_stack[math_SP - 3] <= (int)operand)
+                  if ((int)math_stack[math_SP - 3] <= (int)operand) {
                     operand = -1;
-                  else
+                  } else {
                     operand = 0;
+                  }
                   break;
                 case GREATER_THAN:
-                  if ((int)math_stack[math_SP - 3] > (int)operand)
+                  if ((int)math_stack[math_SP - 3] > (int)operand) {
                     operand = -1;
-                  else
+                  } else {
                     operand = 0;
+                  }
                   break;
                 case GREATER_EQUAL:
-                  if ((int)math_stack[math_SP - 3] >= (int)operand)
+                  if ((int)math_stack[math_SP - 3] >= (int)operand) {
                     operand = -1;
-                  else
+                  } else {
                     operand = 0;
+                  }
                   break;
 
                 default:
@@ -6121,52 +6140,61 @@ unsigned int evaluate(char* string,
               }
               math_SP = math_SP - 3;
             }
-            done = (priority <= 1); /* Next operator a ")" or end */
+            done = (priority <= 1);  // Next operator a ")" or end
 
-            if (!done) { /* Priority must be increasing */
-              if ((math_SP + 3) <= MATHSTACK_SIZE) /* PUSH */
-              {
+            // Priority must be increasing
+            if (!done) {
+              // PUSH
+              if ((math_SP + 3) <= MATHSTACK_SIZE) {
                 math_stack[math_SP] = operand;
                 math_stack[math_SP + 1] = operator;
                 math_stack[math_SP + 2] = priority;
                 math_SP = math_SP + 3;
-              } else
-                error = eval_mathstack_limit; /* Don't overflow stack */
-            } else { /* Now bracketed by terminators.  Matched? */
-              if (priority == math_stack[math_SP - 1])
+              } else {
+                error = eval_mathstack_limit;  // Don't overflow stack
+              }
+            }
+            // Now bracketed by terminators.  Matched?
+            else {
+              if (priority == math_stack[math_SP - 1]) {
                 math_SP = math_SP - 1;
-              else if (priority == 0)
-                error = eval_not_closebr; /* Errors */
-              else
+              } else if (priority == 0) {
+                error = eval_not_closebr;  // Errors
+              } else {
                 error = eval_not_openbr;
+              }
             }
           }
         }
       }
       if (error != eval_okay) {
-        done = TRUE;                  /* Terminate on error whatever else */
-        if (error == eval_not_openbr) /* Include position on line (if poss.) */
-          error = error | (*pos - 1); /* Has stepped over extra ')' */
-        else if (error !=
-                 eval_div_by_zero) /* Arithmetic error will occur late */
-          error = error | *pos;    /* Include position on line */
+        done = TRUE;  // Terminate on error whatever else
+
+        // Include position on line (if poss.)
+        if (error == eval_not_openbr) {
+          error = error | (*pos - 1);  // Has stepped over extra ')'
+        }
+        // Arithmetic error will occur late
+        else if (error != eval_div_by_zero) {
+          error = error | *pos;  // Include position on line
+        }
       }
     }
 
     *value = operand;
-
     return;
   }
 
-  error = eval_okay;       /* "Evaluate" initialised and called from here */
-  first_error = eval_okay; /* Used to note if labels undefined, etc. */
+  error = eval_okay;        // "Evaluate" initialised and called from here
+  first_error = eval_okay;  // Used to note if labels undefined, etc.
   math_SP = 0;
-  Eval_inner(0, value); /* Potentially recursive evaluation code */
+  Eval_inner(0, value);  // Potentially recursive evaluation code
 
-  if (error == eval_okay)
-    return first_error; /* Signal any problems held over */
-  else
+  if (error == eval_okay) {
+    return first_error;  // Signal any problems held over
+  } else {
     return error;
+  }
 }
 
 /**
