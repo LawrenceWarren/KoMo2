@@ -16,10 +16,10 @@
 #include <time.h>
 #include <unistd.h>
 #include <iostream>
-#include "definitions.h"
 #include "interface.h"
 
 #define uchar unsigned char
+#define uint unsigned int
 
 #define NO_OF_BREAKPOINTS 32  // Max 32
 #define NO_OF_WATCHPOINTS 4   // Max 32
@@ -577,10 +577,11 @@ void monitorOptionsMisc(uchar command) {
       pBuff = terminalTable[device][0];
       getChar(&max_length);
       available = countBuffer(&terminal0Tx); /* See how many chars we have */
-      if (pBuff == NULL)
+      if (pBuff == NULL) {
         length = 0; /* Kill if no corresponding buffer */
-      else
-        length = MIN(available, max_length); /* else clip to message max. */
+      } else {
+        length = available < max_length ? available : max_length;
+      }
       sendChar(length);
       for (i = 0; i < length; i++) /* Send zero or more characters */
       {
@@ -744,7 +745,6 @@ int sendNBytes(int value, int N) {
 
 /**
  * @brief Gets N bytes from the host (??) into the indicated val_ptr, LSB first.
- * If error suspected sets `board_version' to not present
  * @param valPtr
  * @param N
  * @return int The number of bytes received successfully (i.e. N=>"Ok")
@@ -763,10 +763,6 @@ int getNBytes(int* valPtr, int N) {
 
   for (i = 0; i < No_received; i++) {
     *valPtr = *valPtr | ((buffer[i] & 0xFF) << (i * 8)); /* Assemble integer */
-  }
-
-  if (No_received != N) {
-    board_version = -1;
   }
 
   return No_received;
@@ -2613,11 +2609,13 @@ int checkWatchpoints(uint address, int data, int size, int direction) {
 
     may_break &= ((watchpoints[i].size & size) != 0); /* Size is allowed? */
 
-    if (may_break)
-      if (direction == 0)
+    if (may_break) {
+      if (direction == 0) {
         may_break = (watchpoints[i].cond & 0x10) != 0;
-      else
+      } else {
         may_break = (watchpoints[i].cond & 0x20) != 0;
+      }
+    }
 
     if (may_break) /* Try address comparison */
       switch (watchpoints[i].cond & 0x0C) {
