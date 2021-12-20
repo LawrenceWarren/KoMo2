@@ -47,6 +47,8 @@
 #include <stdlib.h>  /* For {malloc, exit} */
 #include <string.h>  /* For {strcat, strlen, strcpy} */
 #include <unistd.h>  // for readlink
+#include <array>
+#include <string>
 
 #define TRUE (0 == 0)
 #define FALSE (0 != 0)
@@ -134,21 +136,21 @@
 
 /* evaluate return error states */
 /*
-#define eval_okay             0x0000		// Rationalise @@@
+#define EVAL_OKAY             0x0000		// Rationalise @@@
 */
-#define eval_okay SYM_NO_ERROR
-#define eval_no_operand 0x3000
-#define eval_no_operator 0x3100
-#define eval_not_closebr 0x3200
-#define eval_not_openbr 0x3300
-#define eval_mathstack_limit 0x3400
-#define eval_no_label (0x3500 | ALLOW_ON_FIRST_PASS)
-#define eval_label_undef (0x3600 | ALL_EXCEPT_LAST_PASS)
-#define eval_out_of_radix 0x3700
-#define eval_div_by_zero (0x3800 | ALL_EXCEPT_LAST_PASS)
-#define eval_operand_error 0x3900
-#define eval_bad_loc_lab 0x3A00
-#define eval_no_label_yet 0x3B00 /* Label not defined `above' (for `IF's)*/
+#define EVAL_OKAY SYM_NO_ERROR
+#define EVAL_NO_OPERAND 0x3000
+#define EVAL_NO_OPERATOR 0x3100
+#define EVAL_NO_CLOSEBR 0x3200
+#define EVAL_NO_OPENBR 0x3300
+#define EVAL_MATHSTACK_LIMIT 0x3400
+#define EVAL_NO_LIMIT (0x3500 | ALLOW_ON_FIRST_PASS)
+#define EVAL_LABEL_UNDEF (0x3600 | ALL_EXCEPT_LAST_PASS)
+#define EVAL_OUT_OF_RADIX 0x3700
+#define EVAL_DIV_BY_ZERO (0x3800 | ALL_EXCEPT_LAST_PASS)
+#define EVAL_OPERAND_ERROR 0x3900
+#define EVAL_BAD_LOC_LAB 0x3A00
+#define EVAL_NO_LABEL_YET 0x3B00 /* Label not defined `above' (for `IF's)*/
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 /* Literal pool flags                                                         */
@@ -225,7 +227,6 @@
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-typedef int boolean;
 typedef enum { ARM, THUMB } instr_set;
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -297,7 +298,7 @@ typedef struct literal_record_name /* Literal pool element holder definition */
 
 typedef struct elf_temp_name {
   struct elf_temp_name* pNext;
-  boolean continuation;
+  bool continuation;
   unsigned int section;
   unsigned int address;
   unsigned int count;
@@ -332,10 +333,10 @@ const int SIZE_RECORD_SIZE = sizeof(size_record);
 
 /*----------------------------------------------------------------------------*/
 
-boolean set_options(int argc, char* argv[]);
+bool set_options(int argc, char* argv[]);
 
-boolean input_line(FILE*, char*, unsigned int);
-boolean parse_mnemonic_line(char*, sym_table*, sym_table*, sym_table*);
+bool input_line(FILE*, char*, unsigned int);
+bool parse_mnemonic_line(char*, sym_table*, sym_table*, sym_table*);
 unsigned int
 parse_source_line(char*, sym_table_item*, sym_table*, int, int, char**, char*);
 void print_error(char*, unsigned int, unsigned int, char*, int);
@@ -349,7 +350,7 @@ unsigned int assemble_line(char*,
                            char**,
                            char*);
 
-int do_literal(instr_set, type_size, int*, boolean, unsigned int*);
+int do_literal(instr_set, type_size, int*, bool, unsigned int*);
 unsigned int find_partials(unsigned int, unsigned int*);
 unsigned int variable_item_size(int, unsigned int);
 
@@ -380,14 +381,14 @@ void assemble_redef_label(unsigned int,
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-unsigned int evaluate(char*, unsigned int*, int*, sym_table*);
-int get_variable(char*, unsigned int*, int*, int*, boolean*, sym_table*);
+unsigned int evaluate(std::string, unsigned int*, int*, sym_table*);
+int get_variable(char*, unsigned int*, int*, int*, bool*, sym_table*);
 int get_operator(char*, unsigned int*, int*, int*);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
 sym_table* sym_create_table(char*, unsigned int);
-int sym_delete_table(sym_table*, boolean);
+int sym_delete_table(sym_table*, bool);
 defn_return sym_define_label(char*,
                              unsigned int,
                              unsigned int,
@@ -437,14 +438,14 @@ void list_hex(unsigned int, unsigned int, char*);
 int skip_spc(char*, int);
 char* file_path(char*);
 char* pathname(char*, char*);
-boolean cmp_next_non_space(char*, int*, int, char);
-boolean test_eol(char);
+bool cmp_next_non_space(char*, int*, int, char);
+bool test_eol(char);
 unsigned int get_identifier(char*, unsigned int, char*, unsigned int);
-boolean alpha_numeric(char);
-boolean alphabetic(char);
+bool alpha_numeric(char);
+bool alphabetic(char);
 unsigned char c_char_esc(unsigned char);
 int get_num(char*, int*, int*, unsigned int);
-int allow_error(unsigned int, boolean, boolean);
+int allow_error(unsigned int, bool, bool);
 
 /*----------------------------------------------------------------------------*/
 /* Global variables                                                           */
@@ -471,17 +472,17 @@ unsigned int arm_variant;
 
 unsigned int assembly_pointer; /* Address at which to plant instruction */
 unsigned int def_increment;    /* Offset reached from assembly_pointer */
-boolean assembly_pointer_defined;
+bool assembly_pointer_defined;
 unsigned int entry_address;
-boolean entry_address_defined;
+bool entry_address_defined;
 unsigned int data_pointer;    /* Used for creating record offsets etc. */
 unsigned int undefined_count; /* Number of references to undefined variables */
 unsigned int defined_count;   /* Number of variables defined this pass */
 unsigned int redefined_count; /* Number of variables redefined this pass */
 unsigned int pass_count;      /* Pass number, starts at 0 */
 unsigned int pass_errors;     /* Errors occurred in this pass */
-boolean div_zero_this_pass;   /* Indicates /0 in pass, prevents code dump */
-boolean dump_code;            /* Allow output (FALSE on last pass if error) */
+bool div_zero_this_pass;      /* Indicates /0 in pass, prevents code dump */
+bool dump_code;               /* Allow output (FALSE on last pass if error) */
 
 own_label* evaluate_own_label; /* Yuk! @@@@@ */
 /* Because evaluate needs to know if there is a local label on -current- line */
@@ -497,7 +498,7 @@ size_record* size_record_list;    /* Start of list of ADRL (etc.) lengths */
 size_record* size_record_current; /* Current record in above list */
 unsigned int size_changed_count;  /* Number of `instruction' size changes */
 
-boolean if_stack[IF_STACK_SIZE + 1]; /* Used for nesting IF clauses */
+bool if_stack[IF_STACK_SIZE + 1]; /* Used for nesting IF clauses */
 int if_SP;
 
 unsigned int list_address;
@@ -506,13 +507,13 @@ unsigned int list_line_position; /* Pos. in the src line copied to output */
 char list_buffer[LIST_LINE_LENGTH];
 
 unsigned int hex_address;
-boolean hex_address_defined;
+bool hex_address_defined;
 char hex_buffer[HEX_LINE_LENGTH];
 
 int elf_section_valid;    /* Flag: true if code dumped in elf_section */
 unsigned int elf_section; /* Current elf section number (for labels) */
 unsigned int elf_section_old;
-boolean elf_new_block;
+bool elf_new_block;
 
 elf_temp* elf_record_list;
 elf_temp* current_elf_record;
@@ -534,7 +535,7 @@ int main(int argc, char* argv[]) {
   sym_table *arm_mnemonic_table, *thumb_mnemonic_table, *directive_table;
   sym_table* symbol_table;
   sym_table_item *arm_mnemonic_list, *thumb_mnemonic_list; /* Real lists */
-  boolean finished, last_pass;
+  bool finished, last_pass;
   unsigned int error_code;
 
   /* Recursion for INCLUDE files */
@@ -564,7 +565,7 @@ int main(int argc, char* argv[]) {
 printf("Hello Y %08X %s\n", symbol_table->pList[0], line);
 */
 
-      if (error_code != eval_okay)
+      if (error_code != EVAL_OKAY)
         print_error(line, line_number, error_code, filename, last_pass);
       else if (include_name != NULL) {
         char* pInclude;
@@ -1000,7 +1001,7 @@ printf("Hello Y %08X %s\n", symbol_table->pList[0], line);
 /*----------------------------------------------------------------------------*/
 /*					// Allow omission of spaces? @@@@
                                         // Allow filename first ?    @@@@*/
-boolean set_options(int argc, char* argv[]) {
+bool set_options(int argc, char* argv[]) {
   void file_option(int* std_out, char** filename, char* err_mss) {
     if (argc > 2) {
       if ((argv[1])[0] == '-')
@@ -1015,7 +1016,7 @@ boolean set_options(int argc, char* argv[]) {
     return;
   }
 
-  boolean okay;
+  bool okay;
   char c;
 
   okay = FALSE;
@@ -1152,7 +1153,7 @@ void print_error(char* line,
                  unsigned int line_no,
                  unsigned int error_code,
                  char* filename,
-                 boolean last_pass) {
+                 bool last_pass) {
   unsigned int position;
   int i;
 
@@ -1295,40 +1296,40 @@ void print_error(char* line,
     case SYM_NO_REG_HASH:
       printf("'#' or register expected");
       break;
-    case eval_no_operand:
+    case EVAL_NO_OPERAND:
       printf("Operand expected");
       break;
-    case eval_no_operator:
+    case EVAL_NO_OPERATOR:
       printf("Operator expected");
       break;
-    case eval_not_closebr:
+    case EVAL_NO_CLOSEBR:
       printf("Missing ')'");
       break;
-    case eval_not_openbr:
+    case EVAL_NO_OPENBR:
       printf("Extra ')'");
       break;
-    case eval_mathstack_limit:
+    case EVAL_MATHSTACK_LIMIT:
       printf("Math stack overflow");
       break;
-    case eval_no_label:
+    case EVAL_NO_LIMIT:
       printf("Label not found");
       break;
-    case eval_label_undef:
+    case EVAL_LABEL_UNDEF:
       printf("Label undefined");
       break;
-    case eval_out_of_radix:
+    case EVAL_OUT_OF_RADIX:
       printf("Number out of radix");
       break;
-    case eval_div_by_zero:
+    case EVAL_DIV_BY_ZERO:
       printf("Division by zero");
       break;
-    case eval_operand_error:
+    case EVAL_OPERAND_ERROR:
       printf("Operand error");
       break;
-    case eval_bad_loc_lab:
+    case EVAL_BAD_LOC_LAB:
       printf("Bad local label");
       break;
-    case eval_no_label_yet:
+    case EVAL_NO_LABEL_YET:
       printf("Label not defined before this point");
       break;
 
@@ -1359,7 +1360,7 @@ void print_error(char* line,
 
 /*----------------------------------------------------------------------------*/
 
-boolean input_line(FILE* file, char* buffer, unsigned int max) {
+bool input_line(FILE* file, char* buffer, unsigned int max) {
   int i;
   char c;
 
@@ -1387,10 +1388,10 @@ boolean input_line(FILE* file, char* buffer, unsigned int max) {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-boolean parse_mnemonic_line(char* line,
-                            sym_table* a_table,
-                            sym_table* t_table,
-                            sym_table* d_table) {
+bool parse_mnemonic_line(char* line,
+                         sym_table* a_table,
+                         sym_table* t_table,
+                         sym_table* d_table) {
   int i, j, k, okay;
   unsigned int value, token;
   sym_record* dummy;
@@ -1560,7 +1561,7 @@ unsigned int parse_source_line(char* line,
                                sym_table_item* mnemonic_list,
                                sym_table* symbols,
                                int pass_count,
-                               boolean last_pass,
+                               bool last_pass,
                                char** include_name,
                                char* include_file_path) {
   int pos, j;
@@ -1568,7 +1569,7 @@ unsigned int parse_source_line(char* line,
   sym_record* ptr;
   char buffer[LINE_LENGTH];
   unsigned int value, error_code;
-  boolean mnemonic;
+  bool mnemonic;
 
   error_code = SYM_NO_ERROR; /* @@@@ */
   mnemonic = FALSE;
@@ -1632,7 +1633,7 @@ unsigned int parse_source_line(char* line,
     /* If all is well, at this point the first item on the */
     /*  line has been identified, classified and stripped. */
 
-    if ((error_code == eval_okay) && !mnemonic)
+    if ((error_code == EVAL_OKAY) && !mnemonic)
     /* Could check for other symbols (e.g. "=") first     @@@@ */
     {
       pos = skip_spc(line, pos); /* Find next item on line */
@@ -1661,7 +1662,7 @@ unsigned int parse_source_line(char* line,
       }
     }
 
-    if ((error_code == eval_okay) && mnemonic) {
+    if ((error_code == EVAL_OKAY) && mnemonic) {
       /* Check lower bits of token against current instruction set */
       if ((ptr->value & arm_variant & 0x00000FFF) != 0)
         error_code = SYM_BAD_VARIANT; /* Disallowed in selected ARM variant */
@@ -1704,7 +1705,7 @@ unsigned int parse_source_line(char* line,
 int do_literal(instr_set instr_type,
                type_size size,
                int* ext_value,
-               boolean first_pass,
+               bool first_pass,
                unsigned int* pError) {
   unsigned int value;
   int what, PC_inc;
@@ -1726,7 +1727,7 @@ int do_literal(instr_set instr_type,
     if (literal_list == NULL)
       literal_list = pTemp;
 
-    if (*pError == eval_okay) {
+    if (*pError == EVAL_OKAY) {
       literal_head->flags = LIT_DEFINED; /* Zeros other flags */
       defined_count++;                   /* Is this a "label"?? @@@ */
       if (size == TYPE_HALF)
@@ -1743,7 +1744,7 @@ int do_literal(instr_set instr_type,
     else
       literal_head = literal_head->pNext;
 
-    if (*pError == eval_okay) {
+    if (*pError == EVAL_OKAY) {
       if ((literal_head->flags & LIT_DEFINED) == 0) /* undef? */
         defined_count++; /* Is this a "label"?? @@@ */
       else if (literal_head->value != value)
@@ -1771,7 +1772,7 @@ int do_literal(instr_set instr_type,
             literal_head->flags |=
                 LIT_NO_DUMP; /*  ... save word in lit. pool */
         } else {
-          boolean found;
+          bool found;
 
           what = 2;                            /* Needs a load */
           literal_head->flags &= ~LIT_NO_DUMP; /* Long form */
@@ -1829,7 +1830,7 @@ int do_literal(instr_set instr_type,
     }
   }
 
-  if (*pError == eval_okay)
+  if (*pError == EVAL_OKAY)
     return what;
   else
     return -1;
@@ -1910,7 +1911,7 @@ unsigned int assemble_line(char* line,
                            own_label* my_label,
                            sym_table* symbol_table,
                            int pass_count,
-                           boolean last_pass,
+                           bool last_pass,
                            char** include_name,
                            char* include_file_path) {
   unsigned int operand, error_code;
@@ -1921,7 +1922,7 @@ unsigned int assemble_line(char* line,
    * -*/
 
   void assemble_define(int size) { /* Elongated by string definition */
-    boolean terminate, escape;
+    bool terminate, escape;
     char delimiter, c;
 
     terminate = FALSE;
@@ -1956,13 +1957,13 @@ unsigned int assemble_line(char* line,
       } else {
         error_code = evaluate(line, &position, &temp, symbol_table);
         /* Parse expression */
-        if ((error_code == eval_okay) ||
+        if ((error_code == EVAL_OKAY) ||
             allow_error(error_code, first_pass, last_pass)) {
-          if ((error_code == eval_okay) && last_pass) /* Plant, ltl endian */
+          if ((error_code == EVAL_OKAY) && last_pass) /* Plant, ltl endian */
             byte_dump(assembly_pointer + def_increment, temp, line, size);
 
           if (!last_pass)
-            error_code = eval_okay; /* Pretend it's okay */
+            error_code = EVAL_OKAY; /* Pretend it's okay */
           def_increment += size;    /* Continue, even if missing values */
         } else
           terminate = TRUE;
@@ -1991,9 +1992,9 @@ unsigned int assemble_line(char* line,
     position++; /* Skip comma */
     error_code = evaluate(line, &position, &fill, symbol_table);
     if (allow_error(error_code, first_pass, last_pass))
-      error_code = eval_okay;
+      error_code = EVAL_OKAY;
 
-    if (last_pass && (error_code == eval_okay))
+    if (last_pass && (error_code == EVAL_OKAY))
       for (i = 0; i < operand; i++)
         byte_dump(assembly_pointer + i, fill & 0xFF, line, 1);
 
@@ -2014,7 +2015,7 @@ unsigned int assemble_line(char* line,
     if (!last_pass)
       return op_code; /* Crude, but clear! */
 
-    if (error_code == eval_okay) {
+    if (error_code == EVAL_OKAY) {
       x = (int)value; /* Cast for convenience */
       if (x < 0)
         x = -x; /* Make offset positive */
@@ -2069,12 +2070,12 @@ unsigned int assemble_line(char* line,
     int x;
 
     error_code = evaluate(line, pPosition, &value, symbol_table);
-    if (error_code == eval_okay) {
+    if (error_code == EVAL_OKAY) {
       if (line[*pPosition] == ',') /* Allow "ROR" instead/too? @@@ */
       {                            /* Explicit rotation code */
         (*pPosition)++;            /* Skip comma */
         error_code = evaluate(line, pPosition, &ror_value, symbol_table);
-        if (error_code == eval_okay) {
+        if (error_code == EVAL_OKAY) {
           if (((value & 0xFFFFFF00) == 0) /* Check value ranges */
               && ((ror_value & 0xFFFFFFE1) == 0))
             op_code = op_code | (ror_value << 7) | value;
@@ -2138,7 +2139,7 @@ unsigned int assemble_line(char* line,
         {
           error_code = evaluate(line, pPosition, &value, symbol_table);
 
-          if (error_code == eval_okay) {
+          if (error_code == EVAL_OKAY) {
             if (value == 0)
               op_code = op_code & 0xFFFFFF9F; /* Back to LSL */
             else if ((value & 0xFFFFFFC0) != 0)
@@ -2223,7 +2224,7 @@ unsigned int assemble_line(char* line,
       } else
         error_code = SYM_BAD_REG | position; /* Bad individual/start reg. */
     } /* Iterate while no errors and comma separators encountered */
-    while ((error_code == eval_okay) &&
+    while ((error_code == EVAL_OKAY) &&
            cmp_next_non_space(line, &position, 0, ','));
 
     if ((list & ~allowed) != 0)
@@ -2244,7 +2245,7 @@ unsigned int assemble_line(char* line,
     else {
       op_code |= parse_reg_list(0x0000FFFF); /* Get bitmask of registers */
 
-      if (error_code == eval_okay) {
+      if (error_code == EVAL_OKAY) {
         if (line[position] == '}') /* Check list terminated cleanly */
         {
           if (cmp_next_non_space(line, &position, 1, '^'))
@@ -2337,7 +2338,7 @@ unsigned int assemble_line(char* line,
                     position++;
                     error_code =
                         evaluate(line, &position, &value, symbol_table);
-                    if (error_code == eval_okay) {
+                    if (error_code == EVAL_OKAY) {
                       if ((value & 0xFFFFFF00) == 0x00000000) {
                         op_code = op_code | value | 0x00800000; /* Set U bit */
                         if (!cmp_next_non_space(line, &position, 0, '}'))
@@ -2359,7 +2360,7 @@ unsigned int assemble_line(char* line,
               error_code = evaluate(line, &position, &value, symbol_table);
               op_code = ldr_offset(op_code, value, size);
               /* Offset */
-              if ((error_code == eval_okay) ||
+              if ((error_code == EVAL_OKAY) ||
                   allow_error(error_code, first_pass,
                               last_pass)) { /* May need to tolerate an error to
                                                check syntax */
@@ -2387,7 +2388,7 @@ unsigned int assemble_line(char* line,
                     if (size == TYPE_WORD) {      /* Shift */
                       op_code = addr_shift(line, &position, op_code, FALSE);
 
-                      if ((error_code == eval_okay) ||
+                      if ((error_code == EVAL_OKAY) ||
                           allow_error(error_code, first_pass, last_pass)) {
                         if (line[position] == ']')
                           position++;
@@ -2424,7 +2425,7 @@ unsigned int assemble_line(char* line,
           position++;
           error_code = evaluate(line, &position, &value, symbol_table);
 
-          if ((error_code == eval_okay) ||
+          if ((error_code == EVAL_OKAY) ||
               allow_error(error_code, first_pass, last_pass)) {
             switch (do_literal(ARM, size, &value, first_pass, &error_code))
             /* Constant size? */
@@ -2451,7 +2452,7 @@ unsigned int assemble_line(char* line,
         }
       } else { /* Try for `absolute' address */
         error_code = evaluate(line, &position, &value, symbol_table);
-        if (error_code == eval_okay)
+        if (error_code == EVAL_OKAY)
           op_code = ldr_offset(op_code | parameter[3],
                                value - (assembly_pointer + 8), size);
       }
@@ -2465,7 +2466,7 @@ unsigned int assemble_line(char* line,
   void arm_mnemonic() { /* Instructions, rather than directives */
     unsigned int op_code, value, extras;
     int reg;
-    boolean rrx; /* Flag (of convenience) identifying short RRX */
+    bool rrx; /* Flag (of convenience) identifying short RRX */
 
     extras = 0; /* Instruction length - 4 */
 
@@ -2506,7 +2507,7 @@ dump) unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
             } else
               error_code = SYM_BAD_REG | position;
 
-          if (error_code == eval_okay) {
+          if (error_code == EVAL_OKAY) {
             if ((token & 0x00002000) != 0) /* Source Rn wanted? */
               if ((reg = get_reg(line, &position)) >= 0) {
                 op_code = op_code | (reg << 16);
@@ -2516,7 +2517,7 @@ dump) unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
                 error_code = SYM_BAD_REG | position;
 
             if (error_code ==
-                eval_okay) { /* Rm always present, so check omitted */
+                EVAL_OKAY) { /* Rm always present, so check omitted */
               if (cmp_next_non_space(line, &position, 0, '#')) /* Imm. mode */
                 op_code = data_op_immediate(line, &position, op_code, TRUE);
               else { /* Register mode */
@@ -2613,7 +2614,7 @@ dump) unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
 
           i = 0;
 
-          while ((error_code == eval_okay) && (pRegs[i] >= 0)) {
+          while ((error_code == EVAL_OKAY) && (pRegs[i] >= 0)) {
             if ((reg = get_reg(line, &position)) >= 0) {
               if (rrx && (i == 2))
                 error_code = SYM_ERR_SYNTAX; /* RRX, short form, has no Rs */
@@ -2721,7 +2722,7 @@ dump) unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
                * "[Rn, #0]" */
               /*       to be translated too.  Is this acceptable?  @@ */
             case 0x00030000: /* LDR/STR only */
-              if ((error_code == eval_okay) &&
+              if ((error_code == EVAL_OKAY) &&
                   ((token & 0x00001000) != 0)) {           /* 'T' option */
                 if (((op_code & 0x01200000) == 0x00000000) /* Post ind. mode? */
                     ||
@@ -2951,7 +2952,7 @@ dump) unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
                 int x;
                 error_code = evaluate(line, &position, &value, symbol_table);
 
-                if (error_code == eval_okay) {
+                if (error_code == EVAL_OKAY) {
                   x = (int)(value - (assembly_pointer + 8)); /* Offset */
                   if (x < 0) {
                     op_code = op_code | 0x024F0000;
@@ -2963,7 +2964,7 @@ dump) unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
                 if ((token & 0x0000B000) == 0x00008000) /* Var. length: ADRL */
                 { /* Crunch without restriction */
                   if (!last_pass) {
-                    if (error_code == eval_okay)
+                    if (error_code == EVAL_OKAY)
                       adr_loop(x, -1);
                     else
                       extras = 12; /* If unknown assume 3 extra words needed*/
@@ -2972,7 +2973,7 @@ dump) unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
 
                   extras = variable_item_size(first_pass, extras);
                 } else /* Fixed length: ADR(n) */
-                  if (error_code == eval_okay)
+                  if (error_code == EVAL_OKAY)
                     adr_loop(x,
                              (token >> 12) & 3); /* Pass length to cruncher */
                   else
@@ -3013,7 +3014,7 @@ dump) unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
             op_code = op_code | (reg << 8); /* cp_num */
             if (cmp_next_non_space(line, &position, 0, ',')) {
               error_code = evaluate(line, &position, &value, symbol_table);
-              if ((error_code == eval_okay) ||
+              if ((error_code == EVAL_OKAY) ||
                   (first_pass && ((error_code & ALLOW_ON_FIRST_PASS) != 0))) {
                 if ((value & parameters[0]) == 0) /* opcode_1 */
                 {
@@ -3041,7 +3042,7 @@ dump) unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
                                                        ',')) {
                                   error_code = evaluate(line, &position, &value,
                                                         symbol_table);
-                                  if ((error_code == eval_okay) ||
+                                  if ((error_code == EVAL_OKAY) ||
                                       (first_pass &&
                                        ((error_code & ALLOW_ON_FIRST_PASS) !=
                                         0))) {
@@ -3133,7 +3134,7 @@ dump) unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
           } else
             error_code = SYM_BAD_REG | position;
 
-          if (error_code == eval_okay) /* Get the immediate value */
+          if (error_code == EVAL_OKAY) /* Get the immediate value */
           {
             if (!cmp_next_non_space(line, &position, 0, '#'))
               error_code = SYM_NO_HASH | position;
@@ -3142,7 +3143,7 @@ dump) unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
           }
 
           ptr = partial;               /* Default setting */
-          if (error_code == eval_okay) /* Got the (possible) immediate value */
+          if (error_code == EVAL_OKAY) /* Got the (possible) immediate value */
           {
             if ((token & 0x0FE00000) == TOKEN_ANDX /* AND must be single op. */
                 && find_partials(imm, partial) != 1) /*  else ANDX => BICX */
@@ -3262,13 +3263,13 @@ dump) unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
 
     } /* end of -skip- */
 
-    if (error_code == eval_okay) {
+    if (error_code == EVAL_OKAY) {
       if (last_pass)
         byte_dump(assembly_pointer + extras, op_code, line, 4);
     } else {
       if (!last_pass) {
         if (allow_error(error_code, first_pass, last_pass))
-          error_code = eval_okay; /* Pretend we're okay */
+          error_code = EVAL_OKAY; /* Pretend we're okay */
       } else                      /* Error on final pass */
         byte_dump(assembly_pointer + extras, 0, line, 4);
       /* Dump 0x00000000 place holder */
@@ -3307,7 +3308,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
           } else
             error_code = SYM_BAD_REG | position;
 
-          if (error_code == eval_okay) {
+          if (error_code == EVAL_OKAY) {
             reg = get_thumb_reg(line, &position, 0x00FF); /* Second register */
             if (reg >= 0)
               op_code = op_code | (reg << 3);
@@ -3329,7 +3330,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
           } else
             error_code = SYM_BAD_REG | position;
 
-          if (error_code == eval_okay) /* First register specifier read okay */
+          if (error_code == EVAL_OKAY) /* First register specifier read okay */
           {
             reg = get_thumb_reg(line, &position, 0x00FF);
             if (reg >= 0) /* Second operand is a register too */
@@ -3341,7 +3342,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
                 if (cmp_next_non_space(line, &position, 0, '#')) /* (1) */
                 { /* Comma so immediate shift (probably) */
                   error_code = evaluate(line, &position, &value, symbol_table);
-                  if (error_code == eval_okay) {
+                  if (error_code == EVAL_OKAY) {
                     unsigned int x;
                     if ((token & 0x00300000) == 0x00000000)
                       x = value; /* LSL */
@@ -3376,7 +3377,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
             {
               error_code = evaluate(line, &position, &value, symbol_table);
 
-              if (error_code == eval_okay) {
+              if (error_code == EVAL_OKAY) {
                 if (Rd < 8) /* (2) */
                 {
                   if ((value & ~0xFF) == 0) {
@@ -3433,7 +3434,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
                       {
                         error_code =
                             evaluate(line, &position, &value, symbol_table);
-                        if (error_code == eval_okay) {
+                        if (error_code == EVAL_OKAY) {
                           if ((value & ~0x7) == 0)
                             op_code |= 0x0400 | (value << 6) | (Rn << 3) | Rd;
                           else
@@ -3458,7 +3459,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
                             op_code = 0xA800; /* SP (6) */
                           error_code =
                               evaluate(line, &position, &value, symbol_table);
-                          if (error_code == eval_okay) {
+                          if (error_code == EVAL_OKAY) {
                             if ((value & ~0x3FC) == 0)
                               op_code = op_code | Rd << 8 | (value >> 2);
                             else
@@ -3496,7 +3497,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
               if (Rd < 8) {
                 error_code = evaluate(line, &position, &value, symbol_table);
 
-                if (error_code == eval_okay) {
+                if (error_code == EVAL_OKAY) {
                   if ((value & ~0xFF) == 0) {
                     if (op_code == 0)
                       op_code = 0x2000 | (Rd << 8) | value;
@@ -3537,7 +3538,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
         case 0x00040000: /* Branches */
           error_code = evaluate(line, &position, &value, symbol_table);
 
-          if (error_code == eval_okay) {
+          if (error_code == EVAL_OKAY) {
             value = value - (assembly_pointer + 4);
             if ((value & 1) != 0) /* Not halfword aligned */
               error_code = SYM_UNALIGNED_BRANCH;
@@ -3589,7 +3590,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
             {
               error_code = evaluate(line, &position, &value, symbol_table);
 
-              if (error_code == eval_okay) {
+              if (error_code == EVAL_OKAY) {
                 value = value - (assembly_pointer + 4);
                 if (op != 0x0000)
                   value += 2;         /* BLX correction */
@@ -3617,7 +3618,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
         case 0x00070000: /* SWI/BKPT */
           error_code = evaluate(line, &position, &value, symbol_table);
 
-          if (error_code == eval_okay) {
+          if (error_code == EVAL_OKAY) {
             if ((value & ~0xFF) == 0)
               op_code = (op_code << 8) | value;
             else
@@ -3641,7 +3642,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
         case 0x00090000: /* Single register transfers */
         {
           unsigned int Rd;
-          boolean imm, no_offset;
+          bool imm, no_offset;
 
           no_offset = FALSE; /* Used to amalgamate different syntaxes */
 
@@ -3664,7 +3665,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
                     error_code = SYM_ERR_SYNTAX | position;
                 }
 
-                if (error_code == eval_okay) {
+                if (error_code == EVAL_OKAY) {
                   imm = no_offset /* No offset */
                         || cmp_next_non_space(line, &position, 0,
                                               '#'); /* Immediate */
@@ -3692,7 +3693,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
                               error_code = evaluate(line, &position, &value,
                                                     symbol_table);
 
-                            if (error_code == eval_okay) {
+                            if (error_code == EVAL_OKAY) {
                               int shifts; /* For immediate field justification
                                            */
 
@@ -3771,7 +3772,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
                           error_code =
                               evaluate(line, &position, &value, symbol_table);
 
-                          if (error_code == eval_okay) {
+                          if (error_code == EVAL_OKAY) {
                             if ((value & ~0x3FC) == 0) {
                               op_code |= value >> 2;
                               if (!cmp_next_non_space(line, &position, 0, ']'))
@@ -3798,7 +3799,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
                     error_code =
                         evaluate(line, &position, &value, symbol_table);
 
-                    if ((error_code == eval_okay) ||
+                    if ((error_code == EVAL_OKAY) ||
                         allow_error(error_code, first_pass, last_pass)) {
                       switch (do_literal(THUMB, TYPE_WORD, &value, first_pass,
                                          &error_code)) {
@@ -3825,7 +3826,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
                 {      /* Try for `absolute' address */
                   error_code = evaluate(line, &position, &value, symbol_table);
 
-                  if (error_code == eval_okay)
+                  if (error_code == EVAL_OKAY)
                     op_code = thumb_pc_load(assembly_pointer, value, 0x4800, Rd,
                                             last_pass, &error_code);
                 }
@@ -3865,12 +3866,12 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
               list = 0x80FF; /* POP:  PC */
           }
 
-          if (error_code == eval_okay) /* Should be ready for register list */
+          if (error_code == EVAL_OKAY) /* Should be ready for register list */
           {
             if (cmp_next_non_space(line, &position, 0, '{')) {
               list =
                   parse_reg_list(list); /* Replace allowed with actual list */
-              if (error_code == eval_okay) {
+              if (error_code == EVAL_OKAY) {
                 if ((list & 0xC000) != 0)
                   op_code = op_code | 0x0100;
                 op_code = op_code | (list & 0xFF);
@@ -3888,7 +3889,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
           if ((reg = get_thumb_reg(line, &position, 0x00FF)) >= 0) {
             if (cmp_next_non_space(line, &position, 0, ',')) {
               error_code = evaluate(line, &position, &value, symbol_table);
-              if (error_code == eval_okay)
+              if (error_code == EVAL_OKAY)
                 op_code = thumb_pc_load(assembly_pointer, value, 0xA000, reg,
                                         last_pass, &error_code);
             } else
@@ -3903,13 +3904,13 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
       }
     }
 
-    if (error_code == eval_okay) {
+    if (error_code == EVAL_OKAY) {
       if (last_pass)
         byte_dump(assembly_pointer + extras, op_code, line, 2);
     } else {
       if (!last_pass) {
         if (allow_error(error_code, first_pass, last_pass))
-          error_code = eval_okay; /* Pretend we're okay */
+          error_code = EVAL_OKAY; /* Pretend we're okay */
       } else                      /* Error on final pass */
         byte_dump(assembly_pointer + extras, 0, line, 2);
       /* Dump 0x0000 place holder */
@@ -3929,16 +3930,16 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
     int fill;
 
     error_code = evaluate(line, &position, &operand, symbol_table);
-    if ((error_code & 0xFFFFFF00) == eval_no_operand) /* Code - position */
+    if ((error_code & 0xFFFFFF00) == EVAL_NO_OPERAND) /* Code - position */
     {
-      error_code = eval_okay;
+      error_code = EVAL_OKAY;
       if (instruction_set == THUMB)
         operand = 2; /* Thumb default = 2 */
       else
         operand = 4; /* else default = 4 */
     }
 
-    if (error_code == eval_okay) {
+    if (error_code == EVAL_OKAY) {
       if (operand != 0) { /* (ALIGN 0 has no effect) */
         temp = (assembly_pointer - 1) % operand;
         operand = operand - (temp + 1); /* No. of elements to skip(/fill) */
@@ -3960,7 +3961,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
       }
     }
 
-    if (error_code == eval_okay) /* Still OK? */
+    if (error_code == EVAL_OKAY) /* Still OK? */
     {
       if (fill) /* Any label is at source point */
         assemble_redef_label(assembly_pointer, assembly_pointer_defined,
@@ -3981,7 +3982,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
   /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
    * -*/
 
-  error_code = eval_okay; /* #DEFINE ??   @@@@ */
+  error_code = EVAL_OKAY; /* #DEFINE ??   @@@@ */
 
   first_pass = (pass_count == 0);
   evaluate_own_label = my_label; /* Yuk! @@@@@ */
@@ -3997,7 +3998,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
 
   def_increment = 0; /* Default to first position/item on line */
 
-  if (error_code == eval_okay) {  //###	Check this error trap correct.
+  if (error_code == EVAL_OKAY) {  //###	Check this error trap correct.
 
     if ((token & 0xF0000000) == 0xF0000000) { /* Directive */
       switch (token) {                        /* Defining code */
@@ -4013,9 +4014,9 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
         case 0xF0030000: /* DEFS */
           error_code = evaluate(line, &position, &operand, symbol_table);
           if (allow_error(error_code, first_pass, last_pass))
-            error_code = eval_okay;
+            error_code = EVAL_OKAY;
 
-          if (error_code == eval_okay) {
+          if (error_code == EVAL_OKAY) {
             if (line[position] == ',')
               fill_space(operand); /*Fill with value (?)*/
             else                   /* Reorigin ELF by starting new section */
@@ -4024,14 +4025,14 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
 
             //##
             if (if_stack[if_SP])
-              if (error_code == eval_okay)
+              if (error_code == EVAL_OKAY)
                 assembly_pointer += operand; /*Still OK?*/
           }
           break;
 
         case 0xF0040000: /* EXPORT */
         {
-          boolean terminate;
+          bool terminate;
           int i;
           char ident[LINE_LENGTH];
           sym_record* symbol;
@@ -4128,13 +4129,13 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
             error_code = SYM_MANY_IFS;
           else {
             error_code = evaluate(line, &position, &condition, symbol_table);
-            if (error_code != eval_okay) {
+            if (error_code != EVAL_OKAY) {
               //## printf("IF: error %08X\n", error_code);
               condition = -1;
               if ((error_code & 0xFFFFFF00) ==
-                  eval_no_label) /* Improve error */
+                  EVAL_NO_LIMIT) /* Improve error */
                 error_code =
-                    eval_no_label_yet | (error_code & 0xFF); /* message */
+                    EVAL_NO_LABEL_YET | (error_code & 0xFF); /* message */
             }
             if_stack[++if_SP] = condition;
             //## printf("IF: Push value %08X\n", condition);
@@ -4234,7 +4235,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
         case 0xF8010000: /* ORG */
           error_code =
               evaluate(line, &position, &assembly_pointer, symbol_table);
-          assembly_pointer_defined = (error_code == eval_okay);
+          assembly_pointer_defined = (error_code == EVAL_OKAY);
           /* Result may be `undefined' */
           if (allow_error(error_code, first_pass, last_pass))
             error_code =
@@ -4255,13 +4256,13 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
 
         case 0xF8040000: /* RECORD */
           error_code = evaluate(line, &position, &temp, symbol_table);
-          if (((error_code & 0xFFFFFF00) == eval_no_operand) ||
+          if (((error_code & 0xFFFFFF00) == EVAL_NO_OPERAND) ||
               allow_error(error_code, first_pass, last_pass)) {
             temp = 0; /* If no operand found then assume zero start */
-            error_code = eval_okay;
+            error_code = EVAL_OKAY;
           }
 
-          if (error_code == eval_okay) {
+          if (error_code == EVAL_OKAY) {
             data_pointer = temp;
             assemble_redef_label(data_pointer, TRUE, my_label, &error_code,
                                  SYM_REC_DATA_FLAG, pass_count, last_pass,
@@ -4271,13 +4272,13 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
 
         case 0xF8050000: /* REC_ALIGN */
           error_code = evaluate(line, &position, &temp, symbol_table);
-          if (((error_code & 0xFFFFFF00) == eval_no_operand) ||
+          if (((error_code & 0xFFFFFF00) == EVAL_NO_OPERAND) ||
               allow_error(error_code, first_pass, last_pass)) {
             temp = 4;
-            error_code = eval_okay;
+            error_code = EVAL_OKAY;
           }
 
-          if (error_code == eval_okay) {
+          if (error_code == EVAL_OKAY) {
             if (temp != 0)
               data_pointer = data_pointer - (data_pointer % temp) + temp;
             /* Any label is after alignment */
@@ -4297,13 +4298,13 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
 
           size = (token >> 16) & 0xF; /* Size of one element */
           error_code = evaluate(line, &position, &temp, symbol_table);
-          if (((error_code & 0xFFFFFF00) == eval_no_operand) ||
+          if (((error_code & 0xFFFFFF00) == EVAL_NO_OPERAND) ||
               allow_error(error_code, first_pass, last_pass)) {
             temp = 1; /* If no operand found then assume one element */
-            error_code = eval_okay;
+            error_code = EVAL_OKAY;
           }
 
-          if (error_code == eval_okay) {
+          if (error_code == EVAL_OKAY) {
             assemble_redef_label(data_pointer, TRUE, my_label, &error_code,
                                  SYM_REC_DATA_FLAG, pass_count, last_pass,
                                  line);
@@ -4372,7 +4373,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
   }  //  ###
   if (first_pass &&
       (error_code ==
-       eval_okay)) { /* Check that nothing remains on line (first pass only) */
+       EVAL_OKAY)) { /* Check that nothing remains on line (first pass only) */
     position = skip_spc(line, position);
     if (!test_eol(line[position]))
       error_code = SYM_GARBAGE | position;
@@ -4468,7 +4469,7 @@ int get_psr(char* line, unsigned int* pPos) {
         reg = reg | 0x0F; /* Assume "_all" as default */
       else                /* Search out fields and assemble field mask */
       {
-        boolean okay;
+        bool okay;
 
         okay = TRUE;
         (*pPos)++;
@@ -4534,7 +4535,7 @@ int get_shift(char* line, unsigned int* pos) {
 int data_op_imm(unsigned int value) /* Not particularly efficient */
 {
   unsigned int i;
-  boolean found;
+  bool found;
 
   unsigned int rol32(unsigned int x, unsigned int j) {
     return (((x & 0xFFFFFFFF) >> (32 - j)) | (x << j)) & 0xFFFFFFFF;
@@ -4562,7 +4563,7 @@ unsigned int thumb_pc_load(unsigned int here,
                            unsigned int there,
                            unsigned int op_code,
                            int reg,
-                           boolean last_pass,
+                           bool last_pass,
                            unsigned int* error_code) {
   there = there - ((here & ~0x00000002) + 4); /* Calculate offset */
 
@@ -4601,7 +4602,7 @@ void assemble_redef_label(unsigned int value,
                           unsigned int* error_code,
                           int type_change,
                           int pass_count,
-                          boolean last_pass,
+                          bool last_pass,
                           char* line) {
   int value_defined; /* Genuine value supplied */
   unsigned int old_value;
@@ -4621,7 +4622,7 @@ void assemble_redef_label(unsigned int value,
     }
 
     value_defined =
-        (*error_code == eval_okay) && defined;  // Clumsy - 2 parameters @@
+        (*error_code == EVAL_OKAY) && defined;  // Clumsy - 2 parameters @@
 
     if ((pass_count != (flags & 0xFF))        /* First encounter this pass? */
         || ((flags & SYM_REC_DEF_FLAG) == 0)) /*  or was undefined */
@@ -4700,11 +4701,11 @@ void byte_dump(unsigned int address, unsigned int value, char* line, int size) {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 /* Dump any pending literal records into code                                 */
-/* `last_pass' is a boolean which enables code dumping                        */
+/* `last_pass' is a bool which enables code dumping                        */
 /* `line' is the input source line                                            */
 /* `limit' is a dump address not to exceed, unless 0 which indicates no limit */
 
-void literal_dump(boolean last_pass, char* line, unsigned int limit) {
+void literal_dump(bool last_pass, char* line, unsigned int limit) {
   unsigned int address; /* Needed because assembly pointer is static */
                         /*  for each `instruction' in the list file */
   unsigned int size;    /* Each plant aligns to the appropriate boundary */
@@ -5348,9 +5349,9 @@ sym_table* sym_create_table(char* name, unsigned int flags) {
 /*             retained                                                       */
 /* Returns:  Boolean - TRUE if some of the table remains                      */
 
-int sym_delete_table(sym_table* old_table, boolean export) {
+int sym_delete_table(sym_table* old_table, bool export) {
   int i;
-  boolean some_kept;
+  bool some_kept;
 
   some_kept = export && ((old_table->flags & SYM_TAB_EXPORT_FLAG) != 0);
 
@@ -5436,7 +5437,7 @@ int sym_locate_label(char* name,
                      sym_table* table,
                      sym_record** record) {
   sym_record *ptr1, *ptr2;
-  boolean result;
+  bool result;
   // defn_return result;
 
   ptr1 = sym_create_record(name, 0, flags & ~SYM_REC_DEF_FLAG, table->flags);
@@ -5526,7 +5527,7 @@ sym_record* sym_create_record(char* name,
 /* Returns:  TRUE if any records have been kept                               */
 
 int sym_delete_record_list(sym_record** ptr1, int export) {
-  boolean some_kept;
+  bool some_kept;
   sym_record *ptr2,
       *ptr3; /* Current and next records; ptr1 => current pointer */
 
@@ -5584,7 +5585,7 @@ int sym_add_to_table(sym_table* table, sym_record* record) {
 
 sym_record* sym_find_record(sym_table* table, sym_record* record) {
   sym_record* ptr;
-  boolean found;
+  bool found;
   int i;
 
   if (table != NULL) {
@@ -5729,7 +5730,7 @@ sym_record* sym_sort_symbols(sym_table* table,
 
   sym_record *temp_record, *sorted_list, *ptr1, *ptr2, **pptr;
   int i, j, min, after;
-  boolean found;
+  bool found;
   unsigned int flag_mask, flag_match;
 
   switch (what) /* Class of records to include */
@@ -5924,7 +5925,7 @@ void local_label_dump(local_label* pTable, FILE* handle) {
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
 void lit_print_table(literal_record* pTemp, FILE* handle) {
-  boolean nothing;
+  bool nothing;
 
   nothing = TRUE;
 
@@ -5946,6 +5947,240 @@ void lit_print_table(literal_record* pTemp, FILE* handle) {
 }
 
 /**
+ * @brief
+ * @param priority
+ * @param value
+ * @param math_stack
+ * @param math_SP
+ * @param error
+ * @param string
+ * @param pos
+ * @param symbol_table
+ */
+void Eval_inner(int priority,
+                int* value,
+                std::array<unsigned int, MATHSTACK_SIZE>& math_stack,
+                unsigned int& math_SP,
+                unsigned int& error,
+                std::string& string,
+                unsigned int*& pos,
+                sym_table*& symbol_table,
+                unsigned int& first_error) {
+  bool done, bracket;
+  unsigned int operator, operand, unary;
+
+  done = FALSE;  // Termination indicator
+
+  math_stack[math_SP] = priority;
+  math_SP = math_SP + 1;  // Stack `start' marker
+
+  while (!done) {
+    error = get_variable(string, pos, &operand, &unary, &bracket, symbol_table);
+
+    // Error not instantly fatal
+    if ((error & ALL_EXCEPT_LAST_PASS) != 0) {
+      // Keep note of error and pretend everything is still okay
+      if (first_error == EVAL_OKAY) {
+        first_error = error;
+      }
+      error = EVAL_OKAY;
+    }
+
+    if (error == EVAL_OKAY) {
+      if (bracket) {
+        Eval_inner(1, &operand, math_stack, math_SP, error, string, pos,
+                   symbol_table, first_error);  // May return error
+      }
+      // Can now apply unary to returned value
+      if (error == EVAL_OKAY) {
+        switch (unary) {
+          case PLUS:
+            break;
+          case MINUS:
+            operand = -operand;
+            break;
+          case NOT:
+            operand = ~operand;
+            break;
+          // Truncated log2 of operand
+          case LOG: {
+            unsigned int i;
+            i = operand;
+            operand = -1;
+            while (i > 0) {
+              operand++;
+              i = i >> 1;
+            }
+          } break;
+        }
+
+        if ((error = get_operator(string, pos, &operator, & priority)) ==
+            EVAL_OKAY) {
+          // If priority decreasing and previous a real operator, OPERATE
+          while ((priority <= math_stack[math_SP - 1]) &&
+                 (math_stack[math_SP - 1] > 1)) {
+            switch (math_stack[math_SP - 2]) {
+              case PLUS:
+                operand = math_stack[math_SP - 3] + operand;
+                break;
+              case MINUS:
+                operand = math_stack[math_SP - 3] - operand;
+                break;
+              case MULTIPLY:
+                operand = math_stack[math_SP - 3] * operand;
+                break;
+              case DIVIDE:
+                if (operand != 0) {
+                  operand = math_stack[math_SP - 3] / operand;
+                } else {
+                  operand = -1;
+                  if ((error == EVAL_OKAY) && (first_error == EVAL_OKAY)) {
+                    error = EVAL_DIV_BY_ZERO;
+                  }
+                  div_zero_this_pass = TRUE;
+                }
+                break;
+              case MODULUS:
+                // else leave it alone
+                if (operand != 0) {
+                  operand = math_stack[math_SP - 3] % operand;
+                }
+                break;
+              case LEFT_SHIFT:
+                operand = math_stack[math_SP - 3] << operand;
+                break;
+              case RIGHT_SHIFT:
+                operand = math_stack[math_SP - 3] >> operand;
+                break;
+              case AND:
+                operand = math_stack[math_SP - 3] & operand;
+                break;
+              case OR:
+                operand = math_stack[math_SP - 3] | operand;
+                break;
+              case XOR:
+                operand = math_stack[math_SP - 3] ^ operand;
+                break;
+              case EQUALS:
+                if (math_stack[math_SP - 3] == operand) {
+                  operand = -1;
+                } else {
+                  operand = 0;
+                }
+                break;
+              case NOT_EQUAL:
+                if (math_stack[math_SP - 3] != operand) {
+                  operand = -1;
+                } else {
+                  operand = 0;
+                }
+                break;
+              case LOWER_THAN:
+                if (math_stack[math_SP - 3] < operand) {
+                  operand = -1;
+                } else {
+                  operand = 0;
+                }
+                break;
+              case LOWER_EQUAL:
+                if (math_stack[math_SP - 3] <= operand) {
+                  operand = -1;
+                } else {
+                  operand = 0;
+                }
+                break;
+              case HIGHER_THAN:
+                if (math_stack[math_SP - 3] > operand) {
+                  operand = -1;
+                } else {
+                  operand = 0;
+                }
+                break;
+              case HIGHER_EQUAL:
+                if (math_stack[math_SP - 3] >= operand) {
+                  operand = -1;
+                } else {
+                  operand = 0;
+                }
+                break;
+              case LESS_THAN:
+                if ((int)math_stack[math_SP - 3] < (int)operand) {
+                  operand = -1;
+                } else {
+                  operand = 0;
+                }
+                break;
+              case LESS_EQUAL:
+                if ((int)math_stack[math_SP - 3] <= (int)operand) {
+                  operand = -1;
+                } else {
+                  operand = 0;
+                }
+                break;
+              case GREATER_THAN:
+                if ((int)math_stack[math_SP - 3] > (int)operand) {
+                  operand = -1;
+                } else {
+                  operand = 0;
+                }
+                break;
+              case GREATER_EQUAL:
+                if ((int)math_stack[math_SP - 3] >= (int)operand) {
+                  operand = -1;
+                } else {
+                  operand = 0;
+                }
+                break;
+              default:
+                break;
+            }
+            math_SP = math_SP - 3;
+          }
+          done = (priority <= 1);  // Next operator a ")" or end
+
+          // Priority must be increasing
+          if (!done) {
+            // PUSH
+            if ((math_SP + 3) <= MATHSTACK_SIZE) {
+              math_stack[math_SP] = operand;
+              math_stack[math_SP + 1] = operator;
+              math_stack[math_SP + 2] = priority;
+              math_SP = math_SP + 3;
+            } else {
+              error = EVAL_MATHSTACK_LIMIT;  // Don't overflow stack
+            }
+          }
+          // Now bracketed by terminators.  Matched?
+          else {
+            if (priority == math_stack[math_SP - 1]) {
+              math_SP = math_SP - 1;
+            } else if (priority == 0) {
+              error = EVAL_NO_CLOSEBR;  // Errors
+            } else {
+              error = EVAL_NO_OPENBR;
+            }
+          }
+        }
+      }
+    }
+    if (error != EVAL_OKAY) {
+      done = TRUE;  // Terminate on error whatever else
+
+      // Include position on line (if poss.)
+      if (error == EVAL_NO_OPENBR) {
+        error = error | (*pos - 1);  // Has stepped over extra ')'
+      }
+      // Arithmetic error will occur late
+      else if (error != EVAL_DIV_BY_ZERO) {
+        error = error | *pos;  // Include position on line
+      }
+    }
+  }
+
+  *value = operand;
+}
+
+/**
  * @brief Evaluate - modulo current word length
  * On entry: *string points to a pointer to the input string
  *            *pos points to an offset in the string
@@ -5960,237 +6195,20 @@ void lit_print_table(literal_record* pTemp, FILE* handle) {
  * @param symbol_table
  * @return unsigned int
  */
-unsigned int evaluate(char* string,
+unsigned int evaluate(std::string string,
                       unsigned int* pos,
                       int* value,
                       sym_table* symbol_table) {
-  unsigned int math_stack[MATHSTACK_SIZE];
+  std::array<unsigned int, MATHSTACK_SIZE> math_stack;
   unsigned int math_SP, error, first_error;
 
-  // Main function shares stack etc.
-  void Eval_inner(int priority, int* value) {
-    boolean done, bracket;
-    unsigned int operator, operand, unary;
-
-    done = FALSE;  // Termination indicator
-
-    math_stack[math_SP] = priority;
-    math_SP = math_SP + 1;  // Stack `start' marker
-
-    while (!done) {
-      error =
-          get_variable(string, pos, &operand, &unary, &bracket, symbol_table);
-
-      // Error not instantly fatal
-      if ((error & ALL_EXCEPT_LAST_PASS) != 0) {
-        // Keep note of error and pretend everything is still okay
-        if (first_error == eval_okay) {
-          first_error = error;
-        }
-        error = eval_okay;
-      }
-
-      if (error == eval_okay) {
-        if (bracket) {
-          Eval_inner(1, &operand);  // May return error
-        }
-        // Can now apply unary to returned value
-        if (error == eval_okay) {
-          switch (unary) {
-            case PLUS:
-              break;
-            case MINUS:
-              operand = -operand;
-              break;
-            case NOT:
-              operand = ~operand;
-              break;
-            // Truncated log2 of operand
-            case LOG: {
-              unsigned int i;
-              i = operand;
-              operand = -1;
-              while (i > 0) {
-                operand++;
-                i = i >> 1;
-              }
-            } break;
-          }
-
-          if ((error = get_operator(string, pos, &operator, & priority)) ==
-              eval_okay) {
-            // If priority decreasing and previous a real operator, OPERATE
-            while ((priority <= math_stack[math_SP - 1]) &&
-                   (math_stack[math_SP - 1] > 1)) {
-              switch (math_stack[math_SP - 2]) {
-                case PLUS:
-                  operand = math_stack[math_SP - 3] + operand;
-                  break;
-                case MINUS:
-                  operand = math_stack[math_SP - 3] - operand;
-                  break;
-                case MULTIPLY:
-                  operand = math_stack[math_SP - 3] * operand;
-                  break;
-                case DIVIDE:
-                  if (operand != 0) {
-                    operand = math_stack[math_SP - 3] / operand;
-                  } else {
-                    operand = -1;
-                    if ((error == eval_okay) && (first_error == eval_okay)) {
-                      error = eval_div_by_zero;
-                    }
-                    div_zero_this_pass = TRUE;
-                  }
-                  break;
-                case MODULUS:
-                  // else leave it alone
-                  if (operand != 0) {
-                    operand = math_stack[math_SP - 3] % operand;
-                  }
-                  break;
-                case LEFT_SHIFT:
-                  operand = math_stack[math_SP - 3] << operand;
-                  break;
-                case RIGHT_SHIFT:
-                  operand = math_stack[math_SP - 3] >> operand;
-                  break;
-                case AND:
-                  operand = math_stack[math_SP - 3] & operand;
-                  break;
-                case OR:
-                  operand = math_stack[math_SP - 3] | operand;
-                  break;
-                case XOR:
-                  operand = math_stack[math_SP - 3] ^ operand;
-                  break;
-                case EQUALS:
-                  if (math_stack[math_SP - 3] == operand) {
-                    operand = -1;
-                  } else {
-                    operand = 0;
-                  }
-                  break;
-                case NOT_EQUAL:
-                  if (math_stack[math_SP - 3] != operand) {
-                    operand = -1;
-                  } else {
-                    operand = 0;
-                  }
-                  break;
-                case LOWER_THAN:
-                  if (math_stack[math_SP - 3] < operand) {
-                    operand = -1;
-                  } else {
-                    operand = 0;
-                  }
-                  break;
-                case LOWER_EQUAL:
-                  if (math_stack[math_SP - 3] <= operand) {
-                    operand = -1;
-                  } else {
-                    operand = 0;
-                  }
-                  break;
-                case HIGHER_THAN:
-                  if (math_stack[math_SP - 3] > operand) {
-                    operand = -1;
-                  } else {
-                    operand = 0;
-                  }
-                  break;
-                case HIGHER_EQUAL:
-                  if (math_stack[math_SP - 3] >= operand) {
-                    operand = -1;
-                  } else {
-                    operand = 0;
-                  }
-                  break;
-                case LESS_THAN:
-                  if ((int)math_stack[math_SP - 3] < (int)operand) {
-                    operand = -1;
-                  } else {
-                    operand = 0;
-                  }
-                  break;
-                case LESS_EQUAL:
-                  if ((int)math_stack[math_SP - 3] <= (int)operand) {
-                    operand = -1;
-                  } else {
-                    operand = 0;
-                  }
-                  break;
-                case GREATER_THAN:
-                  if ((int)math_stack[math_SP - 3] > (int)operand) {
-                    operand = -1;
-                  } else {
-                    operand = 0;
-                  }
-                  break;
-                case GREATER_EQUAL:
-                  if ((int)math_stack[math_SP - 3] >= (int)operand) {
-                    operand = -1;
-                  } else {
-                    operand = 0;
-                  }
-                  break;
-
-                default:
-                  break;
-              }
-              math_SP = math_SP - 3;
-            }
-            done = (priority <= 1);  // Next operator a ")" or end
-
-            // Priority must be increasing
-            if (!done) {
-              // PUSH
-              if ((math_SP + 3) <= MATHSTACK_SIZE) {
-                math_stack[math_SP] = operand;
-                math_stack[math_SP + 1] = operator;
-                math_stack[math_SP + 2] = priority;
-                math_SP = math_SP + 3;
-              } else {
-                error = eval_mathstack_limit;  // Don't overflow stack
-              }
-            }
-            // Now bracketed by terminators.  Matched?
-            else {
-              if (priority == math_stack[math_SP - 1]) {
-                math_SP = math_SP - 1;
-              } else if (priority == 0) {
-                error = eval_not_closebr;  // Errors
-              } else {
-                error = eval_not_openbr;
-              }
-            }
-          }
-        }
-      }
-      if (error != eval_okay) {
-        done = TRUE;  // Terminate on error whatever else
-
-        // Include position on line (if poss.)
-        if (error == eval_not_openbr) {
-          error = error | (*pos - 1);  // Has stepped over extra ')'
-        }
-        // Arithmetic error will occur late
-        else if (error != eval_div_by_zero) {
-          error = error | *pos;  // Include position on line
-        }
-      }
-    }
-
-    *value = operand;
-    return;
-  }
-
-  error = eval_okay;        // "Evaluate" initialised and called from here
-  first_error = eval_okay;  // Used to note if labels undefined, etc.
+  error = EVAL_OKAY;        // "Evaluate" initialised and called from here
+  first_error = EVAL_OKAY;  // Used to note if labels undefined, etc.
   math_SP = 0;
-  Eval_inner(0, value);  // Potentially recursive evaluation code
+  Eval_inner(0, value, math_stack, math_SP, error, string, pos, symbol_table,
+             first_error);  // Potentially recursive evaluation code
 
-  if (error == eval_okay) {
+  if (error == EVAL_OKAY) {
     return first_error;  // Signal any problems held over
   } else {
     return error;
@@ -6223,12 +6241,12 @@ int get_variable(char* input,
                  unsigned int* pos,
                  int* value,
                  int* unary,
-                 boolean* bracket,
+                 bool* bracket,
                  sym_table* symbol_table) {
   int status, radix;
   unsigned int ii;
 
-  status = eval_no_operand;      // In case nothing found
+  status = EVAL_NO_OPERAND;      // In case nothing found
   radix = -1;                    // Indicates no numeric constant spotted
   *pos = skip_spc(input, *pos);  // In case of error want this at next item
   ii = *pos;                     // String pointer within routine
@@ -6254,7 +6272,7 @@ int get_variable(char* input,
   if (input[ii] == '(') {  // Open brackets instead of value
     *bracket = TRUE;
     ii++;  // Skip bracket
-    status = eval_okay;
+    status = EVAL_OKAY;
   } else {
     int i;
     char ident[LINE_LENGTH];
@@ -6266,16 +6284,16 @@ int get_variable(char* input,
         // Label present and with a valid value
         if ((symbol->flags & SYM_REC_DEF_FLAG) != 0) {
           *value = symbol->value;
-          status = eval_okay;
+          status = EVAL_OKAY;
         }
         // Label found but value invalid
         else {
-          status = eval_label_undef | ii;
+          status = EVAL_LABEL_UNDEF | ii;
           undefined_count++;  // Increment global variable
         }
         // Label not found
       } else {
-        status = eval_no_label | ii;
+        status = EVAL_NO_LIMIT | ii;
       }
       ii = ii + i;  // Step pointer on End of label gathering
     } else {
@@ -6316,9 +6334,9 @@ int get_variable(char* input,
           pStart = loc_lab_position;
         }
         if (!get_num(input, &ii, &label, 10)) {
-          status = eval_bad_loc_lab;
+          status = EVAL_BAD_LOC_LAB;
         } else {
-          boolean found;
+          bool found;
 
           found = FALSE;
 
@@ -6343,10 +6361,10 @@ int get_variable(char* input,
           }
 
           if (found) {
-            status = eval_okay;
+            status = EVAL_OKAY;
             *value = pTemp->value;
           } else {
-            status = eval_no_label;
+            status = EVAL_NO_LIMIT;
           }
         }
       } else {
@@ -6363,9 +6381,9 @@ int get_variable(char* input,
                 (input[ii + 1] == '\'')) {
               *value = input[ii];
               ii += 2;
-              status = eval_okay;
+              status = EVAL_OKAY;
             } else {
-              status = eval_operand_error | ii;
+              status = EVAL_OPERAND_ERROR | ii;
             }
           }
           // C-style escaped characters
@@ -6375,18 +6393,18 @@ int get_variable(char* input,
                 (input[ii + 1] == '\'')) {
               *value = c_char_esc(input[ii]);
               ii += 2;
-              status = eval_okay;
+              status = EVAL_OKAY;
             } else {
-              status = eval_operand_error | ii;
+              status = EVAL_OPERAND_ERROR | ii;
             }
           }
         } else {
           if (input[ii] == '.') {
             if (assembly_pointer_defined) {
               *value = assembly_pointer + def_increment;
-              status = eval_okay;
+              status = EVAL_OKAY;
             } else {
-              status = eval_label_undef | ii;
+              status = EVAL_LABEL_UNDEF | ii;
             }
             ii++;
           }
@@ -6422,9 +6440,9 @@ int get_variable(char* input,
             }
             if (radix > 0) {
               if (get_num(input, &ii, value, radix)) {
-                status = eval_okay;
+                status = EVAL_OKAY;
               } else {
-                status = eval_out_of_radix;
+                status = EVAL_OUT_OF_RADIX;
               }
             }
           }
@@ -6433,7 +6451,7 @@ int get_variable(char* input,
     }
   }
 
-  if ((status == eval_okay) || ((status & ALL_EXCEPT_LAST_PASS) != 0)) {
+  if ((status == EVAL_OKAY) || ((status & ALL_EXCEPT_LAST_PASS) != 0)) {
     *pos = ii;  // Move input pointer if successful (in some degree)
   }
 
@@ -6469,7 +6487,7 @@ int get_operator(char* input,
   *pos = skip_spc(input, *pos);  // In case of error want this at next item
   ii = *pos;                     // String pointer within routine
 
-  status = eval_no_operator;
+  status = EVAL_NO_OPERATOR;
 
   // in case no operator was found, this will be the default
   switch (input[ii]) {
@@ -6480,59 +6498,59 @@ int get_operator(char* input,
     case '}':
     case '\n':
       *operator= END;
-      status = eval_okay;
+      status = EVAL_OKAY;
       break;
     case '+':
       *operator= PLUS;
       ii++;
-      status = eval_okay;
+      status = EVAL_OKAY;
       break;
     case '-':
       *operator= MINUS;
       ii++;
-      status = eval_okay;
+      status = EVAL_OKAY;
       break;
     case '*':
       *operator= MULTIPLY;
       ii++;
-      status = eval_okay;
+      status = EVAL_OKAY;
       break;
     case '/':
       *operator= DIVIDE;
       ii++;
-      status = eval_okay;
+      status = EVAL_OKAY;
       break;
     case '\\':
       *operator= MODULUS;
       ii++;
-      status = eval_okay;
+      status = EVAL_OKAY;
       break;
     case ')':
       *operator= CLOSEBR;
       ii++;
-      status = eval_okay;
+      status = EVAL_OKAY;
       break;
     case '|':
       *operator= OR;
       ii++;
-      status = eval_okay;
+      status = EVAL_OKAY;
       break;
-      // case '&':  *operator = AND;       ii++;  status = eval_okay; break;
+      // case '&':  *operator = AND;       ii++;  status = EVAL_OKAY; break;
     case '^':
       *operator= XOR;
       ii++;
-      status = eval_okay;
+      status = EVAL_OKAY;
       break;
     case '=':
       *operator= EQUALS;
       ii++;
-      status = eval_okay;
+      status = EVAL_OKAY;
       break;
     case '!':
       if (input[ii + 1] == '=') {
         *operator= NOT_EQUAL;
         ii += 2;
-        status = eval_okay;
+        status = EVAL_OKAY;
       }
       break;
     case '<':
@@ -6554,7 +6572,7 @@ int get_operator(char* input,
           ii += 1;
           break;
       }
-      status = eval_okay;
+      status = EVAL_OKAY;
       break;
     case '>':
       switch (input[ii + 1]) {
@@ -6571,7 +6589,7 @@ int get_operator(char* input,
           ii += 1;
           break;
       }
-      status = eval_okay;
+      status = EVAL_OKAY;
       break;
 
     // Have a go at symbolically defined operators
@@ -6586,7 +6604,7 @@ int get_operator(char* input,
         if ((ptr = sym_find_label(buffer, operator_table)) != NULL) {
           *operator= ptr->value;
           ii += i;
-          status = eval_okay;
+          status = EVAL_OKAY;
         }
       }
     }
@@ -6662,7 +6680,7 @@ int get_operator(char* input,
       break;
   }
 
-  if (status == eval_okay) {
+  if (status == EVAL_OKAY) {
     *pos = ii;  // Move input pointer if successful
   }
 
@@ -6733,10 +6751,10 @@ char* pathname(char* name1, char* name2) {
  * @param pPos
  * @param offset
  * @param character
- * @return boolean true if `character' is found
+ * @return bool true if `character' is found
  */
-boolean cmp_next_non_space(char* line, int* pPos, int offset, char character) {
-  boolean result;
+bool cmp_next_non_space(char* line, int* pPos, int offset, char character) {
+  bool result;
 
   *pPos = skip_spc(line, *pPos + offset);  // Strip, possibly skipping first
   result = (line[*pPos] == character);
@@ -6749,9 +6767,9 @@ boolean cmp_next_non_space(char* line, int* pPos, int offset, char character) {
 /**
  * @brief
  * @param character
- * @return boolean true if `character' is valid end of statement
+ * @return bool true if `character' is valid end of statement
  */
-boolean test_eol(char character) {
+bool test_eol(char character) {
   return (character == '\0') || (character == ';') || (character == '\n');
 }
 
@@ -6783,18 +6801,18 @@ unsigned int get_identifier(char* line,
 /**
  * @brief
  * @param c
- * @return boolean
+ * @return bool
  */
-boolean alpha_numeric(char c) {
+bool alpha_numeric(char c) {
   return (((c >= '0') && (c <= '9')) || alphabetic(c));
 }
 
 /**
  * @brief
  * @param c
- * @return boolean
+ * @return bool
  */
-boolean alphabetic(char c) {
+bool alphabetic(char c) {
   return ((c == '_') || ((c >= 'A') && (c <= 'Z')) ||
           ((c >= 'a') && (c <= 'z')));
 }
@@ -6897,7 +6915,7 @@ int num_char(char* line, int* pos, unsigned int radix) {
  */
 int get_num(char* line, int* position, int* value, unsigned int radix) {
   int i, new_digit;
-  boolean found;
+  bool found;
 
   i = skip_spc(line, *position);
   *value = 0;
@@ -6922,9 +6940,7 @@ int get_num(char* line, int* position, int* value, unsigned int radix) {
  * @param last_pass
  * @return int
  */
-int allow_error(unsigned int error_code,
-                boolean first_pass,
-                boolean last_pass) {
+int allow_error(unsigned int error_code, bool first_pass, bool last_pass) {
   return (!last_pass && ((error_code & ALLOW_ON_INTER_PASS) != 0)) ||
          (first_pass && ((error_code & ALLOW_ON_FIRST_PASS) != 0));
 }
