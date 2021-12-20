@@ -384,7 +384,7 @@ int get_operator(char*, unsigned int*, int*, int*);
 
 sym_table* sym_create_table(char*, unsigned int);
 int sym_delete_table(sym_table*, bool);
-defn_return sym_define_label(char*,
+defn_return sym_define_label(const char*,
                              unsigned int,
                              unsigned int,
                              sym_table*,
@@ -520,7 +520,18 @@ sym_table* cregister_table;
 sym_table* copro_table;
 sym_table* shift_table;
 
-// Recursion for INCLUDE files
+/**
+ * @brief
+ * @param fHandle
+ * @param filename
+ * @param line
+ * @param error_code
+ * @param thumb_mnemonic_list
+ * @param arm_mnemonic_list
+ * @param symbol_table
+ * @param last_pass
+ * @param finished
+ */
 void code_pass(FILE*& fHandle,
                char*& filename,
                std::string& line,
@@ -585,7 +596,14 @@ void code_pass(FILE*& fHandle,
   free(include_file_path);
 }
 
-// Create and initialise a symbol table
+/**
+ * @brief Create and initialise a symbol table
+ * @param table_name
+ * @param flags
+ * @param sym_names
+ * @param values
+ * @return sym_table*
+ */
 sym_table* build_table(char* table_name,
                        unsigned int flags,
                        std::string* sym_names,
@@ -596,8 +614,10 @@ sym_table* build_table(char* table_name,
 
   table = sym_create_table(table_name, flags);
 
-  for (i = 0; *(sym_names[i]) != '\0'; i++)  // repeat until "" found
-    sym_define_label(sym_names[i], values[i], 0, table, &dummy);
+  // repeat until "" found
+  for (i = 0; sym_names[i] != ""; i++) {
+    sym_define_label(sym_names[i].c_str(), values[i], 0, table, &dummy);
+  }
 
   return table;
 }
@@ -835,7 +855,9 @@ int main(int argc, char* argv[]) {
 
         rewind(fSource); /* Ensure at start of file */
 
-        code_pass(fSource, input_file_name);
+        code_pass(fSource, input_file_name, line, error_code,
+                  thumb_mnemonic_list, arm_mnemonic_list, symbol_table,
+                  last_pass, finished);
         /* no error checks @@@ */
 
         if (literal_tail != literal_head) /* Clear the literal pool */
@@ -991,33 +1013,50 @@ int main(int argc, char* argv[]) {
       sym_delete_table(copro_table, false);
       sym_delete_table(shift_table, false);
     }
-  } else
+  } else {
     printf("No input file specified\n");
-
-  if (pass_errors == 0)
-    exit(0);
-  else
-    exit(-1);
-}
-
-/*----------------------------------------------------------------------------*/
-/*					// Allow omission of spaces? @@@@
-                                        // Allow filename first ?    @@@@*/
-bool set_options(int argc, char* argv[]) {
-  void file_option(int* std_out, char** filename, char* err_mss) {
-    if (argc > 2) {
-      if ((argv[1])[0] == '-')
-        *std_out = true;
-      else {
-        *filename = &(*argv[1]);
-        argc--;
-        argv++;
-      }
-    } else
-      printf("%s filename omitted\n", err_mss);
-    return;
   }
 
+  if (pass_errors == 0) {
+    exit(0);
+  } else {
+    exit(-1);
+  }
+}
+
+/**
+ * @brief
+ * @param std_out
+ * @param filename
+ * @param err_mss
+ */
+void file_option(int* std_out,
+                 char** filename,
+                 char* err_mss,
+                 int& argc,
+                 char**& argv) {
+  if (argc > 2) {
+    if ((argv[1])[0] == '-')
+      *std_out = true;
+    else {
+      *filename = &(*argv[1]);
+      argc--;
+      argv++;
+    }
+  } else {
+    printf("%s filename omitted\n", err_mss);
+  }
+}
+
+/**
+ * @brief Set the options object
+ *
+ * @param argc
+ * @param argv
+ * @return true
+ * @return false
+ */
+bool set_options(int argc, char* argv[]) {
   bool okay;
   char c;
 
@@ -1052,12 +1091,12 @@ bool set_options(int argc, char* argv[]) {
 
         case 'E':
         case 'e':
-          file_option(&elf_stdout, &elf_file_name, "Elf file");
+          file_option(&elf_stdout, &elf_file_name, "Elf file", argc, argv);
           break;
 
         case 'H':
         case 'h':
-          file_option(&hex_stdout, &hex_file_name, "Hex dump");
+          file_option(&hex_stdout, &hex_file_name, "Hex dump", argc, argv);
           break;
 
         case 'L':
@@ -1066,7 +1105,7 @@ bool set_options(int argc, char* argv[]) {
               ((((*argv)[2] & 0xDF) == 'S') || (((*argv)[2] & 0xDF) == 'K'));
           /* 'S' or 'K' dumps symbols too */
           list_kmd = (((*argv)[2] & 0xDF) == 'K'); /* K inserts "KMD" header */
-          file_option(&list_stdout, &list_file_name, "List");
+          file_option(&list_stdout, &list_file_name, "List", argc, argv);
           break;
 
         case 'S':
@@ -1096,13 +1135,14 @@ bool set_options(int argc, char* argv[]) {
               sym_print_extras |= 2;
             pos++;
           }
-          file_option(&symbols_stdout, &symbols_file_name, "Symbol");
+          file_option(&symbols_stdout, &symbols_file_name, "Symbol", argc,
+                      argv);
         } break;
 
         case 'V':
         case 'v':
           file_option(&verilog_stdout, &verilog_file_name,
-                      "Verilog memory format");
+                      "Verilog memory format", argc, argv);
 
           if (argc > 2) {
             if ((argv[1])[0] == '[') {
@@ -1149,8 +1189,14 @@ bool set_options(int argc, char* argv[]) {
   return okay;
 }
 
-/*----------------------------------------------------------------------------*/
-
+/**
+ * @brief
+ * @param line
+ * @param line_no
+ * @param error_code
+ * @param filename
+ * @param last_pass
+ */
 void print_error(std::string& line,
                  unsigned int line_no,
                  unsigned int error_code,
@@ -1160,15 +1206,16 @@ void print_error(std::string& line,
   int i;
 
   if ((error_code & WARNING_ONLY) != 0) {
-    if (!last_pass)
-      return; /* Barf! */
-    else
+    if (!last_pass) {
+      return;
+    } else {
       printf("Warning: ");
-  } else
-    pass_errors++; /* Don't tally warnings */
+    }
+  } else {
+    pass_errors++;  // Don't tally warnings
+  }
 
-  /*  The position on the line is in the bottom 8 bits; 0 indicates undefined.
-   */
+  // The position on the line is in the bottom 8 bits; 0 indicates undefined.
   position = error_code & 0x000000FF;
 
   switch (error_code & 0xFFFFFF00) {
@@ -1341,10 +1388,9 @@ void print_error(std::string& line,
   }
   printf(" on line %d of file: %s\n", line_no, filename);
 
-  /*printf(line); printf("\n");           /* This suppresses '%' characters :-(
-   */
-  for (i = 0; line[i] != '\0'; i++)
+  for (i = 0; line[i] != '\0'; i++) {
     printf("%c", line[i]);
+  }
   printf("\n"); /* Yuk! */
 
   if (position > 0) /* else position not well defined */
@@ -1360,8 +1406,14 @@ void print_error(std::string& line,
   return;
 }
 
-/*----------------------------------------------------------------------------*/
-
+/**
+ * @brief
+ * @param file
+ * @param buffer
+ * @param max
+ * @return true
+ * @return false
+ */
 bool input_line(FILE* file, std::string& buffer, unsigned int max) {
   int i;
   char c;
@@ -1392,8 +1444,15 @@ bool input_line(FILE* file, std::string& buffer, unsigned int max) {
   }
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-
+/**
+ * @brief
+ * @param line
+ * @param a_table
+ * @param t_table
+ * @param d_table
+ * @return true
+ * @return false
+ */
 bool parse_mnemonic_line(std::string& line,
                          sym_table* a_table,
                          sym_table* t_table,
@@ -5386,7 +5445,7 @@ int sym_delete_table(sym_table* old_table, bool export) {
 /* Returns:  enumerated type indicating the action taken                      */
 /*           pointer to the appropriate record in var. specified by **record  */
 
-defn_return sym_define_label(char* name,
+defn_return sym_define_label(const char* name,
                              unsigned int value,
                              unsigned int flags,
                              sym_table* table,
