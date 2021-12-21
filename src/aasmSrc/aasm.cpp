@@ -46,6 +46,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <array>
+#include <iostream>
 #include <string>
 
 #define MAX_PASSES 30                  // No of reiterations before giving up
@@ -335,7 +336,7 @@ unsigned int parse_source_line(std::string&,
                                char**,
                                char*);
 void print_error(std::string&, unsigned int, unsigned int, char*, int);
-unsigned int assemble_line(char*,
+unsigned int assemble_line(std::string,
                            unsigned int,
                            unsigned int,
                            own_label*,
@@ -372,7 +373,7 @@ void assemble_redef_label(unsigned int,
                           int,
                           int,
                           int,
-                          char*);
+                          std::string);
 
 /*----------------------------------------------------------------------------*/
 
@@ -430,16 +431,16 @@ void list_hex(unsigned int, unsigned int, char*);
 
 /*----------------------------------------------------------------------------*/
 
-int skip_spc(char*, int);
+int skip_spc(std::string, int);
 char* file_path(char*);
 char* pathname(char*, char*);
 bool cmp_next_non_space(char*, int*, int, char);
 bool test_eol(char);
-unsigned int get_identifier(char*, unsigned int, char*, unsigned int);
+unsigned int get_identifier(std::string, unsigned int, char*, unsigned int);
 bool alpha_numeric(char);
 bool alphabetic(char);
 unsigned char c_char_esc(unsigned char);
-int get_num(char*, int*, int*, unsigned int);
+int get_num(std::string, int*, int*, unsigned int);
 int allow_error(unsigned int, bool, bool);
 
 /*----------------------------------------------------------------------------*/
@@ -752,7 +753,7 @@ int main(int argc, char* argv[]) {
     // Depends on using a Unix system which contains `proc/self/exe`
     // To find the absolute filepath of an executable.
     if (readlink("/proc/self/exe", full_name, sizeof(full_name)) == -1) {
-      printf("Getting file path failed!");
+      std::cout << "Getting file path failed!";
       exit(1);
     }
 
@@ -875,12 +876,13 @@ int main(int argc, char* argv[]) {
 
         if (pass_errors != 0) {
           finished = true;
-          printf("Pass %2d: terminating due to %d error", pass_count,
-                 pass_errors);
-          if (pass_errors == 1)
-            printf("\n");
-          else
-            printf("s\n");
+          std::cout << "Pass " << pass_count << " terminating due to "
+                    << pass_errors << " error";
+          if (pass_errors == 1) {
+            std::cout << std::endl;
+          } else {
+            std::cout << 's' << std::endl;
+          }
         } else {
           if (last_pass || (pass_count > MAX_PASSES))
             finished = true;
@@ -895,7 +897,8 @@ int main(int argc, char* argv[]) {
         }
 
         if (if_SP != 0) {
-          printf("Pass completed with IF clause still open; terminating\n");
+          std::cout << "Pass completed with IF clause still open; terminating"
+                    << std::endl;
           finished = true;
         }
 
@@ -906,13 +909,13 @@ int main(int argc, char* argv[]) {
 
       if ((fList != NULL) && list_sym)
         list_symbols(fList, symbol_table);
-      /* Symbols into list file */
+      // Symbols into list file
 
-      if (fVerilog != NULL) /* Dump memory image to hex file */
+      if (fVerilog != NULL)  // Dump memory image to hex file
       {
         int i;
         for (i = 0; i < verilog_mem_size; i++) {
-          fprintf(fVerilog, "%02X", Verilog_array[i ^ 3]); /* Big endian */
+          fprintf(fVerilog, "%02X", Verilog_array[i ^ 3]);  // Big endian
           if ((i & 3) == 3)
             fprintf(fVerilog, "\n");
         }
@@ -923,39 +926,48 @@ int main(int argc, char* argv[]) {
       close_output_file(fVerilog, verilog_file_name, pass_errors != 0);
 
       if (fElf != NULL)
-        elf_dump_out(fElf, symbol_table); /* Organise & o/p ELF */
+        elf_dump_out(fElf, symbol_table);  // Organise & o/p ELF
 
       if (pass_count > MAX_PASSES) {
-        printf("Couldn't do it ... fed up!\n\n");
-        printf("Undefined labels:\n");
+        std::cout << "Couldn't do it ... fed up!" << std::endl << std::endl;
+        std::cout << "Undefined labels:" << std::endl;
         sym_print_table(symbol_table, UNDEFINED, ALPHABETIC, true, "");
       } else {
         if (symbols_stdout || (symbols_file_name[0] != '\0')) {
           sym_print_table(symbol_table, ALL, symbols_order, symbols_stdout,
                           symbols_file_name);
-          if (!symbols_stdout)
-            printf("Symbols in file: %s\n", symbols_file_name);
+          if (!symbols_stdout) {
+            std::cout << "Symbols in file: " << symbols_file_name << std::endl;
+          }
         }
 
         if (pass_errors == 0) {
-          if (list_file_name[0] != '\0')
-            printf("List file in: %s\n", list_file_name);
-          if (hex_file_name[0] != '\0')
-            printf("Hex dump in: %s\n", hex_file_name);
-          if (elf_file_name[0] != '\0')
-            printf("ELF file in: %s\n", elf_file_name);
-          if (verilog_file_name[0] != '\0') {
-            printf("Verilog file in: %s", verilog_file_name);
-            printf("  size: %X (decimal %d) words\n", verilog_mem_size,
-                   verilog_mem_size);
+          if (list_file_name[0] != '\0') {
+            std::cout << "List file in: " << list_file_name << std::endl;
           }
-        } else
-          printf("No output generated.\n"); /* Errors => trash output files */
+          if (hex_file_name[0] != '\0') {
+            std::cout << "Hex dump in: " << hex_file_name << std::endl;
+          }
+          if (elf_file_name[0] != '\0') {
+            std::cout << "ELF file in: " << elf_file_name << std::endl;
+          }
+          if (verilog_file_name[0] != '\0') {
+            std::cout << "Verilog file in: " << verilog_file_name << std::endl;
+            std::cout << "  size: " << verilog_mem_size << " (decimal "
+                      << verilog_mem_size << ") words" << std::endl;
+          }
+        } else {
+          std::cout << "No output generated."
+                    << std::endl;  // Errors => trash output files
+        }
 
-        if (pass_count == 1)
-          printf("\n1 pass performed.\n");
-        else
-          printf("\nComplete.  %d passes performed.\n", pass_count);
+        if (pass_count == 1) {
+          std::cout << std::endl << "1 pass performed." << std::endl;
+        } else {
+          std::cout << std::endl
+                    << "Complete. " << pass_count << " passes performed."
+                    << std::endl;
+        }
       }
 
       { /* Free local label list */
@@ -1014,7 +1026,7 @@ int main(int argc, char* argv[]) {
       sym_delete_table(shift_table, false);
     }
   } else {
-    printf("No input file specified\n");
+    std::cout << "No input file specified" << std::endl;
   }
 
   if (pass_errors == 0) {
@@ -1044,7 +1056,7 @@ void file_option(int* std_out,
       argv++;
     }
   } else {
-    printf("%s filename omitted\n", err_mss);
+    std::cout << err_mss << " filename omitted" << std::endl;
   }
 }
 
@@ -1063,25 +1075,35 @@ bool set_options(int argc, char* argv[]) {
   okay = false;
 
   if (argc == 1) {
-    printf("ARM assembler v0.28 (23/03/15)\n");
-    printf("Usage: %s <options> filename\n", argv[0]);
-    printf("Options:    -e <filename>  specify ELF output file\n");
-    printf("            -h <filename>  specify hex dump file\n");
-    printf("            -l <filename>  specify list file\n");
-    printf("                -ls appends symbol table\n");
-    printf("                -lk produces a KMD file\n");
-    printf("            -s <filename>  specify symbol table file\n");
-    printf("                -sd gives symbols in order of definition\n");
-    printf("                -sv gives symbols sorted by value\n");
-    printf("                -sl includes local labels\n");
-    printf("                -sp includes automatically generated literals\n");
-    printf("            -v <filename>  specify Verilog readmemh file\n");
-    printf("                [<hex number>] following name sets file size\n");
-    printf("                    default (max) = %08X\n", VERILOG_MAX);
-    printf("                    (output aliases modulo this size)\n");
-    printf("Omitting a filename (or using '-') directs to stdout\n");
+    std::cout << "ARM assembler v0.28 (23/03/15)" << std::endl
+              << "Usage: " << argv[0] << " <options> filename" << std::endl
+              << "Options:    -e <filename>  specify ELF output file"
+              << std::endl
+              << "            -h <filename>  specify hex dump file" << std::endl
+              << "            -l <filename>  specify list file" << std::endl
+              << "                -ls appends symbol table" << std::endl
+              << "                -lk produces a KMD file" << std::endl
+              << "            -s <filename>  specify symbol table file"
+              << std::endl
+              << "                -sd gives symbols in order of definition"
+              << std::endl
+              << "                -sv gives symbols sorted by value"
+              << std::endl
+              << "                -sl includes local labels" << std::endl
+              << "                -sp includes automatically generated literals"
+              << std::endl
+              << "            -v <filename>  specify Verilog readmemh file"
+              << std::endl
+              << "                [<hex number>] following name sets file size"
+              << std::endl
+              << "                    default (max) = " << VERILOG_MAX
+              << std::endl
+              << "                    (output aliases modulo this size)"
+              << std::endl
+              << "Omitting a filename (or using '-') directs to stdout"
+              << std::endl;
   } else {
-    argv++; /* Next pointer */
+    argv++;  // Next pointer
 
     while ((argc > 1) && ((*argv)[0] == '-')) {
       c = (*argv)[1];
@@ -1154,8 +1176,9 @@ bool set_options(int argc, char* argv[]) {
                 if (x < verilog_mem_size)
                   verilog_mem_size = x; /* Clip to max.*/
 
-              if ((argv[1])[p] != ']')
-                printf("Please close the brackets!\n");
+              if ((argv[1])[p] != ']') {
+                std::cout << "Please close the brackets!" << std::endl;
+              }
 
               argc--;
               argv++;
@@ -1164,11 +1187,11 @@ bool set_options(int argc, char* argv[]) {
           break;
 
         default:
-          printf("Unknown option %c\n", c);
+          std::cout << "Unknown option " << c << std::endl;
           break;
       }
-      argc--; /* Remove parameter from count */
-      argv++; /* Next pointer */
+      argc--;  // Remove parameter from count
+      argv++;  // Next pointer
     }
 
     if (argc > 1) {
@@ -1182,7 +1205,7 @@ bool set_options(int argc, char* argv[]) {
         return 144;
       }
 
-      printf("Input file: %s\n", input_file_name);
+      std::cout << "Input file: " << input_file_name << std::endl;
       okay = true;
     }
   }
@@ -1209,7 +1232,7 @@ void print_error(std::string& line,
     if (!last_pass) {
       return;
     } else {
-      printf("Warning: ");
+      std::cout << "Warning: ";
     }
   } else {
     pass_errors++;  // Don't tally warnings
@@ -1220,190 +1243,193 @@ void print_error(std::string& line,
 
   switch (error_code & 0xFFFFFF00) {
     case SYM_ERR_SYNTAX:
-      printf("Syntax error");
+      std::cout << "Syntax error";
       break;
     case SYM_ERR_NO_MNEM:
-      printf("Mnemonic not found");
+      std::cout << "Mnemonic not found";
       break;
     case SYM_ERR_NO_EQU:
-      printf("Label missing");
+      std::cout << "Label missing";
       break;
     case SYM_BAD_REG:
-      printf("Bad register");
+      std::cout << "Bad register";
       break;
     case SYM_BAD_REG_COMB:
-      printf("Illegal register combination");
+      std::cout << "Illegal register combination";
       break;
     case SYM_NO_REGLIST:
-      printf("Register list required");
+      std::cout << "Register list required";
       break;
     case SYM_NO_RSQUIGGLE:
-      printf("Missing '}'");
+      std::cout << "Missing '}'";
       break;
     case SYM_OORANGE:
-      printf("Value out of range");
+      std::cout << "Value out of range";
       break;
     case SYM_ENDLESS_STRING:
-      printf("String unterminated");
+      std::cout << "String unterminated";
       break;
     case SYM_DEF_TWICE:
-      printf("Label redefined");
+      std::cout << "Label redefined";
       break;
     case SYM_NO_COMMA:
-      printf("',' expected");
+      std::cout << "',' expected";
       break;
     case SYM_GARBAGE:
-      printf("Garbage");
+      std::cout << "Garbage";
       break;
     case SYM_ERR_NO_EXPORT:
-      printf("Exported label not defined");
+      std::cout << "Exported label not defined";
       break;
     case SYM_INCONSISTENT:
-      printf("Label redefined inconsistently");
+      std::cout << "Label redefined inconsistently";
       break;
     case SYM_ERR_NO_FILENAME:
-      printf("Filename missing");
+      std::cout << "Filename missing";
       break;
     case SYM_NO_LBR:
-      printf("'[' expected");
+      std::cout << "'[' expected";
       break;
     case SYM_NO_RBR:
-      printf("']' expected");
+      std::cout << "']' expected";
       break;
     case SYM_ADDR_MODE_ERR:
-      printf("Error in addressing mode");
+      std::cout << "Error in addressing mode";
       break;
     case SYM_ADDR_MODE_BAD:
-      printf("Illegal addressing mode");
+      std::cout << "Illegal addressing mode";
       break;
     case SYM_NO_LSQUIGGLE:
-      printf("'{' expected");
+      std::cout << "'{' expected";
       break;
     case SYM_OFFSET_TOO_BIG:
-      printf("Offset out of range");
+      std::cout << "Offset out of range";
       break;
     case SYM_BAD_COPRO:
-      printf("Coprocessor specifier expected");
+      std::cout << "Coprocessor specifier expected";
       break;
     case SYM_BAD_VARIANT:
-      printf("Instruction not available");
+      std::cout << "Instruction not available";
       break;
     case SYM_NO_COND:
-      printf("Conditional execution forbidden");
+      std::cout << "Conditional execution forbidden";
       break;
     case SYM_BAD_CP_OP:
-      printf("Bad coprocessor operation");
+      std::cout << "Bad coprocessor operation";
       break;
     case SYM_NO_LABELS:
-      printf("No labels! Position uncertain");
+      std::cout << "No labels! Position uncertain";
       break;
     case SYM_DOUBLE_ENTRY:
-      printf("Entry already defined");
+      std::cout << "Entry already defined";
       break;
     case SYM_NO_INCLUDE:
-      printf("Include file missing");
+      std::cout << "Include file missing";
       break;
     case SYM_NO_BANG:
-      printf("'!' expected");
+      std::cout << "'!' expected";
       break;
     case SYM_MISALIGNED:
-      printf("Offset misaligned");
+      std::cout << "Offset misaligned";
       break;
     case SYM_OORANGE_BRANCH:
-      printf("Branch out of range");
+      std::cout << "Branch out of range";
       break;
     case SYM_UNALIGNED_BRANCH:
-      printf("Branch to misaligned target");
+      std::cout << "Branch to misaligned target";
       break;
     case SYM_VAR_INCONSISTENT:
-      printf("Variable redefined inconsistently");
+      std::cout << "Variable redefined inconsistently";
       break;
     case SYM_NO_IDENTIFIER:
-      printf("Identifier expected");
+      std::cout << "Identifier expected";
       break;
     case SYM_MANY_IFS:
-      printf("Too many nested IFs");
+      std::cout << "Too many nested IFs";
       break;
     case SYM_MANY_FIS:
-      printf("ENDIF without an IF");
+      std::cout << "ENDIF without an IF";
       break;
     case SYM_LOST_ELSE:
-      printf("Floating ELSE");
+      std::cout << "Floating ELSE";
       break;
     case SYM_NO_HASH:
-      printf("'#' expected");
+      std::cout << "'#' expected";
       break;
     case SYM_NO_IMPORT:
-      printf("Import file missing");
+      std::cout << "Import file missing";
       break;
     case SYM_ADRL_PC:
-      printf("Only ADR allowed with destination PC");
+      std::cout << "Only ADR allowed with destination PC";
       break;
     case SYM_ERR_NO_SHFT:
-      printf("Shift operator expected");
+      std::cout << "Shift operator expected";
       break;
     case SYM_NO_REG_HASH:
-      printf("'#' or register expected");
+      std::cout << "'#' or register expected";
       break;
     case EVAL_NO_OPERAND:
-      printf("Operand expected");
+      std::cout << "Operand expected";
       break;
     case EVAL_NO_OPERATOR:
-      printf("Operator expected");
+      std::cout << "Operator expected";
       break;
     case EVAL_NO_CLOSEBR:
-      printf("Missing ')'");
+      std::cout << "Missing ')'";
       break;
     case EVAL_NO_OPENBR:
-      printf("Extra ')'");
+      std::cout << "Extra ')'";
       break;
     case EVAL_MATHSTACK_LIMIT:
-      printf("Math stack overflow");
+      std::cout << "Math stack overflow";
       break;
     case EVAL_NO_LIMIT:
-      printf("Label not found");
+      std::cout << "Label not found";
       break;
     case EVAL_LABEL_UNDEF:
-      printf("Label undefined");
+      std::cout << "Label undefined";
       break;
     case EVAL_OUT_OF_RADIX:
-      printf("Number out of radix");
+      std::cout << "Number out of radix";
       break;
     case EVAL_DIV_BY_ZERO:
-      printf("Division by zero");
+      std::cout << "Division by zero";
       break;
     case EVAL_OPERAND_ERROR:
-      printf("Operand error");
+      std::cout << "Operand error";
       break;
     case EVAL_BAD_LOC_LAB:
-      printf("Bad local label");
+      std::cout << "Bad local label";
       break;
     case EVAL_NO_LABEL_YET:
-      printf("Label not defined before this point");
+      std::cout << "Label not defined before this point";
       break;
 
     default:
-      printf("Strange error");
+      std::cout << "Strange error";
       break;
   }
-  printf(" on line %d of file: %s\n", line_no, filename);
+  std::cout << " on line " << line_no << "of file: " << filename << std::endl;
 
   for (i = 0; line[i] != '\0'; i++) {
-    printf("%c", line[i]);
+    std::cout << line[i];
   }
-  printf("\n"); /* Yuk! */
+  std::cout << std::endl;
 
-  if (position > 0) /* else position not well defined */
-  {
-    for (i = 0; i <= position - 1; i++) /* 1 space less than the posn. */
-      if (line[i] == '\t')
-        printf("\t");
-      else
-        printf(" ");
-    printf("^\n"); /* Mirrors TAB expansion (non-printing chars too? @@) */
+  // else position not well defined
+  if (position > 0) {
+    // 1 space less than the posn.
+    for (i = 0; i <= position - 1; i++) {
+      if (line[i] == '\t') {
+        std::cout << '\t';
+      } else {
+        std::cout << " ";
+      }
+    }
+    std::cout
+        << "^"
+        << std::endl;  // Mirrors TAB expansion (non-printing chars too? @@)
   }
-
-  return;
 }
 
 /**
@@ -1446,6 +1472,138 @@ bool input_line(FILE* file, std::string& buffer, unsigned int max) {
 
 /**
  * @brief
+ * @param letter
+ * @param mask
+ */
+void extra_letter(const char letter,
+                  unsigned int mask,
+                  const unsigned int eos,
+                  char*& name2,
+                  unsigned int& token2,
+                  sym_table*& a_table,
+                  sym_record*& dummy,
+                  std::string& buffer) {
+  buffer[eos] = letter;
+  buffer[eos + 1] = '\0';
+  sym_define_label(name2, token2 | mask, 0, a_table, &dummy);
+}
+
+/**
+ * @brief Wrapper to allow more suffixes (e.g. "S") on mnemonics
+ * @param name2
+ * @param eos
+ * @param token2
+ * @param variation
+ */
+void parse_mnem_variant(char* name2,
+                        unsigned int eos,
+                        unsigned int token2,
+                        unsigned int variation,
+                        sym_table*& a_table,
+                        sym_record*& dummy,
+                        std::string& buffer) {
+  switch (variation) {
+    case 0x1:  // Arithmetic 'S'
+    case 0xD:
+      sym_define_label(name2, token2, 0, a_table, &dummy);
+      extra_letter('s', 0x00100000, eos, name2, token2, a_table, dummy, buffer);
+      break;
+
+    case 0x2:  // Multiplies 'S' + others with just register lists
+      sym_define_label(name2, token2, 0, a_table, &dummy);
+      switch (token2 & 0x0000F000) {
+        case 0x00001000:
+          extra_letter('s', 0x00100000, eos, name2, token2, a_table, dummy,
+                       buffer);
+          break;  // MUL etc.
+        case 0x00002000:
+          extra_letter('b', 0x00400000, eos, name2, token2, a_table, dummy,
+                       buffer);
+          break;  // SWP
+        case 0x00004000:
+          extra_letter('s', 0x00100000, eos, name2, token2, a_table, dummy,
+                       buffer);
+          break;  // Shifts
+        default:
+          break;  // 0 - CLZ, 3 - QADD, 8-B - SMUL
+      }
+      break;
+
+    case 0x3:  // LDR/STR - not LDRH etc.
+      sym_define_label(name2, token2, 0, a_table, &dummy);
+      extra_letter('t', 0x00001000, eos, name2, token2, a_table, dummy,
+                   buffer); /* suffix 'T' */
+      extra_letter('b', 0x00400000, eos, name2, token2, a_table, dummy,
+                   buffer); /* suffix 'B' */
+      eos++;                /* Grubbily leaves previous 'B' in place */
+      extra_letter('t', 0x00401000, eos, name2, token2, a_table, dummy,
+                   buffer); /* suffix 'BT' */
+      break;
+
+    case 0x6:  // LDM/STM
+    {
+      char* ldm_mode[] = {"da fa", "ia fd", "db ea", "ib ed"};
+      char* stm_mode[] = {"da ed", "ia ea", "db fd", "ib fa"};
+      char* pMode;
+      int mode, k;
+
+      for (mode = 0; mode < 4; mode++) /* Loop over possible addressing modes */
+      {
+        if ((token2 & 0x00100000) == 0)
+          pMode = stm_mode[mode];
+        else
+          pMode = ldm_mode[mode];
+
+        while (*pMode != '\0') /* While some items remain in string */
+        {
+          k = eos; /* Points at `original' terminator in buffer */
+          while ((*pMode != '\0') && (*pMode != ' '))
+            buffer[k++] = *(pMode++);
+          buffer[k] = '\0'; /* Copy suffix and terminate it */
+          sym_define_label(name2, token2 | (mode << 23), 0, a_table, &dummy);
+
+          while (*pMode == ' ')
+            pMode++; /* Skip spaces - next suffix (if any) */
+        }
+      }
+    } break;
+
+    case 0x9:  // LDRH etc.
+      extra_letter('h', 0x00000000, eos, name2, token2, a_table, dummy,
+                   buffer);            // suffix 'H'
+      if ((token2 & 0x00100000) != 0)  // Loads, only
+      {
+        buffer[eos++] = 's';
+        extra_letter('b', 0x00001000, eos, name2, token2, a_table, dummy,
+                     buffer); /* suffix "SB" */
+        extra_letter('h', 0x00002000, eos, name2, token2, a_table, dummy,
+                     buffer); /* suffix "SH" */
+      }
+      break;
+
+    case 0xB:  // LDC/STC
+      sym_define_label(name2, token2, 0, a_table, &dummy);
+      extra_letter('l', 0x00400000, eos, name2, token2, a_table, dummy, buffer);
+      break;
+
+    case 0xC:  // LDRD/STRD
+      extra_letter('d', 0x00000000, eos, name2, token2, a_table, dummy,
+                   buffer);  // suffix 'D'
+      break;
+
+    case 0x4:  // Branch
+    case 0x5:  // Miscellaneous
+    case 0x7:  // MRS/MSR
+    case 0x8:  // ADR
+    case 0xA:  // CDP + MCR/MRC
+    default:
+      sym_define_label(name2, token2, 0, a_table, &dummy);
+      break;
+  }
+}
+
+/**
+ * @brief
  * @param line
  * @param a_table
  * @param t_table
@@ -1460,116 +1618,11 @@ bool parse_mnemonic_line(std::string& line,
   int i, j, k, okay;
   unsigned int value, token;
   sym_record* dummy;
-  char
-      buffer[SYM_NAME_MAX + 5]; /* Largest suffix is 5 bytes, inc. terminator */
+  std::string buffer(SYM_NAME_MAX + 5,
+                     0);  // Largest suffix is 5 bytes, inc. terminator
   char* conditions[] = {"eq", "ne", "cs hs", "cc lo", "mi", "pl", "vs", "vc",
                         "hi", "ls", "ge",    "lt",    "gt", "le", "al"};
   char* pCC;
-
-  /* Wrapper to allow more suffixes (e.g. "S") on mnemonics  */
-  void parse_mnem_variant(char* name2, unsigned int eos, unsigned int token2,
-                          unsigned int variation) {
-    void extra_letter(char letter,
-                      unsigned int mask) /* Convenient abstraction */
-    {
-      buffer[eos] = letter;
-      buffer[eos + 1] = '\0'; /* Terminator */
-      sym_define_label(name2, token2 | mask, 0, a_table, &dummy);
-      return;
-    }
-
-    switch (variation) {
-      case 0x1: /* Arithmetic 'S' */
-      case 0xD:
-        sym_define_label(name2, token2, 0, a_table, &dummy);
-        extra_letter('s', 0x00100000);
-        break;
-
-      case 0x2: /* Multiplies 'S' + others with just register lists */
-        sym_define_label(name2, token2, 0, a_table, &dummy);
-        switch (token2 & 0x0000F000) {
-          case 0x00001000:
-            extra_letter('s', 0x00100000);
-            break; /* MUL etc. */
-          case 0x00002000:
-            extra_letter('b', 0x00400000);
-            break; /* SWP      */
-          case 0x00004000:
-            extra_letter('s', 0x00100000);
-            break; /* Shifts   */
-          default:
-            break; /* 0 - CLZ, 3 - QADD, 8-B - SMUL */
-        }
-        break;
-
-      case 0x3: /* LDR/STR - not LDRH etc. */
-        sym_define_label(name2, token2, 0, a_table, &dummy);
-        extra_letter('t', 0x00001000); /* suffix 'T' */
-        extra_letter('b', 0x00400000); /* suffix 'B' */
-        eos++; /* Grubbily leaves previous 'B' in place */
-        extra_letter('t', 0x00401000); /* suffix 'BT' */
-        break;
-
-      case 0x6: /* LDM/STM */
-      {
-        char* ldm_mode[] = {"da fa", "ia fd", "db ea", "ib ed"};
-        char* stm_mode[] = {"da ed", "ia ea", "db fd", "ib fa"};
-        char* pMode;
-        int mode, k;
-
-        for (mode = 0; mode < 4;
-             mode++) /* Loop over possible addressing modes */
-        {
-          if ((token2 & 0x00100000) == 0)
-            pMode = stm_mode[mode];
-          else
-            pMode = ldm_mode[mode];
-
-          while (*pMode != '\0') /* While some items remain in string */
-          {
-            k = eos; /* Points at `original' terminator in buffer */
-            while ((*pMode != '\0') && (*pMode != ' '))
-              buffer[k++] = *(pMode++);
-            buffer[k] = '\0'; /* Copy suffix and terminate it */
-            sym_define_label(name2, token2 | (mode << 23), 0, a_table, &dummy);
-
-            while (*pMode == ' ')
-              pMode++; /* Skip spaces - next suffix (if any) */
-          }
-        }
-      } break;
-
-      case 0x9:                         /* LDRH etc. */
-        extra_letter('h', 0x00000000);  /* suffix 'H' */
-        if ((token2 & 0x00100000) != 0) /* Loads, only */
-        {
-          buffer[eos++] = 's';
-          extra_letter('b', 0x00001000); /* suffix "SB" */
-          extra_letter('h', 0x00002000); /* suffix "SH" */
-        }
-        break;
-
-      case 0xB: /* LDC/STC */
-        sym_define_label(name2, token2, 0, a_table, &dummy);
-        extra_letter('l', 0x00400000);
-        break;
-
-      case 0xC:                        /* LDRD/STRD */
-        extra_letter('d', 0x00000000); /* suffix 'D' */
-        break;
-
-      case 0x4: /* Branch */
-      case 0x5: /* Miscellaneous */
-      case 0x7: /* MRS/MSR */
-      case 0x8: /* ADR */
-      case 0xA: /* CDP + MCR/MRC */
-      default:
-        sym_define_label(name2, token2, 0, a_table, &dummy);
-        break;
-    }
-
-    return;
-  }
 
   i = skip_spc(line, 0);
   j = 0; /* Indicates end of `root' mnemonic */
@@ -1592,7 +1645,7 @@ bool parse_mnemonic_line(std::string& line,
       else {
         token = value & 0x0FFFFFFF;
         parse_mnem_variant(&buffer[0], j, 0xE0000000 | token,
-                           (value >> 16) & 0xF);
+                           (value >> 16) & 0xF, a_table, dummy, buffer);
         /* Straightforward "always" */
 
         if ((value & 0x40000000) != 0) /* Conditions too? */
@@ -1605,7 +1658,7 @@ bool parse_mnemonic_line(std::string& line,
                 buffer[k++] = *(pCC++);
               buffer[k] = '\0'; /* Copy and terminate */
               parse_mnem_variant(&buffer[0], k, (i << 28) | token,
-                                 (value >> 16) & 0xF);
+                                 (value >> 16) & 0xF, a_table, dummy, buffer);
 
               while (*pCC == ' ')
                 pCC++; /* Skip spaces */
@@ -1970,7 +2023,7 @@ unsigned int variable_item_size(int first_pass, unsigned int size) {
 /* If an INCLUDE <file> is found a string is allocated and pointed to by      */
 /* include_name.                                                              */
 
-unsigned int assemble_line(char* line,
+unsigned int assemble_line(std::string line,
                            unsigned int position,
                            unsigned int token,
                            own_label* my_label,
@@ -3269,7 +3322,7 @@ dump) unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
                 break;
 
               default:
-                printf("Unknown `long' operation\n");
+                std::cout << "Unknown `long' operation" << std::endl;
                 break;
             }
           } else
@@ -3322,7 +3375,7 @@ dump) unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
         } break;
 
         default:
-          printf("Unprocessable opcode!\n");
+          std::cout << "Unprocessable opcode!" << std::endl;
           break;
       }
 
@@ -3873,7 +3926,8 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
                           break;
 
                         case 1:
-                          printf("Assembler error: Thumb LDR=/MVN\n");
+                          std::cout << "Assembler error: Thumb LDR=/MVN"
+                                    << std::endl;
                           break;
 
                         case 2: /* Needs full-blooded LDR */
@@ -3964,7 +4018,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
         } break;
 
         default:
-          printf("Unprocessable opcode!\n");
+          std::cout << "Unprocessable opcode!" << std::endl;
           break;
       }
     }
@@ -4430,7 +4484,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
           thumb_mmemonic();
           break;
         default:
-          printf("Got into an undefined instruction set :-(\n");
+          std::cout << "Got into an undefined instruction set :-(" << std::endl;
           break;
       }
     }
@@ -4668,7 +4722,7 @@ void assemble_redef_label(unsigned int value,
                           int type_change,
                           int pass_count,
                           bool last_pass,
-                          char* line) {
+                          std::string line) {
   int value_defined; /* Genuine value supplied */
   unsigned int old_value;
   int flags;
@@ -6758,7 +6812,7 @@ int get_operator(char* input,
  * @param position
  * @return int
  */
-int skip_spc(char* line, int position) {
+int skip_spc(std::string line, int position) {
   while ((line[position] == ' ') || (line[position] == '\t')) {
     position++;
   }
@@ -6846,7 +6900,7 @@ bool test_eol(char character) {
  * @param max_length
  * @return unsigned int
  */
-unsigned int get_identifier(char* line,
+unsigned int get_identifier(std::string line,
                             unsigned int position,
                             char* buffer,
                             unsigned int max_length) {
@@ -6978,7 +7032,7 @@ int num_char(char* line, int* pos, unsigned int radix) {
  * @param radix
  * @return int flag to say number read (value at pointer).
  */
-int get_num(char* line, int* position, int* value, unsigned int radix) {
+int get_num(std::string line, int* position, int* value, unsigned int radix) {
   int i, new_digit;
   bool found;
 
