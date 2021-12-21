@@ -408,7 +408,7 @@ void lit_print_table(literal_record*, FILE*);
 
 /*----------------------------------------------------------------------------*/
 
-void byte_dump(unsigned int, unsigned int, char*, int);
+void byte_dump(unsigned int, unsigned int, std::string, int);
 
 void literal_dump(int, char*, unsigned int);
 
@@ -2019,10 +2019,405 @@ unsigned int variable_item_size(int first_pass, unsigned int size) {
   return size;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-/* If an INCLUDE <file> is found a string is allocated and pointed to by      */
-/* include_name.                                                              */
+/**
+ * @brief
+ * @param size
+ * @param position
+ * @param line
+ * @param last_pass
+ * @param error_code
+ * @param symbol_table
+ */
+void assemble_define(int size,
+                     unsigned int& position,
+                     std::string& line,
+                     bool& last_pass,
+                     unsigned int& error_code,
+                     sym_table*& symbol_table) {
+  bool terminate, escape;
+  char delimiter, c;
 
+  terminate = false;
+
+  while (!terminate) {
+    position = skip_spc(line, position);
+    if (((line[position] == '"') || (line[position] == '\'') /*  String    */
+         || (line[position] == '/') ||
+         (line[position] == '`')))  /* delimiters */
+    {                               /* Input string */
+      delimiter = line[position++]; /* Strip & record delimiter */
+      while ((line[position] != delimiter) && !terminate) {
+        c = line[position];
+        if (escape = (c == '\\')) /* C-style escape code */
+          c = line[++position];   /* Get next character */
+
+        if (c != '\0') {
+          if (last_pass) { /* Bytes only */
+            if (escape)
+              c = c_char_esc(c);
+            byte_dump(assembly_pointer + def_increment, c, line, size);
+          }
+          def_increment = def_increment + size; /* Always one address here */
+          position++;
+        } else { /* Line finished before string did */
+          error_code = SYM_ENDLESS_STRING;
+          terminate = true;
+        }
+      }
+      if (!terminate)
+        position = skip_spc(line, position + 1); /*Skip delimiter*/
+    } else {
+      error_code = evaluate(line, &position, &temp, symbol_table);
+      /* Parse expression */
+      if ((error_code == EVAL_OKAY) ||
+          allow_error(error_code, first_pass, last_pass)) {
+        if ((error_code == EVAL_OKAY) && last_pass) /* Plant, ltl endian */
+          byte_dump(assembly_pointer + def_increment, temp, line, size);
+
+        if (!last_pass)
+          error_code = EVAL_OKAY; /* Pretend it's okay */
+        def_increment += size;    /* Continue, even if missing values */
+      } else
+        terminate = true;
+    }
+
+    if (!terminate) {
+      if (line[position] == ',')
+        position++; /* Another element? */
+      else
+        terminate = true;
+    }
+  } /* End of WHILE */
+  //##
+  if (if_stack[if_SP])
+    assembly_pointer += def_increment; /* Add total size at end */
+  return;
+}
+
+/**
+ * @brief Fill with value
+ * @param count
+ */
+void fill_space(unsigned int count,
+                unsigned int& position,
+                unsigned int& error_code,
+                bool& last_pass,
+                std::string& line,
+                sym_table*& symbol_table,
+                unsigned int& operand,
+                int& first_pass) {
+  int fill;
+  int i;
+
+  position++;  // Skip comma
+  error_code = evaluate(line, &position, &fill, symbol_table);
+  if (allow_error(error_code, first_pass, last_pass)) {
+    error_code = EVAL_OKAY;
+  }
+
+  if (last_pass && (error_code == EVAL_OKAY)) {
+    for (i = 0; i < operand; i++) {
+      byte_dump(assembly_pointer + i, fill & 0xFF, line, 1);
+    }
+  }
+}
+
+/**
+ * @brief Read, range check and insert a 8-bit immediate offset for a load or
+ * store.
+ * @param op_code
+ * @param value
+ * @param variation indicates the type of instruction
+ * @return unsigned int
+ */
+unsigned int ldr_offset(unsigned int op_code,
+                        unsigned int value,
+                        type_size variation,
+                        bool& last_pass,
+                        unsigned int& error_code) {
+  int x;
+
+  if (!last_pass)
+    return op_code; /* Crude, but clear! */
+
+  if (error_code == EVAL_OKAY) {
+    x = (int)value; /* Cast for convenience */
+    if (x < 0)
+      x = -x; /* Make offset positive */
+    else
+      op_code = op_code | 0x00800000; /*  or set U bit */
+
+    switch (variation) /* Select on load/store type */
+    {
+      case TYPE_WORD:              /* LDR, LDRB, etc. */
+        if ((x & 0xFFFFF000) == 0) /* Used to trap the `min_int' case too */
+          op_code = op_code | x;
+        else if (last_pass)
+          error_code = SYM_OFFSET_TOO_BIG;
+        break;
+
+      case TYPE_HALF:              /* LDRH, LDRSB, etc. */
+        if ((x & 0xFFFFFF00) == 0) /* Used to trap the `min_int' case too */
+          op_code = op_code | ((x & 0xF0) << 4) | (x & 0x0F);
+        else if (last_pass)
+          error_code = SYM_OFFSET_TOO_BIG;
+        break;
+
+      case TYPE_CPRO:              /* LDC, STC, etc. */
+        if ((x & 0xFFFFFC03) == 0) /* Used to trap the `min_int' case too */
+          op_code = op_code | (x >> 2);
+        else if (last_pass) {
+          if ((x & 3) != 0)
+            error_code = SYM_MISALIGNED;
+          else
+            error_code = SYM_OFFSET_TOO_BIG;
+        }
+        break;
+
+      default:
+        break;
+    }
+  }
+  return op_code;
+}
+
+/**
+ * @brief Parse a data operation immediate field, explicitly or implicitly
+ * specified
+ * @param line
+ * @param pPosition
+ * @param op_code
+ * @param translate allows a second data operation to be tried if the first
+ * attempt is out of range.
+ * @return unsigned int
+ */
+unsigned int data_op_immediate(char* line,
+                               unsigned int* pPosition,
+                               unsigned int op_code,
+                               int translate,
+                               unsigned int& error_code,
+                               sym_table*& symbol_table,
+                               unsigned int& token) {
+  int ror_value, value, x;
+
+  error_code = evaluate(line, pPosition, &value, symbol_table);
+  if (error_code == EVAL_OKAY) {
+    if (line[*pPosition] == ',') /* Allow "ROR" instead/too? @@@ */
+    {                            /* Explicit rotation code */
+      (*pPosition)++;            /* Skip comma */
+      error_code = evaluate(line, pPosition, &ror_value, symbol_table);
+      if (error_code == EVAL_OKAY) {
+        if (((value & 0xFFFFFF00) == 0) /* Check value ranges */
+            && ((ror_value & 0xFFFFFFE1) == 0))
+          op_code = op_code | (ror_value << 7) | value;
+        else
+          error_code = SYM_OORANGE;
+      }
+    } else {                  /* Rotation implicit */
+      x = data_op_imm(value); /* Transform into rotate+field code */
+      if (x >= 0)
+        op_code = op_code | x;
+      else { /* Out of range */
+        int trans_type[] = {0,  -1, 1, -1, 1,  0, 0, -1,
+                            -1, -1, 1, 1,  -1, 0, 0, 0};
+        int trans_instr[] = {0xE, -1, 0x4, -1,  0x2, 0x6, 0x5, -1,
+                             -1,  -1, 0xB, 0xA, -1,  0xF, 0x0, 0xD};
+        int i;
+
+        i = (token >> 21) & 0xF; /* Data operation specifier */
+
+        if (translate &&
+            (trans_type[i] >= 0)) {   /* Maybe can do as a different op. */
+          x = ~value + trans_type[i]; /* 0 = not, 1 = negate */
+          x = data_op_imm(x);         /* Try a transform ... */
+          if (x >= 0) { /* Okay, so use new immediate and change operation */
+            op_code = op_code | x;
+            op_code = (op_code & 0xFE1FFFFF) | (trans_instr[i] << 21);
+          } else
+            error_code = SYM_OORANGE;
+        } else
+          error_code = SYM_OORANGE;
+      }
+    }
+  }
+
+  return op_code | 0x02000000; /* Set I bit */
+}
+
+/**
+ * @briefL ook for a register shift specifier from line[*pPosition], Append
+ * the code, if found, to op_code, and return it (stripped from input)
+ * @param line
+ * @param pPosition
+ * @param op_code
+ * @param reg_shift allows a register as the distance specifier
+ * @return unsigned int
+ */
+unsigned int addr_shift(char* line,
+                        unsigned int* pPosition,
+                        unsigned int op_code,
+                        int reg_shift,
+                        unsigned int& error_code,
+                        sym_table*& symbol_table,
+                        unsigned int& position) {
+  int shift;
+  unsigned int value;
+
+  shift = get_shift(line, pPosition);
+  if (shift >= 0)  // Legitimate shift code
+  {
+    if ((shift & 4) != 0)              // Extended code
+      op_code = op_code | 0x00000060;  // RRX
+    else {
+      op_code = op_code | (shift << 5);  // Insert shift op. code
+                                         // (removed later if #0)
+
+      if (cmp_next_non_space(line, (int*)pPosition, 0,
+                             '#'))  // Check/strip '#'
+      {
+        error_code = evaluate(line, pPosition, (int*)&value, symbol_table);
+
+        if (error_code == EVAL_OKAY) {
+          if (value == 0)
+            op_code = op_code & 0xFFFFFF9F; /* Back to LSL */
+          else if ((value & 0xFFFFFFC0) != 0)
+            error_code = SYM_OORANGE; /* Coarse filter */
+          else
+            switch (shift) {
+              case 0: /* LSL and ROR (#0 already done) */
+              case 3:
+                if (value <= 31)
+                  op_code = op_code | (value << 7);
+                else
+                  error_code = SYM_OORANGE;
+                break;
+
+              case 1: /* LSR and ASR */
+              case 2:
+                if (value <= 32)
+                  op_code = op_code | ((value & 0x1F) << 7);
+                else
+                  error_code = SYM_OORANGE;
+                break;
+
+              default:
+                break; /* Unreachable :-/ */
+            }
+        }
+      } else {
+        if (reg_shift) /* Allowed on data ops. but not load/store */
+        {
+          int reg;
+
+          if ((reg = get_reg(line, &position)) >= 0)
+            op_code = op_code | 0x00000010 | (reg << 8);
+          else
+            error_code = SYM_BAD_REG | position;
+        } else
+          error_code = SYM_ADDR_MODE_ERR | *pPosition; /* Only '#' legit. */
+      }
+    }
+  } else /* Check for `dangling' end after comma */
+    if (shift < -1)
+      error_code = SYM_ERR_NO_SHFT | *pPosition;
+
+  return op_code;
+}
+
+/**
+ * @brief Parses a LDM-style register list and returns bit vector indicating
+ * which registers are found.  Checks validity against an `allowed' vector and
+ * modifies (global) error_code if a bad register is requested.
+ * @param allowed
+ * @return unsigned int
+ */
+unsigned int parse_reg_list(unsigned int allowed,
+                            char*& line,
+                            unsigned int& position,
+                            unsigned int& error_code) {
+  unsigned int list, RegA, RegB; /* Bit positions/mask */
+  int reg;
+
+  list = 0; /* Bitmask for collecting registers */
+
+  do {
+    if (line[position] == ',')
+      position++; /* Applies after 1st iter.*/
+    if ((reg = get_thumb_reg(line, &position, allowed)) >= 0) {
+      RegA = 1 << reg;    /* Bit position */
+      list = list | RegA; /* Put this register into mask */
+
+      if (cmp_next_non_space(line, &position, 0,
+                             '-')) { /* Register list coming up */
+        if ((reg = get_thumb_reg(line, &position, allowed)) >= 0) {
+          RegB = 1 << reg; /* Last position in list */
+
+          while (RegA != RegB) /* Fill in the bits between */
+          {                    /* Iterate up or down, as required */
+            if (RegA < RegB)
+              RegA = RegA << 1;
+            else
+              RegA = RegA >> 1;
+            list = list | RegA;
+          }
+        } else
+          error_code = SYM_BAD_REG | position; /* Bad list end reg. */
+      } /* End of register list processing */
+    } else
+      error_code = SYM_BAD_REG | position; /* Bad individual/start reg. */
+  } /* Iterate while no errors and comma separators encountered */
+  while ((error_code == EVAL_OKAY) &&
+         cmp_next_non_space(line, &position, 0, ','));
+
+  if ((list & ~allowed) != 0)
+    error_code = SYM_BAD_REG; /* Posn. uncertain */
+  /* Else breakage possible if range used in Thumb (e.g. PUSH {R0-LR} ) */
+
+  return list;
+}
+
+/**
+ * @brief Wrapper for parse_reg_list to deal with '{' '}' syntax (ARM only)
+ * @param op_code
+ * @param line_offset
+ * @return unsigned int
+ */
+unsigned int parse_ARM_reg_list(char*& line,
+                                unsigned int op_code,
+                                unsigned int line_offset,
+                                unsigned int& position,
+                                unsigned int& error_code) {
+  if (!cmp_next_non_space(line, &position, line_offset, '{'))
+    error_code = SYM_NO_LSQUIGGLE | position;
+  else {
+    op_code |= parse_reg_list(0x0000FFFF); /* Get bitmask of registers */
+
+    if (error_code == EVAL_OKAY) {
+      if (line[position] == '}') /* Check list terminated cleanly */
+      {
+        if (cmp_next_non_space(line, &position, 1, '^'))
+          op_code = op_code | 0x00400000; /* Add S bit if required */
+      } else
+        error_code = SYM_NO_RSQUIGGLE | position;
+    }
+  }
+  return op_code;
+}
+
+/**
+ * @brief If an INCLUDE <file> is found a string is allocated and pointed to by
+ * include_name.
+ * @param line
+ * @param position
+ * @param token
+ * @param my_label
+ * @param symbol_table
+ * @param pass_count
+ * @param last_pass
+ * @param include_name
+ * @param include_file_path
+ * @return unsigned int
+ */
 unsigned int assemble_line(std::string line,
                            unsigned int position,
                            unsigned int token,
@@ -2036,351 +2431,14 @@ unsigned int assemble_line(std::string line,
   unsigned int temp;
   int first_pass;
 
-  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   * -*/
-
-  void assemble_define(int size) { /* Elongated by string definition */
-    bool terminate, escape;
-    char delimiter, c;
-
-    terminate = false;
-
-    while (!terminate) {
-      position = skip_spc(line, position);
-      if (((line[position] == '"') || (line[position] == '\'') /*  String    */
-           || (line[position] == '/') ||
-           (line[position] == '`')))  /* delimiters */
-      {                               /* Input string */
-        delimiter = line[position++]; /* Strip & record delimiter */
-        while ((line[position] != delimiter) && !terminate) {
-          c = line[position];
-          if (escape = (c == '\\')) /* C-style escape code */
-            c = line[++position];   /* Get next character */
-
-          if (c != '\0') {
-            if (last_pass) { /* Bytes only */
-              if (escape)
-                c = c_char_esc(c);
-              byte_dump(assembly_pointer + def_increment, c, line, size);
-            }
-            def_increment = def_increment + size; /* Always one address here */
-            position++;
-          } else { /* Line finished before string did */
-            error_code = SYM_ENDLESS_STRING;
-            terminate = true;
-          }
-        }
-        if (!terminate)
-          position = skip_spc(line, position + 1); /*Skip delimiter*/
-      } else {
-        error_code = evaluate(line, &position, &temp, symbol_table);
-        /* Parse expression */
-        if ((error_code == EVAL_OKAY) ||
-            allow_error(error_code, first_pass, last_pass)) {
-          if ((error_code == EVAL_OKAY) && last_pass) /* Plant, ltl endian */
-            byte_dump(assembly_pointer + def_increment, temp, line, size);
-
-          if (!last_pass)
-            error_code = EVAL_OKAY; /* Pretend it's okay */
-          def_increment += size;    /* Continue, even if missing values */
-        } else
-          terminate = true;
-      }
-
-      if (!terminate) {
-        if (line[position] == ',')
-          position++; /* Another element? */
-        else
-          terminate = true;
-      }
-    } /* End of WHILE */
-    //##
-    if (if_stack[if_SP])
-      assembly_pointer += def_increment; /* Add total size at end */
-    return;
-  }
-
-  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   * -*/
-
-  void fill_space(unsigned int count) { /* Fill with value */
-    unsigned int fill;
-    int i;
-
-    position++; /* Skip comma */
-    error_code = evaluate(line, &position, &fill, symbol_table);
-    if (allow_error(error_code, first_pass, last_pass))
-      error_code = EVAL_OKAY;
-
-    if (last_pass && (error_code == EVAL_OKAY))
-      for (i = 0; i < operand; i++)
-        byte_dump(assembly_pointer + i, fill & 0xFF, line, 1);
-
-    return;
-  }
-
-  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   * -*/
-  /* Read, range check and insert a 8-bit immediate offset for a load or store
+  /**
+   * @brief Parse an addressing mode
+   *
+   * @param op_code
+   * @param size specifies the type of instruction and hence the particular
+   * syntax
+   * @return unsigned int op_code with the new coding appended
    */
-  /* "error_code" is `global' wrt this routine. */
-  /* `variation' indicates the type of instruction */
-
-  unsigned int ldr_offset(unsigned int op_code, unsigned int value,
-                          type_size variation) {
-    int x;
-
-    if (!last_pass)
-      return op_code; /* Crude, but clear! */
-
-    if (error_code == EVAL_OKAY) {
-      x = (int)value; /* Cast for convenience */
-      if (x < 0)
-        x = -x; /* Make offset positive */
-      else
-        op_code = op_code | 0x00800000; /*  or set U bit */
-
-      switch (variation) /* Select on load/store type */
-      {
-        case TYPE_WORD:              /* LDR, LDRB, etc. */
-          if ((x & 0xFFFFF000) == 0) /* Used to trap the `min_int' case too */
-            op_code = op_code | x;
-          else if (last_pass)
-            error_code = SYM_OFFSET_TOO_BIG;
-          break;
-
-        case TYPE_HALF:              /* LDRH, LDRSB, etc. */
-          if ((x & 0xFFFFFF00) == 0) /* Used to trap the `min_int' case too */
-            op_code = op_code | ((x & 0xF0) << 4) | (x & 0x0F);
-          else if (last_pass)
-            error_code = SYM_OFFSET_TOO_BIG;
-          break;
-
-        case TYPE_CPRO:              /* LDC, STC, etc. */
-          if ((x & 0xFFFFFC03) == 0) /* Used to trap the `min_int' case too */
-            op_code = op_code | (x >> 2);
-          else if (last_pass) {
-            if ((x & 3) != 0)
-              error_code = SYM_MISALIGNED;
-            else
-              error_code = SYM_OFFSET_TOO_BIG;
-          }
-          break;
-
-        default:
-          break;
-      }
-    }
-    return op_code;
-  }
-
-  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   * -*/
-  /* Parse a data operation immediate field, explicitly or implicitly specified
-   */
-  /* The Boolean `translate' flag allows a second data operation to be tried if
-   */
-  /* the first attempt is out of range. */
-
-  unsigned int data_op_immediate(char* line, unsigned int* pPosition,
-                                 unsigned int op_code, int translate) {
-    unsigned int value, ror_value;
-    int x;
-
-    error_code = evaluate(line, pPosition, &value, symbol_table);
-    if (error_code == EVAL_OKAY) {
-      if (line[*pPosition] == ',') /* Allow "ROR" instead/too? @@@ */
-      {                            /* Explicit rotation code */
-        (*pPosition)++;            /* Skip comma */
-        error_code = evaluate(line, pPosition, &ror_value, symbol_table);
-        if (error_code == EVAL_OKAY) {
-          if (((value & 0xFFFFFF00) == 0) /* Check value ranges */
-              && ((ror_value & 0xFFFFFFE1) == 0))
-            op_code = op_code | (ror_value << 7) | value;
-          else
-            error_code = SYM_OORANGE;
-        }
-      } else {                  /* Rotation implicit */
-        x = data_op_imm(value); /* Transform into rotate+field code */
-        if (x >= 0)
-          op_code = op_code | x;
-        else { /* Out of range */
-          int trans_type[] = {0,  -1, 1, -1, 1,  0, 0, -1,
-                              -1, -1, 1, 1,  -1, 0, 0, 0};
-          int trans_instr[] = {0xE, -1, 0x4, -1,  0x2, 0x6, 0x5, -1,
-                               -1,  -1, 0xB, 0xA, -1,  0xF, 0x0, 0xD};
-          int i;
-
-          i = (token >> 21) & 0xF; /* Data operation specifier */
-
-          if (translate &&
-              (trans_type[i] >= 0)) {   /* Maybe can do as a different op. */
-            x = ~value + trans_type[i]; /* 0 = not, 1 = negate */
-            x = data_op_imm(x);         /* Try a transform ... */
-            if (x >= 0) { /* Okay, so use new immediate and change operation */
-              op_code = op_code | x;
-              op_code = (op_code & 0xFE1FFFFF) | (trans_instr[i] << 21);
-            } else
-              error_code = SYM_OORANGE;
-          } else
-            error_code = SYM_OORANGE;
-        }
-      }
-    }
-
-    return op_code | 0x02000000; /* Set I bit */
-  }
-
-  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   * -*/
-  /* Look for a register shift specifier from line[*pPosition] */
-  /* Append the code, if found, to op_code, and return it (stripped from input)
-   */
-  /* reg_shift is a Boolean which allows a register as the distance specifier */
-  /* "error_code" and "symbol_table" are `global' wrt this routine. */
-
-  unsigned int addr_shift(char* line, unsigned int* pPosition,
-                          unsigned int op_code, int reg_shift) {
-    int shift;
-    unsigned int value;
-
-    shift = get_shift(line, pPosition);
-    if (shift >= 0) /* Legitimate shift code */
-    {
-      if ((shift & 4) != 0)             /* Extended code */
-        op_code = op_code | 0x00000060; /* RRX */
-      else {
-        op_code = op_code | (shift << 5); /* Insert shift op. code */
-                                          /* (removed later if #0) */
-
-        if (cmp_next_non_space(line, pPosition, 0, '#')) /* Check/strip '#' */
-        {
-          error_code = evaluate(line, pPosition, &value, symbol_table);
-
-          if (error_code == EVAL_OKAY) {
-            if (value == 0)
-              op_code = op_code & 0xFFFFFF9F; /* Back to LSL */
-            else if ((value & 0xFFFFFFC0) != 0)
-              error_code = SYM_OORANGE; /* Coarse filter */
-            else
-              switch (shift) {
-                case 0: /* LSL and ROR (#0 already done) */
-                case 3:
-                  if (value <= 31)
-                    op_code = op_code | (value << 7);
-                  else
-                    error_code = SYM_OORANGE;
-                  break;
-
-                case 1: /* LSR and ASR */
-                case 2:
-                  if (value <= 32)
-                    op_code = op_code | ((value & 0x1F) << 7);
-                  else
-                    error_code = SYM_OORANGE;
-                  break;
-
-                default:
-                  break; /* Unreachable :-/ */
-              }
-          }
-        } else {
-          if (reg_shift) /* Allowed on data ops. but not load/store */
-          {
-            int reg;
-
-            if ((reg = get_reg(line, &position)) >= 0)
-              op_code = op_code | 0x00000010 | (reg << 8);
-            else
-              error_code = SYM_BAD_REG | position;
-          } else
-            error_code = SYM_ADDR_MODE_ERR | *pPosition; /* Only '#' legit. */
-        }
-      }
-    } else /* Check for `dangling' end after comma */
-      if (shift < -1)
-        error_code = SYM_ERR_NO_SHFT | *pPosition;
-
-    return op_code;
-  }
-
-  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   * -*/
-  /* Parses a LDM-style register list and returns bit vector indicating which */
-  /* registers are found.  Checks validity against an `allowed' vector and */
-  /* modifies (global) error_code if a bad register is requested. */
-
-  unsigned int parse_reg_list(unsigned int allowed) {
-    unsigned int list, RegA, RegB; /* Bit positions/mask */
-    int reg;
-
-    list = 0; /* Bitmask for collecting registers */
-
-    do {
-      if (line[position] == ',')
-        position++; /* Applies after 1st iter.*/
-      if ((reg = get_thumb_reg(line, &position, allowed)) >= 0) {
-        RegA = 1 << reg;    /* Bit position */
-        list = list | RegA; /* Put this register into mask */
-
-        if (cmp_next_non_space(line, &position, 0,
-                               '-')) { /* Register list coming up */
-          if ((reg = get_thumb_reg(line, &position, allowed)) >= 0) {
-            RegB = 1 << reg; /* Last position in list */
-
-            while (RegA != RegB) /* Fill in the bits between */
-            {                    /* Iterate up or down, as required */
-              if (RegA < RegB)
-                RegA = RegA << 1;
-              else
-                RegA = RegA >> 1;
-              list = list | RegA;
-            }
-          } else
-            error_code = SYM_BAD_REG | position; /* Bad list end reg. */
-        } /* End of register list processing */
-      } else
-        error_code = SYM_BAD_REG | position; /* Bad individual/start reg. */
-    } /* Iterate while no errors and comma separators encountered */
-    while ((error_code == EVAL_OKAY) &&
-           cmp_next_non_space(line, &position, 0, ','));
-
-    if ((list & ~allowed) != 0)
-      error_code = SYM_BAD_REG; /* Posn. uncertain */
-    /* Else breakage possible if range used in Thumb (e.g. PUSH {R0-LR} ) */
-
-    return list;
-  }
-
-  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   * -*/
-  /* Wrapper for parse_reg_list to deal with '{' '}' syntax (ARM only) */
-
-  unsigned int parse_ARM_reg_list(unsigned int op_code,
-                                  unsigned int line_offset) {
-    if (!cmp_next_non_space(line, &position, line_offset, '{'))
-      error_code = SYM_NO_LSQUIGGLE | position;
-    else {
-      op_code |= parse_reg_list(0x0000FFFF); /* Get bitmask of registers */
-
-      if (error_code == EVAL_OKAY) {
-        if (line[position] == '}') /* Check list terminated cleanly */
-        {
-          if (cmp_next_non_space(line, &position, 1, '^'))
-            op_code = op_code | 0x00400000; /* Add S bit if required */
-        } else
-          error_code = SYM_NO_RSQUIGGLE | position;
-      }
-    }
-    return op_code;
-  }
-
-  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   * -*/
-  /* Parse an addressing mode */
-  /* size specifies the type of instruction and hence the particular syntax */
-  /* Returns op_code with the new coding appended */
-
   unsigned int addressing_mode(unsigned int op_code, type_size size)
 
   { /* First, the parameters which differentiate LDR and LDRH */
@@ -2577,9 +2635,6 @@ unsigned int assemble_line(std::string line,
     }
     return op_code;
   }
-
-  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   * -*/
 
   void arm_mnemonic() { /* Instructions, rather than directives */
     unsigned int op_code, value, extras;
@@ -3399,9 +3454,6 @@ dump) unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
     return;
   }
 
-  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   * -*/
-
   void thumb_mmemonic() {
     unsigned int op_code, value, extras;
     int reg;
@@ -4041,8 +4093,6 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
     return;
   }
 
-  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   * -*/
   /* Separated out so other functions (e.g. "ARM") can call it too. */
 
   void do_align() {
@@ -4796,7 +4846,10 @@ void assemble_redef_label(unsigned int value,
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-void byte_dump(unsigned int address, unsigned int value, char* line, int size) {
+void byte_dump(unsigned int address,
+               unsigned int value,
+               std::string line,
+               int size) {
   int i;
 
   //## printf("Should I? : %d %08X %08X %d\n", if_SP, if_stack[if_SP], value,
