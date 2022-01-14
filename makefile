@@ -1,5 +1,5 @@
 # Do all
-all: aasm jimulator kmd
+all: jimulator kmd
 
 # Compile the KoMo2 binary.
 # ! WARNING ! Compiling with -O3 (highest level optimisations) is considered
@@ -11,8 +11,8 @@ kmd: src/kmdSrc/views/TerminalView.cpp src/kmdSrc/views/DisassemblyView.cpp src/
 	g++ `pkg-config --cflags gtkmm-3.0` -o bin/kmd src/kmdSrc/views/RegistersView.cpp src/kmdSrc/models/RegistersModel.cpp src/kmdSrc/views/CompileLoadView.cpp src/kmdSrc/views/ControlsView.cpp src/kmdSrc/jimulatorInterface.cpp src/kmdSrc/models/KoMo2Model.cpp  src/kmdSrc/models/CompileLoadModel.cpp src/kmdSrc/models/Model.cpp  src/kmdSrc/models/ControlsModel.cpp src/kmdSrc/views/MainWindowView.cpp src/kmdSrc/views/TerminalView.cpp src/kmdSrc/views/DisassemblyView.cpp src/kmdSrc/models/DisassemblyModel.cpp src/kmdSrc/models/TerminalModel.cpp src/kmdSrc/main.cpp `pkg-config --libs gtkmm-3.0` -Wall -Wextra -O3 -std=c++17
 
 # Compile the arm assember binary.
-aasm: src/aasmSrc/aasm.c
-	gcc -O0 -o bin/aasm src/aasmSrc/aasm.c -Wall -Wextra
+aasm: src/aasmSrc/aasm.cpp
+	g++ -O0 -o bin/aasm src/aasmSrc/aasm.cpp -Wall -Wextra
 
 # Compile the jimulator binary.
 jimulator: src/jimulatorSrc/jimulator.cpp

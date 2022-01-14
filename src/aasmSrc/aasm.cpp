@@ -71,14 +71,24 @@
 #define SYM_REC_EQUATED (SYM_REC_EQU_FLAG | SYM_REC_USR_FLAG)  // Either
 #define SYM_REC_USR_FLAG 0x0800  // Indicate `type' as DEF (abs)
 
-// Indicate label in `Thumb' area Lowest 8 bits used for pass count
-#define SYM_REC_THUMB_FLAG 0x1000
 #define SYM_REC_DATA_FLAG 0x2000  // Data space offset
 
 #define ALLOW_ON_FIRST_PASS 0x00010000  // Bit masks to prevent errors
 #define ALLOW_ON_INTER_PASS 0x00020000  // occurring when not wanted.
 #define WARNING_ONLY 0x00040000
 #define ALL_EXCEPT_LAST_PASS (ALLOW_ON_FIRST_PASS | ALLOW_ON_INTER_PASS)
+
+#define TOKEN_ANDX 0x02000000
+#define TOKEN_EORX 0x02200000
+#define TOKEN_SUBX 0x02400000
+#define TOKEN_RSBX 0x02600000
+#define TOKEN_ADDX 0x02800000
+#define TOKEN_ADCX 0x02A00000
+#define TOKEN_SBCX 0x02C00000
+#define TOKEN_RSCX 0x02E00000
+#define TOKEN_ORRX 0x03800000
+#define TOKEN_MOVX 0x03A00000
+#define TOKEN_BICX 0x03C00000
 
 #define SYM_NO_ERROR 0
 #define SYM_ERR_SYNTAX 0x0100
@@ -218,7 +228,7 @@
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-typedef enum { ARM, THUMB } instr_set;
+typedef enum { ARM } instr_set;
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
@@ -327,7 +337,7 @@ const int SIZE_RECORD_SIZE = sizeof(size_record);
 bool set_options(int argc, char* argv[]);
 
 bool input_line(FILE*, std::string&, unsigned int);
-bool parse_mnemonic_line(std::string&, sym_table*, sym_table*, sym_table*);
+bool parse_mnemonic_line(std::string&, sym_table*, sym_table*);
 unsigned int parse_source_line(std::string&,
                                sym_table_item*,
                                sym_table*,
@@ -337,7 +347,7 @@ unsigned int parse_source_line(std::string&,
                                char*);
 void print_error(std::string&, unsigned int, unsigned int, char*, int);
 unsigned int assemble_line(std::string,
-                           unsigned int,
+                           int,
                            unsigned int,
                            own_label*,
                            sym_table*,
@@ -346,26 +356,20 @@ unsigned int assemble_line(std::string,
                            char**,
                            char*);
 
-int do_literal(instr_set, type_size, int*, bool, unsigned int*);
+int do_literal(instr_set, type_size, unsigned int*, bool, unsigned int*);
 unsigned int find_partials(unsigned int, unsigned int*);
 unsigned int variable_item_size(int, unsigned int);
 
-int get_thing(char*, unsigned int*, sym_table*);
-int get_reg(char*, unsigned int*);
-int get_thumb_reg(char*, unsigned int*, unsigned int);
-int get_creg(char*, unsigned int*);
-int get_copro(char*, unsigned int*);
-int get_psr(char*, unsigned int*);
-int get_shift(char*, unsigned int*);
+int get_thing(std::string&, int*, sym_table*);
+int get_reg(std::string, int*);
+int get_thumb_reg(std::string&, int*, unsigned int);
+int get_creg(std::string&, int*);
+int get_copro(std::string&, int*);
+int get_psr(std::string&, int*);
+int get_shift(std::string&, int*);
 int data_op_imm(unsigned int);
-unsigned int thumb_pc_load(unsigned int,
-                           unsigned int,
-                           unsigned int,
-                           int,
-                           int,
-                           unsigned int*);
 
-void redefine_symbol(char*, sym_record*, sym_table*);
+void redefine_symbol(std::string&, sym_record*, sym_table*);
 void assemble_redef_label(unsigned int,
                           int,
                           own_label*,
@@ -377,28 +381,37 @@ void assemble_redef_label(unsigned int,
 
 /*----------------------------------------------------------------------------*/
 
-unsigned int evaluate(std::string, unsigned int*, int*, sym_table*);
-int get_variable(char*, unsigned int*, int*, int*, bool*, sym_table*);
-int get_operator(char*, unsigned int*, int*, int*);
+unsigned int evaluate(std::string, int*, unsigned int*, sym_table*);
+
+int get_variable(std::string&,
+                 unsigned int*,
+                 unsigned int*,
+                 int*,
+                 bool*,
+                 sym_table*);
+int get_operator(std::string&, int*, unsigned int*, int*);
 
 /*----------------------------------------------------------------------------*/
 
 sym_table* sym_create_table(char*, unsigned int);
 int sym_delete_table(sym_table*, bool);
-defn_return sym_define_label(const char*,
+defn_return sym_define_label(std::string&,
                              unsigned int,
                              unsigned int,
                              sym_table*,
                              sym_record**);
-int sym_locate_label(char*, unsigned int, sym_table*, sym_record**);
-sym_record* sym_find_label_list(char*, sym_table_item*);
-sym_record* sym_find_label(char*, sym_table*);
-sym_record* sym_create_record(char*, unsigned int, unsigned int, unsigned int);
+int sym_locate_label(std::string&, unsigned int, sym_table*, sym_record**);
+sym_record* sym_find_label_list(std::string&, sym_table_item*);
+sym_record* sym_find_label(std::string&, sym_table*);
+sym_record* sym_create_record(std::string&,
+                              unsigned int,
+                              unsigned int,
+                              unsigned int);
 void sym_delete_record(sym_record*);
 int sym_delete_record_list(sym_record**, int);
 int sym_add_to_table(sym_table*, sym_record*);
 sym_record* sym_find_record(sym_table*, sym_record*);
-void sym_string_copy(char*, sym_record*, unsigned int);
+void sym_string_copy(std::string&, sym_record*, unsigned int);
 char* sym_strtab(sym_record*, unsigned int, unsigned int*);
 sym_record* sym_sort_symbols(sym_table*, label_category, label_sort);
 unsigned int sym_count_symbols(sym_table*, label_category);
@@ -410,7 +423,7 @@ void lit_print_table(literal_record*, FILE*);
 
 void byte_dump(unsigned int, unsigned int, std::string, int);
 
-void literal_dump(int, char*, unsigned int);
+void literal_dump(int, std::string&, unsigned int);
 
 FILE* open_output_file(int, char*);
 void close_output_file(FILE*, char*, int);
@@ -423,10 +436,10 @@ void elf_dump_out(FILE*, sym_table*);
 
 void list_file_out(void);
 void list_start_line(unsigned int, int);
-void list_mid_line(unsigned int, char*, int);
-void list_end_line(char*);
+void list_mid_line(unsigned int, std::string&, int);
+void list_end_line(std::string&);
 void list_symbols(FILE*, sym_table*);
-void list_buffer_init(char*, unsigned int, int);
+void list_buffer_init(std::string&, unsigned int, int);
 void list_hex(unsigned int, unsigned int, char*);
 
 /*----------------------------------------------------------------------------*/
@@ -434,19 +447,22 @@ void list_hex(unsigned int, unsigned int, char*);
 int skip_spc(std::string, int);
 char* file_path(char*);
 char* pathname(char*, char*);
-bool cmp_next_non_space(char*, int*, int, char);
+bool cmp_next_non_space(std::string, int*, int, char);
 bool test_eol(char);
-unsigned int get_identifier(std::string, unsigned int, char*, unsigned int);
+unsigned int get_identifier(std::string,
+                            unsigned int,
+                            std::string&,
+                            unsigned int);
 bool alpha_numeric(char);
 bool alphabetic(char);
 unsigned char c_char_esc(unsigned char);
-int get_num(std::string, int*, int*, unsigned int);
+int get_num(std::string, unsigned int*, unsigned int*, unsigned int);
 int allow_error(unsigned int, bool, bool);
 
 /*----------------------------------------------------------------------------*/
 /* Global variables                                                           */
 
-instr_set instruction_set;  // ARM or Thumb
+instr_set instruction_set;
 char* input_file_name;
 char* symbols_file_name;
 char* list_file_name;
@@ -527,7 +543,6 @@ sym_table* shift_table;
  * @param filename
  * @param line
  * @param error_code
- * @param thumb_mnemonic_list
  * @param arm_mnemonic_list
  * @param symbol_table
  * @param last_pass
@@ -537,7 +552,6 @@ void code_pass(FILE*& fHandle,
                char*& filename,
                std::string& line,
                unsigned int& error_code,
-               sym_table_item*& thumb_mnemonic_list,
                sym_table_item*& arm_mnemonic_list,
                sym_table*& symbol_table,
                bool& last_pass,
@@ -554,15 +568,9 @@ void code_pass(FILE*& fHandle,
     include_name = NULL;                     // Don't normally return anything
     input_line(fHandle, line, LINE_LENGTH);  // Errors ignored
 
-    if (instruction_set == THUMB) {
-      error_code =
-          parse_source_line(line, thumb_mnemonic_list, symbol_table, pass_count,
-                            last_pass, &include_name, include_file_path);
-    } else {
-      error_code =
-          parse_source_line(line, arm_mnemonic_list, symbol_table, pass_count,
-                            last_pass, &include_name, include_file_path);
-    }
+    error_code =
+        parse_source_line(line, arm_mnemonic_list, symbol_table, pass_count,
+                          last_pass, &include_name, include_file_path);
 
     if (error_code != EVAL_OKAY) {
       print_error(line, line_number, error_code, filename, last_pass);
@@ -582,8 +590,8 @@ void code_pass(FILE*& fHandle,
         fprintf(stderr, "Can't open \"%s\"\n", include_name);
         finished = true;
       } else {
-        code_pass(incl_handle, pInclude, line, error_code, thumb_mnemonic_list,
-                  arm_mnemonic_list, symbol_table, last_pass, finished);
+        code_pass(incl_handle, pInclude, line, error_code, arm_mnemonic_list,
+                  symbol_table, last_pass, finished);
         fclose(incl_handle);  // Doesn't leave file locked
       }
       if (pInclude != include_name) {
@@ -617,7 +625,7 @@ sym_table* build_table(char* table_name,
 
   // repeat until "" found
   for (i = 0; sym_names[i] != ""; i++) {
-    sym_define_label(sym_names[i].c_str(), values[i], 0, table, &dummy);
+    sym_define_label(sym_names[i], values[i], 0, table, &dummy);
   }
 
   return table;
@@ -633,14 +641,13 @@ int main(int argc, char* argv[]) {
   FILE *fMnemonics, *fSource;
   std::string line(LINE_LENGTH + 1, '\0');
 
-  sym_table *arm_mnemonic_table, *thumb_mnemonic_table, *directive_table;
+  sym_table *arm_mnemonic_table, *directive_table;
   sym_table* symbol_table;
-  sym_table_item *arm_mnemonic_list, *thumb_mnemonic_list;  // Real lists
+  sym_table_item* arm_mnemonic_list;  // Real lists
   bool finished, last_pass;
   unsigned int error_code;
 
   arm_mnemonic_list = NULL;
-  thumb_mnemonic_list = NULL;
   symbols_file_name = ""; /* Defaults */
   list_file_name = "";
   hex_file_name = "";
@@ -742,8 +749,6 @@ int main(int argc, char* argv[]) {
     }
 
     arm_mnemonic_table = sym_create_table("ARM Mnemonics", SYM_TAB_CASE_FLAG);
-    thumb_mnemonic_table =
-        sym_create_table("Thumb Mnemonics", SYM_TAB_CASE_FLAG);
     directive_table = sym_create_table("Directives", SYM_TAB_CASE_FLAG);
 
     /* Following is crude hack for test/commissioning purposes.        @@@@@ */
@@ -769,32 +774,21 @@ int main(int argc, char* argv[]) {
     else {
       while (!feof(fMnemonics)) {
         input_line(fMnemonics, line, LINE_LENGTH); /* Errors ignored @@@ */
-        if (!parse_mnemonic_line(line, arm_mnemonic_table, thumb_mnemonic_table,
-                                 directive_table))
+        if (!parse_mnemonic_line(line, arm_mnemonic_table, directive_table))
           fprintf(stderr, "Mnemonic file error\n %s\n", &line[0]);
       }
       /* no error checks @@@ */
       fclose(fMnemonics);
 
-      { /* Make up mnemonic table lists */
-        sym_table_item *pMnem, *pDir;
+      sym_table_item *pMnem, *pDir;
 
-        pMnem = (sym_table_item*)malloc(SYM_TABLE_ITEM_SIZE); /* ARM defns. */
-        pDir = (sym_table_item*)malloc(SYM_TABLE_ITEM_SIZE);  /* (hand built) */
-        pMnem->pTable = arm_mnemonic_table;
-        pMnem->pNext = pDir;
-        pDir->pTable = directive_table;
-        pDir->pNext = NULL;
-        arm_mnemonic_list = pMnem;
-
-        pMnem = (sym_table_item*)malloc(SYM_TABLE_ITEM_SIZE); /* Thumb defns. */
-        pDir = (sym_table_item*)malloc(SYM_TABLE_ITEM_SIZE);  /* (hand built) */
-        pMnem->pTable = thumb_mnemonic_table;
-        pMnem->pNext = pDir;
-        pDir->pTable = directive_table;
-        pDir->pNext = NULL;
-        thumb_mnemonic_list = pMnem;
-      }
+      pMnem = (sym_table_item*)malloc(SYM_TABLE_ITEM_SIZE); /* ARM defns. */
+      pDir = (sym_table_item*)malloc(SYM_TABLE_ITEM_SIZE);  /* (hand built) */
+      pMnem->pTable = arm_mnemonic_table;
+      pMnem->pNext = pDir;
+      pDir->pTable = directive_table;
+      pDir->pNext = NULL;
+      arm_mnemonic_list = pMnem;
 
       symbol_table =
           sym_create_table("Labels", 0);  // Labels are case sensitive
@@ -856,17 +850,17 @@ int main(int argc, char* argv[]) {
 
         rewind(fSource); /* Ensure at start of file */
 
-        code_pass(fSource, input_file_name, line, error_code,
-                  thumb_mnemonic_list, arm_mnemonic_list, symbol_table,
-                  last_pass, finished);
+        code_pass(fSource, input_file_name, line, error_code, arm_mnemonic_list,
+                  symbol_table, last_pass, finished);
         /* no error checks @@@ */
 
         if (literal_tail != literal_head) /* Clear the literal pool */
         {
-          char* literals = "Remaining literals";
+          std::string literals("Remaining literals");
 
-          if (fList != NULL)
+          if (fList != NULL) {
             list_start_line(assembly_pointer, false);
+          }
           literal_dump(last_pass, literals, 0); /*  Much like an instruction */
           if (fList != NULL)
             list_end_line(literals);
@@ -1006,18 +1000,11 @@ int main(int argc, char* argv[]) {
           p1 = p1->pNext;
           free(p2);
         }
-        p1 = thumb_mnemonic_list;
-        while (p1 != NULL) {
-          p2 = p1;
-          p1 = p1->pNext;
-          free(p2);
-        }
       }
 
       sym_delete_table(symbol_table, false);
       sym_delete_table(directive_table, false);
       sym_delete_table(arm_mnemonic_table, false);
-      sym_delete_table(thumb_mnemonic_table, false);
       sym_delete_table(arch_table, false);
       sym_delete_table(operator_table, false);
       sym_delete_table(register_table, false);
@@ -1478,7 +1465,7 @@ bool input_line(FILE* file, std::string& buffer, unsigned int max) {
 void extra_letter(const char letter,
                   unsigned int mask,
                   const unsigned int eos,
-                  char*& name2,
+                  std::string& name2,
                   unsigned int& token2,
                   sym_table*& a_table,
                   sym_record*& dummy,
@@ -1495,7 +1482,7 @@ void extra_letter(const char letter,
  * @param token2
  * @param variation
  */
-void parse_mnem_variant(char* name2,
+void parse_mnem_variant(std::string& name2,
                         unsigned int eos,
                         unsigned int token2,
                         unsigned int variation,
@@ -1606,17 +1593,15 @@ void parse_mnem_variant(char* name2,
  * @brief
  * @param line
  * @param a_table
- * @param t_table
  * @param d_table
  * @return true
  * @return false
  */
 bool parse_mnemonic_line(std::string& line,
                          sym_table* a_table,
-                         sym_table* t_table,
                          sym_table* d_table) {
-  int i, j, k, okay;
-  unsigned int value, token;
+  int j, k, okay;
+  unsigned int i, value, token;
   sym_record* dummy;
   std::string buffer(SYM_NAME_MAX + 5,
                      0);  // Largest suffix is 5 bytes, inc. terminator
@@ -1639,13 +1624,11 @@ bool parse_mnemonic_line(std::string& line,
 
     if (okay) {
       if ((value & 0xF0000000) == 0xF0000000) /* Straight directive */
-        sym_define_label(&buffer[0], value, 0, d_table, &dummy);
-      else if ((value & 0x00000100) != 0) /* Thumb mnemonic */
-        sym_define_label(&buffer[0], value, 0, t_table, &dummy);
+        sym_define_label(buffer, value, 0, d_table, &dummy);
       else {
         token = value & 0x0FFFFFFF;
-        parse_mnem_variant(&buffer[0], j, 0xE0000000 | token,
-                           (value >> 16) & 0xF, a_table, dummy, buffer);
+        parse_mnem_variant(buffer, j, 0xE0000000 | token, (value >> 16) & 0xF,
+                           a_table, dummy, buffer);
         /* Straightforward "always" */
 
         if ((value & 0x40000000) != 0) /* Conditions too? */
@@ -1657,7 +1640,7 @@ bool parse_mnemonic_line(std::string& line,
               while ((*pCC != '\0') && (*pCC != ' '))
                 buffer[k++] = *(pCC++);
               buffer[k] = '\0'; /* Copy and terminate */
-              parse_mnem_variant(&buffer[0], k, (i << 28) | token,
+              parse_mnem_variant(buffer, k, (i << 28) | token,
                                  (value >> 16) & 0xF, a_table, dummy, buffer);
 
               while (*pCC == ' ')
@@ -1668,13 +1651,22 @@ bool parse_mnemonic_line(std::string& line,
       }
     }
   } else
-    okay = true; /* Blank line or comment */
+    okay = true;  // Blank line or comment
 
   return okay;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-
+/**
+ * @brief
+ * @param line
+ * @param mnemonic_list
+ * @param symbols
+ * @param pass_count
+ * @param last_pass
+ * @param include_name
+ * @param include_file_path
+ * @return unsigned int
+ */
 unsigned int parse_source_line(std::string& line,
                                sym_table_item* mnemonic_list,
                                sym_table* symbols,
@@ -1682,11 +1674,10 @@ unsigned int parse_source_line(std::string& line,
                                bool last_pass,
                                char** include_name,
                                char* include_file_path) {
-  int pos, j;
   own_label label_this_line;
   sym_record* ptr;
-  char buffer[LINE_LENGTH];
-  unsigned int value, error_code;
+  std::string buffer(LINE_LENGTH, 0);
+  unsigned int pos, j, value, error_code;
   bool mnemonic;
 
   error_code = SYM_NO_ERROR; /* @@@@ */
@@ -1733,10 +1724,7 @@ unsigned int parse_source_line(std::string& line,
         pos = pos + j; /* Move position in line */
         if ((ptr = sym_find_label_list(buffer, mnemonic_list)) ==
             NULL) { /* Not a mnemonic */
-          if (sym_locate_label(
-                  buffer, /* Pass in flag if in Thumb area */
-                  instruction_set == THUMB ? SYM_REC_THUMB_FLAG : 0, symbols,
-                  &(label_this_line.symbol)))
+          if (sym_locate_label(buffer, 0, symbols, &(label_this_line.symbol)))
             label_this_line.sort = SYMBOL; /* Found */
           else {
             if (pass_count == 0) /* First pass */
@@ -1792,8 +1780,9 @@ unsigned int parse_source_line(std::string& line,
   }
 
   if (last_pass) {
-    if (fList != NULL)
-      list_end_line(&line[0]);
+    if (fList != NULL) {
+      list_end_line(line);
+    }
 
     if ((label_this_line.sort == SYMBOL) &&
         ((label_this_line.symbol->flags & SYM_REC_EQUATED) == 0))
@@ -1803,26 +1792,30 @@ unsigned int parse_source_line(std::string& line,
   return error_code;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-/* Do almost all the processing when an "LDR Rd, =value" is met.              */
-/* On entry: instr_set is the current instruction set                         */
-/*           size is the transfer size                                        */
-/*           ext_value points to a location for the return value              */
-/* On exit:  *ext_value will have been modified as appropriate to the         */
-/*             returned value.                                                */
-/* Returns:  0 if value can fit in a single MOV instruction                   */
-/*             ext_value contains the immediate field                         */
-/*           1 if value can fit in a single MVN instruction                   */
-/*             ext_value contains the immediate field                         */
-/*           2 if a load is required (data structures have been set up)       */
-/*             ext_value contains the address to load                         */
-/*          -1 on error                                                       */
-/*             ext_value is undefined                                         */
-/* External variables:  literal_head, literal_list, defined_count             */
-
+/**
+ * @brief Do almost all the processing when an "LDR Rd, =value" is met.
+ * On entry: instr_set is the current instruction set
+ *           size is the transfer size
+ *           ext_value points to a location for the return value
+ * On exit:  *ext_value will have been modified as appropriate to the
+ *             returned value.
+ * @param instr_type
+ * @param size
+ * @param ext_value
+ * @param first_pass
+ * @param pError
+ * @return   0 if value can fit in a single MOV instruction
+ *             ext_value contains the immediate field
+ *           1 if value can fit in a single MVN instruction
+ *             ext_value contains the immediate field
+ *           2 if a load is required (data structures have been set up)
+ *             ext_value contains the address to load
+ *          -1 on error
+ *             ext_value is undefined
+ */
 int do_literal(instr_set instr_type,
                type_size size,
-               int* ext_value,
+               unsigned int* ext_value,
                bool first_pass,
                unsigned int* pError) {
   unsigned int value;
@@ -1831,10 +1824,7 @@ int do_literal(instr_set instr_type,
 
   value = *ext_value;
 
-  if (instr_type == THUMB)
-    PC_inc = 4;
-  else
-    PC_inc = 8;
+  PC_inc = 8;
 
   if (first_pass) { /* Create new literal entry */
     pTemp = (literal_record*)malloc(LIT_RECORD_SIZE);
@@ -1874,9 +1864,7 @@ int do_literal(instr_set instr_type,
       literal_head->value = value;        /* ... and this is it */
 
       if (((value & ~0x000000FF) == 0) /* Thumb test - all ARM values pass */
-          || ((instr_type == ARM) && (data_op_imm(value) >= 0)))
-      //                              || (data_op_imm(~value) >= 0))))
-      {
+          || ((instr_type == ARM) && (data_op_imm(value) >= 0))) {
         what = 0;                     /* Can do a MOV */
         *ext_value = value;           /* Return value */
         if (pass_count < SHRINK_STOP) /* If object code can still shrink ... */
@@ -1913,23 +1901,22 @@ int do_literal(instr_set instr_type,
                 int range;
 
                 range = pTemp->address - (assembly_pointer + PC_inc);
-                if (instr_type == ARM) /* Range check of possible share */
-                {
-                  if (range < 0)
-                    range = -range;
-                  switch (size) {
-                    case TYPE_WORD:
-                      found = range < 4096;
-                      break;
-                    case TYPE_HALF:
-                      found = range < 256;
-                      break;
-                    case TYPE_CPRO:
-                      found = range < 1024;
-                      break;
-                  }
-                } else /* Thumb is -much- more constrained */
-                  found = (range >= 0) && (range < 1024);
+
+                if (range < 0) {
+                  range = -range;
+                }
+
+                switch (size) {
+                  case TYPE_WORD:
+                    found = range < 4096;
+                    break;
+                  case TYPE_HALF:
+                    found = range < 256;
+                    break;
+                  case TYPE_CPRO:
+                    found = range < 1024;
+                    break;
+                }
 
               } /*  else not found (word can't alias to halfword) */
             }
@@ -1954,11 +1941,12 @@ int do_literal(instr_set instr_type,
     return -1;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-/* Break immediate into a set of ARM immediate fields in "buffer"             */
-/* Returns number of entries required                                         */
-// Compare & maybe amalgamate with "adr_loop"	@@@
-
+/**
+ * @brief Break immediate into a set of ARM immediate fields in "buffer"
+ * @param imm
+ * @param buffer
+ * @return unsigned int number of entries required
+ */
 unsigned int find_partials(unsigned int imm, unsigned int* buffer) {
   unsigned int i, count;
 
@@ -2029,11 +2017,13 @@ unsigned int variable_item_size(int first_pass, unsigned int size) {
  * @param symbol_table
  */
 void assemble_define(int size,
-                     unsigned int& position,
+                     int& position,
                      std::string& line,
                      bool& last_pass,
                      unsigned int& error_code,
-                     sym_table*& symbol_table) {
+                     sym_table*& symbol_table,
+                     int& first_pass,
+                     unsigned int& temp) {
   bool terminate, escape;
   char delimiter, c;
 
@@ -2091,7 +2081,6 @@ void assemble_define(int size,
   //##
   if (if_stack[if_SP])
     assembly_pointer += def_increment; /* Add total size at end */
-  return;
 }
 
 /**
@@ -2099,14 +2088,14 @@ void assemble_define(int size,
  * @param count
  */
 void fill_space(unsigned int count,
-                unsigned int& position,
+                int& position,
                 unsigned int& error_code,
                 bool& last_pass,
                 std::string& line,
                 sym_table*& symbol_table,
                 unsigned int& operand,
                 int& first_pass) {
-  int fill;
+  unsigned int fill;
   int i;
 
   position++;  // Skip comma
@@ -2191,14 +2180,15 @@ unsigned int ldr_offset(unsigned int op_code,
  * attempt is out of range.
  * @return unsigned int
  */
-unsigned int data_op_immediate(char* line,
-                               unsigned int* pPosition,
+unsigned int data_op_immediate(std::string& line,
+                               int* pPosition,
                                unsigned int op_code,
                                int translate,
                                unsigned int& error_code,
                                sym_table*& symbol_table,
                                unsigned int& token) {
-  int ror_value, value, x;
+  int x;
+  unsigned int value, ror_value;
 
   error_code = evaluate(line, pPosition, &value, symbol_table);
   if (error_code == EVAL_OKAY) {
@@ -2253,13 +2243,13 @@ unsigned int data_op_immediate(char* line,
  * @param reg_shift allows a register as the distance specifier
  * @return unsigned int
  */
-unsigned int addr_shift(char* line,
-                        unsigned int* pPosition,
+unsigned int addr_shift(std::string& line,
+                        int* pPosition,
                         unsigned int op_code,
                         int reg_shift,
                         unsigned int& error_code,
                         sym_table*& symbol_table,
-                        unsigned int& position) {
+                        int& position) {
   int shift;
   unsigned int value;
 
@@ -2272,10 +2262,10 @@ unsigned int addr_shift(char* line,
       op_code = op_code | (shift << 5);  // Insert shift op. code
                                          // (removed later if #0)
 
-      if (cmp_next_non_space(line, (int*)pPosition, 0,
+      if (cmp_next_non_space(line, pPosition, 0,
                              '#'))  // Check/strip '#'
       {
-        error_code = evaluate(line, pPosition, (int*)&value, symbol_table);
+        error_code = evaluate(line, pPosition, &value, symbol_table);
 
         if (error_code == EVAL_OKAY) {
           if (value == 0)
@@ -2332,7 +2322,7 @@ unsigned int addr_shift(char* line,
  * @return unsigned int
  */
 unsigned int parse_reg_list(unsigned int allowed,
-                            char*& line,
+                            std::string& line,
                             unsigned int& position,
                             unsigned int& error_code) {
   unsigned int list, RegA, RegB; /* Bit positions/mask */
@@ -2343,13 +2333,13 @@ unsigned int parse_reg_list(unsigned int allowed,
   do {
     if (line[position] == ',')
       position++; /* Applies after 1st iter.*/
-    if ((reg = get_thumb_reg(line, &position, allowed)) >= 0) {
+    if ((reg = get_thumb_reg(line, (int*)&position, allowed)) >= 0) {
       RegA = 1 << reg;    /* Bit position */
       list = list | RegA; /* Put this register into mask */
 
-      if (cmp_next_non_space(line, &position, 0,
+      if (cmp_next_non_space(line, (int*)&position, 0,
                              '-')) { /* Register list coming up */
-        if ((reg = get_thumb_reg(line, &position, allowed)) >= 0) {
+        if ((reg = get_thumb_reg(line, (int*)&position, allowed)) >= 0) {
           RegB = 1 << reg; /* Last position in list */
 
           while (RegA != RegB) /* Fill in the bits between */
@@ -2367,7 +2357,7 @@ unsigned int parse_reg_list(unsigned int allowed,
       error_code = SYM_BAD_REG | position; /* Bad individual/start reg. */
   } /* Iterate while no errors and comma separators encountered */
   while ((error_code == EVAL_OKAY) &&
-         cmp_next_non_space(line, &position, 0, ','));
+         cmp_next_non_space(line, (int*)&position, 0, ','));
 
   if ((list & ~allowed) != 0)
     error_code = SYM_BAD_REG; /* Posn. uncertain */
@@ -2382,15 +2372,16 @@ unsigned int parse_reg_list(unsigned int allowed,
  * @param line_offset
  * @return unsigned int
  */
-unsigned int parse_ARM_reg_list(char*& line,
+unsigned int parse_ARM_reg_list(std::string& line,
                                 unsigned int op_code,
                                 unsigned int line_offset,
-                                unsigned int& position,
+                                int& position,
                                 unsigned int& error_code) {
   if (!cmp_next_non_space(line, &position, line_offset, '{'))
     error_code = SYM_NO_LSQUIGGLE | position;
   else {
-    op_code |= parse_reg_list(0x0000FFFF); /* Get bitmask of registers */
+    op_code |= parse_reg_list(0x0000FFFF, line, (unsigned int&)position,
+                              error_code); /* Get bitmask of registers */
 
     if (error_code == EVAL_OKAY) {
       if (line[position] == '}') /* Check list terminated cleanly */
@@ -2402,6 +2393,1141 @@ unsigned int parse_ARM_reg_list(char*& line,
     }
   }
   return op_code;
+}
+
+/**
+ * @brief Parse an addressing mode
+ *
+ * @param op_code
+ * @param size specifies the type of instruction and hence the particular
+ * syntax
+ * @return unsigned int op_code with the new coding appended
+ */
+unsigned int addressing_mode(unsigned int op_code,
+                             type_size size,
+                             std::string& line,
+                             int& position,
+                             sym_table*& symbol_table,
+                             unsigned int& error_code,
+                             bool& last_pass,
+                             int& first_pass) {
+  // First, the parameters which differentiate LDR and LDRH
+  unsigned int word_masks[] = {0x01000000, 0x02000000, 0x03000000, 0x010F0000};
+  unsigned int half_masks[] = {0x01400000, 0x00000000, 0x01000000, 0x014F0000};
+  unsigned int cpro_masks[] = {0x01000000, 0x00000000, 0x01000000, 0x010F0000};
+  unsigned int* parameter;
+  unsigned int value;
+  int reg;
+
+  switch (size) {
+    case TYPE_WORD:
+      parameter = word_masks;
+      break;
+    case TYPE_HALF:
+      parameter = half_masks;
+      break;
+    case TYPE_CPRO:
+      parameter = cpro_masks;
+      break;
+  }
+
+  if (cmp_next_non_space(line, &position, 0, '[')) {
+    if ((reg = get_reg(line, &position)) >= 0) {
+      op_code = op_code | (reg << 16);  // Base register (Rn)
+      position = skip_spc(line, position);
+
+      // What succeeds base register?
+      switch (line[position]) {
+        case ']':  // Post indexed or just "[Rn]"
+          if (!cmp_next_non_space(line, &position, 1, ',')) {
+            op_code = op_code | parameter[0];  // Just "[Rn]"
+          }
+          // Post-indexed mode
+          else {
+            // Imm. ?
+            if (cmp_next_non_space(line, &position, 0, '#')) {
+              error_code = evaluate(line, &position, &value, symbol_table);
+              op_code = ldr_offset(op_code, value, size, last_pass, error_code);
+              switch (size) {
+                case TYPE_HALF:
+                  op_code |= 0x00400000;
+                  break; /* I bit */
+                case TYPE_CPRO:
+                  op_code |= 0x00200000;
+                  break; /* W bit */
+                default:
+                  break;
+              }
+            } else { /* Register offset, post-indexed */
+              if (size != TYPE_CPRO) {
+                op_code = op_code | parameter[1];
+                if (line[position] == '-')
+                  position++; /* + or - op.? */
+                else {
+                  op_code = op_code | 0x00800000; /* Set 'U' bit */
+                  if (line[position] == '+') {
+                    position++;
+                  }
+                }
+
+                // Rm
+                if ((reg = get_reg(line, &position)) >= 0) {
+                  if (size == TYPE_WORD) {
+                    op_code = addr_shift(line, &position, op_code | reg, false,
+                                         error_code, symbol_table, position);
+                  } else {
+                    op_code = op_code | reg;  // No shift for LDRH
+                  }
+                } else {
+                  error_code = SYM_BAD_REG | position;  // No offset reg.
+                }
+              } else { /* LDC/STC "unindexed" mode */
+                if (line[position] == '{') {
+                  position++;
+                  error_code = evaluate(line, &position, &value, symbol_table);
+                  if (error_code == EVAL_OKAY) {
+                    if ((value & 0xFFFFFF00) == 0x00000000) {
+                      op_code = op_code | value | 0x00800000; /* Set U bit */
+                      if (!cmp_next_non_space(line, &position, 0, '}'))
+                        error_code = SYM_NO_RSQUIGGLE | position;
+                    } else
+                      error_code = SYM_OORANGE;
+                  }
+                } else
+                  error_code = SYM_NO_LSQUIGGLE | position;
+              }
+            }
+          }
+          break;
+
+        case ',':
+          if (cmp_next_non_space(line, &position, 1,
+                                 '#')) { /* Pre-index immediate */
+            op_code = op_code | parameter[0];
+            error_code = evaluate(line, &position, &value, symbol_table);
+            op_code = ldr_offset(op_code, value, size, last_pass, error_code);
+            /* Offset */
+            // May need to tolerate an error to check syntax
+            if ((error_code == EVAL_OKAY) ||
+                allow_error(error_code, first_pass, last_pass)) {
+              if (line[position] == ']') {
+                if (cmp_next_non_space(line, &position, 1, '!'))
+                  op_code = op_code | 0x00200000; /* Set 'W' bit */
+              } else
+                error_code = SYM_NO_RBR | position;
+            }
+          } else { /* Register offset, pre-indexed */
+            if (size != TYPE_CPRO) {
+              op_code = op_code | parameter[2];
+              if (line[position] == '-')
+                position++; /* + or - operator? */
+              else {
+                if (line[position] == '+')
+                  position++;
+                op_code = op_code | 0x00800000; /* Set 'U' bit */
+              }
+
+              if ((reg = get_reg(line, &position)) >= 0) {
+                op_code = op_code | reg; /* Rm */
+                if (!cmp_next_non_space(line, &position, 0,
+                                        ']')) { /* Something else here ... */
+                  if (size == TYPE_WORD) {      /* Shift */
+                    op_code = addr_shift(line, &position, op_code, false,
+                                         error_code, symbol_table, position);
+
+                    if ((error_code == EVAL_OKAY) ||
+                        allow_error(error_code, first_pass, last_pass)) {
+                      if (line[position] == ']')
+                        position++;
+                      else
+                        error_code = SYM_NO_RBR | position;
+                    }
+                  } else
+                    error_code = SYM_NO_RBR | position; /* LDRH */
+                }
+
+                if (cmp_next_non_space(line, &position, 0, '!'))
+                  op_code = op_code | 0x00200000; /* Set 'W' bit */
+
+              } else
+                error_code = SYM_BAD_REG | position; /* Rm not IDed */
+            } else
+              error_code = SYM_ADDR_MODE_BAD; /* Bad mode for LDC/STC */
+          }
+          break;
+
+        default:
+          error_code = SYM_ADDR_MODE_ERR;
+          break;
+      }
+
+    } else
+      error_code = SYM_BAD_REG | position; /* Base register not found */
+  } else /* Addressing mode does not begin with '[' */
+  {
+    if (line[position] == '=') { /* Literal pool stuff */
+      if ((size == TYPE_CPRO) || ((op_code & 0x00100000) == 0))
+        error_code = SYM_ADDR_MODE_ERR; /* Disallowed in LDC and all stores */
+      else {
+        position++;
+        error_code = evaluate(line, &position, &value, symbol_table);
+
+        if ((error_code == EVAL_OKAY) ||
+            allow_error(error_code, first_pass, last_pass)) {
+          switch (do_literal(ARM, size, &value, first_pass, &error_code))
+          /* Constant size? */
+          {         /*  (literal table appended as necessary) */
+            case 0: /* Will fit in instruction */
+              op_code = op_code & 0xF000F000; /* Fields to keep */
+              op_code = op_code | 0x03A00000 | data_op_imm(value); /* MOV */
+              break;
+
+            case 1:                           /* Will fit in instruction */
+              op_code = op_code & 0xF000F000; /* Fields to keep */
+              op_code = op_code | 0x03E00000 | data_op_imm(~value); /* MVN */
+              break;
+
+            case 2:  // Needs full-blooded LDR
+              op_code = ldr_offset(op_code | parameter[3],
+                                   value - (assembly_pointer + 8), size,
+                                   last_pass, error_code);
+              break;
+
+            default:
+              break;
+          }
+        }
+      }
+    } else { /* Try for `absolute' address */
+      error_code = evaluate(line, &position, &value, symbol_table);
+      if (error_code == EVAL_OKAY)
+        op_code =
+            ldr_offset(op_code | parameter[3], value - (assembly_pointer + 8),
+                       size, last_pass, error_code);
+    }
+  }
+  return op_code;
+}
+
+/**
+ * @brief
+ * @param value
+ * @param count
+ */
+void adr_loop(int value,
+              int count,
+              unsigned int& op_code,
+              const bool last_pass,
+              std::string& line,
+              unsigned int& extras,
+              unsigned int& error_code) {
+  int i, fixed;
+
+  fixed = count >= 0;  // Flag for loop termination
+
+  // Something to go at?
+  while (true) {
+    // Find LS bit pair, unless zero
+    i = 0;
+    if (value != 0) {
+      while ((value & (3 << (2 * i))) == 0) {
+        i++;
+      }
+    }
+
+    op_code = op_code | data_op_imm(value & (0xFF << (2 * i)));
+    value = value & ~(0xFF << (2 * i));  // Peel off byte from offset
+
+    // Finish if dealing with last word
+    if (fixed) {
+      count = count - 1;
+      if (count < 0) {
+        break;
+      }
+    } else if (value == 0) {
+      break;
+    }
+    // otherwise plant word and continue
+
+    if (last_pass) {
+      byte_dump(assembly_pointer + extras, op_code, line, 4);
+    }
+    extras = extras + 4;  // Count extra word(s)
+    // Modify op-code
+    op_code = (op_code & 0xFFF0F000) | ((op_code & 0x0000F000) << 4);
+  }
+
+  if (value != 0) {
+    error_code = SYM_OORANGE;  // Bits remain: error
+  }
+}
+
+/**
+ * @brief Instructions, rather than directives
+ */
+void arm_mnemonic(bool& last_pass,
+                  unsigned int& token,
+                  int& first_pass,
+                  std::string& line,
+                  unsigned int& error_code,
+                  int& position,
+                  sym_table*& symbol_table) {
+  unsigned int op_code, value, extras;
+  int reg;
+  bool rrx;  // Flag (of convenience) identifying short RRX
+
+  extras = 0;  // Instruction length - 4
+
+  /* Only do difficult stuff on first pass (syntax) and last pass (code dump)
+    unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
+  if (first_pass || last_pass || ((token & 0x00008000) != 0)) {
+    op_code = token & 0xFFF00000;
+
+    rrx = ((token & 0x000FFF00) == 0x00024E00);  // Nasty irregular case
+
+    if (!rrx && ((token & 0x00000800) != 0)) {
+      op_code |= 0xF0000000;
+    }
+    //`New' always codes
+
+    switch (token & 0x000F0000) {
+      case 0x00000000:  // NOP (etc.)
+        switch (token & 0x00F00000) {
+          case 0x00000000:
+            op_code = 0xE1A00000;
+            break;          // NOP
+          case 0x00100000:  // undefined
+            op_code = (op_code & 0xF0000000) | 0x06000010;
+            break;
+
+          default:
+            op_code = 0xE1A00000;
+            break;  // NOP
+        }
+
+        break;
+
+      case 0x00010000:                  // Data operations
+        if ((token & 0x00004000) != 0)  // Destination register wanted?
+          if ((reg = get_reg(line, &position)) >= 0) {
+            op_code = op_code | (reg << 12);
+            if (!cmp_next_non_space(line, &position, 0, ',')) {
+              error_code = SYM_NO_COMMA | position;
+            }
+          } else {
+            error_code = SYM_BAD_REG | position;
+          }
+
+        if (error_code == EVAL_OKAY) {
+          // Source Rn wanted?
+          if ((token & 0x00002000) != 0) {
+            if ((reg = get_reg(line, &position)) >= 0) {
+              op_code = op_code | (reg << 16);
+              if (!cmp_next_non_space(line, &position, 0, ',')) {
+                error_code = SYM_NO_COMMA | position;
+              }
+            }
+          } else {
+            error_code = SYM_BAD_REG | position;
+          }
+
+          // Rm always present, so check omitted
+          if (error_code == EVAL_OKAY) {
+            // Imm. mode
+            if (cmp_next_non_space(line, &position, 0, '#')) {
+              op_code = data_op_immediate(line, &position, op_code, true,
+                                          error_code, symbol_table, token);
+            }
+            // Register mode
+            else {
+              if ((reg = get_reg(line, &position)) >= 0) {
+                op_code = addr_shift(line, &position, op_code | reg, true,
+                                     error_code, symbol_table, position);
+              } else {
+                error_code = SYM_BAD_REG | position;
+              }
+            }
+          }
+        }
+        break;
+
+      case 0x00020000:                         // Multiply operations
+      {                                        // and misc. later add-ons
+        int mul_regs[] = {16, 0, 8, -1};       // Bit positions of
+        int mla_regs[] = {16, 0, 8, 12, -1};   //    the various
+        int mull_regs[] = {12, 16, 0, 8, -1};  //  register fields
+        int swp_regs[] = {12, 0, -1};          // First 2 for SWP
+        int clz_regs[] = {12, 0, -1};
+        int qadd_regs[] = {12, 0, 16, -1};
+        int shift_regs[] = {12, 0, 8, -1};
+        int not_def[] = {-1};
+        int *pRegs, i;
+
+        switch (token & 0x0000F000) {
+          case 0x00000000:
+            pRegs = clz_regs;
+            op_code |= 0x000F0F10;
+            break;
+          case 0x00002000:
+            pRegs = swp_regs;
+            op_code |= 0x00000090;
+            break;
+          case 0x00003000:
+            pRegs = qadd_regs;
+            op_code |= 0x00000050;
+            break;
+          case 0x00001000:
+            op_code = op_code | 0x00000090;
+
+            // Decide where the reg. fields go
+            switch (token & 0x00E00000) {
+              case 0x00000000:
+                pRegs = mul_regs;
+                break;
+              case 0x00200000:
+                pRegs = mla_regs;
+                break;
+              case 0x00800000:
+              case 0x00A00000:
+              case 0x00C00000:
+              case 0x00E00000:
+                pRegs = mull_regs;
+                break;
+              default:
+                pRegs = not_def;
+                break;
+            }
+            break;
+
+          case 0x00004000:  // Alternative shift mnemonics
+            pRegs = shift_regs;
+            op_code |= (token & 0x600) >> 4 | 0x00000010;
+            break;
+
+          case 0x00008000:
+          case 0x00009000:
+          case 0x0000A000:
+          case 0x0000B000:
+            op_code = op_code | ((token >> 7) & 0x60) | 0x00000080;
+            // Decide where the reg. fields go
+            switch (token & 0x00600000) {
+              case 0x00000000:
+                pRegs = mla_regs;
+                break;
+              case 0x00200000:
+                if ((token & 0x00001000) == 0)
+                  pRegs = mla_regs;
+                else
+                  pRegs = mul_regs;
+                break;
+              case 0x00400000:
+                pRegs = mull_regs;
+                break;
+              case 0x00600000:
+                pRegs = mul_regs;
+                break;
+            }
+            break;
+
+          default:
+            pRegs = not_def;
+            break;
+        }
+
+        i = 0;
+
+        while ((error_code == EVAL_OKAY) && (pRegs[i] >= 0)) {
+          if ((reg = get_reg(line, &position)) >= 0) {
+            if (rrx && (i == 2))
+              error_code = SYM_ERR_SYNTAX;  // RRX, short form, has no Rs
+            else {
+              op_code = op_code | (reg << pRegs[i]);
+              i++;
+              // If there is a next register ...
+              if (pRegs[i] >= 0) {
+                if (!cmp_next_non_space(line, &position, 0, ',')) {
+                  // RRX, short form
+                  if (rrx) {
+                    op_code &= 0xFFFFFFEF;  // Clear 'register' bit
+                    i++;  // Will move to control array terminator
+                  } else {
+                    error_code = SYM_NO_COMMA | position;
+                  }
+                }
+              }
+              // SWP addr. bodged
+              else if ((token & 0x0000F000) == 0x00002000) {
+                if (!cmp_next_non_space(line, &position, 0, ',')) {
+                  error_code = SYM_NO_COMMA | position;
+                } else if (!cmp_next_non_space(line, &position, 0, '[')) {
+                  error_code = SYM_NO_LBR | position;
+                } else if ((reg = get_reg(line, &position)) >= 0) {
+                  op_code = op_code | (reg << 16);
+                  if (!cmp_next_non_space(line, &position, 0, ']')) {
+                    error_code = SYM_NO_RBR | position;
+                  }
+                } else {
+                  error_code = SYM_BAD_REG | position;
+                }
+              }
+            }
+          } else {
+            // Shift immediate?
+            if ((token & 0x000FF000) == 0x00024000) {
+              if ((line[position] == '#') && (i == 2)) {
+                op_code &= 0xFFFFFFEF;  // Clear 'register' bit
+                position++;
+                i++;
+                error_code = evaluate(line, &position, &value, symbol_table);
+                switch (token & 0x00000E00) {
+                  case 0x000:  // LSL
+                    if (value > 31) {
+                      error_code = SYM_OORANGE;
+                    }
+                    break;
+                  case 0x600:  // ROR
+                    if ((value < 1) || (value > 31)) {
+                      error_code = SYM_OORANGE;
+                    }
+                    break;
+                  case 0xE00:  // RRX
+                    if (value != 1) {
+                      error_code = SYM_OORANGE;
+                    } else {
+                      value = 0;
+                    }
+                    break;
+                  // Other shift types
+                  default:
+                    if ((value < 1) || (value > 32)) {
+                      error_code = SYM_OORANGE;
+                    } else {
+                      value = value & 0x1F;
+                    }
+                    break;
+                }
+                op_code |= value << 7;
+              } else {  // Over detailed error messages?!
+                if (i < 2) {
+                  error_code = SYM_BAD_REG | position;
+                } else if (!rrx) {
+                  error_code = SYM_NO_REG_HASH | position;
+                } else {
+                  error_code = SYM_NO_HASH | position;
+                }
+              }
+            } else {
+              error_code = SYM_BAD_REG | position;
+            }
+          }
+        }
+      } break;
+
+      case 0x00030000:  // Normal LDR/STR operations
+      case 0x00090000:  // LDRH etc.
+      case 0x000C0000:  // LDRD/STRD
+      {
+        int err_pos;  // Used if real register Rd is disallowed
+
+        err_pos = position;
+        // Reg. to transfer (Rd)
+        if ((reg = get_reg(line, &position)) >= 0) {
+          if (((token & 0x000F0000) == 0x000C0000) && ((reg & 1) != 0)) {
+            error_code = SYM_BAD_REG | skip_spc(line, err_pos);
+          }
+          // Even regs. only in LDRD; rederive position only if needed
+          else {
+            op_code = op_code | (reg << 12);
+            // Comma found
+            if (cmp_next_non_space(line, &position, 0, ',')) {
+              if ((token & 0x000F0000) == 0x00030000) /* LDR/STR */
+                op_code = addressing_mode(op_code, TYPE_WORD, line, position,
+                                          symbol_table, error_code, last_pass,
+                                          first_pass);
+              else /* LDRH etc./LDRD */
+                op_code = addressing_mode(op_code, TYPE_HALF, line, position,
+                                          symbol_table, error_code, last_pass,
+                                          first_pass);
+            } else
+              error_code = SYM_NO_COMMA | position; /*',' after Rd missing*/
+          }
+        } else
+          error_code = SYM_BAD_REG | position; /* Rd not found */
+
+        switch (token & 0x000F0000) {
+            /* Note: the following trap allows "[Rn]" for LDRT but also allows
+             * "[Rn, #0]" */
+            /*       to be translated too.  Is this acceptable?  @@ */
+          case 0x00030000: /* LDR/STR only */
+            if ((error_code == EVAL_OKAY) &&
+                ((token & 0x00001000) != 0)) {           /* 'T' option */
+              if (((op_code & 0x01200000) == 0x00000000) /* Post ind. mode? */
+                  ||
+                  ((op_code & 0x02000FFF) == 0x00000000)) /*  or #0 offset? */
+                op_code = (op_code & 0xFEFFFFFF) | 0x00200000;
+              /* Redefine addressing mode */
+              else
+                error_code = SYM_ADDR_MODE_BAD;
+            }
+            break;
+
+          case 0x00090000:              /* Short-form LD/ST */
+            switch (token & 0x00007000) /* Which LDRH... instruction? */
+            {
+              case 0x00000000:
+                op_code = op_code | 0x000000B0;
+                break; /*LDRH */
+              case 0x00001000:
+                op_code = op_code | 0x000000D0;
+                break; /*LDRSB*/
+              case 0x00002000:
+                op_code = op_code | 0x000000F0;
+                break; /*LDRSH*/
+              default:
+                break;
+            }
+            break;
+
+          case 0x000C0000: /* LDRD/STRD */
+            if ((token & 0x00001000) == 0)
+              op_code |= 0x000000F0; /* STRD */
+            else
+              op_code |= 0x000000D0; /* LDRD */
+            break;
+        }
+      } break;
+
+      case 0x00040000: /* B and BL */
+        error_code = evaluate(line, &position, &value, symbol_table);
+        value = value - (assembly_pointer + 8);
+        if ((value & 3) != 0) /* Not word aligned */
+          error_code = SYM_UNALIGNED_BRANCH;
+        else if (((value & 0xFE000000) == 0x00000000) /*  or out of range */
+                 || ((value & 0xFE000000) == 0xFE000000))
+          op_code = op_code | ((value >> 2) & 0x00FFFFFF);
+        else
+          error_code = SYM_OORANGE_BRANCH;
+        break;
+
+      case 0x00050000: /* Miscellany */
+        switch (token & 0x0000F000) {
+          case 0x00000000: /* SWI */
+            error_code = evaluate(line, &position, &value, symbol_table);
+            if ((value & 0xFF000000) == 0)
+              op_code = op_code | value;
+            else
+              error_code = SYM_OORANGE;
+            break;
+
+          case 0x00001000: /* BX */
+            if ((reg = get_reg(line, &position)) >= 0)
+              op_code = op_code | 0x000FFF10 | reg;
+            else
+              error_code = SYM_BAD_REG | position; /* Rm not found */
+            break;
+
+          case 0x00002000: /* BKPT */
+            error_code = evaluate(line, &position, &value, symbol_table);
+            if ((value & 0xFFFF0000) == 0)
+              op_code =
+                  op_code | ((value & 0xFFF0) << 4) | 0x70 | (value & 0x000F);
+            else
+              error_code = SYM_OORANGE;
+            break;
+
+          case 0x00003000: /* BLX */
+            if ((reg = get_reg(line, &position)) >= 0)
+              op_code = op_code | 0x012FFF30 | reg;
+            else                                      /* Rm not found */
+              if ((token & 0xF0000000) == 0xE0000000) /* Only unconditional */
+              {
+                error_code = evaluate(line, &position, &value, symbol_table);
+                value = value - (assembly_pointer + 8);
+
+                if ((value & 1) != 0) /* Not halfword aligned */
+                  error_code = SYM_UNALIGNED_BRANCH;
+                else if (((value & 0xFE000000) == 0x00000000) /* In range? */
+                         || ((value & 0xFE000000) == 0xFE000000))
+                  op_code = 0xFA000000 | ((value & 0x03FFFFFC) >> 2) |
+                            ((value & 2) << 23);
+                else
+                  error_code = SYM_OORANGE_BRANCH;
+              } else
+                error_code = SYM_NO_COND;
+            break;
+
+          case 0x00004000:  // PLD *
+            op_code = addressing_mode(op_code | 0x0000F000, TYPE_WORD, line,
+                                      position, symbol_table, error_code,
+                                      last_pass, first_pass);
+            // Modes which write back are disallowed
+            if ((op_code & 0x01200000) != 0x01000000) {
+              op_code = 0x00000000;
+              error_code = SYM_ADDR_MODE_BAD;
+            }
+            break;
+
+          case 0x00005000:  // PUSH/POP
+            op_code =
+                op_code | 0x000D0000 |
+                parse_ARM_reg_list(line, op_code, 0, position, error_code);
+            break;
+
+          default:
+            break;
+        }
+        break; /* End of case 0x00050000 "Miscellany" */
+
+      case 0x00060000:                             /* STM/LDM */
+        if ((reg = get_reg(line, &position)) >= 0) /* Base register (Rn) */
+        {
+          op_code = op_code | (reg << 16);
+
+          if (cmp_next_non_space(line, &position, 0, '!')) {
+            op_code = op_code | 0x00200000; /* Set W bit */
+            position = skip_spc(line, position);
+          }
+
+          if (line[position] == ',')
+            op_code = op_code | parse_ARM_reg_list(line, op_code, 1, position,
+                                                   error_code);
+          else
+            error_code = SYM_NO_COMMA | position;
+        } else
+          error_code = SYM_BAD_REG | position; /* Rn not found */
+
+        break;
+
+      case 0x00070000:                  // MRS/MSR
+        if ((token & 0x00200000) == 0)  // MRS
+        {
+          if ((reg = get_reg(line, &position)) >= 0)  // Register (Rd)
+          {
+            op_code = op_code | (reg << 12);
+
+            if (cmp_next_non_space(line, &position, 0, ',')) {
+              unsigned int old_pos;
+
+              position = skip_spc(line, position);
+              old_pos = position;              // Remember in case of error
+              reg = get_psr(line, &position);  // PSR
+              if ((reg >= 0) && ((reg & 0x0F) == 0x0F))  // Reg. found
+                op_code = op_code | (reg << 16);         //  and legal here
+              // The lower `field mask' fills the SBO field <19>-<16>
+              else
+                error_code = SYM_BAD_REG | old_pos;
+            } else
+              error_code = SYM_NO_COMMA | position;
+          } else
+            error_code = SYM_BAD_REG | position; /* Rd not found */
+        } else                                   /* MSR */
+        {
+          position = skip_spc(line, position);
+          reg = get_psr(line, &position); /* PSR */
+          if (reg >= 0) {
+            op_code = op_code | (reg << 16) | 0x0000F000;
+            if (cmp_next_non_space(line, &position, 0, ',')) {
+              if (cmp_next_non_space(line, &position, 0, '#')) /* Skip ',' */
+                op_code = data_op_immediate(line, &position, op_code, false,
+                                            error_code, symbol_table, token);
+              else {
+                if ((reg = get_reg(line, &position)) >= 0) /* Register (Rm) */
+                  op_code = op_code | reg;
+                else
+                  error_code = SYM_BAD_REG | position; /*Missing source reg.*/
+              }
+            } else
+              error_code = SYM_NO_COMMA | position;
+          } else
+            error_code = SYM_BAD_REG | position;
+        }
+        break;
+
+      case 0x00080000: /* ADR */
+      {
+        if ((reg = get_reg(line, &position)) >= 0) {
+          if ((reg == 15) && ((token & 0x0000F000) != 0x00000000))
+            error_code = SYM_ADRL_PC; /* Only ADR with PC */
+          else {
+            op_code = op_code | (reg << 12);
+            if (cmp_next_non_space(line, &position, 0, ',')) {
+              int x;
+              error_code = evaluate(line, &position, &value, symbol_table);
+
+              if (error_code == EVAL_OKAY) {
+                x = (int)(value - (assembly_pointer + 8)); /* Offset */
+                if (x < 0) {
+                  op_code = op_code | 0x024F0000;
+                  x = -x;
+                } else
+                  op_code = op_code | 0x028F0000; /* Sign and mag.*/
+              }
+
+              if ((token & 0x0000B000) == 0x00008000) /* Var. length: ADRL */
+              { /* Crunch without restriction */
+                if (!last_pass) {
+                  if (error_code == EVAL_OKAY)
+                    adr_loop(x, -1, op_code, last_pass, line, extras,
+                             error_code);
+                  extras = 12; /* If unknown assume 3 extra words needed*/
+                } else
+                  adr_loop(x, size_record_current->size / 4, op_code, last_pass,
+                           line, extras, error_code);
+
+                extras = variable_item_size(first_pass, extras);
+              } else /* Fixed length: ADR(n) */
+                if (error_code == EVAL_OKAY)
+                  adr_loop(x, (token >> 12) & 3, op_code, last_pass, line,
+                           extras, error_code); /* Pass length to cruncher */
+                else
+                  extras = (token >> 10) & 0xC; /* Length as specified */
+            } else
+              error_code = SYM_NO_COMMA | position; /* ',' not found */
+          }
+        } else
+          error_code = SYM_BAD_REG | position; /* Rd not found */
+      } break;
+
+      case 0x000A0000: /* CDP + MCR/MRC */
+      {
+        int cdp_parameters[] = {0xFFFFFFF0, 20, 1, 1, 2};
+        int mcr_parameters[] = {0xFFFFFFF8, 21, 0, 1, 1};
+        int mcrr_parameters[] = {0xFFFFFFF0, 4, 0, 0, 0};
+        int* parameters;
+        int CDP;
+
+        CDP = ((token & 0x0000F000) == 0x00000000); /* Differ. from MCR/MRC */
+
+        switch (token & 0x0000F000) {
+          case 0x00000000:
+            parameters = cdp_parameters;
+            break;
+          case 0x00001000:
+            parameters = mcr_parameters;
+            op_code |= 0x00000010;
+            break;
+          case 0x00002000:
+            parameters = mcrr_parameters;
+            break;
+        }
+
+        if ((reg = get_copro(line, &position)) >= 0)  // `reg' is a temp var.
+        {
+          op_code = op_code | (reg << 8); /* cp_num */
+          if (cmp_next_non_space(line, &position, 0, ',')) {
+            error_code = evaluate(line, &position, &value, symbol_table);
+            if ((error_code == EVAL_OKAY) ||
+                (first_pass && ((error_code & ALLOW_ON_FIRST_PASS) != 0))) {
+              if ((value & parameters[0]) == 0) /* opcode_1 */
+              {
+                op_code = op_code | (value << parameters[1]);
+                if (cmp_next_non_space(line, &position, 0, ',')) {
+                  if (parameters[2] == 0)
+                    reg = get_reg(line, &position);
+                  else
+                    reg = get_creg(line, &position);
+                  if (reg >= 0) {
+                    op_code = op_code | (reg << 12); /* CRd */
+                    if (cmp_next_non_space(line, &position, 0, ',')) {
+                      if (parameters[3] == 0)
+                        reg = get_reg(line, &position);
+                      else
+                        reg = get_creg(line, &position);
+                      if (reg >= 0) {
+                        op_code = op_code | (reg << 16); /* CRn */
+                        if (cmp_next_non_space(line, &position, 0, ',')) {
+                          if ((reg = get_creg(line, &position)) >= 0) {
+                            op_code = op_code | reg; /* CRm */
+                            if (parameters[4] > 0)   /* else finished (MCRR) */
+                            {
+                              if (cmp_next_non_space(line, &position, 0, ',')) {
+                                error_code = evaluate(line, &position, &value,
+                                                      symbol_table);
+                                if ((error_code == EVAL_OKAY) ||
+                                    (first_pass &&
+                                     ((error_code & ALLOW_ON_FIRST_PASS) !=
+                                      0))) {
+                                  if ((value & 0xFFFFFFF8) == 0) /* opcode_2 */
+                                    op_code = op_code | (value << 5);
+                                  else
+                                    error_code = SYM_BAD_CP_OP; /*Bad Op. #2*/
+                                }
+                              } else /* Last field optional for MCR/MRC */
+                                if (parameters[4] == 2) /* CDP only */
+                                  error_code = SYM_NO_COMMA | position;
+                            }
+                          } else
+                            error_code = SYM_BAD_REG | position; /*No CRm*/
+                        } else
+                          error_code = SYM_NO_COMMA | position;
+                      } else
+                        error_code = SYM_BAD_REG | position; /*CRn missing*/
+                    } else
+                      error_code = SYM_NO_COMMA | position;
+                  } else
+                    error_code = SYM_BAD_REG | position; /* CRd missing */
+                } else
+                  error_code = SYM_NO_COMMA | position;
+              } else
+                error_code = SYM_BAD_CP_OP; /* Opcode 1 out of range */
+            }
+          } else
+            error_code = SYM_NO_COMMA | position;
+        } else
+          error_code = SYM_BAD_COPRO | position; /* Copro. field missing */
+      } break;
+
+      case 0x000B0000:                               /* LDC/STC */
+        if ((reg = get_copro(line, &position)) >= 0) /* `reg' is a temp var. */
+        {
+          op_code = op_code | (reg << 8); /* cp_num */
+          if (cmp_next_non_space(line, &position, 0, ',')) {
+            if ((reg = get_creg(line, &position)) >= 0) {
+              op_code = op_code | (reg << 12); /* Rd */
+              if (cmp_next_non_space(line, &position, 0, ','))
+                op_code = addressing_mode(op_code, TYPE_CPRO, line, position,
+                                          symbol_table, error_code, last_pass,
+                                          first_pass);
+              else
+                error_code = SYM_NO_COMMA | position;
+            } else
+              error_code = SYM_BAD_REG | position; /* CRd missing */
+          } else
+            error_code = SYM_NO_COMMA | position;
+        } else
+          error_code = SYM_BAD_COPRO | position; /* Copro. field missing */
+        break;
+
+      case 0x000D0000: /* Long data-op. variants */
+      {
+        unsigned int Rd, Rn, imm;
+        unsigned int partial[4], alternate[4]; /* Buffers for imm. fields */
+        unsigned int count, alt_count, true_count, *ptr;
+        unsigned int op_base;
+
+        if ((Rd = get_reg(line, &position)) >= 0) /* Syntax parsing */
+        {
+          if (!cmp_next_non_space(line, &position, 0, ','))
+            error_code = SYM_NO_COMMA | position;
+          else {
+            if ((token & 0x00002000) != 0) /* Source Rn wanted? */
+            {                              /* (all except MOVL) */
+              if ((Rn = get_reg(line, &position)) >= 0) {
+                if (!cmp_next_non_space(line, &position, 0, ','))
+                  error_code = SYM_NO_COMMA | position;
+              } else
+                error_code = SYM_BAD_REG | position;
+            } else
+              Rn = 0; /* `Rn' for MOV/MVN shoud be R0 */
+          }
+        } else
+          error_code = SYM_BAD_REG | position;
+
+        if (error_code == EVAL_OKAY) /* Get the immediate value */
+        {
+          if (!cmp_next_non_space(line, &position, 0, '#'))
+            error_code = SYM_NO_HASH | position;
+          else
+            error_code = evaluate(line, &position, &imm, symbol_table);
+        }
+
+        ptr = partial;               /* Default setting */
+        if (error_code == EVAL_OKAY) /* Got the (possible) immediate value */
+        {
+          if ((token & 0x0FE00000) == TOKEN_ANDX   /* AND must be single op. */
+              && find_partials(imm, partial) != 1) /*  else ANDX => BICX */
+          {
+            token = token & 0xF01FFFFF | TOKEN_BICX;
+            imm = ~imm;
+          }
+
+          op_base = token & 0xFFF00000;
+          count = find_partials(imm, partial); /* Break up imm */
+
+          switch (token & 0x0FE00000) /* Check for shorter alternatives */
+          {
+            case TOKEN_ANDX: /* ANDX */
+            case TOKEN_EORX: /* EORX */
+            case TOKEN_ORRX: /* ORRX */
+            case TOKEN_BICX: /* BICX */
+            case TOKEN_RSBX: /* RSBX */
+            case TOKEN_RSCX: /* RSCX */
+              break;
+
+            case TOKEN_SUBX:                              /* SUBX */
+            case TOKEN_ADDX:                              /* ADDX */
+            case TOKEN_ADCX:                              /* ADCX */
+            case TOKEN_SBCX:                              /* SBCX */
+              alt_count = find_partials(-imm, alternate); /* Negate */
+              if (alt_count < count) /* Use alternative op. */
+              {
+                count = alt_count;
+                ptr = alternate;
+                switch (token & 0x0FE00000) /* Change op. code */
+                {
+                  case TOKEN_SUBX:
+                    op_base = op_base & 0xFE100000 | TOKEN_ADDX;
+                    break;
+                  case TOKEN_ADDX:
+                    op_base = op_base & 0xFE100000 | TOKEN_SUBX;
+                    break;
+                  case TOKEN_ADCX:
+                    op_base = op_base & 0xFE100000 | TOKEN_SBCX;
+                    break;
+                  case TOKEN_SBCX:
+                    op_base = op_base & 0xFE100000 | TOKEN_ADCX;
+                    break;
+                }
+              }
+              break;
+
+              /* Note: doesn't try 16-bit MOVs from v6T2 */
+            case TOKEN_MOVX:                              /* MOVX */
+              alt_count = find_partials(~imm, alternate); /* One's comp. */
+              if (alt_count < count) /* Use alternative op. */
+              {
+                count = alt_count;
+                ptr = alternate;
+                op_base = op_base | 0x00400000; /* MVN */
+              }
+              break;
+
+            default:
+              std::cout << "Unknown `long' operation" << std::endl;
+              break;
+          }
+        } else
+          count = 4;
+
+        true_count = variable_item_size(first_pass, count);
+        /* Account for variable length sequence */
+
+        if (!last_pass)
+          extras = extras + 4 * (true_count - 1);
+        else /* Only derive op. code(s) on last pass */
+        {
+          unsigned int i;
+          op_base = op_base | Rn << 16 | Rd << 12;
+
+          /* Padding only used if length is `wrong' */
+          for (i = count; i < true_count; i++)
+            ptr[i] = 0; /* Pad with 0 */
+                        /* Zero is safe for any op. after 1st in sequence */
+          for (i = 0; i < true_count;
+               i++) { /* After first word accumulate within Rd */
+            op_code = op_base | ptr[i];
+            if (i != true_count - 1) /* If not last word to plant ... */
+            {
+              op_code = op_code & 0xFFEFFFFF; /* S bit only on last op. */
+              byte_dump(assembly_pointer + extras, op_code, line, 4);
+              extras = extras + 4; /* Count extra word(s) */
+            }
+
+            /* Now prepare for follow up operations */
+            if (i != 0)
+              continue; /* Not -needed- probably faster */
+            op_base = op_base & 0xFFF0F000 | Rd << 16; /* Accumulator */
+            switch (token & 0x0FE00000)                /* Change op. code? */
+            { /* No carry after first operation */
+              case TOKEN_SBCX:
+                op_base = op_base & 0xFE1FFFFF | TOKEN_SUBX;
+                break;
+              case TOKEN_RSBX: /* Remaining immediate is added on */
+              case TOKEN_RSCX:
+              case TOKEN_ADCX:
+                op_base = op_base & 0xFE1FFFFF | TOKEN_ADDX;
+                break;
+              case TOKEN_MOVX:
+                op_base = op_base & 0xFFDFFFFF;
+                break;
+            }
+          } /* End of `for' loop */
+        }
+      } break;
+
+      default:
+        std::cout << "Unprocessable opcode!" << std::endl;
+        break;
+    }
+
+  } /* end of -skip- */
+
+  if (error_code == EVAL_OKAY) {
+    if (last_pass)
+      byte_dump(assembly_pointer + extras, op_code, line, 4);
+  } else {
+    if (!last_pass) {
+      if (allow_error(error_code, first_pass, last_pass))
+        error_code = EVAL_OKAY; /* Pretend we're okay */
+    } else                      /* Error on final pass */
+      byte_dump(assembly_pointer + extras, 0, line, 4);
+    /* Dump 0x00000000 place holder */
+  }
+  //##
+  if (if_stack[if_SP])
+    assembly_pointer = assembly_pointer + 4 + extras;
+}
+
+/**
+ * @brief
+ */
+void do_align(unsigned int& error_code,
+              std::string& line,
+              int& position,
+              unsigned int& operand,
+              sym_table*& symbol_table,
+              unsigned int& temp,
+              bool& last_pass,
+              own_label*& my_label,
+              int& first_pass) {
+  int fill;
+
+  error_code = evaluate(line, &position, &operand, symbol_table);
+  if ((error_code & 0xFFFFFF00) == EVAL_NO_OPERAND)  // Code - position
+  {
+    error_code = EVAL_OKAY;
+    operand = 4;
+  }
+
+  if (error_code == EVAL_OKAY) {
+    if (operand != 0) {  // (ALIGN 0 has no effect)
+      temp = (assembly_pointer - 1) % operand;
+      operand = operand - (temp + 1);  // No. of elements to skip(/fill)
+    }
+
+    if (fill = (line[position] == ','))  // Note where any label should go
+      fill_space(operand, position, error_code, last_pass, line, symbol_table,
+                 operand, first_pass);  // Fill with value (?)
+    else                                // Start new section if leaving gap
+    {
+      // dumping literals inside ALIGN @@@
+      // literal_dump(last_pass, line, assembly_pointer + operand);
+      // printf("Hello?\n");
+      if (fList != NULL) {
+        list_start_line(assembly_pointer + operand, false);
+      }
+      // Revise list file address
+
+      if (operand != 0) {
+        elf_new_section_maybe();  // Only reorigin in needed
+      }
+    }
+  }
+
+  if (error_code == EVAL_OKAY) /* Still OK? */
+  {
+    if (fill) /* Any label is at source point */
+      assemble_redef_label(assembly_pointer, assembly_pointer_defined, my_label,
+                           &error_code, 0, pass_count, last_pass, line);
+    else /* Any label is after alignment */
+      assemble_redef_label(assembly_pointer + operand, assembly_pointer_defined,
+                           my_label, &error_code, 0, pass_count, last_pass,
+                           line);
+    //##
+    if (if_stack[if_SP]) {
+      assembly_pointer = assembly_pointer + operand;
+    }
+  }
 }
 
 /**
@@ -2419,7 +3545,7 @@ unsigned int parse_ARM_reg_list(char*& line,
  * @return unsigned int
  */
 unsigned int assemble_line(std::string line,
-                           unsigned int position,
+                           int position,
                            unsigned int token,
                            own_label* my_label,
                            sym_table* symbol_table,
@@ -2431,1727 +3557,8 @@ unsigned int assemble_line(std::string line,
   unsigned int temp;
   int first_pass;
 
-  /**
-   * @brief Parse an addressing mode
-   *
-   * @param op_code
-   * @param size specifies the type of instruction and hence the particular
-   * syntax
-   * @return unsigned int op_code with the new coding appended
-   */
-  unsigned int addressing_mode(unsigned int op_code, type_size size)
-
-  { /* First, the parameters which differentiate LDR and LDRH */
-    unsigned int word_masks[] = {0x01000000, 0x02000000, 0x03000000,
-                                 0x010F0000};
-    unsigned int half_masks[] = {0x01400000, 0x00000000, 0x01000000,
-                                 0x014F0000};
-    unsigned int cpro_masks[] = {0x01000000, 0x00000000, 0x01000000,
-                                 0x010F0000};
-    unsigned int* parameter;
-    unsigned int value;
-    int reg;
-
-    switch (size) {
-      case TYPE_WORD:
-        parameter = word_masks;
-        break;
-      case TYPE_HALF:
-        parameter = half_masks;
-        break;
-      case TYPE_CPRO:
-        parameter = cpro_masks;
-        break;
-    }
-
-    if (cmp_next_non_space(line, &position, 0, '[')) {
-      if ((reg = get_reg(line, &position)) >= 0) {
-        op_code = op_code | (reg << 16); /* Base register (Rn) */
-        position = skip_spc(line, position);
-
-        switch (line[position]) /* What succeeds base register? */
-        {
-          case ']': /* Post indexed or just "[Rn]" */
-            if (!cmp_next_non_space(line, &position, 1, ','))
-              op_code = op_code | parameter[0]; /* Just "[Rn]" */
-            else {                              /* Post-indexed mode */
-              if (cmp_next_non_space(line, &position, 0, '#')) /* Imm. ? */
-              {
-                error_code = evaluate(line, &position, &value, symbol_table);
-                op_code = ldr_offset(op_code, value, size);
-                switch (size) {
-                  case TYPE_HALF:
-                    op_code |= 0x00400000;
-                    break; /* I bit */
-                  case TYPE_CPRO:
-                    op_code |= 0x00200000;
-                    break; /* W bit */
-                  default:
-                    break;
-                }
-              } else { /* Register offset, post-indexed */
-                if (size != TYPE_CPRO) {
-                  op_code = op_code | parameter[1];
-                  if (line[position] == '-')
-                    position++; /* + or - op.? */
-                  else {
-                    op_code = op_code | 0x00800000; /* Set 'U' bit */
-                    if (line[position] == '+')
-                      position++;
-                  }
-
-                  if ((reg = get_reg(line, &position)) >= 0) /* Rm */
-                  {
-                    if (size == TYPE_WORD)
-                      op_code =
-                          addr_shift(line, &position, op_code | reg, false);
-                    else
-                      op_code = op_code | reg; /* No shift for LDRH */
-                  } else
-                    error_code = SYM_BAD_REG | position; /* No offset reg. */
-                } else { /* LDC/STC "unindexed" mode */
-                  if (line[position] == '{') {
-                    position++;
-                    error_code =
-                        evaluate(line, &position, &value, symbol_table);
-                    if (error_code == EVAL_OKAY) {
-                      if ((value & 0xFFFFFF00) == 0x00000000) {
-                        op_code = op_code | value | 0x00800000; /* Set U bit */
-                        if (!cmp_next_non_space(line, &position, 0, '}'))
-                          error_code = SYM_NO_RSQUIGGLE | position;
-                      } else
-                        error_code = SYM_OORANGE;
-                    }
-                  } else
-                    error_code = SYM_NO_LSQUIGGLE | position;
-                }
-              }
-            }
-            break;
-
-          case ',':
-            if (cmp_next_non_space(line, &position, 1,
-                                   '#')) { /* Pre-index immediate */
-              op_code = op_code | parameter[0];
-              error_code = evaluate(line, &position, &value, symbol_table);
-              op_code = ldr_offset(op_code, value, size);
-              /* Offset */
-              if ((error_code == EVAL_OKAY) ||
-                  allow_error(error_code, first_pass,
-                              last_pass)) { /* May need to tolerate an error to
-                                               check syntax */
-                if (line[position] == ']') {
-                  if (cmp_next_non_space(line, &position, 1, '!'))
-                    op_code = op_code | 0x00200000; /* Set 'W' bit */
-                } else
-                  error_code = SYM_NO_RBR | position;
-              }
-            } else { /* Register offset, pre-indexed */
-              if (size != TYPE_CPRO) {
-                op_code = op_code | parameter[2];
-                if (line[position] == '-')
-                  position++; /* + or - operator? */
-                else {
-                  if (line[position] == '+')
-                    position++;
-                  op_code = op_code | 0x00800000; /* Set 'U' bit */
-                }
-
-                if ((reg = get_reg(line, &position)) >= 0) {
-                  op_code = op_code | reg; /* Rm */
-                  if (!cmp_next_non_space(line, &position, 0,
-                                          ']')) { /* Something else here ... */
-                    if (size == TYPE_WORD) {      /* Shift */
-                      op_code = addr_shift(line, &position, op_code, false);
-
-                      if ((error_code == EVAL_OKAY) ||
-                          allow_error(error_code, first_pass, last_pass)) {
-                        if (line[position] == ']')
-                          position++;
-                        else
-                          error_code = SYM_NO_RBR | position;
-                      }
-                    } else
-                      error_code = SYM_NO_RBR | position; /* LDRH */
-                  }
-
-                  if (cmp_next_non_space(line, &position, 0, '!'))
-                    op_code = op_code | 0x00200000; /* Set 'W' bit */
-
-                } else
-                  error_code = SYM_BAD_REG | position; /* Rm not IDed */
-              } else
-                error_code = SYM_ADDR_MODE_BAD; /* Bad mode for LDC/STC */
-            }
-            break;
-
-          default:
-            error_code = SYM_ADDR_MODE_ERR;
-            break;
-        }
-
-      } else
-        error_code = SYM_BAD_REG | position; /* Base register not found */
-    } else /* Addressing mode does not begin with '[' */
-    {
-      if (line[position] == '=') { /* Literal pool stuff */
-        if ((size == TYPE_CPRO) || ((op_code & 0x00100000) == 0))
-          error_code = SYM_ADDR_MODE_ERR; /* Disallowed in LDC and all stores */
-        else {
-          position++;
-          error_code = evaluate(line, &position, &value, symbol_table);
-
-          if ((error_code == EVAL_OKAY) ||
-              allow_error(error_code, first_pass, last_pass)) {
-            switch (do_literal(ARM, size, &value, first_pass, &error_code))
-            /* Constant size? */
-            {         /*  (literal table appended as necessary) */
-              case 0: /* Will fit in instruction */
-                op_code = op_code & 0xF000F000; /* Fields to keep */
-                op_code = op_code | 0x03A00000 | data_op_imm(value); /* MOV */
-                break;
-
-              case 1:                           /* Will fit in instruction */
-                op_code = op_code & 0xF000F000; /* Fields to keep */
-                op_code = op_code | 0x03E00000 | data_op_imm(~value); /* MVN */
-                break;
-
-              case 2: /* Needs full-blooded LDR */
-                op_code = ldr_offset(op_code | parameter[3],
-                                     value - (assembly_pointer + 8), size);
-                break;
-
-              default:
-                break;
-            }
-          }
-        }
-      } else { /* Try for `absolute' address */
-        error_code = evaluate(line, &position, &value, symbol_table);
-        if (error_code == EVAL_OKAY)
-          op_code = ldr_offset(op_code | parameter[3],
-                               value - (assembly_pointer + 8), size);
-      }
-    }
-    return op_code;
-  }
-
-  void arm_mnemonic() { /* Instructions, rather than directives */
-    unsigned int op_code, value, extras;
-    int reg;
-    bool rrx; /* Flag (of convenience) identifying short RRX */
-
-    extras = 0; /* Instruction length - 4 */
-
-    if (first_pass || last_pass || ((token & 0x00008000) != 0)) /* -skip- */
-    { /* Only do difficult stuff on first pass (syntax) and last pass (code
-dump) unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
-      op_code = token & 0xFFF00000;
-
-      rrx = ((token & 0x000FFF00) == 0x00024E00); /* Nasty irregular case */
-
-      if (!rrx && ((token & 0x00000800) != 0))
-        op_code |= 0xF0000000;
-      /*`New' always codes */
-
-      switch (token & 0x000F0000) {
-        case 0x00000000: /* NOP (etc.) */
-          switch (token & 0x00F00000) {
-            case 0x00000000:
-              op_code = 0xE1A00000;
-              break;         /* NOP */
-            case 0x00100000: /* undefined */
-              op_code = (op_code & 0xF0000000) | 0x06000010;
-              break;
-
-            default:
-              op_code = 0xE1A00000;
-              break; /* NOP */
-          }
-
-          break;
-
-        case 0x00010000:                 /* Data operations */
-          if ((token & 0x00004000) != 0) /* Destination register wanted? */
-            if ((reg = get_reg(line, &position)) >= 0) {
-              op_code = op_code | (reg << 12);
-              if (!cmp_next_non_space(line, &position, 0, ','))
-                error_code = SYM_NO_COMMA | position;
-            } else
-              error_code = SYM_BAD_REG | position;
-
-          if (error_code == EVAL_OKAY) {
-            if ((token & 0x00002000) != 0) /* Source Rn wanted? */
-              if ((reg = get_reg(line, &position)) >= 0) {
-                op_code = op_code | (reg << 16);
-                if (!cmp_next_non_space(line, &position, 0, ','))
-                  error_code = SYM_NO_COMMA | position;
-              } else
-                error_code = SYM_BAD_REG | position;
-
-            if (error_code ==
-                EVAL_OKAY) { /* Rm always present, so check omitted */
-              if (cmp_next_non_space(line, &position, 0, '#')) /* Imm. mode */
-                op_code = data_op_immediate(line, &position, op_code, true);
-              else { /* Register mode */
-                if ((reg = get_reg(line, &position)) >= 0)
-                  op_code = addr_shift(line, &position, op_code | reg, true);
-                else
-                  error_code = SYM_BAD_REG | position;
-              }
-            }
-          }
-          break;
-
-        case 0x00020000:                        /* Multiply operations */
-        {                                       /* and misc. later add-ons */
-          int mul_regs[] = {16, 0, 8, -1};      /* Bit positions of */
-          int mla_regs[] = {16, 0, 8, 12, -1};  /*    the various   */
-          int mull_regs[] = {12, 16, 0, 8, -1}; /*  register fields */
-          int swp_regs[] = {12, 0, -1};         /* First 2 for SWP */
-          int clz_regs[] = {12, 0, -1};
-          int qadd_regs[] = {12, 0, 16, -1};
-          int shift_regs[] = {12, 0, 8, -1};
-          int not_def[] = {-1};
-          int *pRegs, i;
-
-          switch (token & 0x0000F000) {
-            case 0x00000000:
-              pRegs = clz_regs;
-              op_code |= 0x000F0F10;
-              break;
-            case 0x00002000:
-              pRegs = swp_regs;
-              op_code |= 0x00000090;
-              break;
-            case 0x00003000:
-              pRegs = qadd_regs;
-              op_code |= 0x00000050;
-              break;
-            case 0x00001000:
-              op_code = op_code | 0x00000090;
-              switch (token & 0x00E00000) /* Decide where the reg. fields go */
-              {
-                case 0x00000000:
-                  pRegs = mul_regs;
-                  break;
-                case 0x00200000:
-                  pRegs = mla_regs;
-                  break;
-                case 0x00800000:
-                case 0x00A00000:
-                case 0x00C00000:
-                case 0x00E00000:
-                  pRegs = mull_regs;
-                  break;
-                default:
-                  pRegs = not_def;
-                  break;
-              }
-              break;
-
-            case 0x00004000: /* Alternative shift mnemonics */
-              pRegs = shift_regs;
-              op_code |= (token & 0x600) >> 4 | 0x00000010;
-              break;
-
-            case 0x00008000:
-            case 0x00009000:
-            case 0x0000A000:
-            case 0x0000B000:
-              op_code = op_code | ((token >> 7) & 0x60) | 0x00000080;
-              switch (token & 0x00600000) /* Decide where the reg. fields go */
-              {
-                case 0x00000000:
-                  pRegs = mla_regs;
-                  break;
-                case 0x00200000:
-                  if ((token & 0x00001000) == 0)
-                    pRegs = mla_regs;
-                  else
-                    pRegs = mul_regs;
-                  break;
-                case 0x00400000:
-                  pRegs = mull_regs;
-                  break;
-                case 0x00600000:
-                  pRegs = mul_regs;
-                  break;
-              }
-              break;
-
-            default:
-              pRegs = not_def;
-              break;
-          }
-
-          i = 0;
-
-          while ((error_code == EVAL_OKAY) && (pRegs[i] >= 0)) {
-            if ((reg = get_reg(line, &position)) >= 0) {
-              if (rrx && (i == 2))
-                error_code = SYM_ERR_SYNTAX; /* RRX, short form, has no Rs */
-              else {
-                op_code = op_code | (reg << pRegs[i]);
-                i++;
-                if (pRegs[i] >= 0) /* If there is a next register ... */
-                {
-                  if (!cmp_next_non_space(line, &position, 0, ',')) {
-                    if (rrx) /* RRX, short form */
-                    {
-                      op_code &= 0xFFFFFFEF; /* Clear 'register' bit */
-                      i++; /* Will move to control array terminator */
-                    } else
-                      error_code = SYM_NO_COMMA | position;
-                  }
-                } else if ((token & 0x0000F000) ==
-                           0x00002000) /* SWP addr. bodged */
-                {
-                  if (!cmp_next_non_space(line, &position, 0, ','))
-                    error_code = SYM_NO_COMMA | position;
-                  else if (!cmp_next_non_space(line, &position, 0, '['))
-                    error_code = SYM_NO_LBR | position;
-                  else if ((reg = get_reg(line, &position)) >= 0) {
-                    op_code = op_code | (reg << 16);
-                    if (!cmp_next_non_space(line, &position, 0, ']'))
-                      error_code = SYM_NO_RBR | position;
-                  } else
-                    error_code = SYM_BAD_REG | position;
-                }
-              }
-            } else {
-              if ((token & 0x000FF000) == 0x00024000) /* Shift immediate? */
-              {
-                if ((line[position] == '#') && (i == 2)) {
-                  op_code &= 0xFFFFFFEF; /* Clear 'register' bit */
-                  position++;
-                  i++;
-                  error_code = evaluate(line, &position, &value, symbol_table);
-                  switch (token & 0x00000E00) {
-                    case 0x000: /* LSL */
-                      if (value > 31)
-                        error_code = SYM_OORANGE;
-                      break;
-                    case 0x600: /* ROR */
-                      if ((value < 1) || (value > 31))
-                        error_code = SYM_OORANGE;
-                      break;
-                    case 0xE00: /* RRX */
-                      if (value != 1)
-                        error_code = SYM_OORANGE;
-                      else
-                        value = 0;
-                      break;
-                    default: /* Other shift types */
-                      if ((value < 1) || (value > 32))
-                        error_code = SYM_OORANGE;
-                      else
-                        value = value & 0x1F;
-                      break;
-                  }
-                  op_code |= value << 7;
-                } else { /* Over detailed error messages?! */
-                  if (i < 2)
-                    error_code = SYM_BAD_REG | position;
-                  else if (!rrx)
-                    error_code = SYM_NO_REG_HASH | position;
-                  else
-                    error_code = SYM_NO_HASH | position;
-                }
-              } else
-                error_code = SYM_BAD_REG | position;
-            }
-          }
-        } break;
-
-        case 0x00030000: /* Normal LDR/STR operations */
-        case 0x00090000: /* LDRH etc. */
-        case 0x000C0000: /* LDRD/STRD */
-        {
-          int err_pos; /* Used if real register Rd is disallowed */
-
-          err_pos = position;
-          if ((reg = get_reg(line, &position)) >= 0) /* Reg. to transfer (Rd) */
-          {
-            if (((token & 0x000F0000) == 0x000C0000) && ((reg & 1) != 0))
-              error_code = SYM_BAD_REG | skip_spc(line, err_pos);
-            /* Even regs. only in LDRD; rederive position only if needed */
-            else {
-              op_code = op_code | (reg << 12);
-              if (cmp_next_non_space(line, &position, 0, ',')) /* Comma found */
-              {
-                if ((token & 0x000F0000) == 0x00030000) /* LDR/STR */
-                  op_code = addressing_mode(op_code, TYPE_WORD);
-                else /* LDRH etc./LDRD */
-                  op_code = addressing_mode(op_code, TYPE_HALF);
-              } else
-                error_code = SYM_NO_COMMA | position; /*',' after Rd missing*/
-            }
-          } else
-            error_code = SYM_BAD_REG | position; /* Rd not found */
-
-          switch (token & 0x000F0000) {
-              /* Note: the following trap allows "[Rn]" for LDRT but also allows
-               * "[Rn, #0]" */
-              /*       to be translated too.  Is this acceptable?  @@ */
-            case 0x00030000: /* LDR/STR only */
-              if ((error_code == EVAL_OKAY) &&
-                  ((token & 0x00001000) != 0)) {           /* 'T' option */
-                if (((op_code & 0x01200000) == 0x00000000) /* Post ind. mode? */
-                    ||
-                    ((op_code & 0x02000FFF) == 0x00000000)) /*  or #0 offset? */
-                  op_code = (op_code & 0xFEFFFFFF) | 0x00200000;
-                /* Redefine addressing mode */
-                else
-                  error_code = SYM_ADDR_MODE_BAD;
-              }
-              break;
-
-            case 0x00090000:              /* Short-form LD/ST */
-              switch (token & 0x00007000) /* Which LDRH... instruction? */
-              {
-                case 0x00000000:
-                  op_code = op_code | 0x000000B0;
-                  break; /*LDRH */
-                case 0x00001000:
-                  op_code = op_code | 0x000000D0;
-                  break; /*LDRSB*/
-                case 0x00002000:
-                  op_code = op_code | 0x000000F0;
-                  break; /*LDRSH*/
-                default:
-                  break;
-              }
-              break;
-
-            case 0x000C0000: /* LDRD/STRD */
-              if ((token & 0x00001000) == 0)
-                op_code |= 0x000000F0; /* STRD */
-              else
-                op_code |= 0x000000D0; /* LDRD */
-              break;
-          }
-        } break;
-
-        case 0x00040000: /* B and BL */
-          error_code = evaluate(line, &position, &value, symbol_table);
-          value = value - (assembly_pointer + 8);
-          if ((value & 3) != 0) /* Not word aligned */
-            error_code = SYM_UNALIGNED_BRANCH;
-          else if (((value & 0xFE000000) == 0x00000000) /*  or out of range */
-                   || ((value & 0xFE000000) == 0xFE000000))
-            op_code = op_code | ((value >> 2) & 0x00FFFFFF);
-          else
-            error_code = SYM_OORANGE_BRANCH;
-          break;
-
-        case 0x00050000: /* Miscellany */
-          switch (token & 0x0000F000) {
-            case 0x00000000: /* SWI */
-              error_code = evaluate(line, &position, &value, symbol_table);
-              if ((value & 0xFF000000) == 0)
-                op_code = op_code | value;
-              else
-                error_code = SYM_OORANGE;
-              break;
-
-            case 0x00001000: /* BX */
-              if ((reg = get_reg(line, &position)) >= 0)
-                op_code = op_code | 0x000FFF10 | reg;
-              else
-                error_code = SYM_BAD_REG | position; /* Rm not found */
-              break;
-
-            case 0x00002000: /* BKPT */
-              error_code = evaluate(line, &position, &value, symbol_table);
-              if ((value & 0xFFFF0000) == 0)
-                op_code =
-                    op_code | ((value & 0xFFF0) << 4) | 0x70 | (value & 0x000F);
-              else
-                error_code = SYM_OORANGE;
-              break;
-
-            case 0x00003000: /* BLX */
-              if ((reg = get_reg(line, &position)) >= 0)
-                op_code = op_code | 0x012FFF30 | reg;
-              else                                      /* Rm not found */
-                if ((token & 0xF0000000) == 0xE0000000) /* Only unconditional */
-                {
-                  error_code = evaluate(line, &position, &value, symbol_table);
-                  value = value - (assembly_pointer + 8);
-
-                  if ((value & 1) != 0) /* Not halfword aligned */
-                    error_code = SYM_UNALIGNED_BRANCH;
-                  else if (((value & 0xFE000000) == 0x00000000) /* In range? */
-                           || ((value & 0xFE000000) == 0xFE000000))
-                    op_code = 0xFA000000 | ((value & 0x03FFFFFC) >> 2) |
-                              ((value & 2) << 23);
-                  else
-                    error_code = SYM_OORANGE_BRANCH;
-                } else
-                  error_code = SYM_NO_COND;
-              break;
-
-            case 0x00004000: /* PLD */
-              op_code = addressing_mode(op_code | 0x0000F000, TYPE_WORD);
-              if ((op_code & 0x01200000) !=
-                  0x01000000) { /* Modes which write back are disallowed */
-                op_code = 0x00000000;
-                error_code = SYM_ADDR_MODE_BAD;
-              }
-              break;
-
-            case 0x00005000: /* PUSH/POP */
-              op_code = op_code | 0x000D0000 | parse_ARM_reg_list(op_code, 0);
-              break;
-
-            default:
-              break;
-          }
-          break; /* End of case 0x00050000 "Miscellany" */
-
-        case 0x00060000:                             /* STM/LDM */
-          if ((reg = get_reg(line, &position)) >= 0) /* Base register (Rn) */
-          {
-            op_code = op_code | (reg << 16);
-
-            if (cmp_next_non_space(line, &position, 0, '!')) {
-              op_code = op_code | 0x00200000; /* Set W bit */
-              position = skip_spc(line, position);
-            }
-
-            if (line[position] == ',')
-              op_code = op_code | parse_ARM_reg_list(op_code, 1);
-            else
-              error_code = SYM_NO_COMMA | position;
-          } else
-            error_code = SYM_BAD_REG | position; /* Rn not found */
-
-          break;
-
-        case 0x00070000:                 /* MRS/MSR */
-          if ((token & 0x00200000) == 0) /* MRS */
-          {
-            if ((reg = get_reg(line, &position)) >= 0) /* Register (Rd) */
-            {
-              op_code = op_code | (reg << 12);
-
-              if (cmp_next_non_space(line, &position, 0, ',')) {
-                unsigned int old_pos;
-
-                position = skip_spc(line, position);
-                old_pos = position;             /* Remember in case of error */
-                reg = get_psr(line, &position); /* PSR */
-                if ((reg >= 0) && ((reg & 0x0F) == 0x0F)) /* Reg. found */
-                  op_code = op_code | (reg << 16);        /*  and legal here */
-                /* The lower `field mask' fills the SBO field <19>-<16> */
-                else
-                  error_code = SYM_BAD_REG | old_pos;
-              } else
-                error_code = SYM_NO_COMMA | position;
-            } else
-              error_code = SYM_BAD_REG | position; /* Rd not found */
-          } else                                   /* MSR */
-          {
-            position = skip_spc(line, position);
-            reg = get_psr(line, &position); /* PSR */
-            if (reg >= 0) {
-              op_code = op_code | (reg << 16) | 0x0000F000;
-              if (cmp_next_non_space(line, &position, 0, ',')) {
-                if (cmp_next_non_space(line, &position, 0, '#')) /* Skip ',' */
-                  op_code = data_op_immediate(line, &position, op_code, false);
-                else {
-                  if ((reg = get_reg(line, &position)) >= 0) /* Register (Rm) */
-                    op_code = op_code | reg;
-                  else
-                    error_code = SYM_BAD_REG | position; /*Missing source reg.*/
-                }
-              } else
-                error_code = SYM_NO_COMMA | position;
-            } else
-              error_code = SYM_BAD_REG | position;
-          }
-          break;
-
-        case 0x00080000: /* ADR */
-        {
-          void adr_loop(int value, int count) /* Local procedure */
-          {
-            int i, fixed;
-
-            fixed = count >= 0; /* Flag for loop termination */
-
-            while
-              true /* Something to go at? */
-              {
-                i = 0;
-                if (value != 0)
-                  while ((value & (3 << (2 * i))) == 0)
-                    i++;
-                /* Find LS bit pair, unless zero */
-
-                op_code = op_code | data_op_imm(value & (0xFF << (2 * i)));
-                value =
-                    value & ~(0xFF << (2 * i)); /* Peel off byte from offset */
-
-                /* Finish if dealing with last word */
-                if (fixed) {
-                  count = count - 1;
-                  if (count < 0)
-                    break;
-                } else if (value == 0)
-                  break;
-                /* otherwise plant word and continue */
-
-                if (last_pass)
-                  byte_dump(assembly_pointer + extras, op_code, line, 4);
-                extras = extras + 4;             /* Count extra word(s) */
-                op_code = (op_code & 0xFFF0F000) /* Modify op-code */
-                          | ((op_code & 0x0000F000) << 4);
-              } /* Closure of loop */
-
-            if (value != 0)
-              error_code = SYM_OORANGE; /* Bits remain: error */
-
-            return;
-          }
-
-          if ((reg = get_reg(line, &position)) >= 0) {
-            if ((reg == 15) && ((token & 0x0000F000) != 0x00000000))
-              error_code = SYM_ADRL_PC; /* Only ADR with PC */
-            else {
-              op_code = op_code | (reg << 12);
-              if (cmp_next_non_space(line, &position, 0, ',')) {
-                int x;
-                error_code = evaluate(line, &position, &value, symbol_table);
-
-                if (error_code == EVAL_OKAY) {
-                  x = (int)(value - (assembly_pointer + 8)); /* Offset */
-                  if (x < 0) {
-                    op_code = op_code | 0x024F0000;
-                    x = -x;
-                  } else
-                    op_code = op_code | 0x028F0000; /* Sign and mag.*/
-                }
-
-                if ((token & 0x0000B000) == 0x00008000) /* Var. length: ADRL */
-                { /* Crunch without restriction */
-                  if (!last_pass) {
-                    if (error_code == EVAL_OKAY)
-                      adr_loop(x, -1);
-                    else
-                      extras = 12; /* If unknown assume 3 extra words needed*/
-                  } else
-                    adr_loop(x, size_record_current->size / 4);
-
-                  extras = variable_item_size(first_pass, extras);
-                } else /* Fixed length: ADR(n) */
-                  if (error_code == EVAL_OKAY)
-                    adr_loop(x,
-                             (token >> 12) & 3); /* Pass length to cruncher */
-                  else
-                    extras = (token >> 10) & 0xC; /* Length as specified */
-              } else
-                error_code = SYM_NO_COMMA | position; /* ',' not found */
-            }
-          } else
-            error_code = SYM_BAD_REG | position; /* Rd not found */
-        } break;
-
-        case 0x000A0000: /* CDP + MCR/MRC */
-        {
-          int cdp_parameters[] = {0xFFFFFFF0, 20, 1, 1, 2};
-          int mcr_parameters[] = {0xFFFFFFF8, 21, 0, 1, 1};
-          int mcrr_parameters[] = {0xFFFFFFF0, 4, 0, 0, 0};
-          int* parameters;
-          int CDP;
-
-          CDP = ((token & 0x0000F000) == 0x00000000); /* Differ. from MCR/MRC */
-
-          switch (token & 0x0000F000) {
-            case 0x00000000:
-              parameters = cdp_parameters;
-              break;
-            case 0x00001000:
-              parameters = mcr_parameters;
-              op_code |= 0x00000010;
-              break;
-            case 0x00002000:
-              parameters = mcrr_parameters;
-              break;
-          }
-
-          if ((reg = get_copro(line, &position)) >=
-              0) /* `reg' is a temp var. */
-          {
-            op_code = op_code | (reg << 8); /* cp_num */
-            if (cmp_next_non_space(line, &position, 0, ',')) {
-              error_code = evaluate(line, &position, &value, symbol_table);
-              if ((error_code == EVAL_OKAY) ||
-                  (first_pass && ((error_code & ALLOW_ON_FIRST_PASS) != 0))) {
-                if ((value & parameters[0]) == 0) /* opcode_1 */
-                {
-                  op_code = op_code | (value << parameters[1]);
-                  if (cmp_next_non_space(line, &position, 0, ',')) {
-                    if (parameters[2] == 0)
-                      reg = get_reg(line, &position);
-                    else
-                      reg = get_creg(line, &position);
-                    if (reg >= 0) {
-                      op_code = op_code | (reg << 12); /* CRd */
-                      if (cmp_next_non_space(line, &position, 0, ',')) {
-                        if (parameters[3] == 0)
-                          reg = get_reg(line, &position);
-                        else
-                          reg = get_creg(line, &position);
-                        if (reg >= 0) {
-                          op_code = op_code | (reg << 16); /* CRn */
-                          if (cmp_next_non_space(line, &position, 0, ',')) {
-                            if ((reg = get_creg(line, &position)) >= 0) {
-                              op_code = op_code | reg; /* CRm */
-                              if (parameters[4] > 0) /* else finished (MCRR) */
-                              {
-                                if (cmp_next_non_space(line, &position, 0,
-                                                       ',')) {
-                                  error_code = evaluate(line, &position, &value,
-                                                        symbol_table);
-                                  if ((error_code == EVAL_OKAY) ||
-                                      (first_pass &&
-                                       ((error_code & ALLOW_ON_FIRST_PASS) !=
-                                        0))) {
-                                    if ((value & 0xFFFFFFF8) ==
-                                        0) /* opcode_2 */
-                                      op_code = op_code | (value << 5);
-                                    else
-                                      error_code = SYM_BAD_CP_OP; /*Bad Op. #2*/
-                                  }
-                                } else /* Last field optional for MCR/MRC */
-                                  if (parameters[4] == 2) /* CDP only */
-                                    error_code = SYM_NO_COMMA | position;
-                              }
-                            } else
-                              error_code = SYM_BAD_REG | position; /*No CRm*/
-                          } else
-                            error_code = SYM_NO_COMMA | position;
-                        } else
-                          error_code = SYM_BAD_REG | position; /*CRn missing*/
-                      } else
-                        error_code = SYM_NO_COMMA | position;
-                    } else
-                      error_code = SYM_BAD_REG | position; /* CRd missing */
-                  } else
-                    error_code = SYM_NO_COMMA | position;
-                } else
-                  error_code = SYM_BAD_CP_OP; /* Opcode 1 out of range */
-              }
-            } else
-              error_code = SYM_NO_COMMA | position;
-          } else
-            error_code = SYM_BAD_COPRO | position; /* Copro. field missing */
-        } break;
-
-        case 0x000B0000: /* LDC/STC */
-          if ((reg = get_copro(line, &position)) >=
-              0) /* `reg' is a temp var. */
-          {
-            op_code = op_code | (reg << 8); /* cp_num */
-            if (cmp_next_non_space(line, &position, 0, ',')) {
-              if ((reg = get_creg(line, &position)) >= 0) {
-                op_code = op_code | (reg << 12); /* Rd */
-                if (cmp_next_non_space(line, &position, 0, ','))
-                  op_code = addressing_mode(op_code, TYPE_CPRO);
-                else
-                  error_code = SYM_NO_COMMA | position;
-              } else
-                error_code = SYM_BAD_REG | position; /* CRd missing */
-            } else
-              error_code = SYM_NO_COMMA | position;
-          } else
-            error_code = SYM_BAD_COPRO | position; /* Copro. field missing */
-          break;
-
-#define TOKEN_ANDX 0x02000000 /* Just to aid readability below */
-#define TOKEN_EORX 0x02200000
-#define TOKEN_SUBX 0x02400000
-#define TOKEN_RSBX 0x02600000
-#define TOKEN_ADDX 0x02800000
-#define TOKEN_ADCX 0x02A00000
-#define TOKEN_SBCX 0x02C00000
-#define TOKEN_RSCX 0x02E00000
-#define TOKEN_ORRX 0x03800000
-#define TOKEN_MOVX 0x03A00000
-#define TOKEN_BICX 0x03C00000
-
-        case 0x000D0000: /* Long data-op. variants */
-        {
-          unsigned int Rd, Rn, imm;
-          unsigned int partial[4], alternate[4]; /* Buffers for imm. fields */
-          unsigned int count, alt_count, true_count, *ptr;
-          unsigned int op_base;
-
-          if ((Rd = get_reg(line, &position)) >= 0) /* Syntax parsing */
-          {
-            if (!cmp_next_non_space(line, &position, 0, ','))
-              error_code = SYM_NO_COMMA | position;
-            else {
-              if ((token & 0x00002000) != 0) /* Source Rn wanted? */
-              {                              /* (all except MOVL) */
-                if ((Rn = get_reg(line, &position)) >= 0) {
-                  if (!cmp_next_non_space(line, &position, 0, ','))
-                    error_code = SYM_NO_COMMA | position;
-                } else
-                  error_code = SYM_BAD_REG | position;
-              } else
-                Rn = 0; /* `Rn' for MOV/MVN shoud be R0 */
-            }
-          } else
-            error_code = SYM_BAD_REG | position;
-
-          if (error_code == EVAL_OKAY) /* Get the immediate value */
-          {
-            if (!cmp_next_non_space(line, &position, 0, '#'))
-              error_code = SYM_NO_HASH | position;
-            else
-              error_code = evaluate(line, &position, &imm, symbol_table);
-          }
-
-          ptr = partial;               /* Default setting */
-          if (error_code == EVAL_OKAY) /* Got the (possible) immediate value */
-          {
-            if ((token & 0x0FE00000) == TOKEN_ANDX /* AND must be single op. */
-                && find_partials(imm, partial) != 1) /*  else ANDX => BICX */
-            {
-              token = token & 0xF01FFFFF | TOKEN_BICX;
-              imm = ~imm;
-            }
-
-            op_base = token & 0xFFF00000;
-            count = find_partials(imm, partial); /* Break up imm */
-
-            switch (token & 0x0FE00000) /* Check for shorter alternatives */
-            {
-              case TOKEN_ANDX: /* ANDX */
-              case TOKEN_EORX: /* EORX */
-              case TOKEN_ORRX: /* ORRX */
-              case TOKEN_BICX: /* BICX */
-              case TOKEN_RSBX: /* RSBX */
-              case TOKEN_RSCX: /* RSCX */
-                break;
-
-              case TOKEN_SUBX:                              /* SUBX */
-              case TOKEN_ADDX:                              /* ADDX */
-              case TOKEN_ADCX:                              /* ADCX */
-              case TOKEN_SBCX:                              /* SBCX */
-                alt_count = find_partials(-imm, alternate); /* Negate */
-                if (alt_count < count) /* Use alternative op. */
-                {
-                  count = alt_count;
-                  ptr = alternate;
-                  switch (token & 0x0FE00000) /* Change op. code */
-                  {
-                    case TOKEN_SUBX:
-                      op_base = op_base & 0xFE100000 | TOKEN_ADDX;
-                      break;
-                    case TOKEN_ADDX:
-                      op_base = op_base & 0xFE100000 | TOKEN_SUBX;
-                      break;
-                    case TOKEN_ADCX:
-                      op_base = op_base & 0xFE100000 | TOKEN_SBCX;
-                      break;
-                    case TOKEN_SBCX:
-                      op_base = op_base & 0xFE100000 | TOKEN_ADCX;
-                      break;
-                  }
-                }
-                break;
-
-                /* Note: doesn't try 16-bit MOVs from v6T2 */
-              case TOKEN_MOVX:                              /* MOVX */
-                alt_count = find_partials(~imm, alternate); /* One's comp. */
-                if (alt_count < count) /* Use alternative op. */
-                {
-                  count = alt_count;
-                  ptr = alternate;
-                  op_base = op_base | 0x00400000; /* MVN */
-                }
-                break;
-
-              default:
-                std::cout << "Unknown `long' operation" << std::endl;
-                break;
-            }
-          } else
-            count = 4;
-
-          true_count = variable_item_size(first_pass, count);
-          /* Account for variable length sequence */
-
-          if (!last_pass)
-            extras = extras + 4 * (true_count - 1);
-          else /* Only derive op. code(s) on last pass */
-          {
-            unsigned int i;
-            op_base = op_base | Rn << 16 | Rd << 12;
-
-            /* Padding only used if length is `wrong' */
-            for (i = count; i < true_count; i++)
-              ptr[i] = 0; /* Pad with 0 */
-                          /* Zero is safe for any op. after 1st in sequence */
-            for (i = 0; i < true_count;
-                 i++) { /* After first word accumulate within Rd */
-              op_code = op_base | ptr[i];
-              if (i != true_count - 1) /* If not last word to plant ... */
-              {
-                op_code = op_code & 0xFFEFFFFF; /* S bit only on last op. */
-                byte_dump(assembly_pointer + extras, op_code, line, 4);
-                extras = extras + 4; /* Count extra word(s) */
-              }
-
-              /* Now prepare for follow up operations */
-              if (i != 0)
-                continue; /* Not -needed- probably faster */
-              op_base = op_base & 0xFFF0F000 | Rd << 16; /* Accumulator */
-              switch (token & 0x0FE00000)                /* Change op. code? */
-              { /* No carry after first operation */
-                case TOKEN_SBCX:
-                  op_base = op_base & 0xFE1FFFFF | TOKEN_SUBX;
-                  break;
-                case TOKEN_RSBX: /* Remaining immediate is added on */
-                case TOKEN_RSCX:
-                case TOKEN_ADCX:
-                  op_base = op_base & 0xFE1FFFFF | TOKEN_ADDX;
-                  break;
-                case TOKEN_MOVX:
-                  op_base = op_base & 0xFFDFFFFF;
-                  break;
-              }
-            } /* End of `for' loop */
-          }
-        } break;
-
-        default:
-          std::cout << "Unprocessable opcode!" << std::endl;
-          break;
-      }
-
-    } /* end of -skip- */
-
-    if (error_code == EVAL_OKAY) {
-      if (last_pass)
-        byte_dump(assembly_pointer + extras, op_code, line, 4);
-    } else {
-      if (!last_pass) {
-        if (allow_error(error_code, first_pass, last_pass))
-          error_code = EVAL_OKAY; /* Pretend we're okay */
-      } else                      /* Error on final pass */
-        byte_dump(assembly_pointer + extras, 0, line, 4);
-      /* Dump 0x00000000 place holder */
-    }
-    //##
-    if (if_stack[if_SP])
-      assembly_pointer = assembly_pointer + 4 + extras;
-
-    return;
-  }
-
-  void thumb_mmemonic() {
-    unsigned int op_code, value, extras;
-    int reg;
-
-    extras = 0; /* Instruction length - 2 */
-
-    if (first_pass || last_pass || ((token & 0x00008000) != 0)) /* -skip- */
-    { /* Only do difficult stuff on first pass (syntax) and last pass (dump)
-unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
-      op_code = (token >> 20) & 0x00000FFF;
-
-      switch (token & 0x000F0000) {
-        case 0x00000000: /* Straightforward data operations */
-        { /* ADC, AND, BIC, CMN, EOR, MUL, MVN, NEG, ORR, ROR, SBC, TST */
-          op_code = 0x4000 | (op_code << 6);
-
-          reg = get_thumb_reg(line, &position, 0x00FF); /* First register */
-          if (reg >= 0) {
-            op_code = op_code | reg;
-            if (!cmp_next_non_space(line, &position, 0, ','))
-              error_code = SYM_NO_COMMA | position;
-          } else
-            error_code = SYM_BAD_REG | position;
-
-          if (error_code == EVAL_OKAY) {
-            reg = get_thumb_reg(line, &position, 0x00FF); /* Second register */
-            if (reg >= 0)
-              op_code = op_code | (reg << 3);
-            else
-              error_code = SYM_BAD_REG | position;
-          }
-
-        } break;
-
-        case 0x00010000: /* Shifts {ASR, LSL, LSR} */
-        {                /*  (ROR is different format) */
-          unsigned int temp;
-
-          reg = get_thumb_reg(line, &position, 0x00FF); /* First register */
-          if (reg >= 0) {
-            temp = reg;
-            if (!cmp_next_non_space(line, &position, 0, ','))
-              error_code = SYM_NO_COMMA | position;
-          } else
-            error_code = SYM_BAD_REG | position;
-
-          if (error_code == EVAL_OKAY) /* First register specifier read okay */
-          {
-            reg = get_thumb_reg(line, &position, 0x00FF);
-            if (reg >= 0) /* Second operand is a register too */
-            {
-              temp = temp | (reg << 3);
-
-              if (cmp_next_non_space(line, &position, 0, ',')) /* Any more? */
-              {
-                if (cmp_next_non_space(line, &position, 0, '#')) /* (1) */
-                { /* Comma so immediate shift (probably) */
-                  error_code = evaluate(line, &position, &value, symbol_table);
-                  if (error_code == EVAL_OKAY) {
-                    unsigned int x;
-                    if ((token & 0x00300000) == 0x00000000)
-                      x = value; /* LSL */
-                    else
-                      x = value - 1;      /* ASR, LSR */
-                    if ((x & ~0x1F) == 0) /* Range check (0-31 or 1-32) */
-                      op_code = (op_code << 11) | ((value & 0x1F) << 6) | temp;
-                    else
-                      error_code = SYM_OORANGE;
-                  }
-                } else
-                  error_code = SYM_ERR_SYNTAX | position;
-              } else /* No comma so register shift */
-                op_code = 0x4000 | ((op_code + 2) << 6) | temp; /* (2) */
-            } else
-              error_code = SYM_BAD_REG | position; /* 2nd op. not register */
-          }
-
-        } break;
-
-        case 0x00020000: /* ADD/SUB */
-        {
-          unsigned int Rd_pos, Rn_pos;
-          int Rd, Rn, Rm, imm;
-
-          Rd_pos = position;
-          Rd = get_reg(line, &position);
-          if (Rd >= 0) {
-            if (!cmp_next_non_space(line, &position, 0, ','))
-              error_code = SYM_NO_COMMA | position;
-            else if (cmp_next_non_space(line, &position, 0, '#')) /* Rd, #nn */
-            {
-              error_code = evaluate(line, &position, &value, symbol_table);
-
-              if (error_code == EVAL_OKAY) {
-                if (Rd < 8) /* (2) */
-                {
-                  if ((value & ~0xFF) == 0) {
-                    if (op_code == 0)
-                      op_code = 0x3000 | (Rd << 8) | value;
-                    else
-                      op_code = 0x3800 | (Rd << 8) | value;
-                  } else
-                    error_code = SYM_OORANGE;
-                } else {
-                  if (Rd = 13) /* (7) */
-                  {
-                    if ((value & ~0x1FC) == 0) {
-                      if (op_code == 0)
-                        op_code = 0xB000 | (value >> 2);
-                      else
-                        op_code = 0xB080 | (value >> 2);
-                    } else
-                      error_code = SYM_OORANGE;
-                  } else
-                    error_code = SYM_ERR_SYNTAX;
-                }
-              }
-            } else /* Rd, Rn ... */
-            {
-              Rn_pos = position;
-              Rn = get_reg(line, &position);
-              if (Rn >= 0) /* Should be another register by now */
-              {
-                if (!cmp_next_non_space(line, &position, 0, ',')) /* (4) */
-                {
-                  if (op_code == 0) /* ADD */
-                  {
-                    if (((Rd | Rn) & 8) == 0) /* Both low registers? */
-                      op_code = 0x1800 | (Rn << 6) | (Rn << 3) | Rd; /* (3) */
-                    else
-                      op_code = 0x4400 | ((Rd & 8) << 4) | (Rn << 3) | (Rd & 7);
-                  } else
-                    error_code = SYM_BAD_VARIANT; /* Not SUB */
-                } else                            /* Third operand reached */
-                {
-                  imm = cmp_next_non_space(line, &position, 0, '#'); /* below */
-
-                  if (Rd < 8) /* Should be so, here */
-                  {
-                    if (Rn < 8) /* (1) or (3) */
-                    {
-                      if (op_code == 0)
-                        op_code = 0x1800;
-                      else
-                        op_code = 0x1A00;
-
-                      if (imm) /* (1) */
-                      {
-                        error_code =
-                            evaluate(line, &position, &value, symbol_table);
-                        if (error_code == EVAL_OKAY) {
-                          if ((value & ~0x7) == 0)
-                            op_code |= 0x0400 | (value << 6) | (Rn << 3) | Rd;
-                          else
-                            error_code = SYM_OORANGE;
-                        }
-                      } else /* (3) */
-                      {
-                        Rm = get_thumb_reg(line, &position, 0x00FF);
-                        if (Rm >= 0)
-                          op_code |= (Rm << 6) | (Rn << 3) | Rd;
-                        else
-                          error_code = SYM_BAD_REG | position;
-                      }
-                    } else if (op_code == 0) /* ADD */
-                    {
-                      if ((Rn | 0x2) == 0xF) /* (5) or (6) */
-                      {
-                        if (imm) {
-                          if (Rn == 15)
-                            op_code = 0xA000; /* PC (5) */
-                          else
-                            op_code = 0xA800; /* SP (6) */
-                          error_code =
-                              evaluate(line, &position, &value, symbol_table);
-                          if (error_code == EVAL_OKAY) {
-                            if ((value & ~0x3FC) == 0)
-                              op_code = op_code | Rd << 8 | (value >> 2);
-                            else
-                              error_code = SYM_OORANGE;
-                          }
-                        } else
-                          error_code = SYM_ERR_SYNTAX | position;
-                      } else
-                        error_code = SYM_BAD_REG | skip_spc(line, Rn_pos);
-                    } else
-                      error_code = SYM_BAD_VARIANT; /* Can't "SUB" */
-                  } else
-                    error_code = SYM_BAD_REG | skip_spc(line, Rd_pos);
-                }
-              } else
-                error_code = SYM_BAD_REG | skip_spc(line, Rn_pos);
-            }
-          } else
-            error_code = SYM_BAD_REG | skip_spc(line, Rd_pos);
-
-        } break;
-
-        case 0x00030000: /* MOV/CMP */
-        {
-          int Rd, Rm;
-          unsigned int Rd_pos, Rm_pos;
-
-          Rd_pos = position;
-          Rd = get_reg(line, &position);
-          if (Rd >= 0) {
-            if (!cmp_next_non_space(line, &position, 0, ','))
-              error_code = SYM_NO_COMMA | position;
-            else if (cmp_next_non_space(line, &position, 0, '#')) /* Rd, #nn */
-            {                                                     /* (1) */
-              if (Rd < 8) {
-                error_code = evaluate(line, &position, &value, symbol_table);
-
-                if (error_code == EVAL_OKAY) {
-                  if ((value & ~0xFF) == 0) {
-                    if (op_code == 0)
-                      op_code = 0x2000 | (Rd << 8) | value;
-                    else
-                      op_code = 0x2800 | (Rd << 8) | value;
-                  } else
-                    error_code = SYM_OORANGE;
-                }
-              } else
-                error_code = SYM_BAD_REG | skip_spc(line, Rd_pos);
-            } else {
-              Rm_pos = position;
-              Rm = get_reg(line, &position);
-              if (Rm >= 0) {
-                if (((Rm | Rd) & 8) == 0) /* Both low registers? */
-                {                         /* (2) */
-                  if (op_code == 0)
-                    op_code = 0x1C00;
-                  else
-                    op_code = 0x4280;
-                  op_code = op_code | (Rm << 3) | Rd; /* MOV is really ADD # */
-                } else                                /* (3) */
-                {
-                  if (op_code == 0)
-                    op_code = 0x4600;
-                  else
-                    op_code = 0x4500;
-                  op_code |= ((Rd & 8) << 4) | (Rm << 3) | (Rd & 7);
-                }
-              } else
-                error_code = SYM_BAD_REG | skip_spc(line, Rm_pos);
-            }
-          } else
-            error_code = SYM_BAD_REG | skip_spc(line, Rd_pos);
-
-        } break;
-
-        case 0x00040000: /* Branches */
-          error_code = evaluate(line, &position, &value, symbol_table);
-
-          if (error_code == EVAL_OKAY) {
-            value = value - (assembly_pointer + 4);
-            if ((value & 1) != 0) /* Not halfword aligned */
-              error_code = SYM_UNALIGNED_BRANCH;
-            else {
-              if ((op_code & 0xF) == 0x000E) /* 11 bit branch range */
-              {
-                if (((value & 0xFFFFF800) == 0x00000000) /* Out of range? */
-                    || ((value & 0xFFFFF800) == 0xFFFFF800))
-                  op_code = 0xE000 | ((value >> 1) & 0x000007FF);
-                else
-                  error_code = SYM_OORANGE_BRANCH;
-              } else {
-                if (((value & 0xFFFFFF00) == 0x00000000) /* Out of range? */
-                    || ((value & 0xFFFFFF00) == 0xFFFFFF00))
-                  op_code =
-                      0xD000 | ((op_code & 0xF) << 8) | ((value >> 1) & 0xFF);
-                else
-                  error_code = SYM_OORANGE_BRANCH;
-              }
-            }
-          }
-          break;
-
-        case 0x00050000: /* BX */
-          reg = get_reg(line, &position);
-          if (reg >= 0)
-            op_code = 0x4700 | (reg << 3);
-          else
-            error_code = SYM_BAD_REG | position;
-          break;
-
-        case 0x00060000: /* BL/BLX */
-        {
-          unsigned int op, old_pos;
-
-          op = op_code; /* Copy of operation type */
-          old_pos = position;
-          reg = get_reg(line, &position);
-          /* Don't prefilter here - want to know if PC specified */
-          if (reg >= 15)
-            error_code = SYM_BAD_REG | skip_spc(line, old_pos);
-          else {
-            if (reg >= 0) {
-              if (op != 0x0001)
-                error_code = SYM_BAD_VARIANT; /* Not BLX */
-              else
-                op_code = 0x4780 | (reg << 3);
-            } else /* Fixed offset form */
-            {
-              error_code = evaluate(line, &position, &value, symbol_table);
-
-              if (error_code == EVAL_OKAY) {
-                value = value - (assembly_pointer + 4);
-                if (op != 0x0000)
-                  value += 2;         /* BLX correction */
-                if ((value & 1) != 0) /* Not halfword aligned */
-                  error_code = SYM_UNALIGNED_BRANCH;
-                else if (((value & 0xFFC00000) == 0x00000000) ||
-                         ((value & 0xFFC00000) == 0xFFC00000)) {
-                  if (last_pass) {
-                    op_code = 0xF000 | ((value >> 12) & 0x07FF);
-                    byte_dump(assembly_pointer, op_code, line, 2);
-                  }
-                  extras = extras + 2; /* Count extra halfword */
-                  if (op == 0x0000)
-                    op_code = 0xF800 | ((value >> 1) & 0x07FF);
-                  else
-                    op_code = 0xE800 | ((value >> 1) & 0x07FE);
-                } /* NB Bit 0 is cleared for BLX */
-                else
-                  error_code = SYM_OORANGE_BRANCH;
-              }
-            }
-          }
-        } break;
-
-        case 0x00070000: /* SWI/BKPT */
-          error_code = evaluate(line, &position, &value, symbol_table);
-
-          if (error_code == EVAL_OKAY) {
-            if ((value & ~0xFF) == 0)
-              op_code = (op_code << 8) | value;
-            else
-              error_code = SYM_OORANGE;
-          }
-          break;
-
-        case 0x00080000: /* Miscellany */
-          switch (op_code) {
-            case 0x0000:
-              op_code = 0x46C0;
-              break; /* NOP (mov r8, r8) */
-            case 0x0001:
-              op_code = 0xDE00;
-              break; /* Undefined */
-            default:
-              break;
-          }
-          break;
-
-        case 0x00090000: /* Single register transfers */
-        {
-          unsigned int Rd;
-          bool imm, no_offset;
-
-          no_offset = false; /* Used to amalgamate different syntaxes */
-
-          Rd =
-              get_thumb_reg(line, &position, 0x00FF); /* Register to transfer */
-          if (Rd >= 0) {
-            if (!cmp_next_non_space(line, &position, 0, ','))
-              error_code = SYM_ERR_SYNTAX | position;
-            else {
-              if (cmp_next_non_space(line, &position, 0, '[')) {
-                unsigned int old_pos;
-
-                old_pos = position; /* Survived to try for base register */
-                reg = get_reg(line, &position);
-                /* Want `old_pos' in case mode disallowed */
-                if (!cmp_next_non_space(line, &position, 0, ',')) {
-                  if (line[position] == ']')
-                    no_offset = true; /* No offset */
-                  else
-                    error_code = SYM_ERR_SYNTAX | position;
-                }
-
-                if (error_code == EVAL_OKAY) {
-                  imm = no_offset /* No offset */
-                        || cmp_next_non_space(line, &position, 0,
-                                              '#'); /* Immediate */
-
-                  if (reg < 0)
-                    error_code = SYM_BAD_REG | skip_spc(line, old_pos);
-                  else {
-                    switch (reg) /* Select according to base register */
-                    {
-                      case 0:
-                      case 1:
-                      case 2:
-                      case 3:
-                      case 4:
-                      case 5:
-                      case 6:
-                      case 7:
-                        if (imm) /* R0-R7, immediate offset */
-                        {
-                          if ((token & 0x00004000) != 0) /* Legal mode? */
-                          {
-                            if (no_offset)
-                              value = 0; /* [Rn] form */
-                            else
-                              error_code = evaluate(line, &position, &value,
-                                                    symbol_table);
-
-                            if (error_code == EVAL_OKAY) {
-                              int shifts; /* For immediate field justification
-                                           */
-
-                              if (!cmp_next_non_space(line, &position, 0, ']'))
-                                error_code = SYM_NO_RBR | position;
-                              else {
-                                switch (token & 0x00700000) {
-                                  case 0x00000000:
-                                    op_code = 0x6000;
-                                    break; /*STR */
-                                  case 0x00100000:
-                                    op_code = 0x8000;
-                                    break; /*STRH*/
-                                  case 0x00200000:
-                                    op_code = 0x7000;
-                                    break; /*STRB*/
-                                  case 0x00300000:
-                                    op_code = 0x0000;
-                                    break;
-                                  case 0x00400000:
-                                    op_code = 0x6800;
-                                    break; /*LDR */
-                                  case 0x00500000:
-                                    op_code = 0x8800;
-                                    break; /*LDRH*/
-                                  case 0x00600000:
-                                    op_code = 0x7800;
-                                    break; /*LDRB*/
-                                  case 0x00700000:
-                                    op_code = 0x0000;
-                                    break;
-                                }
-                                op_code = op_code | (reg << 3) | Rd;
-
-                                shifts = (token >> 24) & 3;
-
-                                if ((value & ~(0x1F << shifts)) ==
-                                    0) /* Magic! */
-                                  op_code = op_code | value << (6 - shifts);
-                                else
-                                  error_code = SYM_OORANGE;
-                              }
-                            }
-                          } else
-                            error_code = SYM_BAD_VARIANT;
-                        } else { /* Register offset */
-                          op_code =
-                              0x5000 | ((op_code & 7) << 9) | (reg << 3) | Rd;
-
-                          reg = get_thumb_reg(line, &position, 0x00FF);
-
-                          if (reg < 0)
-                            error_code = SYM_BAD_REG | position;
-                          else {
-                            op_code = op_code | (reg << 6);
-                            if (!cmp_next_non_space(line, &position, 0, ']'))
-                              error_code = SYM_NO_RBR | position;
-                          }
-                        }
-                        break;
-
-                      case 13:
-                      case 15: /* Other legal Thumb base registers */
-                        if (imm &&
-                            (((reg == 15) && ((token & 0x00002000) != 0)) ||
-                             ((reg == 13) && ((token & 0x00001000) != 0)))) {
-                          if ((token & 0x00400000) == 0)
-                            op_code = 0x9000; /*STR [SP */
-                          else if (reg == 13)
-                            op_code = 0x9800; /*LDR [SP */
-                          else
-                            op_code = 0x4800; /*LDR [PC */
-
-                          op_code = op_code | (Rd << 8); /* Insert Rd field */
-
-                          error_code =
-                              evaluate(line, &position, &value, symbol_table);
-
-                          if (error_code == EVAL_OKAY) {
-                            if ((value & ~0x3FC) == 0) {
-                              op_code |= value >> 2;
-                              if (!cmp_next_non_space(line, &position, 0, ']'))
-                                error_code = SYM_NO_RBR | position;
-                            } else
-                              error_code = SYM_OORANGE;
-                          }
-                        } else
-                          error_code = SYM_BAD_VARIANT;
-                        break;
-
-                      default:
-                        error_code = SYM_BAD_VARIANT;
-                        break;
-                    }
-                  }
-                }
-              } else {
-                if (line[position] == '=') { /* Literal pool stuff */
-                  if ((token & 0xFFF00000) != 0x02400000) /* Only for LDR */
-                    error_code = SYM_ADDR_MODE_BAD;
-                  else {
-                    position++;
-                    error_code =
-                        evaluate(line, &position, &value, symbol_table);
-
-                    if ((error_code == EVAL_OKAY) ||
-                        allow_error(error_code, first_pass, last_pass)) {
-                      switch (do_literal(THUMB, TYPE_WORD, &value, first_pass,
-                                         &error_code)) {
-                        case 0: /* Will fit in instruction */
-                          op_code = 0x2000 | (Rd << 8) | value; /* => MOV */
-                          break;
-
-                        case 1:
-                          std::cout << "Assembler error: Thumb LDR=/MVN"
-                                    << std::endl;
-                          break;
-
-                        case 2: /* Needs full-blooded LDR */
-                          op_code =
-                              thumb_pc_load(assembly_pointer, value, 0x4800, Rd,
-                                            last_pass, &error_code);
-                          break;
-
-                        default:
-                          break;
-                      }
-                    }
-                  }
-                } else /* Not '[' or '=' */
-                {      /* Try for `absolute' address */
-                  error_code = evaluate(line, &position, &value, symbol_table);
-
-                  if (error_code == EVAL_OKAY)
-                    op_code = thumb_pc_load(assembly_pointer, value, 0x4800, Rd,
-                                            last_pass, &error_code);
-                }
-              }
-            }
-          } else
-            error_code = SYM_BAD_REG | position;
-
-        } break;
-
-        case 0x000A0000: /* Multiple load/stores */
-        {
-          unsigned int list;
-
-          op_code = (op_code & 0xFF) << 8;
-          if ((token & 0x0F000000) == 0x0C000000) /* LDM/STM */
-          {
-            list = 0x00FF; /* Just R7-R0 */
-
-            reg = get_thumb_reg(line, &position, 0x00FF);
-
-            if (reg < 0)
-              error_code = SYM_BAD_REG | position;
-            else {
-              op_code = op_code | (reg << 8); /* Include base register */
-
-              if (!cmp_next_non_space(line, &position, 0, '!'))
-                error_code = SYM_NO_BANG | position;
-              else if (!cmp_next_non_space(line, &position, 0, ','))
-                error_code = SYM_NO_COMMA | position;
-            }
-          } else /* PUSH/POP */
-          {
-            if ((token & 0x0FF00000) == 0x0B400000)
-              list = 0x40FF; /* PUSH: LR */
-            else
-              list = 0x80FF; /* POP:  PC */
-          }
-
-          if (error_code == EVAL_OKAY) /* Should be ready for register list */
-          {
-            if (cmp_next_non_space(line, &position, 0, '{')) {
-              list =
-                  parse_reg_list(list); /* Replace allowed with actual list */
-              if (error_code == EVAL_OKAY) {
-                if ((list & 0xC000) != 0)
-                  op_code = op_code | 0x0100;
-                op_code = op_code | (list & 0xFF);
-                if (!cmp_next_non_space(line, &position, 0, '}'))
-                  error_code = SYM_NO_RSQUIGGLE | position;
-              }
-            } else
-              error_code = SYM_NO_REGLIST | position;
-          }
-
-        } break;
-
-        case 0x000B0000: /* ADR */
-        {                /* Only single instruction ops. at present */
-          if ((reg = get_thumb_reg(line, &position, 0x00FF)) >= 0) {
-            if (cmp_next_non_space(line, &position, 0, ',')) {
-              error_code = evaluate(line, &position, &value, symbol_table);
-              if (error_code == EVAL_OKAY)
-                op_code = thumb_pc_load(assembly_pointer, value, 0xA000, reg,
-                                        last_pass, &error_code);
-            } else
-              error_code = SYM_NO_COMMA | position; /* ',' not found */
-          } else
-            error_code = SYM_BAD_REG | position; /* Rd not found */
-        } break;
-
-        default:
-          std::cout << "Unprocessable opcode!" << std::endl;
-          break;
-      }
-    }
-
-    if (error_code == EVAL_OKAY) {
-      if (last_pass)
-        byte_dump(assembly_pointer + extras, op_code, line, 2);
-    } else {
-      if (!last_pass) {
-        if (allow_error(error_code, first_pass, last_pass))
-          error_code = EVAL_OKAY; /* Pretend we're okay */
-      } else                      /* Error on final pass */
-        byte_dump(assembly_pointer + extras, 0, line, 2);
-      /* Dump 0x0000 place holder */
-    }
-    //##
-    if (if_stack[if_SP])
-      assembly_pointer = assembly_pointer + 2 + extras;
-
-    return;
-  }
-
-  /* Separated out so other functions (e.g. "ARM") can call it too. */
-
-  void do_align() {
-    int fill;
-
-    error_code = evaluate(line, &position, &operand, symbol_table);
-    if ((error_code & 0xFFFFFF00) == EVAL_NO_OPERAND) /* Code - position */
-    {
-      error_code = EVAL_OKAY;
-      if (instruction_set == THUMB)
-        operand = 2; /* Thumb default = 2 */
-      else
-        operand = 4; /* else default = 4 */
-    }
-
-    if (error_code == EVAL_OKAY) {
-      if (operand != 0) { /* (ALIGN 0 has no effect) */
-        temp = (assembly_pointer - 1) % operand;
-        operand = operand - (temp + 1); /* No. of elements to skip(/fill) */
-      }
-
-      if (fill = (line[position] == ',')) /*Note where any label should go*/
-        fill_space(operand);              /* Fill with value (?) */
-      else                                /* Start new section if leaving gap */
-      {
-        // dumping literals inside ALIGN @@@
-        // literal_dump(last_pass, line, assembly_pointer + operand);
-        // printf("Hello?\n");
-        if (fList != NULL)
-          list_start_line(assembly_pointer + operand, false);
-        /* Revise list file address */
-
-        if (operand != 0)
-          elf_new_section_maybe(); /* Only reorigin in needed */
-      }
-    }
-
-    if (error_code == EVAL_OKAY) /* Still OK? */
-    {
-      if (fill) /* Any label is at source point */
-        assemble_redef_label(assembly_pointer, assembly_pointer_defined,
-                             my_label, &error_code, 0, pass_count, last_pass,
-                             line);
-      else /* Any label is after alignment */
-        assemble_redef_label(assembly_pointer + operand,
-                             assembly_pointer_defined, my_label, &error_code, 0,
-                             pass_count, last_pass, line);
-      //##
-      if (if_stack[if_SP])
-        assembly_pointer = assembly_pointer + operand;
-    }
-
-    return;
-  }
-
-  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   * -*/
-
-  error_code = EVAL_OKAY; /* #DEFINE ??   @@@@ */
+  // Separated out so other functions (e.g. "ARM") can call it too.
+  error_code = EVAL_OKAY;  // #DEFINE ??
 
   first_pass = (pass_count == 0);
   evaluate_own_label = my_label; /* Yuk! @@@@@ */
@@ -4172,13 +3579,16 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
     if ((token & 0xF0000000) == 0xF0000000) { /* Directive */
       switch (token) {                        /* Defining code */
         case 0xF0000000:
-          assemble_define(1);
+          assemble_define(1, position, line, last_pass, error_code,
+                          symbol_table, first_pass, temp);
           break; /* DEFB */
         case 0xF0010000:
-          assemble_define(2);
+          assemble_define(2, position, line, last_pass, error_code,
+                          symbol_table, first_pass, temp);
           break; /* DEFH */
         case 0xF0020000:
-          assemble_define(4);
+          assemble_define(4, position, line, last_pass, error_code,
+                          symbol_table, first_pass, temp);
           break;         /* DEFW */
         case 0xF0030000: /* DEFS */
           error_code = evaluate(line, &position, &operand, symbol_table);
@@ -4187,8 +3597,10 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
 
           if (error_code == EVAL_OKAY) {
             if (line[position] == ',')
-              fill_space(operand); /*Fill with value (?)*/
-            else                   /* Reorigin ELF by starting new section */
+              fill_space(operand, position, error_code, last_pass, line,
+                         symbol_table, operand,
+                         first_pass); /*Fill with value (?)*/
+            else                      /* Reorigin ELF by starting new section */
               if (operand != 0)
                 elf_new_section_maybe(); /* Reorigin in needed */
 
@@ -4203,7 +3615,7 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
         {
           bool terminate;
           int i;
-          char ident[LINE_LENGTH];
+          std::string ident(LINE_LENGTH, 0);
           sym_record* symbol;
 
           terminate = false;
@@ -4280,11 +3692,10 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
 
         case 0xF0090000: /* ARM */
           instruction_set = ARM;
-          do_align(); /* Automatic realignment (correct choice of action?) */
-          break;
-
-        case 0xF00A0000: /* THUMB */
-          instruction_set = THUMB;
+          do_align(error_code, line, position, operand, symbol_table, temp,
+                   last_pass, my_label,
+                   first_pass); /* Automatic realignment (correct choice of
+                                        action?) */
           break;
 
         case 0xF00B0000: /* <option removed> */
@@ -4297,7 +3708,8 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
           if (if_SP >= IF_STACK_SIZE)
             error_code = SYM_MANY_IFS;
           else {
-            error_code = evaluate(line, &position, &condition, symbol_table);
+            error_code = evaluate(line, &position, (unsigned int*)&condition,
+                                  symbol_table);
             if (error_code != EVAL_OKAY) {
               //## printf("IF: error %08X\n", error_code);
               condition = -1;
@@ -4420,7 +3832,8 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
           break;
 
         case 0xF8020000: /* ALIGN */
-          do_align();
+          do_align(error_code, line, position, operand, symbol_table, temp,
+                   last_pass, my_label, first_pass);
           break;
 
         case 0xF8040000: /* RECORD */
@@ -4526,20 +3939,11 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
           break;
       }
     } else {
-      switch (instruction_set) {
-        case ARM:
-          arm_mnemonic();
-          break;
-        case THUMB:
-          thumb_mmemonic();
-          break;
-        default:
-          std::cout << "Got into an undefined instruction set :-(" << std::endl;
-          break;
-      }
+      arm_mnemonic(last_pass, token, first_pass, line, error_code, position,
+                   symbol_table);
     }
+  }
 
-  }  //  ###
   if (first_pass &&
       (error_code ==
        EVAL_OKAY)) { /* Check that nothing remains on line (first pass only) */
@@ -4549,7 +3953,8 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
   }
 
   return error_code;
-}
+
+}  //  ###
 
 /*----------------------------------------------------------------------------*/
 /* Fully parameterised utility routines                                       */
@@ -4560,9 +3965,9 @@ unless instruction may cause file length to vary (e.g. LDR Rd, =###) */
 
 #define THING_BUFFER_LENGTH 16
 
-int get_thing(char* line, unsigned int* pos, sym_table* table) {
+int get_thing(std::string& line, int* pos, sym_table* table) {
   int i, result;
-  char buffer[THING_BUFFER_LENGTH];
+  std::string buffer(THING_BUFFER_LENGTH, 0);
   sym_record* ptr;
 
   *pos = skip_spc(line, *pos);
@@ -4581,7 +3986,7 @@ int get_thing(char* line, unsigned int* pos, sym_table* table) {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-int get_reg(char* line, unsigned int* pos) /* Expand into code? @@@@ */
+int get_reg(std::string line, int* pos) /* Expand into code? @@@@ */
 {
   return get_thing(line, pos, register_table);
 }
@@ -4590,7 +3995,7 @@ int get_reg(char* line, unsigned int* pos) /* Expand into code? @@@@ */
 /* Like get_reg but accepts a mask of which subset of registers are allowed.  */
 /* If mask doesn't match then leaves *pos at start of symbol.                 */
 
-int get_thumb_reg(char* line, unsigned int* pos, unsigned int reg_mask) {
+int get_thumb_reg(std::string& line, int* pos, unsigned int reg_mask) {
   int reg;
   unsigned int start_pos;
 
@@ -4607,19 +4012,19 @@ int get_thumb_reg(char* line, unsigned int* pos, unsigned int reg_mask) {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-int get_creg(char* line, unsigned int* pos) {
+int get_creg(std::string& line, int* pos) {
   return get_thing(line, pos, cregister_table);
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-int get_copro(char* line, unsigned int* pos) {
+int get_copro(std::string& line, int* pos) {
   return get_thing(line, pos, copro_table);
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-int get_psr(char* line, unsigned int* pPos) {
+int get_psr(std::string& line, int* pPos) {
   int reg;
 
   if ((line[*pPos] & 0xDF) == 'C')
@@ -4678,7 +4083,7 @@ int get_psr(char* line, unsigned int* pPos) {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-int get_shift(char* line, unsigned int* pos) {
+int get_shift(std::string& line, int* pos) {
   int result, flag;
 
   *pos = skip_spc(line, *pos);
@@ -4698,17 +4103,19 @@ int get_shift(char* line, unsigned int* pos) {
   return result;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-/* Change a 32-bit value into a 4-bit ROR + 8-bit immediate form; -1 if can't */
+unsigned int rol32(unsigned int x, unsigned int j) {
+  return (((x & 0xFFFFFFFF) >> (32 - j)) | (x << j)) & 0xFFFFFFFF;
+}
 
-int data_op_imm(unsigned int value) /* Not particularly efficient */
-{
+/**
+ * @brief Change a 32-bit value into a 4-bit ROR + 8-bit immediate form; -1 if
+ * can't.
+ * @param value
+ * @return int
+ */
+int data_op_imm(unsigned int value) {
   unsigned int i;
   bool found;
-
-  unsigned int rol32(unsigned int x, unsigned int j) {
-    return (((x & 0xFFFFFFFF) >> (32 - j)) | (x << j)) & 0xFFFFFFFF;
-  }
 
   found = false;
   i = 0;
@@ -4726,34 +4133,12 @@ int data_op_imm(unsigned int value) /* Not particularly efficient */
     return -1;
 }
 
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-
-unsigned int thumb_pc_load(unsigned int here,
-                           unsigned int there,
-                           unsigned int op_code,
-                           int reg,
-                           bool last_pass,
-                           unsigned int* error_code) {
-  there = there - ((here & ~0x00000002) + 4); /* Calculate offset */
-
-  if ((there & ~0x000003FC) == 0)
-    op_code = op_code | (reg << 8) | (there >> 2);
-  else if (last_pass) {
-    if ((there & 3) != 0)
-      *error_code = SYM_MISALIGNED;
-    else
-      *error_code = SYM_OFFSET_TOO_BIG;
-  }
-
-  return op_code;
-}
-
 /*----------------------------------------------------------------------------*/
 /* Refetch first identifier from source line (in case it was truncated) and   */
 /* re-hash into old symbol with appropriate rules.                            */
 
-void redefine_symbol(char* line, sym_record* record, sym_table* table) {
-  char ident[LINE_LENGTH];
+void redefine_symbol(std::string& line, sym_record* record, sym_table* table) {
+  std::string ident(LINE_LENGTH, 0);
 
   get_identifier(line, skip_spc(line, 0), ident, LINE_LENGTH);
   sym_string_copy(ident, record, table->flags);
@@ -4877,13 +4262,13 @@ void byte_dump(unsigned int address,
 /* `line' is the input source line                                            */
 /* `limit' is a dump address not to exceed, unless 0 which indicates no limit */
 
-void literal_dump(bool last_pass, char* line, unsigned int limit) {
+void literal_dump(bool last_pass, std::string& line, unsigned int limit) {
   unsigned int address; /* Needed because assembly pointer is static */
                         /*  for each `instruction' in the list file */
   unsigned int size;    /* Each plant aligns to the appropriate boundary */
   int i;
   char* align_message = "(padding)";
-  char* my_message;
+  std::string my_message;
 
   address = assembly_pointer;
   my_message = align_message; /* In case we need to align first */
@@ -4941,7 +4326,7 @@ void literal_dump(bool last_pass, char* line, unsigned int limit) {
     if ((literal_tail->flags & LIT_NO_DUMP) ==
         0) /* If -not- converted to MOV */
     {
-      my_message = line; /* Real output line (if any) now */
+      my_message = (char*)line.c_str(); /* Real output line (if any) now */
       if (last_pass)
         byte_dump(address, literal_tail->value, line, size); /*Plant*/
       address = address + size;                              /* Step on */
@@ -5072,30 +4457,35 @@ void elf_new_section_maybe(void) {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
+void elf_dump_word(FILE* fElf, unsigned int word) {
+  fprintf(fElf, "%c%c%c%c", word & 0xFF, (word >> 8) & 0xFF,
+          (word >> 16) & 0xFF, (word >> 24) & 0xFF);
+}
+
+void elf_dump_SH(FILE* fElf,
+                 unsigned int name,
+                 unsigned int type,
+                 unsigned int flags,
+                 unsigned int addr,
+                 unsigned int pos,
+                 unsigned int size,
+                 unsigned int link,
+                 unsigned int info,
+                 unsigned int align,
+                 unsigned int size2) {
+  elf_dump_word(fElf, name);
+  elf_dump_word(fElf, type);
+  elf_dump_word(fElf, flags);
+  elf_dump_word(fElf, addr);
+  elf_dump_word(fElf, pos);
+  elf_dump_word(fElf, size);
+  elf_dump_word(fElf, link);
+  elf_dump_word(fElf, info);
+  elf_dump_word(fElf, align);
+  elf_dump_word(fElf, size2);
+}
+
 void elf_dump_out(FILE* fElf, sym_table* table) {
-  void elf_dump_word(FILE * fElf, unsigned int word) {
-    fprintf(fElf, "%c%c%c%c", word & 0xFF, (word >> 8) & 0xFF,
-            (word >> 16) & 0xFF, (word >> 24) & 0xFF);
-    return;
-  }
-
-  void elf_dump_SH(FILE * fElf, unsigned int name, unsigned int type,
-                   unsigned int flags, unsigned int addr, unsigned int pos,
-                   unsigned int size, unsigned int link, unsigned int info,
-                   unsigned int align, unsigned int size2) {
-    elf_dump_word(fElf, name);
-    elf_dump_word(fElf, type);
-    elf_dump_word(fElf, flags);
-    elf_dump_word(fElf, addr);
-    elf_dump_word(fElf, pos);
-    elf_dump_word(fElf, size);
-    elf_dump_word(fElf, link);
-    elf_dump_word(fElf, info);
-    elf_dump_word(fElf, align);
-    elf_dump_word(fElf, size2);
-    return;
-  }
-
   elf_temp *pTemp, *pTemp_old;
   elf_info *pInfo_head, *pInfo, *pInfo_new;
   unsigned int fragments, total, pad_to_align, i, j, temp;
@@ -5332,7 +4722,7 @@ void list_start_line(unsigned int address, int cont) {
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 // Parameterisation a bit dubious; due for re-analysis & revision @@@@
 
-void list_mid_line(unsigned int value, char* line, int size) {
+void list_mid_line(unsigned int value, std::string& line, int size) {
   if (list_byte == 0)                         /* At start of first line */
     list_buffer_init(line, list_byte, true);  /* Zero output buffer */
   else if (((list_byte % 4) == 0)             /* Start of another line */
@@ -5350,7 +4740,7 @@ void list_mid_line(unsigned int value, char* line, int size) {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-void list_end_line(char* line) {
+void list_end_line(std::string& line) {
   if (list_byte == 0)
     list_buffer_init(line, list_byte, true);
   /* No bytes were dumped */
@@ -5415,12 +4805,10 @@ void list_symbols(FILE* fList, sym_table* table) {
       else {
         if ((pSym->flags & SYM_REC_EXPORT_FLAG) != 0)
           fprintf(fList, "  Global -");
-        else
+        else {
           fprintf(fList, "  Local --");
-        if ((pSym->flags & SYM_REC_THUMB_FLAG) == 0)
-          fprintf(fList, " ARM");
-        else
-          fprintf(fList, " Thumb");
+        }
+        fprintf(fList, " ARM");
       }
       fprintf(fList, "\n");
       pSym = pSym->pNext;
@@ -5433,7 +4821,7 @@ void list_symbols(FILE* fList, sym_table* table) {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
-void list_buffer_init(char* line, unsigned int offset, int do_address) {
+void list_buffer_init(std::string& line, unsigned int offset, int do_address) {
   int i;
 
   for (i = 0; i < LIST_BYTE_FIELD; i++)
@@ -5521,16 +4909,16 @@ sym_table* sym_create_table(char* name, unsigned int flags) {
 /*             retained                                                       */
 /* Returns:  Boolean - true if some of the table remains                      */
 
-int sym_delete_table(sym_table* old_table, bool export) {
+int sym_delete_table(sym_table* old_table, bool exprt) {
   int i;
   bool some_kept;
 
-  some_kept = export && ((old_table->flags & SYM_TAB_EXPORT_FLAG) != 0);
+  some_kept = exprt && ((old_table->flags & SYM_TAB_EXPORT_FLAG) != 0);
 
   if (!some_kept) /* Not exporting whole table */
     for (i = 0; i < SYM_TAB_LIST_COUNT;
          i++) /* Chain down lists, deleting records */
-      if (sym_delete_record_list(&(old_table->pList[i]), export))
+      if (sym_delete_record_list(&(old_table->pList[i]), exprt))
         some_kept = true;
 
   if (!some_kept) {
@@ -5552,7 +4940,7 @@ int sym_delete_table(sym_table* old_table, bool export) {
 /* Returns:  enumerated type indicating the action taken                      */
 /*           pointer to the appropriate record in var. specified by **record  */
 
-defn_return sym_define_label(const char* name,
+defn_return sym_define_label(std::string& name,
                              unsigned int value,
                              unsigned int flags,
                              sym_table* table,
@@ -5604,7 +4992,7 @@ defn_return sym_define_label(const char* name,
 /* Returns:  true if the record was found (previously existed)                */
 /*           pointer to the appropriate record in var. specified by **record  */
 
-int sym_locate_label(char* name,
+int sym_locate_label(std::string& name,
                      unsigned int flags,
                      sym_table* table,
                      sym_record** record) {
@@ -5633,7 +5021,7 @@ int sym_locate_label(char* name,
 /*           table points to an existing list of symbol tables                */
 /* Returns:  pointer to record (NULL if not found)                            */
 
-sym_record* sym_find_label_list(char* name, sym_table_item* item) {
+sym_record* sym_find_label_list(std::string& name, sym_table_item* item) {
   sym_table* table;
   sym_record* result;
 
@@ -5656,7 +5044,7 @@ sym_record* sym_find_label_list(char* name, sym_table_item* item) {
 /*           table points to an existing symbol table                         */
 /* Returns:  pointer to record (NULL if not found)                            */
 
-sym_record* sym_find_label(char* name, sym_table* table) {
+sym_record* sym_find_label(std::string& name, sym_table* table) {
   sym_record *temp, *result;
 
   temp = sym_create_record(name, 0, 0, table->flags); /* Hash name */
@@ -5673,7 +5061,7 @@ sym_record* sym_find_label(char* name, sym_table* table) {
 /*           global_flags define the symbol table properties                  */
 /* Returns:  pointer to allocated record (NULL if this failed)                */
 
-sym_record* sym_create_record(char* name,
+sym_record* sym_create_record(std::string& name,
                               unsigned int value,
                               unsigned int flags,
                               unsigned int global_flags) {
@@ -5698,7 +5086,7 @@ sym_record* sym_create_record(char* name,
 /*           export is a Boolean indicating that records may be retained      */
 /* Returns:  true if any records have been kept                               */
 
-int sym_delete_record_list(sym_record** ptr1, int export) {
+int sym_delete_record_list(sym_record** ptr1, int exprt) {
   bool some_kept;
   sym_record *ptr2,
       *ptr3; /* Current and next records; ptr1 => current pointer */
@@ -5709,7 +5097,7 @@ int sym_delete_record_list(sym_record** ptr1, int export) {
   {
     ptr2 = *ptr1; /* Record for consideration */
 
-    if (!export ||
+    if (!exprt ||
         ((ptr2->flags & SYM_REC_EXPORT_FLAG) == 0)) { /* Delete record */
       ptr3 = ptr2->pNext;      /* Salvage link to next record */
       *ptr1 = ptr3;            /* Point previous link past current record */
@@ -5787,7 +5175,7 @@ sym_record* sym_find_record(sym_table* table, sym_record* record) {
 /*  Copy a string into a specified record, including case conversion,         */
 /* generating hash functions, etc.                                            */
 
-void sym_string_copy(char* string,
+void sym_string_copy(std::string& string,
                      sym_record* record,
                      unsigned int table_flags) {
   unsigned int hash, count;
@@ -5875,6 +5263,22 @@ unsigned int sym_count_symbols(sym_table* table, label_category what) {
   return count;
 }
 
+void sym_dup_record(sym_record* old_record, sym_record* new_record) {
+  unsigned int i, j;
+
+  new_record->count = old_record->count;
+  new_record->hash = old_record->hash;
+  new_record->flags = old_record->flags;
+  new_record->identifier = old_record->identifier;
+  new_record->value = old_record->value;
+  new_record->elf_section = old_record->elf_section;
+  j = old_record->count;
+  if (j > SYM_NAME_MAX)
+    j = SYM_NAME_MAX;
+  for (i = 0; i < j; i++)
+    new_record->name[i] = old_record->name[i];
+}
+
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 /* Returns a newly created (allocated) linked list of symbol records copied   */
 /* from the designated table and sorted as specified.                         */
@@ -5882,24 +5286,6 @@ unsigned int sym_count_symbols(sym_table* table, label_category what) {
 sym_record* sym_sort_symbols(sym_table* table,
                              label_category what,
                              label_sort how) {
-  void sym_dup_record(sym_record * old_record, sym_record * new_record) {
-    unsigned int i, j;
-
-    new_record->count = old_record->count;
-    new_record->hash = old_record->hash;
-    new_record->flags = old_record->flags;
-    new_record->identifier = old_record->identifier;
-    new_record->value = old_record->value;
-    new_record->elf_section = old_record->elf_section;
-    j = old_record->count;
-    if (j > SYM_NAME_MAX)
-      j = SYM_NAME_MAX;
-    for (i = 0; i < j; i++)
-      new_record->name[i] = old_record->name[i];
-
-    return;
-  }
-
   sym_record *temp_record, *sorted_list, *ptr1, *ptr2, **pptr;
   int i, j, min, after;
   bool found;
@@ -6052,10 +5438,7 @@ void sym_print_table(sym_table* table,
       else if ((ptr->flags & SYM_REC_DATA_FLAG) != 0)
         fprintf(handle, "  Offset     ");
       else {
-        if ((ptr->flags & SYM_REC_THUMB_FLAG) == 0)
-          fprintf(handle, "  ARM label  ");
-        else
-          fprintf(handle, "  Thumb label");
+        fprintf(handle, "  ARM label  ");
       }
 
       if ((ptr->flags & SYM_REC_EXPORT_FLAG) !=
@@ -6130,16 +5513,16 @@ void lit_print_table(literal_record* pTemp, FILE* handle) {
  * @param symbol_table
  */
 void Eval_inner(int priority,
-                int* value,
+                unsigned int* value,
                 std::array<unsigned int, MATHSTACK_SIZE>& math_stack,
                 unsigned int& math_SP,
                 unsigned int& error,
                 std::string& string,
-                unsigned int*& pos,
+                int*& pos,
                 sym_table*& symbol_table,
                 unsigned int& first_error) {
   bool done, bracket;
-  unsigned int operator, operand, unary;
+  unsigned int n_operator, operand, unary;
 
   done = false;  // Termination indicator
 
@@ -6147,7 +5530,8 @@ void Eval_inner(int priority,
   math_SP = math_SP + 1;  // Stack `start' marker
 
   while (!done) {
-    error = get_variable(string, pos, &operand, &unary, &bracket, symbol_table);
+    error = get_variable(string, (unsigned int*&)pos, &operand, (int*)&unary,
+                         &bracket, symbol_table);
 
     // Error not instantly fatal
     if ((error & ALL_EXCEPT_LAST_PASS) != 0) {
@@ -6186,7 +5570,7 @@ void Eval_inner(int priority,
           } break;
         }
 
-        if ((error = get_operator(string, pos, &operator, & priority)) ==
+        if ((error = get_operator(string, pos, &n_operator, &priority)) ==
             EVAL_OKAY) {
           // If priority decreasing and previous a real operator, OPERATE
           while ((priority <= math_stack[math_SP - 1]) &&
@@ -6315,7 +5699,7 @@ void Eval_inner(int priority,
             // PUSH
             if ((math_SP + 3) <= MATHSTACK_SIZE) {
               math_stack[math_SP] = operand;
-              math_stack[math_SP + 1] = operator;
+              math_stack[math_SP + 1] = n_operator;
               math_stack[math_SP + 2] = priority;
               math_SP = math_SP + 3;
             } else {
@@ -6368,8 +5752,8 @@ void Eval_inner(int priority,
  * @return unsigned int
  */
 unsigned int evaluate(std::string string,
-                      unsigned int* pos,
-                      int* value,
+                      int* pos,
+                      unsigned int* value,
                       sym_table* symbol_table) {
   std::array<unsigned int, MATHSTACK_SIZE> math_stack;
   unsigned int math_SP, error, first_error;
@@ -6409,9 +5793,9 @@ unsigned int evaluate(std::string string,
  * @param symbol_table
  * @return int
  */
-int get_variable(char* input,
+int get_variable(std::string& input,
                  unsigned int* pos,
-                 int* value,
+                 unsigned int* value,
                  int* unary,
                  bool* bracket,
                  sym_table* symbol_table) {
@@ -6447,7 +5831,7 @@ int get_variable(char* input,
     status = EVAL_OKAY;
   } else {
     int i;
-    char ident[LINE_LENGTH];
+    std::string ident(LINE_LENGTH, 0);
     sym_record* symbol;
 
     if ((i = get_identifier(input, ii, ident, LINE_LENGTH)) > 0) {
@@ -6648,11 +6032,10 @@ int get_variable(char* input,
  * @param priority
  * @return int
  */
-int get_operator(char* input,
-                 unsigned int* pos,
-                 int*
-                 operator,
-                 int * priority) {
+int get_operator(std::string& input,
+                 int* pos,
+                 unsigned int* n_operator,
+                 int* priority) {
   int status;
   unsigned int ii;
 
@@ -6669,58 +6052,58 @@ int get_operator(char* input,
     case ']':
     case '}':
     case '\n':
-      *operator= END;
+      *n_operator = END;
       status = EVAL_OKAY;
       break;
     case '+':
-      *operator= PLUS;
+      *n_operator = PLUS;
       ii++;
       status = EVAL_OKAY;
       break;
     case '-':
-      *operator= MINUS;
+      *n_operator = MINUS;
       ii++;
       status = EVAL_OKAY;
       break;
     case '*':
-      *operator= MULTIPLY;
+      *n_operator = MULTIPLY;
       ii++;
       status = EVAL_OKAY;
       break;
     case '/':
-      *operator= DIVIDE;
+      *n_operator = DIVIDE;
       ii++;
       status = EVAL_OKAY;
       break;
     case '\\':
-      *operator= MODULUS;
+      *n_operator = MODULUS;
       ii++;
       status = EVAL_OKAY;
       break;
     case ')':
-      *operator= CLOSEBR;
+      *n_operator = CLOSEBR;
       ii++;
       status = EVAL_OKAY;
       break;
     case '|':
-      *operator= OR;
+      *n_operator = OR;
       ii++;
       status = EVAL_OKAY;
       break;
       // case '&':  *operator = AND;       ii++;  status = EVAL_OKAY; break;
     case '^':
-      *operator= XOR;
+      *n_operator = XOR;
       ii++;
       status = EVAL_OKAY;
       break;
     case '=':
-      *operator= EQUALS;
+      *n_operator = EQUALS;
       ii++;
       status = EVAL_OKAY;
       break;
     case '!':
       if (input[ii + 1] == '=') {
-        *operator= NOT_EQUAL;
+        *n_operator = NOT_EQUAL;
         ii += 2;
         status = EVAL_OKAY;
       }
@@ -6728,19 +6111,19 @@ int get_operator(char* input,
     case '<':
       switch (input[ii + 1]) {
         case '<':
-          *operator= LEFT_SHIFT;
+          *n_operator = LEFT_SHIFT;
           ii += 2;
           break;
         case '>':
-          *operator= NOT_EQUAL;
+          *n_operator = NOT_EQUAL;
           ii += 2;
           break;
         case '=':
-          *operator= LOWER_EQUAL;
+          *n_operator = LOWER_EQUAL;
           ii += 2;
           break;
         default:
-          *operator= LOWER_THAN;
+          *n_operator = LOWER_THAN;
           ii += 1;
           break;
       }
@@ -6749,15 +6132,15 @@ int get_operator(char* input,
     case '>':
       switch (input[ii + 1]) {
         case '>':
-          *operator= RIGHT_SHIFT;
+          *n_operator = RIGHT_SHIFT;
           ii += 2;
           break;
         case '=':
-          *operator= HIGHER_EQUAL;
+          *n_operator = HIGHER_EQUAL;
           ii += 2;
           break;
         default:
-          *operator= HIGHER_THAN;
+          *n_operator = HIGHER_THAN;
           ii += 1;
           break;
       }
@@ -6767,14 +6150,14 @@ int get_operator(char* input,
     // Have a go at symbolically defined operators
     default: {
       int i;
-      char buffer[SYM_NAME_MAX];
+      std::string buffer(SYM_NAME_MAX, 0);
       sym_record* ptr;
 
       // Something taken
       if ((i = get_identifier(input, ii, buffer, SYM_NAME_MAX)) > 0) {
         // Symbol recognised
         if ((ptr = sym_find_label(buffer, operator_table)) != NULL) {
-          *operator= ptr->value;
+          *n_operator = ptr->value;
           ii += i;
           status = EVAL_OKAY;
         }
@@ -6783,7 +6166,7 @@ int get_operator(char* input,
   }
 
   // Priority "look up". The first two priorities are fixed
-  switch (*operator) {
+  switch (*n_operator) {
     case END:
       *priority = 0;
       break;
@@ -6925,7 +6308,10 @@ char* pathname(char* name1, char* name2) {
  * @param character
  * @return bool true if `character' is found
  */
-bool cmp_next_non_space(char* line, int* pPos, int offset, char character) {
+bool cmp_next_non_space(std::string line,
+                        int* pPos,
+                        int offset,
+                        char character) {
   bool result;
 
   *pPos = skip_spc(line, *pPos + offset);  // Strip, possibly skipping first
@@ -6955,7 +6341,7 @@ bool test_eol(char character) {
  */
 unsigned int get_identifier(std::string line,
                             unsigned int position,
-                            char* buffer,
+                            std::string& buffer,
                             unsigned int max_length) {
   unsigned int i;
 
@@ -7047,7 +6433,7 @@ unsigned char c_char_esc(unsigned char c) {
  * @param radix
  * @return int
  */
-int num_char(char* line, int* pos, unsigned int radix) {
+int num_char(std::string& line, int* pos, unsigned int radix) {
   char c;
 
   while ((c = line[*pos]) == '_') {
@@ -7085,7 +6471,10 @@ int num_char(char* line, int* pos, unsigned int radix) {
  * @param radix
  * @return int flag to say number read (value at pointer).
  */
-int get_num(std::string line, int* position, int* value, unsigned int radix) {
+int get_num(std::string line,
+            unsigned int* position,
+            unsigned int* value,
+            unsigned int radix) {
   int i, new_digit;
   bool found;
 
