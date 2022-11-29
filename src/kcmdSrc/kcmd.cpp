@@ -20,19 +20,19 @@
 #include <sys/signal.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <termios.h>
 #include <unistd.h>
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
+#include <mutex>
 #include <regex>
+#include <sstream>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <vector>
-#include <sstream>
-#include <thread>
-#include <mutex>
-#include <sys/wait.h>
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
 #endif
@@ -282,7 +282,7 @@ constexpr const char getLeastSignificantByte(const int);
  */
 void Jimulator::compileJimulator(std::string pathToBin,
                                  const char* const pathToS,
-				 const char* const pathToKMD) {
+                                 const char* const pathToKMD) {
   char *file_name, *fnoext, *tmp;
   size_t len;
   int pid = -1;
@@ -291,7 +291,7 @@ void Jimulator::compileJimulator(std::string pathToBin,
   dup2(compiler_comms[1], 1);
   close(2);
   dup2(compiler_comms[1], 2);
-  
+
   file_name = strdup(pathToS);
   tmp = strrchr(file_name, '/');
   fnoext = strchr(file_name, '.');
@@ -300,18 +300,19 @@ void Jimulator::compileJimulator(std::string pathToBin,
   *fnoext = 0;
   pid = fork();
 
-  if(!pid) {
-	  int dfd = open("/dev/null", O_RDWR);
-	  close(1);
-	  dup2(dfd, 1);
+  if (!pid) {
+    int dfd = open("/dev/null", O_RDWR);
+    close(1);
+    dup2(dfd, 1);
 #ifdef __APPLE__
-	  execlp(pathToBin.append("/aasm.sh").c_str(), "aasm.sh", file_name, tmp+1, (char*)0);
+    execlp(pathToBin.append("/aasm.sh").c_str(), "aasm.sh", file_name, tmp + 1,
+           (char*)0);
 #else
-	  const char *p = pathToBin.append("/aasm").c_str();
-	  char *cmd = (char*)malloc(0x500);
-	  sprintf(cmd, "%s -lk %s %s", p, pathToKMD, pathToS);
-	  system(cmd);
-	  exit(0);
+    const char* p = pathToBin.append("/aasm").c_str();
+    char* cmd = (char*)malloc(0x500);
+    sprintf(cmd, "%s -lk %s %s", p, pathToKMD, pathToS);
+    system(cmd);
+    exit(0);
 #endif
   }
   wait(NULL);
@@ -1380,7 +1381,8 @@ inline const bool readSourceFile(const char* const pathToKMD) {
           }
 
           buffer[textLength++] = '\0';  // textLength now length incl. '\0'
-          currentLine = (SourceFileLine *)malloc(sizeof(SourceFileLine));  // Create new record
+          currentLine = (SourceFileLine*)malloc(
+              sizeof(SourceFileLine));  // Create new record
           currentLine->address = address;
 
           byteTotal = 0;  // Inefficient
@@ -1431,8 +1433,8 @@ inline const bool readSourceFile(const char* const pathToKMD) {
           }
 
           // Copy text to buffer
-	  currentLine->text = (char *)malloc(textLength);
-	  for (int j = 0; j < textLength; j++) {
+          currentLine->text = (char*)malloc(textLength);
+          for (int j = 0; j < textLength; j++) {
             currentLine->text[j] = buffer[j];
           }
 
@@ -1472,35 +1474,35 @@ inline const bool readSourceFile(const char* const pathToKMD) {
   return true;
 }
 
-char * stokmd(char *file_name) {
-	char *s = strdup(file_name);
-	size_t len;
-	*strrchr(s, '.') = 0;
+char* stokmd(char* file_name) {
+  char* s = strdup(file_name);
+  size_t len;
+  *strrchr(s, '.') = 0;
 
-	len = strlen(file_name);
-	s = (char *)realloc(s, len + 5);
-	strcat(s, ".kmd");
+  len = strlen(file_name);
+  s = (char*)realloc(s, len + 5);
+  strcat(s, ".kmd");
 
-	return s;
+  return s;
 }
 
-char * getKcmdPath() {
-	char *dbuf;
-	uint32_t size = 0x100;
-	dbuf = new char[size];
+char* getKcmdPath() {
+  char* dbuf;
+  uint32_t size = 0x100;
+  dbuf = new char[size];
 #ifdef __APPLE__
-	if(_NSGetExecutablePath(dbuf, &size) != 0) {
-		std::cerr << "Failed to get path for kcmd.\n";
-		exit(1);
-	}
+  if (_NSGetExecutablePath(dbuf, &size) != 0) {
+    std::cerr << "Failed to get path for kcmd.\n";
+    exit(1);
+  }
 #else
-	if(readlink("/proc/self/exe", dbuf, size-1) < 0) {
-		perror("readlink");
-		exit(1);
-	}
-	dbuf[size] = 0;
+  if (readlink("/proc/self/exe", dbuf, size - 1) < 0) {
+    perror("readlink");
+    exit(1);
+  }
+  dbuf[size] = 0;
 #endif
-	return dbuf;
+  return dbuf;
 }
 
 void init_jimulator(std::string argv0) {
@@ -1535,58 +1537,57 @@ void init_jimulator(std::string argv0) {
 }
 
 static void initTerm() {
-	termios oldt;
-	tcgetattr(0, &oldt);
-	termios newt = oldt;
-	newt.c_lflag &= ~(ECHO|ICANON);
-	tcsetattr(0, TCSANOW, &newt);
-	std::cout.setf(std::ios::unitbuf);
-	std::cin.setf(std::ios::unitbuf);
+  termios oldt;
+  tcgetattr(0, &oldt);
+  termios newt = oldt;
+  newt.c_lflag &= ~(ECHO | ICANON);
+  tcsetattr(0, TCSANOW, &newt);
+  std::cout.setf(std::ios::unitbuf);
+  std::cin.setf(std::ios::unitbuf);
 }
 
 static void handle_io() {
-	char c;
+  char c;
 
-	t1 = new std::thread([&]() -> void {
-		while(true) {
-			usleep(10000);
-			mtx.lock();
-			std::cout << Jimulator::getJimulatorTerminalMessages();
-			mtx.unlock();
-		}
-	});
+  t1 = new std::thread([&]() -> void {
+    while (true) {
+      usleep(10000);
+      mtx.lock();
+      std::cout << Jimulator::getJimulatorTerminalMessages();
+      mtx.unlock();
+    }
+  });
 
-	t2 = new std::thread([&]() -> void {
-		while(true) {
-			c = getchar();
-			mtx.lock();
-			Jimulator::sendTerminalInputToJimulator(c);
-			mtx.unlock();
-		}
-	});
+  t2 = new std::thread([&]() -> void {
+    while (true) {
+      c = getchar();
+      mtx.lock();
+      Jimulator::sendTerminalInputToJimulator(c);
+      mtx.unlock();
+    }
+  });
 }
 
 int main(int argc, char** argv) {
-	if(argc != 2) {
-		std::cout << "usage: " << argv[0] << " <asm file>\n";
-		return 1;
-	}
+  if (argc != 2) {
+    std::cout << "usage: " << argv[0] << " <asm file>\n";
+    return 1;
+  }
 
-	char *kcmd_path = getKcmdPath();
-	char *kmd_path = stokmd(argv[1]);
+  char* kcmd_path = getKcmdPath();
+  char* kmd_path = stokmd(argv[1]);
 
-	*strrchr(kcmd_path, '/') = 0;
-	init_jimulator(kcmd_path);
-	initTerm();
-	Jimulator::compileJimulator(kcmd_path, argv[1], kmd_path);
-	
-	Jimulator::loadJimulator(kmd_path);
-	Jimulator::startJimulator(1000000);
-	handle_io();
+  *strrchr(kcmd_path, '/') = 0;
+  init_jimulator(kcmd_path);
+  initTerm();
+  Jimulator::compileJimulator(kcmd_path, argv[1], kmd_path);
 
-	free(kmd_path);
-	free(kcmd_path);
-	wait(NULL);
-	kill(jimulator_pid, SIGTERM);
+  Jimulator::loadJimulator(kmd_path);
+  Jimulator::startJimulator(1000000);
+  handle_io();
+
+  free(kmd_path);
+  free(kcmd_path);
+  wait(NULL);
+  kill(jimulator_pid, SIGTERM);
 }
-

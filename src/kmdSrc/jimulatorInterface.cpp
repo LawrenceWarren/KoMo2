@@ -29,10 +29,10 @@
 #include <iomanip>
 #include <iostream>
 #include <regex>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <sstream>
 
 /**
  * @brief The maximum number of bytes that can be read from a source file.
@@ -1300,7 +1300,7 @@ inline const bool readSourceFile(const char* const pathToKMD) {
   // `system` runs the paramter string as a shell command (i.e. it launches a
   // new process) `pidof` checks to see if a process by the name `jimulator` is
   // running. If it fails (non-zero) It will print an error and return failure.
-  if (system("pidof -x jimulator > /dev/null")) {
+  if (system("pgrep -l jimulator > /dev/null")) {
     std::cout << "Jimulator is not running!\n";
     return false;
   }
