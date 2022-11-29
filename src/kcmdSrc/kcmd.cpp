@@ -73,12 +73,12 @@ constexpr int ADDRESS_BUS_WIDTH = 4;
 constexpr int MAX_NUMBER_OF_BREAKPOINTS = 32;
 
 // Communication pipes
-int communicationFromJimulator[2];
-int communicationToJimulator[2];
-int compilerCommunication[2];
-int writeToJimulator;
-int readFromJimulator;
-int emulator_PID;
+int comms_from_jimulator[2];
+int comms_to_jimulator[2];
+int compiler_comms[2];
+int write_jimulator;
+int read_jimulator;
+int jimulator_pid;
 
 std::thread *t1, *t2;
 std::mutex mtx;
@@ -288,9 +288,9 @@ void Jimulator::compileJimulator(std::string pathToBin,
   int pid = -1;
 
   close(1);
-  dup2(compilerCommunication[1], 1);
+  dup2(compiler_comms[1], 1);
   close(2);
-  dup2(compilerCommunication[1], 2);
+  dup2(compiler_comms[1], 2);
   
   file_name = strdup(pathToS);
   tmp = strrchr(file_name, '/');
@@ -857,7 +857,7 @@ inline void setBreakpointDefinition(unsigned int breakpointIndex,
  */
 inline void sendCharArray(int length, unsigned char* data) {
   struct pollfd pollfd;
-  pollfd.fd = writeToJimulator;
+  pollfd.fd = write_jimulator;
   pollfd.events = POLLOUT;
 
   // See if output possible
@@ -866,7 +866,7 @@ inline void sendCharArray(int length, unsigned char* data) {
   }
 
   // Write char_number bytes
-  if (write(writeToJimulator, data, length) == -1) {
+  if (write(write_jimulator, data, length) == -1) {
     std::cout << "Pipe write error!\n";
   }
 }
@@ -912,7 +912,7 @@ inline const int getCharArray(int length, unsigned char* data) {
   int reply_total = 0;
   struct pollfd pollfd;
 
-  pollfd.fd = readFromJimulator;
+  pollfd.fd = read_jimulator;
   pollfd.events = POLLIN;
 
   // while there is more to get
@@ -925,7 +925,7 @@ inline const int getCharArray(int length, unsigned char* data) {
     // attempt to read the number of bytes requested  and store the number of
     // bytes received
     else {
-      reply_count = read(readFromJimulator, data, length);
+      reply_count = read(read_jimulator, data, length);
     }
 
     if (reply_count == 0) {
@@ -1503,29 +1503,29 @@ char * getKcmdPath() {
 	return dbuf;
 }
 
-void initJimulator(std::string argv0) {
+void init_jimulator(std::string argv0) {
   // sets up the pipes to allow communication between Jimulator and
   // KoMo2 processes.
-  if (pipe(communicationFromJimulator) || pipe(communicationToJimulator)) {
+  if (pipe(comms_from_jimulator) || pipe(comms_to_jimulator)) {
     std::cout << "A pipe error ocurred." << std::endl;
     exit(1);
   }
 
-  readFromJimulator = communicationFromJimulator[0];
-  writeToJimulator = communicationToJimulator[1];
+  read_jimulator = comms_from_jimulator[0];
+  write_jimulator = comms_to_jimulator[1];
 
-  // Stores the emulator_PID for later.
-  emulator_PID = fork();
+  // Stores the jimulator_pid for later.
+  jimulator_pid = fork();
 
   // Jimulator process.
-  if (emulator_PID == 0) {
+  if (jimulator_pid == 0) {
     // Closes Jimulator stdout - Jimulator can write to this pipe using printf
     close(1);
-    dup2(communicationFromJimulator[1], 1);
+    dup2(comms_from_jimulator[1], 1);
 
     // Closes Jimulator stdin - Jimulator can write to this pipe using scanf
     close(0);
-    dup2(communicationToJimulator[0], 0);
+    dup2(comms_to_jimulator[0], 0);
 
     auto jimulatorPath = argv0.append("/jimulator").c_str();
     execlp(jimulatorPath, "jimulator", (char*)0);
@@ -1576,7 +1576,7 @@ int main(int argc, char** argv) {
 	char *kmd_path = stokmd(argv[1]);
 
 	*strrchr(kcmd_path, '/') = 0;
-	initJimulator(kcmd_path);
+	init_jimulator(kcmd_path);
 	initTerm();
 	Jimulator::compileJimulator(kcmd_path, argv[1], kmd_path);
 	
@@ -1587,6 +1587,6 @@ int main(int argc, char** argv) {
 	free(kmd_path);
 	free(kcmd_path);
 	wait(NULL);
-	kill(emulator_PID, SIGTERM);
+	kill(jimulator_pid, SIGTERM);
 }
 

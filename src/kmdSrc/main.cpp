@@ -25,60 +25,43 @@
 #include <libgen.h>
 #include <sys/signal.h>
 #include <unistd.h>
+#include <any>
 #include <array>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <regex>
 #include <sstream>
 #include <utility>
-#include "../../libs/rapidjson/document.h"
+#include <vector>
 #include "models/KoMo2Model.h"
 #include "views/MainWindowView.h"
 
 // ! Forward function declarations
-void initJimulator(const std::string argv0);
-void initCompilerPipes(KoMo2Model* const mainModel);
-const std::string getAbsolutePathToRootDirectory(const char* const arg);
-const int initialiseCommandLine(
-    const Glib::RefPtr<Gio::ApplicationCommandLine>&,
-    const Glib::RefPtr<Gtk::Application>& app);
-const bool receivedCompilerOutput(GIOChannel* source,
-                                  GIOCondition condition,
-                                  gpointer data);
-void readProgramVariables(const std::string argv0);
+void init_jimulator(const std::string argv0);
+void init_compiler_pipes(KoMo2Model* const main_model);
+const std::string get_absolute_path_to_root_dir(const char* const arg);
+const int init_cli(const Glib::RefPtr<Gio::ApplicationCommandLine>&,
+                   const Glib::RefPtr<Gtk::Application>& app);
+const bool receive_compiler_output(GIOChannel* source,
+                                   GIOCondition condition,
+                                   gpointer data);
+void read_program_config(const std::string argv0);
 
 /**
  * @brief This variable will store the PID of the Jimulator process.
  */
-int emulator_PID = -1;
+int jimulator_pid = -1;
 
 // Communication pipes
-int communicationFromJimulator[2];
-int communicationToJimulator[2];
-int compilerCommunication[2];
+int comms_from_jimulator[2];
+int comms_to_jimulator[2];
+int compiler_comms[2];
 // Defined as extern in jimulatorInterface.h
-int writeToJimulator;
-int readFromJimulator;
+int write_jimulator;
+int read_jimulator;
 
-/**
- * @brief Version information read from variables.json is stored here.
- */
-std::string version = "1.0.0";
-
-/**
- * @brief Manual information read from variables.json is stored here.
- */
-std::string manual = "https://github.com/LawrenceWarren/KoMo2#user-manual";
-
-/**
- * @brief Help information read from variables.json is stored here.
- */
-std::string help = "Please view the user manual (" + manual + ") for help.";
-
-/**
- * @brief Refresh rate information read from variables.json is stored here.
- */
-int refresh = 200;
+std::map<std::string, std::any> config_map;
 
 /**
  * @brief Used as a reference to the master KoMo2Model.
@@ -92,52 +75,54 @@ void* model;
  * @return int exit code.
  */
 int main(int argc, char* argv[]) {
-  auto argv0 = getAbsolutePathToRootDirectory(argv[0]);
+  auto argv0 = get_absolute_path_to_root_dir(argv[0]);
   auto app = Gtk::Application::create(argc, argv, "uon.cs.KoMo2",
                                       Gio::APPLICATION_HANDLES_COMMAND_LINE);
 
-  readProgramVariables(argv0);
+  read_program_config(argv0);
 
   // Setup communication to Jimulator child process
-  initJimulator(argv0);
+  init_jimulator(argv0);
 
   // Setup command line argument recognition
-  app->signal_command_line().connect(
-      sigc::bind(sigc::ptr_fun(initialiseCommandLine), app), false);
+  app->signal_command_line().connect(sigc::bind(sigc::ptr_fun(init_cli), app),
+                                     false);
 
   // Setup model & view
-  MainWindowView koMo2Window(400, 400);
-  KoMo2Model mainModel(&koMo2Window, argv0, manual, refresh);
+  MainWindowView km2_window(400, 400);
+  KoMo2Model main_model(&km2_window, argv0,
+                        std::any_cast<std::string>(config_map["manual"]),
+                        std::any_cast<int>(config_map["refresh"]));
 
-  model = &mainModel;
+  model = &main_model;
 
   // Setup communication methods to compile child process
-  initCompilerPipes(&mainModel);
+  init_compiler_pipes(&main_model);
 
   // Run
-  auto exit = app->run(koMo2Window);
-  kill(emulator_PID, SIGKILL);  // Kill Jimulator if main window is killed
+  auto exit = app->run(km2_window);
+  kill(jimulator_pid, SIGKILL);  // Kill Jimulator if main window is killed
   return exit;
 }
 
 /**
  * @brief Initialises the communication pipes between the compiler process & the
  * main KoMo2 GUI.
- * @param mainModel A pointer to the main KoMo2 model.
+ * @param main_model A pointer to the main KoMo2 model.
  */
-void initCompilerPipes(KoMo2Model* mainModel) {
+void init_compiler_pipes(KoMo2Model* main_model) {
   // Allows for printing compile output in the KoMo2 terminal
-  if (pipe(compilerCommunication)) {
+  if (pipe(compiler_comms)) {
     std::cout << "A pipe error ocurred." << std::endl;
     exit(1);
   }
 
-  // Sets up the function `receivedCompilerOutput` to fire whenever a change to
-  // the `compilerCommunication` pipe occurs. This in turn calls a function
-  // in the mainModel object.
-  auto fd = g_io_channel_unix_new(compilerCommunication[0]);
-  auto f = (GIOFunc)receivedCompilerOutput;
-  g_io_add_watch(fd, G_IO_IN, f, mainModel);
+  // Sets up the function `receive_compiler_output` to fire whenever a change to
+  // the `compiler_comms` pipe occurs. This in turn calls a function
+  // in the main_model object.
+  auto fd = g_io_channel_unix_new(compiler_comms[0]);
+  auto f = (GIOFunc)receive_compiler_output;
+  g_io_add_watch(fd, G_IO_IN, f, main_model);
 }
 
 /**
@@ -149,32 +134,32 @@ void initCompilerPipes(KoMo2Model* mainModel) {
  * argv0 will have the value `/home/user/demo` and it will be assumed that the
  * Jimulator executable lives at `/home/user/demo/jimulator`.
  */
-void initJimulator(std::string argv0) {
+void init_jimulator(std::string argv0) {
   // sets up the pipes to allow communication between Jimulator and
   // KoMo2 processes.
-  if (pipe(communicationFromJimulator) || pipe(communicationToJimulator)) {
+  if (pipe(comms_from_jimulator) || pipe(comms_to_jimulator)) {
     std::cout << "A pipe error ocurred." << std::endl;
     exit(1);
   }
 
-  readFromJimulator = communicationFromJimulator[0];
-  writeToJimulator = communicationToJimulator[1];
+  read_jimulator = comms_from_jimulator[0];
+  write_jimulator = comms_to_jimulator[1];
 
-  // Stores the emulator_PID for later.
-  emulator_PID = fork();
+  // Stores the jimulator_pid for later.
+  jimulator_pid = fork();
 
   // Jimulator process.
-  if (emulator_PID == 0) {
+  if (jimulator_pid == 0) {
     // Closes Jimulator stdout - Jimulator can write to this pipe using printf
     close(1);
-    dup2(communicationFromJimulator[1], 1);
+    dup2(comms_from_jimulator[1], 1);
 
     // Closes Jimulator stdin - Jimulator can write to this pipe using scanf
     close(0);
-    dup2(communicationToJimulator[0], 0);
+    dup2(comms_to_jimulator[0], 0);
 
-    auto jimulatorPath = argv0.append("/bin/jimulator").c_str();
-    execlp(jimulatorPath, "", (char*)0);
+    auto jimulator_path = argv0.append("/bin/jimulator").c_str();
+    execlp(jimulator_path, "", (char*)0);
     // should never get here
     _exit(1);
   }
@@ -185,7 +170,7 @@ void initJimulator(std::string argv0) {
  * @return std::string the directory of the KoMo2 binary - if the binary is at
  * `/home/user/demo/kmd`, return `/home/user/demo`.
  */
-const std::string getAbsolutePathToRootDirectory(const char* const arg) {
+const std::string get_absolute_path_to_root_dir(const char* const arg) {
   // Gets a path to this executable
   auto buf = realpath(arg, NULL);
   const std::string argv0(buf);
@@ -195,79 +180,45 @@ const std::string getAbsolutePathToRootDirectory(const char* const arg) {
 }
 
 /**
- * @brief Reads the program variables from the "variables.json" file and
- * populates global variables with the values read.
+ * @brief Reads the program variables from the "config.rc" file and populates
+ * the global variables with the values read.
  */
-void readProgramVariables(const std::string argv0) {
+void read_program_config(const std::string argv0) {
   // Reading the file into a large string
-  std::string s;
-  std::ifstream variablesFile(argv0 + "/variables.json");
-  std::stringstream ss;
-  bool first = true;
+  std::string key, value;
+  std::ifstream config_file(argv0 + "/config.rc");
 
-  if (variablesFile.is_open()) {
-    while (getline(variablesFile, s)) {
-      if (first) {
-        first = false;
-      } else {
-        ss << '\n';
-      }
-
-      ss << s;
-    }
-    variablesFile.close();
+  while (config_file.is_open()) {
+    std::getline(config_file, key, '=');
+    std::getline(config_file, value);
   }
 
-  // JSON parsing the string
-  rapidjson::Document d;
-  d.Parse(ss.str().c_str());
-
-  if (not d.IsObject()) {
-    std::cout << "Can't read variables.json, using defaults." << std::endl;
-    return;
-  }
-
-  if (d.HasMember("version")) {
-    version = std::string(d["version"].GetString());
-  }
-
-  if (d.HasMember("manual")) {
-    manual = std::string(d["manual"].GetString());
-  }
-
-  if (d.HasMember("help")) {
-    help = std::string(d["help"].GetString());
-  } else {
-    help = "Please view the user manual (" + manual + ") for help.";
-  }
-
-  if (d.HasMember("refresh")) {
-    refresh = d["refresh"].GetInt();
-  }
+  config_file.close();
+  config_map.insert_or_assign(key, value);
 }
 
 /**
  * @brief Handles if a command line flag is set.
- * @param isVersion If the version flag has been set.
- * @param isHelp If the help flag has been set.
- * @param isMnemonics If the mnemonics flag is set.
+ * @param is_version If the version flag has been set.
+ * @param is_help If the help flag has been set.
+ * @param is_mnemonic If the mnemonics flag is set.
  * @return int status code.
  */
-const int handleCommandLine(const bool isVersion,
-                            const bool isHelp,
-                            const bool isMnemonics) {
-  if (isMnemonics) {
+const int handle_cli(const bool is_version,
+                     const bool is_help,
+                     const bool is_mnemonic) {
+  if (is_mnemonic) {
     static_cast<KoMo2Model*>(model)->getDisassemblyModel()->setEnglishMnemonic(
         true);
   }
 
-  if (isVersion) {
-    std::cout << version << std::endl;
+  if (is_version) {
+    std::cout << std::any_cast<std::string>(config_map["version"]) << std::endl;
     return 1;
   }
 
-  if (isHelp) {
-    std::cout << help << std::endl;
+  if (is_help) {
+    std::cout << std::any_cast<std::string>(config_map["help"]) << std::endl;
     return 1;
   }
 
@@ -279,36 +230,35 @@ const int handleCommandLine(const bool isVersion,
  * To add more command line arguments, create a new boolean and a new
  * Glib::OptionEntry object, and then add a longname, shortname, and
  * description, then add it to the group. Then pass the boolean into the
- * handleCommandLine function.
+ * handle_cli function.
  * @param cmd The apps command line object.
  * @param app The GTK application itself.
  * @return int status code.
  */
-const int initialiseCommandLine(
-    const Glib::RefPtr<Gio::ApplicationCommandLine>& cmd,
-    const Glib::RefPtr<Gtk::Application>& app) {
+const int init_cli(const Glib::RefPtr<Gio::ApplicationCommandLine>& cmd,
+                   const Glib::RefPtr<Gtk::Application>& app) {
   Glib::OptionGroup group("options", "main options");
-  bool isVersion = false, isHelp = false,
-       isMnemonics = false;  // Booleans for options being toggled
+  bool is_version = false, is_help = false,
+       is_mnemonic = false;  // Booleans for options being toggled
   Glib::OptionEntry version, help, mnemonics;  // Option objects
 
   // Setting the version `-v` option
   version.set_long_name("version");
   version.set_short_name('v');
   version.set_description("Display version information.");
-  group.add_entry(version, isVersion);
+  group.add_entry(version, is_version);
 
   // Setting the help `-h` option
   help.set_long_name("help");
   help.set_short_name('h');
   help.set_description("Display a help message.");
-  group.add_entry(help, isHelp);
+  group.add_entry(help, is_help);
 
   mnemonics.set_long_name("english");
   mnemonics.set_short_name('e');
   mnemonics.set_description(
       "Play ARM mnemonics in English if using a screenreader.");
-  group.add_entry(mnemonics, isMnemonics);
+  group.add_entry(mnemonics, is_mnemonic);
 
   Glib::OptionContext context;
   context.add_group(group);
@@ -320,7 +270,7 @@ const int initialiseCommandLine(
   char** argv = cmd->get_arguments(argc);
   context.parse(argc, argv);
 
-  int returnVal = handleCommandLine(isVersion, isHelp, isMnemonics);
+  int returnVal = handle_cli(is_version, is_help, is_mnemonic);
 
   // If command line arguments were valid, activate app, else not.
   if (not returnVal) {
@@ -346,19 +296,19 @@ const int initialiseCommandLine(
  * to handle a related state change.
  * @return false The function is done handling the state change.
  */
-const bool receivedCompilerOutput(GIOChannel* source,
-                                  GIOCondition condition,
-                                  gpointer data) {
+const bool receive_compiler_output(GIOChannel* source,
+                                   GIOCondition condition,
+                                   gpointer data) {
   // data is always a pointer to the main window
   auto p = static_cast<KoMo2Model*>(data);
   char buff[128];  // An arbitrary size
 
   // The amount of bytes that were read
-  int x = read(compilerCommunication[0], buff, 128);
+  int x = read(compiler_comms[0], buff, 128);
 
   // There was a pipe reading failure.
   if (x < 0) {
-    std::cout << "Error reading from compiler communcation pipe." << std::endl;
+    std::cout << "Error reading the compiler communication pipe." << std::endl;
     return false;
   }
   // There is no more data to be read.

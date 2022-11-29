@@ -270,9 +270,9 @@ void Jimulator::compileJimulator(const char* const pathToBin,
                                  const char* const pathToS,
                                  const char* const pathToKMD) {
   close(1);
-  dup2(compilerCommunication[1], 1);
+  dup2(compiler_comms[1], 1);
   close(2);
-  dup2(compilerCommunication[1], 2);
+  dup2(compiler_comms[1], 2);
   execlp(pathToBin, "aasm", "-lk", pathToKMD, pathToS, (char*)0);
 }
 
@@ -862,7 +862,7 @@ inline void setBreakpointDefinition(unsigned int breakpointIndex,
  */
 inline void sendCharArray(int length, unsigned char* data) {
   struct pollfd pollfd;
-  pollfd.fd = writeToJimulator;
+  pollfd.fd = write_jimulator;
   pollfd.events = POLLOUT;
 
   // See if output possible
@@ -871,7 +871,7 @@ inline void sendCharArray(int length, unsigned char* data) {
   }
 
   // Write char_number bytes
-  if (write(writeToJimulator, data, length) == -1) {
+  if (write(write_jimulator, data, length) == -1) {
     std::cout << "Pipe write error!\n";
   }
 }
@@ -917,7 +917,7 @@ inline const int getCharArray(int length, unsigned char* data) {
   int reply_total = 0;
   struct pollfd pollfd;
 
-  pollfd.fd = readFromJimulator;
+  pollfd.fd = read_jimulator;
   pollfd.events = POLLIN;
 
   // while there is more to get
@@ -930,7 +930,7 @@ inline const int getCharArray(int length, unsigned char* data) {
     // attempt to read the number of bytes requested  and store the number of
     // bytes received
     else {
-      reply_count = read(readFromJimulator, data, length);
+      reply_count = read(read_jimulator, data, length);
     }
 
     if (reply_count == 0) {

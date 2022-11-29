@@ -40,26 +40,26 @@ inline unsigned char operator|(ClientState l, unsigned char r) {
 /**
  * @brief Stores the file descriptor used for writing to Jimulator.
  */
-extern int writeToJimulator;
+extern int write_jimulator;
 /**
  * @brief Stores the file descriptor used for reading from Jimulator.
  */
-extern int readFromJimulator;
+extern int read_jimulator;
 /**
  * @brief The pipe which will be used by KoMo2 to read from Jimulator (i.e.
  * Jimulator will write to it, KoMo2 will read)
  */
-extern int communicationFromJimulator[2];
+extern int comms_from_jimulator[2];
 /**
  * @brief The pipe which will be used by KoMo2 to write to Jimulator (i.e.
  * Jimulator will read from it, KoMo2 will write)
  */
-extern int communicationToJimulator[2];
+extern int comms_to_jimulator[2];
 /**
  * @brief The pipe that handles communication between the compiler process and
  * KoMo2.
  */
-extern int compilerCommunication[2];
+extern int compiler_comms[2];
 
 /**
  * @brief Groups together functions that make up the Jimulator API layer - these
