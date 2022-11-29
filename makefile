@@ -14,6 +14,9 @@ kmd: src/kmdSrc/views/TerminalView.cpp src/kmdSrc/views/DisassemblyView.cpp src/
 aasm: src/aasmSrc/aasm.cpp
 	g++ -O0 -o bin/aasm src/aasmSrc/aasm.cpp -Wall -Wextra
 
+kcmd: src/kcmdSrc/kcmd.cpp
+	g++ src/kcmdSrc/kcmd.cpp -o bin/kcmd -std=c++17 -pthread
+
 # Compile the jimulator binary.
 jimulator: src/jimulatorSrc/jimulator.cpp
 	g++ -o bin/jimulator src/jimulatorSrc/jimulator.cpp -Wall -Wextra -O3 -std=c++17
